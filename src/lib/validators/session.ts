@@ -14,6 +14,7 @@ export const sessionFormSchema = z
     modalite: z.nativeEnum(Modalite),
     nbPlaces: optionalText,
     statut: z.nativeEnum(SessionStatut),
+    formateurIds: z.array(z.string()).optional(),
   })
   .refine((d) => !d.dateDebut || !d.dateFin || d.dateFin >= d.dateDebut, {
     message: "La date de fin doit être postérieure ou égale au début.",

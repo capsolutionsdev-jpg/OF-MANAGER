@@ -41,8 +41,13 @@ export async function createSession(
   if (!parsed.success) return { ok: false, error: "Données invalides." };
 
   try {
+    const ids = parsed.data.formateurIds ?? [];
     const created = await prisma.session.create({
-      data: { ...toData(parsed.data), createdById: session.user.id },
+      data: {
+        ...toData(parsed.data),
+        createdById: session.user.id,
+        formateurs: { connect: ids.map((fid) => ({ id: fid })) },
+      },
     });
     await prisma.auditLog.create({
       data: {
@@ -73,7 +78,14 @@ export async function updateSession(
   if (!parsed.success) return { ok: false, error: "Données invalides." };
 
   try {
-    await prisma.session.update({ where: { id }, data: toData(parsed.data) });
+    const ids = parsed.data.formateurIds ?? [];
+    await prisma.session.update({
+      where: { id },
+      data: {
+        ...toData(parsed.data),
+        formateurs: { set: ids.map((fid) => ({ id: fid })) },
+      },
+    });
     await prisma.auditLog.create({
       data: {
         userId: session.user.id,

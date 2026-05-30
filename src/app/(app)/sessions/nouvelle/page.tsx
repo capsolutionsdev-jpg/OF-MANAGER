@@ -6,11 +6,17 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
 export default async function NouvelleSessionPage() {
-  const formations = await prisma.formation.findMany({
-    where: { isArchived: false },
-    orderBy: { titre: "asc" },
-    select: { id: true, titre: true, reference: true },
-  });
+  const [formations, formateurs] = await Promise.all([
+    prisma.formation.findMany({
+      where: { isArchived: false },
+      orderBy: { titre: "asc" },
+      select: { id: true, titre: true, reference: true },
+    }),
+    prisma.formateur.findMany({
+      orderBy: { nom: "asc" },
+      select: { id: true, nom: true, prenom: true, academies: true },
+    }),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -33,7 +39,7 @@ export default async function NouvelleSessionPage() {
             </Link>
           </Card>
         ) : (
-          <SessionForm formations={formations} />
+          <SessionForm formations={formations} formateurs={formateurs} />
         )}
       </div>
     </div>

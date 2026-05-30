@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { CandidatStatut } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import {
@@ -108,4 +109,25 @@ export async function archiveCandidat(id: string): Promise<ActionResult> {
 
   revalidatePath("/candidats");
   return { ok: true, id };
+}
+
+export async function setCandidatStatut(
+  id: string,
+  statut: CandidatStatut,
+): Promise<{ ok: boolean }> {
+  const session = await auth();
+  if (!session?.user) return { ok: false };
+
+  await prisma.candidat.update({ where: { id }, data: { statut } });
+  await prisma.auditLog.create({
+    data: {
+      userId: session.user.id,
+      action: "STATUT",
+      entityType: "Candidat",
+      entityId: id,
+    },
+  });
+  revalidatePath("/crm");
+  revalidatePath("/candidats");
+  return { ok: true };
 }

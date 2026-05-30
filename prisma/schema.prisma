@@ -325,6 +325,7 @@ model Formation {
 
   sessions    Session[]
   evaluations Evaluation[]
+  formateurs  Formateur[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -378,9 +379,11 @@ model Formateur {
   bio              String? @db.Text
   cvUrl            String?
   experienceAnnees Int?
+  academies        Academy[]
 
-  sessions Session[] @relation("SessionFormateurs")
-  seances  Seance[]
+  sessions   Session[]   @relation("SessionFormateurs")
+  seances    Seance[]
+  formations Formation[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -5,6 +5,8 @@ import {
   BookOpen,
   CalendarDays,
   ShieldCheck,
+  Target,
+  UserCog,
   type LucideIcon,
 } from "lucide-react";
 
@@ -24,6 +26,12 @@ export const navItems: NavItem[] = [
     roles: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT", "FORMATEUR", "APPRENANT"],
   },
   {
+    label: "CRM Prospects",
+    href: "/crm",
+    icon: Target,
+    roles: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
+  },
+  {
     label: "Candidats",
     href: "/candidats",
     icon: Users,
@@ -40,6 +48,12 @@ export const navItems: NavItem[] = [
     href: "/sessions",
     icon: CalendarDays,
     roles: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT", "FORMATEUR"],
+  },
+  {
+    label: "Formateurs",
+    href: "/formateurs",
+    icon: UserCog,
+    roles: ["ADMIN", "RESPONSABLE_FORMATION"],
   },
   {
     label: "Qualiopi",

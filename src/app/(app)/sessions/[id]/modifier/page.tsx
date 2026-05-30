@@ -10,12 +10,19 @@ export default async function ModifierSessionPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [s, formations] = await Promise.all([
-    prisma.session.findUnique({ where: { id } }),
+  const [s, formations, formateurs] = await Promise.all([
+    prisma.session.findUnique({
+      where: { id },
+      include: { formateurs: { select: { id: true } } },
+    }),
     prisma.formation.findMany({
       where: { isArchived: false },
       orderBy: { titre: "asc" },
       select: { id: true, titre: true, reference: true },
+    }),
+    prisma.formateur.findMany({
+      orderBy: { nom: "asc" },
+      select: { id: true, nom: true, prenom: true, academies: true },
     }),
   ]);
   if (!s) notFound();
@@ -35,8 +42,10 @@ export default async function ModifierSessionPage({
       <div className="max-w-3xl">
         <SessionForm
           formations={formations}
+          formateurs={formateurs}
           sessionId={s.id}
           defaultValues={{
+            formateurIds: s.formateurs.map((f) => f.id),
             formationId: s.formationId,
             reference: s.reference ?? "",
             dateDebut: s.dateDebut.toISOString().slice(0, 10),
