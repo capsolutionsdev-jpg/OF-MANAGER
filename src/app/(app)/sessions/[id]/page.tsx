@@ -1,0 +1,204 @@
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft, Pencil, Trash2, Users, ClipboardCheck } from "lucide-react";
+import { prisma } from "@/lib/prisma";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { MODALITE_LABELS } from "@/lib/validators/formation";
+import { SESSION_STATUT_LABELS } from "@/lib/validators/session";
+import { INSCRIPTION_STATUT_LABELS } from "@/lib/validators/inscription";
+import { FINANCEMENT_LABELS } from "@/lib/validators/candidat";
+import { deleteInscriptionAction } from "@/lib/actions/inscription-actions";
+import { EnrollForm } from "@/components/inscriptions/enroll-form";
+import { DocumentsMenu } from "@/components/documents/documents-menu";
+
+function Field({ label, value }: { label: string; value?: string | null }) {
+  return (
+    <div>
+      <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        {label}
+      </dt>
+      <dd className="mt-0.5 text-sm">{value && value !== "" ? value : "—"}</dd>
+    </div>
+  );
+}
+
+export default async function SessionDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const s = await prisma.session.findUnique({
+    where: { id },
+    include: {
+      formation: true,
+      inscriptions: {
+        include: { candidat: true },
+        orderBy: { createdAt: "desc" },
+      },
+    },
+  });
+  if (!s) notFound();
+
+  const enrolledIds = s.inscriptions.map((i) => i.candidatId);
+  const candidatsDisponibles = await prisma.candidat.findMany({
+    where: { id: { notIn: enrolledIds }, statut: { not: "ARCHIVE" } },
+    select: { id: true, nom: true, prenom: true },
+    orderBy: [{ nom: "asc" }, { prenom: "asc" }],
+  });
+
+  const fmt = (d: Date) => d.toLocaleDateString("fr-FR");
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <Link
+          href="/sessions"
+          className="mb-2 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" /> Retour aux sessions
+        </Link>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-2xl font-bold tracking-tight">
+              {s.formation.titre}
+            </h1>
+            <Badge variant="outline">{SESSION_STATUT_LABELS[s.statut]}</Badge>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              render={<Link href={`/sessions/${s.id}/emargement`} />}
+            >
+              <ClipboardCheck className="mr-2 h-4 w-4" /> Émargement
+            </Button>
+            <Button
+              variant="outline"
+              render={<Link href={`/sessions/${s.id}/modifier`} />}
+            >
+              <Pencil className="mr-2 h-4 w-4" /> Modifier
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Détails de la session</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <Field
+              label="Formation"
+              value={`${s.formation.titre} (${s.formation.reference})`}
+            />
+            <Field label="Référence session" value={s.reference} />
+            <Field label="Modalité" value={MODALITE_LABELS[s.modalite]} />
+            <Field label="Date de début" value={fmt(s.dateDebut)} />
+            <Field label="Date de fin" value={fmt(s.dateFin)} />
+            <Field label="Horaires" value={s.horaires} />
+            <Field label="Lieu" value={s.lieu} />
+            <Field
+              label="Places"
+              value={`${s.inscriptions.length} inscrit(s) / ${s.nbPlaces} places`}
+            />
+            <Field label="Statut" value={SESSION_STATUT_LABELS[s.statut]} />
+          </dl>
+        </CardContent>
+      </Card>
+
+      {/* Participants */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Users className="h-4 w-4" /> Participants ({s.inscriptions.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {s.inscriptions.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Aucun candidat inscrit pour le moment.
+            </p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Candidat</TableHead>
+                  <TableHead>Financement</TableHead>
+                  <TableHead>Statut</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {s.inscriptions.map((i) => (
+                  <TableRow key={i.id}>
+                    <TableCell className="font-medium">
+                      <Link
+                        href={`/candidats/${i.candidatId}`}
+                        className="hover:underline"
+                      >
+                        {i.candidat.prenom} {i.candidat.nom}
+                      </Link>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {i.financementType
+                        ? FINANCEMENT_LABELS[i.financementType]
+                        : "—"}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">
+                        {INSCRIPTION_STATUT_LABELS[i.statut]}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <DocumentsMenu inscriptionId={i.id} />
+                        <form action={deleteInscriptionAction}>
+                          <input type="hidden" name="id" value={i.id} />
+                          <input type="hidden" name="sessionId" value={s.id} />
+                          <input
+                            type="hidden"
+                            name="candidatId"
+                            value={i.candidatId}
+                          />
+                          <Button
+                            type="submit"
+                            variant="ghost"
+                            size="icon-sm"
+                            aria-label="Désinscrire"
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </form>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+
+          <div className="rounded-lg border bg-muted/30 p-4">
+            <h3 className="mb-3 text-sm font-semibold">Inscrire un candidat</h3>
+            <EnrollForm sessionId={s.id} candidats={candidatsDisponibles} />
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

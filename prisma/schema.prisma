@@ -1,0 +1,840 @@
+// =============================================================
+//  CAP COMPÉTENCE MANAGER — Schéma de base de données (Prisma)
+//  SaaS de gestion d'organisme de formation certifié Qualiopi.
+//  PostgreSQL. Couvre les 16 modules fonctionnels.
+// =============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// =============================================================
+//  ENUMS
+// =============================================================
+
+enum Role {
+  ADMIN
+  RESPONSABLE_FORMATION
+  ASSISTANT
+  FORMATEUR
+  APPRENANT
+}
+
+enum Modalite {
+  PRESENTIEL
+  DISTANCIEL
+  MIXTE
+}
+
+enum Academy {
+  DIGITAL
+  SAFETY
+  TRANSPORT
+  LANGUE
+}
+
+enum FinancementType {
+  CPF
+  OPCO
+  FRANCE_TRAVAIL
+  AUTOFINANCEMENT
+  ENTREPRISE
+  AUTRE
+}
+
+enum CandidatStatut {
+  NOUVEAU
+  EN_TRAITEMENT
+  INSCRIT
+  REFUSE
+  ARCHIVE
+}
+
+enum SessionStatut {
+  PLANIFIEE
+  OUVERTE
+  COMPLETE
+  EN_COURS
+  TERMINEE
+  ANNULEE
+}
+
+enum InscriptionStatut {
+  EN_ATTENTE
+  VALIDEE
+  ANNULEE
+}
+
+enum SeanceType {
+  JOURNEE
+  MATIN
+  APRES_MIDI
+}
+
+enum PresenceStatut {
+  PRESENT
+  ABSENT
+  RETARD
+  EXCUSE
+}
+
+enum EvaluationType {
+  POSITIONNEMENT
+  ACQUIS
+  SATISFACTION_CHAUD
+  SATISFACTION_FROID
+  BILAN
+}
+
+enum DocumentType {
+  FICHE_INSCRIPTION
+  CONTRAT_FORMATION
+  CONVENTION_FORMATION
+  CONVOCATION
+  PROGRAMME
+  ATTESTATION_ENTREE
+  ATTESTATION_FIN
+  ATTESTATION_REUSSITE
+  CERTIFICAT_REALISATION
+  QUESTIONNAIRE_POSITIONNEMENT
+  QUESTIONNAIRE_SATISFACTION
+  EVALUATION_CHAUD
+  EVALUATION_FROID
+  BILAN_INDIVIDUEL
+  RELEVE_PRESENCE
+  COMPTE_RENDU_PEDAGOGIQUE
+  DOCUMENT_CPF
+  DOCUMENT_OPCO
+  AUTRE
+}
+
+enum SignatureProvider {
+  YOUSIGN
+  UNIVERSIGN
+  DOCUSIGN
+  INTERNE
+}
+
+enum SignatureStatut {
+  EN_ATTENTE
+  ENVOYEE
+  SIGNEE
+  REFUSEE
+  EXPIREE
+}
+
+enum CrmStage {
+  NOUVEAU
+  QUALIFIE
+  PROPOSITION
+  NEGOCIATION
+  GAGNE
+  PERDU
+}
+
+enum InteractionType {
+  APPEL
+  EMAIL
+  RDV
+  NOTE
+}
+
+enum FactureStatut {
+  BROUILLON
+  ENVOYEE
+  PAYEE
+  PARTIELLE
+  ANNULEE
+  AVOIR
+}
+
+enum QualiopiStatut {
+  CONFORME
+  NON_CONFORME
+  EN_COURS
+  NON_APPLICABLE
+}
+
+enum AuditType {
+  INTERNE
+  EXTERNE
+  SURVEILLANCE
+}
+
+enum WorkflowTrigger {
+  AVANT_SESSION
+  DEBUT_SESSION
+  PENDANT_SESSION
+  FIN_SESSION
+  APRES_SESSION
+}
+
+enum WorkflowAction {
+  ENVOI_CONVOCATION
+  RAPPEL
+  ENVOI_EMARGEMENT
+  ENVOI_ATTESTATION
+  ENVOI_CERTIFICAT
+  ENVOI_QUESTIONNAIRE_SATISFACTION
+  EMAIL_PERSONNALISE
+}
+
+enum EmailStatut {
+  EN_ATTENTE
+  ENVOYE
+  ECHEC
+}
+
+enum DataRequestType {
+  EXPORT
+  SUPPRESSION
+}
+
+enum DataRequestStatut {
+  RECUE
+  EN_COURS
+  TRAITEE
+  REFUSEE
+}
+
+// =============================================================
+//  UTILISATEURS & AUTH (Auth.js — credentials + JWT)
+// =============================================================
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         Role     @default(ASSISTANT)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Profils liés (selon le rôle)
+  formateur Formateur?
+  apprenant Apprenant?
+
+  // Traçabilité
+  auditLogs          AuditLog[]
+  documentsGeneres   DocumentGenere[]   @relation("DocumentGenerePar")
+  piecesUploadees    PieceJointe[]      @relation("PieceUploadeePar")
+  candidatsCrees     Candidat[]         @relation("CandidatCreePar")
+  sessionsCreees     Session[]          @relation("SessionCreeePar")
+  interactionsCrm    CrmInteraction[]
+  qualiopiResponsable QualiopiIndicateur[] @relation("IndicateurResponsable")
+  dataRequestsTraitees DataRequest[]    @relation("DataRequestTraitePar")
+
+  @@index([role])
+}
+
+// =============================================================
+//  MODULE 1 — CANDIDATS
+// =============================================================
+
+model Candidat {
+  id String @id @default(cuid())
+
+  // Informations personnelles
+  nom           String
+  prenom        String
+  dateNaissance DateTime?
+  telephone     String?
+  email         String
+  adresse       String?
+  ville         String?
+  codePostal    String?
+  pays          String? @default("France")
+
+  // Informations professionnelles
+  situationPro String?
+  employeur    String?
+  posteOccupe  String?
+
+  // Financement envisagé
+  financementType FinancementType?
+  entrepriseId    String?
+  entreprise      Entreprise? @relation(fields: [entrepriseId], references: [id])
+
+  statut CandidatStatut @default(NOUVEAU)
+
+  // Relations
+  apprenant    Apprenant?
+  inscriptions Inscription[]
+  pieces       PieceJointe[]
+  consentements Consentement[]
+
+  createdById String?
+  createdBy   User?    @relation("CandidatCreePar", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([statut])
+  @@index([email])
+}
+
+model PieceJointe {
+  id        String   @id @default(cuid())
+  candidatId String
+  candidat  Candidat @relation(fields: [candidatId], references: [id], onDelete: Cascade)
+  label     String
+  categorie String? // CV, CNI, DIPLOME, ADMINISTRATIF...
+  url       String
+  mimeType  String?
+  taille    Int?
+  uploadedById String?
+  uploadedBy   User?  @relation("PieceUploadeePar", fields: [uploadedById], references: [id])
+  createdAt DateTime @default(now())
+
+  @@index([candidatId])
+}
+
+// =============================================================
+//  MODULE 2 — CATALOGUE DE FORMATIONS (avec versions)
+// =============================================================
+
+model Formation {
+  id                  String   @id @default(cuid())
+  titre               String
+  reference           String   @unique
+  objectifs           String?  @db.Text
+  programme           String?  @db.Text
+  duree               String? // ex. "21h (14h distanciel + 7h présentiel)"
+  dureeHeures         Int?
+  tarif               Decimal? @db.Decimal(10, 2)
+  modalite            Modalite @default(MIXTE)
+  academy             Academy?
+  prerequis           String?  @db.Text
+  publicVise          String?  @db.Text
+  methodesPedagogiques String? @db.Text
+  modalitesEvaluation String?  @db.Text
+  certification       String? // ex. RS6452
+
+  // Versionnage / archivage
+  version    Int     @default(1)
+  isArchived Boolean @default(false)
+  parentId   String? // formation source en cas de duplication/nouvelle version
+  parent     Formation?  @relation("FormationVersions", fields: [parentId], references: [id])
+  versions   Formation[] @relation("FormationVersions")
+
+  sessions    Session[]
+  evaluations Evaluation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isArchived])
+}
+
+// =============================================================
+//  MODULE 3 — SESSIONS
+// =============================================================
+
+model Session {
+  id          String        @id @default(cuid())
+  formationId String
+  formation   Formation     @relation(fields: [formationId], references: [id])
+  reference   String?       @unique
+  dateDebut   DateTime
+  dateFin     DateTime
+  horaires    String? // ex. "9h-12h30 / 13h30-17h"
+  lieu        String?
+  modalite    Modalite      @default(MIXTE)
+  nbPlaces    Int           @default(10)
+  statut      SessionStatut @default(PLANIFIEE)
+
+  formateurs   Formateur[]   @relation("SessionFormateurs")
+  inscriptions Inscription[]
+  seances      Seance[]
+  evaluations  Evaluation[]
+  documents    DocumentGenere[]
+  conventions  Convention[]
+  emailLogs    EmailLog[]
+
+  createdById String?
+  createdBy   User?    @relation("SessionCreeePar", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([statut])
+  @@index([dateDebut])
+}
+
+model Formateur {
+  id               String  @id @default(cuid())
+  userId           String? @unique
+  user             User?   @relation(fields: [userId], references: [id])
+  nom              String
+  prenom           String
+  email            String?
+  telephone        String?
+  specialites      String?
+  bio              String? @db.Text
+  cvUrl            String?
+  experienceAnnees Int?
+
+  sessions Session[] @relation("SessionFormateurs")
+  seances  Seance[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// =============================================================
+//  MODULE 4 — INSCRIPTIONS (formulaire public) & APPRENANTS
+// =============================================================
+
+model Apprenant {
+  id         String   @id @default(cuid())
+  candidatId String   @unique
+  candidat   Candidat @relation(fields: [candidatId], references: [id])
+  userId     String?  @unique // accès à l'espace apprenant
+  user       User?    @relation(fields: [userId], references: [id])
+
+  inscriptions       Inscription[]
+  presences          Presence[]
+  resultats          EvaluationResultat[]
+  documents          DocumentGenere[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Inscription {
+  id          String   @id @default(cuid())
+  candidatId  String
+  candidat    Candidat @relation(fields: [candidatId], references: [id])
+  sessionId   String
+  session     Session  @relation(fields: [sessionId], references: [id])
+  apprenantId String?
+  apprenant   Apprenant? @relation(fields: [apprenantId], references: [id])
+  entrepriseId String?
+  entreprise   Entreprise? @relation(fields: [entrepriseId], references: [id])
+
+  financementType FinancementType?
+  statut          InscriptionStatut @default(EN_ATTENTE)
+  montant         Decimal?          @db.Decimal(10, 2)
+
+  // RGPD & signature (formulaire public)
+  consentementRgpd Boolean   @default(false)
+  consentementDate DateTime?
+  signatureStatut  SignatureStatut @default(EN_ATTENTE)
+  source           String? // "formulaire_public", "manuel"...
+
+  documents  DocumentGenere[]
+  contrat    Contrat?
+  convention Convention?
+  factures   Facture[]
+  signatures SignatureRequest[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([candidatId, sessionId])
+  @@index([statut])
+}
+
+// =============================================================
+//  MODULE 5 — DOCUMENTS (modèles + génération + historisation)
+// =============================================================
+
+model DocumentTemplate {
+  id        String       @id @default(cuid())
+  nom       String
+  type      DocumentType
+  fileUrl   String? // modèle Word/PDF source
+  contenu   String?      @db.Text // contenu HTML avec variables {{...}}
+  variables String[] // liste des variables détectées
+  isActive  Boolean      @default(true)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  documents DocumentGenere[]
+}
+
+model DocumentGenere {
+  id         String       @id @default(cuid())
+  type       DocumentType
+  templateId String?
+  template   DocumentTemplate? @relation(fields: [templateId], references: [id])
+
+  // Cibles possibles
+  inscriptionId String?
+  inscription   Inscription? @relation(fields: [inscriptionId], references: [id])
+  sessionId     String?
+  session       Session?     @relation(fields: [sessionId], references: [id])
+  apprenantId   String?
+  apprenant     Apprenant?   @relation(fields: [apprenantId], references: [id])
+
+  fileUrl       String?
+  variablesJson Json?
+  version       Int          @default(1)
+
+  generatedById String?
+  generatedBy   User?    @relation("DocumentGenerePar", fields: [generatedById], references: [id])
+  createdAt     DateTime @default(now())
+
+  signatures SignatureRequest[]
+
+  @@index([type])
+  @@index([inscriptionId])
+}
+
+// =============================================================
+//  MODULE 6 & 7 — ÉMARGEMENT, SÉANCES, SUIVI PÉDAGOGIQUE
+// =============================================================
+
+model Seance {
+  id        String     @id @default(cuid())
+  sessionId String
+  session   Session    @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  date      DateTime
+  type      SeanceType @default(JOURNEE)
+  heureDebut String?
+  heureFin   String?
+
+  formateurId String?
+  formateur   Formateur? @relation(fields: [formateurId], references: [id])
+  formateurSignatureUrl String?
+
+  presences Presence[]
+
+  @@index([sessionId])
+}
+
+model Presence {
+  id          String         @id @default(cuid())
+  seanceId    String
+  seance      Seance         @relation(fields: [seanceId], references: [id], onDelete: Cascade)
+  apprenantId String
+  apprenant   Apprenant      @relation(fields: [apprenantId], references: [id])
+  statut      PresenceStatut @default(PRESENT)
+  signatureUrl String?
+  signedAt    DateTime?
+  commentaire String?
+
+  @@unique([seanceId, apprenantId])
+}
+
+// =============================================================
+//  MODULE 7 (suite) — ÉVALUATIONS & SATISFACTION
+// =============================================================
+
+model Evaluation {
+  id           String         @id @default(cuid())
+  titre        String
+  type         EvaluationType
+  formationId  String?
+  formation    Formation?     @relation(fields: [formationId], references: [id])
+  sessionId    String?
+  session      Session?       @relation(fields: [sessionId], references: [id])
+  questionsJson Json? // structure des questions
+  createdAt    DateTime       @default(now())
+
+  resultats EvaluationResultat[]
+}
+
+model EvaluationResultat {
+  id           String     @id @default(cuid())
+  evaluationId String
+  evaluation   Evaluation @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+  apprenantId  String
+  apprenant    Apprenant  @relation(fields: [apprenantId], references: [id])
+  reponsesJson Json?
+  score        Float?
+  note         Float?
+  commentaire  String?    @db.Text
+  completedAt  DateTime?
+  createdAt    DateTime   @default(now())
+
+  @@unique([evaluationId, apprenantId])
+}
+
+// =============================================================
+//  CONVENTIONS & CONTRATS
+// =============================================================
+
+model Convention {
+  id            String   @id @default(cuid())
+  reference     String   @unique
+  inscriptionId String?  @unique
+  inscription   Inscription? @relation(fields: [inscriptionId], references: [id])
+  sessionId     String?
+  session       Session? @relation(fields: [sessionId], references: [id])
+  entrepriseId  String?
+  entreprise    Entreprise? @relation(fields: [entrepriseId], references: [id])
+  montant       Decimal? @db.Decimal(10, 2)
+  dateSignature DateTime?
+  signatureStatut SignatureStatut @default(EN_ATTENTE)
+  fileUrl       String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Contrat {
+  id            String   @id @default(cuid())
+  reference     String   @unique
+  inscriptionId String   @unique
+  inscription   Inscription @relation(fields: [inscriptionId], references: [id])
+  montant       Decimal? @db.Decimal(10, 2)
+  dateSignature DateTime?
+  signatureStatut SignatureStatut @default(EN_ATTENTE)
+  fileUrl       String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// =============================================================
+//  MODULE 10 — QUALIOPI
+// =============================================================
+
+model QualiopiIndicateur {
+  id            String         @id @default(cuid())
+  numero        Int // 1 à 32 (RNQ)
+  libelle       String
+  description   String?        @db.Text
+  statut        QualiopiStatut @default(EN_COURS)
+  responsableId String?
+  responsable   User?          @relation("IndicateurResponsable", fields: [responsableId], references: [id])
+  commentaire   String?        @db.Text
+  dateMaj       DateTime       @default(now())
+
+  preuves QualiopiPreuve[]
+
+  @@unique([numero])
+}
+
+model QualiopiPreuve {
+  id           String   @id @default(cuid())
+  indicateurId String
+  indicateur   QualiopiIndicateur @relation(fields: [indicateurId], references: [id], onDelete: Cascade)
+  label        String
+  fileUrl      String?
+  dateAjout    DateTime @default(now())
+
+  @@index([indicateurId])
+}
+
+model Audit {
+  id               String    @id @default(cuid())
+  type             AuditType
+  date             DateTime
+  auditeur         String?
+  organismeAudit   String?
+  conformiteGlobale QualiopiStatut @default(EN_COURS)
+  rapportUrl       String?
+  notes            String?   @db.Text
+  createdAt        DateTime  @default(now())
+}
+
+// =============================================================
+//  MODULE 12 — CRM ENTREPRISES
+// =============================================================
+
+model Entreprise {
+  id            String   @id @default(cuid())
+  raisonSociale String
+  siret         String?
+  adresse       String?
+  ville         String?
+  codePostal    String?
+  contactNom    String?
+  contactEmail  String?
+  contactTel    String?
+  stage         CrmStage @default(NOUVEAU)
+  notes         String?  @db.Text
+
+  candidats    Candidat[]
+  inscriptions Inscription[]
+  conventions  Convention[]
+  interactions CrmInteraction[]
+  devis        Devis[]
+  factures     Facture[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([stage])
+}
+
+model CrmInteraction {
+  id           String          @id @default(cuid())
+  entrepriseId String
+  entreprise   Entreprise      @relation(fields: [entrepriseId], references: [id], onDelete: Cascade)
+  type         InteractionType
+  date         DateTime        @default(now())
+  sujet        String?
+  contenu      String?         @db.Text
+  userId       String?
+  user         User?           @relation(fields: [userId], references: [id])
+
+  @@index([entrepriseId])
+}
+
+// =============================================================
+//  MODULE 16 — FACTURATION
+// =============================================================
+
+model Devis {
+  id           String   @id @default(cuid())
+  reference    String   @unique
+  entrepriseId String?
+  entreprise   Entreprise? @relation(fields: [entrepriseId], references: [id])
+  dateEmission DateTime @default(now())
+  validUntil   DateTime?
+  montantHT    Decimal  @default(0) @db.Decimal(10, 2)
+  tva          Decimal  @default(20) @db.Decimal(5, 2)
+  montantTTC   Decimal  @default(0) @db.Decimal(10, 2)
+  lignesJson   Json?
+  statut       FactureStatut @default(BROUILLON)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Facture {
+  id            String        @id @default(cuid())
+  reference     String        @unique
+  entrepriseId  String?
+  entreprise    Entreprise?   @relation(fields: [entrepriseId], references: [id])
+  inscriptionId String?
+  inscription   Inscription?  @relation(fields: [inscriptionId], references: [id])
+  dateEmission  DateTime      @default(now())
+  montantHT     Decimal       @default(0) @db.Decimal(10, 2)
+  tva           Decimal       @default(20) @db.Decimal(5, 2)
+  montantTTC    Decimal       @default(0) @db.Decimal(10, 2)
+  lignesJson    Json?
+  statut        FactureStatut @default(BROUILLON)
+  datePaiement  DateTime?
+  financementType FinancementType?
+  avoirParentId String? // si c'est un avoir, référence la facture d'origine
+  avoirParent   Facture?  @relation("FactureAvoirs", fields: [avoirParentId], references: [id])
+  avoirs        Facture[] @relation("FactureAvoirs")
+
+  paiements Paiement[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([statut])
+}
+
+model Paiement {
+  id        String   @id @default(cuid())
+  factureId String
+  facture   Facture  @relation(fields: [factureId], references: [id], onDelete: Cascade)
+  montant   Decimal  @db.Decimal(10, 2)
+  date      DateTime @default(now())
+  mode      String? // VIREMENT, CB, CPF, OPCO...
+  reference String?
+
+  @@index([factureId])
+}
+
+// =============================================================
+//  MODULE 13 — AUTOMATISATIONS / WORKFLOWS & EMAILS
+// =============================================================
+
+model WorkflowRule {
+  id         String          @id @default(cuid())
+  nom        String
+  trigger    WorkflowTrigger
+  offsetDays Int             @default(0) // J-X / J+X
+  action     WorkflowAction
+  templateId String?
+  isActive   Boolean         @default(true)
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+
+  emailLogs EmailLog[]
+}
+
+model EmailLog {
+  id             String      @id @default(cuid())
+  destinataire   String
+  sujet          String
+  corps          String?     @db.Text
+  statut         EmailStatut @default(EN_ATTENTE)
+  sentAt         DateTime?
+  sessionId      String?
+  session        Session?    @relation(fields: [sessionId], references: [id])
+  workflowRuleId String?
+  workflowRule   WorkflowRule? @relation(fields: [workflowRuleId], references: [id])
+  createdAt      DateTime    @default(now())
+
+  @@index([statut])
+}
+
+// =============================================================
+//  MODULE 15 — SIGNATURE ÉLECTRONIQUE
+// =============================================================
+
+model SignatureRequest {
+  id               String            @id @default(cuid())
+  provider         SignatureProvider @default(INTERNE)
+  documentGenereId String?
+  documentGenere   DocumentGenere?   @relation(fields: [documentGenereId], references: [id])
+  inscriptionId    String?
+  inscription      Inscription?      @relation(fields: [inscriptionId], references: [id])
+  statut           SignatureStatut   @default(EN_ATTENTE)
+  signataires      Json? // [{nom,email,role}]
+  externalId       String?
+  signedFileUrl    String?
+  createdAt        DateTime          @default(now())
+  signedAt         DateTime?
+
+  @@index([statut])
+}
+
+// =============================================================
+//  MODULE 14 — RGPD
+// =============================================================
+
+model Consentement {
+  id         String   @id @default(cuid())
+  candidatId String?
+  candidat   Candidat? @relation(fields: [candidatId], references: [id])
+  type       String // "traitement_donnees", "communications"...
+  accepte    Boolean  @default(true)
+  version    String?
+  ip         String?
+  accepteLe  DateTime @default(now())
+  retireLe   DateTime?
+
+  @@index([candidatId])
+}
+
+model DataRequest {
+  id           String            @id @default(cuid())
+  subjectEmail String
+  type         DataRequestType
+  statut       DataRequestStatut @default(RECUE)
+  requestedAt  DateTime          @default(now())
+  processedAt  DateTime?
+  processedById String?
+  processedBy   User?            @relation("DataRequestTraitePar", fields: [processedById], references: [id])
+  notes        String?           @db.Text
+}
+
+// =============================================================
+//  TRAÇABILITÉ — JOURNAL D'ACTIONS (historique complet)
+// =============================================================
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+  action     String // CREATE / UPDATE / DELETE / LOGIN / GENERATE_DOC...
+  entityType String // "Candidat", "Session"...
+  entityId   String?
+  changesJson Json?
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([userId])
+}
