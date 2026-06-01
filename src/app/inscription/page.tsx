@@ -15,6 +15,9 @@ export const metadata: Metadata = {
   description: "Formulaire d'inscription à nos formations.",
 };
 
+// Liste les sessions ouvertes depuis la base → rendu dynamique (pas de build).
+export const dynamic = "force-dynamic";
+
 export default async function PublicInscriptionPage() {
   const sessions = await prisma.session.findMany({
     where: { statut: { in: ["PLANIFIEE", "OUVERTE"] } },

@@ -3,6 +3,10 @@ import { auth } from "@/auth";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppHeader } from "@/components/app-header";
 
+// Rendu dynamique : ces pages lisent la base de données et la session,
+// elles ne doivent pas être pré-générées au build.
+export const dynamic = "force-dynamic";
+
 export default async function AppLayout({
   children,
 }: {
