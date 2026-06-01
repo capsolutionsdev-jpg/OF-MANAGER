@@ -11,24 +11,32 @@ export async function sendEmail(params: {
   subject: string;
   body: string;
 }): Promise<{ sent: boolean }> {
-  if (!emailConfigured()) {
+  const apiKey = process.env.BREVO_API_KEY;
+  if (!apiKey) {
+    // Mode démo : pas d'envoi réel (l'e-mail est seulement journalisé).
     return { sent: false };
   }
 
-  // --- Implémentation réelle (Brevo / Sendinblue) ---
-  // await fetch("https://api.brevo.com/v3/smtp/email", {
-  //   method: "POST",
-  //   headers: {
-  //     "api-key": process.env.BREVO_API_KEY!,
-  //     "Content-Type": "application/json",
-  //   },
-  //   body: JSON.stringify({
-  //     sender: { name: "CAP Compétences", email: process.env.BREVO_SENDER },
-  //     to: [{ email: params.to }],
-  //     subject: params.subject,
-  //     textContent: params.body,
-  //   }),
-  // });
-  void params;
-  return { sent: true };
+  try {
+    const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "api-key": apiKey,
+        "Content-Type": "application/json",
+        accept: "application/json",
+      },
+      body: JSON.stringify({
+        sender: {
+          name: "CAP Compétences",
+          email: process.env.BREVO_SENDER ?? "contact@cap-competences.fr",
+        },
+        to: [{ email: params.to }],
+        subject: params.subject,
+        textContent: params.body,
+      }),
+    });
+    return { sent: res.ok };
+  } catch {
+    return { sent: false };
+  }
 }
