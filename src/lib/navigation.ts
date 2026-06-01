@@ -7,6 +7,9 @@ import {
   ShieldCheck,
   Target,
   UserCog,
+  PenLine,
+  Bell,
+  Shield,
   type LucideIcon,
 } from "lucide-react";
 
@@ -50,6 +53,18 @@ export const navItems: NavItem[] = [
     roles: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT", "FORMATEUR"],
   },
   {
+    label: "Signatures",
+    href: "/signatures",
+    icon: PenLine,
+    roles: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
+  },
+  {
+    label: "Automatisations",
+    href: "/automatisations",
+    icon: Bell,
+    roles: ["ADMIN", "RESPONSABLE_FORMATION"],
+  },
+  {
     label: "Formateurs",
     href: "/formateurs",
     icon: UserCog,
@@ -59,6 +74,12 @@ export const navItems: NavItem[] = [
     label: "Qualiopi",
     href: "/qualiopi",
     icon: ShieldCheck,
+    roles: ["ADMIN", "RESPONSABLE_FORMATION"],
+  },
+  {
+    label: "RGPD",
+    href: "/rgpd",
+    icon: Shield,
     roles: ["ADMIN", "RESPONSABLE_FORMATION"],
   },
 ];

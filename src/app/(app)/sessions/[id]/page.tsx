@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Pencil, Trash2, Users, ClipboardCheck } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2, Users, ClipboardCheck, Mail } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +23,7 @@ import { SESSION_STATUT_LABELS } from "@/lib/validators/session";
 import { INSCRIPTION_STATUT_LABELS } from "@/lib/validators/inscription";
 import { FINANCEMENT_LABELS } from "@/lib/validators/candidat";
 import { deleteInscriptionAction } from "@/lib/actions/inscription-actions";
+import { sendConvocations } from "@/lib/actions/email-actions";
 import { EnrollForm } from "@/components/inscriptions/enroll-form";
 import { DocumentsMenu } from "@/components/documents/documents-menu";
 
@@ -80,7 +81,13 @@ export default async function SessionDetailPage({
             </h1>
             <Badge variant="outline">{SESSION_STATUT_LABELS[s.statut]}</Badge>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <form action={sendConvocations}>
+              <input type="hidden" name="sessionId" value={s.id} />
+              <Button type="submit" variant="outline">
+                <Mail className="mr-2 h-4 w-4" /> Envoyer les convocations
+              </Button>
+            </form>
             <Button
               variant="outline"
               render={<Link href={`/sessions/${s.id}/emargement`} />}

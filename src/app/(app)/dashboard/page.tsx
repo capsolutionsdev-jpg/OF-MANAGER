@@ -88,10 +88,10 @@ export default async function DashboardPage() {
     totalPlaces > 0 ? Math.round((inscriptionsTotal / totalPlaces) * 100) : 0;
 
   const kpis = [
-    { label: "Candidats", value: candidats, icon: Users },
-    { label: "Apprenants", value: apprenants, icon: GraduationCap },
-    { label: "Sessions à venir", value: sessionsAVenir, icon: CalendarClock },
-    { label: "Formations actives", value: formations, icon: BookOpen },
+    { label: "Candidats", value: candidats, icon: Users, color: "bg-blue-500/10 text-blue-600" },
+    { label: "Apprenants", value: apprenants, icon: GraduationCap, color: "bg-emerald-500/10 text-emerald-600" },
+    { label: "Sessions à venir", value: sessionsAVenir, icon: CalendarClock, color: "bg-amber-500/10 text-amber-600" },
+    { label: "Formations actives", value: formations, icon: BookOpen, color: "bg-violet-500/10 text-violet-600" },
   ];
 
   const statutMax = Math.max(1, ...parStatut.map((s) => s._count._all));
@@ -100,25 +100,29 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div>
+      <div className="rounded-2xl bg-gradient-to-r from-primary to-blue-600 p-6 text-primary-foreground shadow-sm">
         <h1 className="text-2xl font-bold tracking-tight">Tableau de bord</h1>
-        <p className="text-sm text-muted-foreground">
-          Vue d&apos;ensemble de l&apos;activité de l&apos;organisme de formation.
+        <p className="mt-1 text-sm text-primary-foreground/80">
+          Vue d&apos;ensemble de l&apos;activité de CAP Compétences.
         </p>
       </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {kpis.map((s) => (
-          <Card key={s.label}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                {s.label}
-              </CardTitle>
-              <s.icon className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">{s.value}</div>
+          <Card key={s.label} className="transition-shadow hover:shadow-md">
+            <CardContent className="flex items-center gap-4 p-5">
+              <div
+                className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${s.color}`}
+              >
+                <s.icon className="h-6 w-6" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-3xl font-bold leading-none">{s.value}</div>
+                <div className="mt-1 truncate text-xs text-muted-foreground">
+                  {s.label}
+                </div>
+              </div>
             </CardContent>
           </Card>
         ))}

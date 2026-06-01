@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Pencil, History, CalendarDays } from "lucide-react";
+import { ArrowLeft, Pencil, History, CalendarDays, FileDown, Trash2 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +15,7 @@ import {
   FINANCEMENT_LABELS,
 } from "@/lib/validators/candidat";
 import { INSCRIPTION_STATUT_LABELS } from "@/lib/validators/inscription";
+import { anonymiseCandidat } from "@/lib/actions/rgpd-actions";
 
 function Field({ label, value }: { label: string; value?: string | null }) {
   return (
@@ -70,12 +71,26 @@ export default async function CandidatDetailPage({
             </h1>
             <Badge variant="secondary">{STATUT_LABELS[candidat.statut]}</Badge>
           </div>
-          <Button
-            variant="outline"
-            render={<Link href={`/candidats/${candidat.id}/modifier`} />}
-          >
-            <Pencil className="mr-2 h-4 w-4" /> Modifier
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              render={<Link href={`/candidats/${candidat.id}/modifier`} />}
+            >
+              <Pencil className="mr-2 h-4 w-4" /> Modifier
+            </Button>
+            <Button
+              variant="outline"
+              render={<a href={`/candidats/${candidat.id}/export`} />}
+            >
+              <FileDown className="mr-2 h-4 w-4" /> Exporter RGPD
+            </Button>
+            <form action={anonymiseCandidat}>
+              <input type="hidden" name="candidatId" value={candidat.id} />
+              <Button type="submit" variant="outline">
+                <Trash2 className="mr-2 h-4 w-4 text-destructive" /> Anonymiser
+              </Button>
+            </form>
+          </div>
         </div>
       </div>
 

@@ -1,11 +1,18 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, PenLine } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { orgConfig } from "@/lib/org-config";
 import { PRESENCE_LABELS } from "@/lib/presence";
 import { MODALITE_LABELS } from "@/lib/validators/formation";
 import { PrintButton } from "@/components/documents/print-button";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { yousignConfigured } from "@/lib/yousign";
+import {
+  requestEmargementSignature,
+  markSignatureSigned,
+} from "@/lib/actions/signature-actions";
 
 export default async function FeuilleEmargementPage({
   params,
@@ -27,6 +34,12 @@ export default async function FeuilleEmargementPage({
   });
   if (!seance) notFound();
 
+  const sig = await prisma.signatureRequest.findFirst({
+    where: { signataires: { path: ["seanceId"], equals: seanceId } },
+    orderBy: { createdAt: "desc" },
+  });
+  const demoSign = !yousignConfigured();
+
   const s = seance.session;
   const fmt = (d: Date) =>
     d.toLocaleDateString("fr-FR", {
@@ -40,14 +53,47 @@ export default async function FeuilleEmargementPage({
   return (
     <div className="min-h-screen bg-muted/40 py-8">
       <div className="mx-auto max-w-3xl px-4">
-        <div className="mb-4 flex items-center justify-between print:hidden">
-          <Link
-            href={`/sessions/${s.id}/emargement`}
-            className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4" /> Retour
-          </Link>
-          <PrintButton />
+        <div className="mb-4 space-y-3 print:hidden">
+          <div className="flex items-center justify-between">
+            <Link
+              href={`/sessions/${s.id}/emargement`}
+              className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeft className="h-4 w-4" /> Retour
+            </Link>
+            <PrintButton />
+          </div>
+          <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-card p-3 text-sm">
+            <span className="font-medium">Signature électronique :</span>
+            {sig?.statut === "SIGNEE" ? (
+              <Badge className="bg-emerald-100 text-emerald-700">
+                Signé le {sig.signedAt?.toLocaleDateString("fr-FR")}
+              </Badge>
+            ) : sig?.statut === "ENVOYEE" ? (
+              <>
+                <Badge variant="secondary">Envoyée — en attente</Badge>
+                <form action={markSignatureSigned}>
+                  <input type="hidden" name="id" value={sig.id} />
+                  <input type="hidden" name="back" value={`/emargement/${seanceId}`} />
+                  <Button type="submit" size="sm" variant="outline">
+                    Marquer comme signé
+                  </Button>
+                </form>
+              </>
+            ) : (
+              <form action={requestEmargementSignature}>
+                <input type="hidden" name="seanceId" value={seanceId} />
+                <Button type="submit" size="sm" variant="outline">
+                  <PenLine className="mr-1.5 h-4 w-4" /> Demander la signature (Yousign)
+                </Button>
+              </form>
+            )}
+            {demoSign && (
+              <span className="text-xs text-muted-foreground">
+                Mode démo — renseignez YOUSIGN_API_KEY pour l&apos;envoi réel.
+              </span>
+            )}
+          </div>
         </div>
 
         <article className="doc-page mx-auto bg-white p-12 text-black shadow-sm">

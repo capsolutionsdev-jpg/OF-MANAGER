@@ -9,6 +9,7 @@ import {
 } from "@/lib/documents/templates";
 import { buildVariables } from "@/lib/documents/resolve";
 import { PrintButton } from "@/components/documents/print-button";
+import { SignatureSection } from "@/components/signature/signature-section";
 
 export default async function DocumentPage({
   params,
@@ -30,14 +31,23 @@ export default async function DocumentPage({
   return (
     <div className="min-h-screen bg-muted/40 py-8">
       <div className="mx-auto max-w-3xl px-4">
-        <div className="mb-4 flex items-center justify-between print:hidden">
-          <Link
-            href={`/sessions/${inscription.sessionId}`}
-            className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4" /> Retour à la session
-          </Link>
-          <PrintButton />
+        <div className="mb-4 space-y-3 print:hidden">
+          <div className="flex items-center justify-between">
+            <Link
+              href={`/sessions/${inscription.sessionId}`}
+              className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeft className="h-4 w-4" /> Retour à la session
+            </Link>
+            <PrintButton />
+          </div>
+          <div className="rounded-lg border bg-card p-3">
+            <SignatureSection
+              inscriptionId={inscriptionId}
+              type={type}
+              label={DOCUMENTS[type].label}
+            />
+          </div>
         </div>
         <article
           className="doc-page mx-auto bg-white p-12 text-black shadow-sm"
