@@ -8,6 +8,7 @@ import {
   inscriptionFormSchema,
   type InscriptionFormValues,
 } from "@/lib/validators/inscription";
+import { startParcours } from "@/lib/actions/parcours-actions";
 
 export type ActionResult =
   | { ok: true; inscriptionId: string }
@@ -56,6 +57,8 @@ export async function createInscription(
         where: { id: v.candidatId },
         data: { statut: "INSCRIT" },
       });
+      // Démarre le parcours automatisé (e-mail + lien de finalisation)
+      await startParcours(created.id);
     }
 
     await prisma.auditLog.create({

@@ -439,6 +439,20 @@ model Inscription {
   // (la liste attendue provient de Formation.piecesAttendues)
   piecesRecues String[]
 
+  // ── Parcours automatisé V2 (lien public + jalons) ──
+  accessToken         String?   @unique // lien unique candidat (formulaire + signature)
+  formCompletedAt     DateTime? // le candidat a rempli son formulaire
+  signedAt            DateTime? // documents signés électroniquement (interne)
+  signatureIp         String?
+  docsCopieSentAt     DateTime? // copie des docs signés envoyée au candidat
+  convocationSentAt   DateTime? // convocation envoyée
+  attestationEntreeSentAt DateTime? // attestation d'entrée envoyée (J1)
+  satisfactionToken   String?   @unique // lien enquête de satisfaction
+  satisfactionSentAt  DateTime? // enquête de satisfaction envoyée (fin)
+  satisfactionJson    Json? // réponses à l'enquête
+  satisfactionCompletedAt DateTime?
+  docsFinSentAt       DateTime? // documents de fin de formation envoyés
+
   // RGPD & signature (formulaire public)
   consentementRgpd Boolean   @default(false)
   consentementDate DateTime?
