@@ -24,21 +24,51 @@ import {
 } from "@/lib/validators/formation";
 import { SESSION_STATUT_LABELS } from "@/lib/validators/session";
 
+// Catégories d'affichage (basé sur les dates ET le statut)
 const ETATS = [
-  { key: "ENCOURS", label: "En cours" },
-  { key: "AVENIR", label: "À venir" },
-  { key: "PASSEE", label: "Passées" },
+  {
+    key: "ENCOURS",
+    label: "En cours",
+    badge: "bg-emerald-500/10 text-emerald-700",
+  },
+  {
+    key: "AVENIR",
+    label: "À venir",
+    badge: "bg-blue-500/10 text-blue-700",
+  },
+  {
+    key: "PASSEE",
+    label: "Passées",
+    badge: "bg-muted text-muted-foreground",
+  },
+  {
+    key: "ARCHIVEE",
+    label: "Archivées",
+    badge: "bg-red-500/10 text-red-700",
+  },
 ] as const;
+
+export const dynamic = "force-dynamic";
 
 export default async function SessionsPage() {
   const sessions = await prisma.session.findMany({
     orderBy: { dateDebut: "asc" },
-    include: { formation: true, _count: { select: { inscriptions: true } } },
+    include: {
+      formation: true,
+      formateurs: { select: { prenom: true, nom: true } },
+      _count: { select: { inscriptions: true } },
+    },
   });
 
   const now = new Date();
-  const etat = (s: (typeof sessions)[number]) =>
-    s.dateFin < now ? "PASSEE" : s.dateDebut > now ? "AVENIR" : "ENCOURS";
+
+  function etat(s: (typeof sessions)[number]): (typeof ETATS)[number]["key"] {
+    if (s.statut === "ANNULEE") return "ARCHIVEE";
+    if (s.dateFin < now) return "PASSEE";
+    if (s.dateDebut > now) return "AVENIR";
+    return "ENCOURS";
+  }
+
   const fmt = (d: Date) => d.toLocaleDateString("fr-FR");
 
   return (
@@ -47,8 +77,7 @@ export default async function SessionsPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Sessions</h1>
           <p className="text-sm text-muted-foreground">
-            {sessions.length} session{sessions.length > 1 ? "s" : ""}, organisée
-            {sessions.length > 1 ? "s" : ""} par état et par académie.
+            {sessions.length} session{sessions.length > 1 ? "s" : ""} au total.
           </p>
         </div>
         <Button render={<Link href="/sessions/nouvelle" />}>
@@ -71,8 +100,11 @@ export default async function SessionsPage() {
         ETATS.map((et) => {
           let inState = sessions.filter((s) => etat(s) === et.key);
           if (inState.length === 0) return null;
-          if (et.key === "PASSEE") inState = [...inState].reverse();
+          // Passées et Archivées : les plus récentes en premier
+          if (et.key === "PASSEE" || et.key === "ARCHIVEE")
+            inState = [...inState].reverse();
 
+          // Sous-groupes par académie
           const acaGroups = [
             ...ACADEMY_ORDER.map((a) => ({
               key: a as string,
@@ -90,8 +122,9 @@ export default async function SessionsPage() {
             <section key={et.key} className="space-y-4">
               <h2 className="flex items-center gap-2 text-lg font-semibold">
                 {et.label}
-                <Badge variant="secondary">{inState.length}</Badge>
+                <Badge className={et.badge}>{inState.length}</Badge>
               </h2>
+
               {acaGroups.map((g) => (
                 <Card key={g.key}>
                   <CardHeader className="py-3">
@@ -105,7 +138,12 @@ export default async function SessionsPage() {
                         <TableRow>
                           <TableHead>Formation</TableHead>
                           <TableHead>Dates</TableHead>
-                          <TableHead>Lieu</TableHead>
+                          <TableHead className="hidden md:table-cell">
+                            Formateur(s)
+                          </TableHead>
+                          <TableHead className="hidden lg:table-cell">
+                            Lieu
+                          </TableHead>
                           <TableHead>Modalité</TableHead>
                           <TableHead>Places</TableHead>
                           <TableHead>Statut</TableHead>
@@ -125,7 +163,14 @@ export default async function SessionsPage() {
                             <TableCell className="text-muted-foreground">
                               {fmt(s.dateDebut)} → {fmt(s.dateFin)}
                             </TableCell>
-                            <TableCell className="text-muted-foreground">
+                            <TableCell className="hidden text-muted-foreground md:table-cell">
+                              {s.formateurs.length > 0
+                                ? s.formateurs
+                                    .map((f) => `${f.prenom} ${f.nom}`)
+                                    .join(", ")
+                                : "—"}
+                            </TableCell>
+                            <TableCell className="hidden text-muted-foreground lg:table-cell">
                               {s.lieu ?? "—"}
                             </TableCell>
                             <TableCell>

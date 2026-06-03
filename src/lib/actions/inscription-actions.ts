@@ -9,7 +9,9 @@ import {
   type InscriptionFormValues,
 } from "@/lib/validators/inscription";
 
-export type ActionResult = { ok: true } | { ok: false; error: string };
+export type ActionResult =
+  | { ok: true; inscriptionId: string }
+  | { ok: false; error: string };
 
 export async function createInscription(
   values: InscriptionFormValues,
@@ -67,7 +69,9 @@ export async function createInscription(
 
     revalidatePath(`/sessions/${v.sessionId}`);
     revalidatePath(`/candidats/${v.candidatId}`);
-    return { ok: true };
+    revalidatePath("/crm");
+    revalidatePath("/candidats");
+    return { ok: true, inscriptionId: created.id };
   } catch (e) {
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
       return { ok: false, error: "Ce candidat est déjà inscrit à cette session." };

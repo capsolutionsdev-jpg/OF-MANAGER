@@ -2,22 +2,51 @@ import Link from "next/link";
 import { Plus, Users } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { STATUT_LABELS } from "@/lib/validators/candidat";
+  CandidatsTable,
+  type CandidatRow,
+} from "@/components/candidats/candidats-table";
+import type { SessionOption } from "@/components/inscriptions/quick-enroll-modal";
+
+export const dynamic = "force-dynamic";
 
 export default async function CandidatsPage() {
-  const candidats = await prisma.candidat.findMany({
-    orderBy: { createdAt: "desc" },
-  });
+  const [candidats, sessions] = await Promise.all([
+    prisma.candidat.findMany({
+      orderBy: [{ nom: "asc" }, { prenom: "asc" }],
+      include: {
+        formationSouhaitee: { select: { id: true, titre: true } },
+      },
+    }),
+    prisma.session.findMany({
+      where: { statut: { in: ["PLANIFIEE", "OUVERTE", "EN_COURS"] } },
+      include: { formation: { select: { id: true, titre: true } } },
+      orderBy: { dateDebut: "asc" },
+    }),
+  ]);
+
+  const fmt = (d: Date) => d.toLocaleDateString("fr-FR");
+
+  const sessionOptions: SessionOption[] = sessions.map((s) => ({
+    id: s.id,
+    formationId: s.formationId,
+    label: `${s.formation.titre} — ${fmt(s.dateDebut)} → ${fmt(s.dateFin)}${
+      s.lieu ? ` (${s.lieu})` : ""
+    }`,
+  }));
+
+  const rows: CandidatRow[] = candidats.map((c) => ({
+    id: c.id,
+    prenom: c.prenom,
+    nom: c.nom,
+    email: c.email,
+    telephone: c.telephone,
+    ville: c.ville,
+    statut: c.statut,
+    formationSouhaitee: c.formationSouhaitee?.titre ?? null,
+    formationSouhaiteeId: c.formationSouhaiteeId,
+  }));
 
   return (
     <div className="space-y-6">
@@ -25,8 +54,8 @@ export default async function CandidatsPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Candidats</h1>
           <p className="text-sm text-muted-foreground">
-            {candidats.length} candidat{candidats.length > 1 ? "s" : ""} enregistré
-            {candidats.length > 1 ? "s" : ""}.
+            {candidats.length} candidat{candidats.length > 1 ? "s" : ""}{" "}
+            enregistré{candidats.length > 1 ? "s" : ""}.
           </p>
         </div>
         <Button render={<Link href="/candidats/nouveau" />}>
@@ -35,8 +64,8 @@ export default async function CandidatsPage() {
         </Button>
       </div>
 
-      <Card>
-        {candidats.length === 0 ? (
+      {candidats.length === 0 ? (
+        <Card>
           <div className="flex flex-col items-center gap-2 p-12 text-center">
             <Users className="h-8 w-8 text-muted-foreground" />
             <p className="font-medium">Aucun candidat pour le moment</p>
@@ -44,46 +73,10 @@ export default async function CandidatsPage() {
               Commencez par créer votre premier candidat.
             </p>
           </div>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nom</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Téléphone</TableHead>
-                <TableHead>Ville</TableHead>
-                <TableHead>Statut</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {candidats.map((c) => (
-                <TableRow key={c.id}>
-                  <TableCell className="font-medium">
-                    <Link
-                      href={`/candidats/${c.id}`}
-                      className="hover:underline"
-                    >
-                      {c.prenom} {c.nom}
-                    </Link>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {c.email}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {c.telephone ?? "—"}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {c.ville ?? "—"}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">{STATUT_LABELS[c.statut]}</Badge>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </Card>
+        </Card>
+      ) : (
+        <CandidatsTable candidats={rows} sessions={sessionOptions} />
+      )}
     </div>
   );
 }
