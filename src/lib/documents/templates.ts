@@ -250,7 +250,7 @@ export const DOCUMENTS: Record<string, { label: string; html: string }> = {
       <p class="mt">Lu et approuvé, le {{date_jour}}.</p>
       <div class="doc-signatures">
         <div><div class="sig-label">La direction — {{organisme_representant}}</div><div class="sig-box">${stamp}</div></div>
-        <div><div class="sig-label">Le candidat — {{nom_complet}}</div><div class="sig-box"></div></div>
+        <div><div class="sig-label">Le candidat — {{nom_complet}}</div><div class="sig-box">{{signature_stagiaire}}</div></div>
       </div>`,
     ),
   },

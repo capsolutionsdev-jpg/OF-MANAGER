@@ -283,16 +283,18 @@ ${orgConfig.representant} — ${orgConfig.name}`;
     data: { docsCopieSentAt: new Date() },
   });
 
-  // Envoi immédiat de la convocation à la formation (une fois les docs signés)
+  // Mail de bienvenue / confirmation d'inscription + convocation en PJ (PDF)
   if (!insc.convocationSentAt) {
     const s = insc.session;
     const f = (d: Date) => d.toLocaleDateString("fr-FR");
-    const subjectConv = `Convocation — ${s.formation.titre}`;
+    const subjectConv = `Bienvenue & confirmation de votre inscription — ${s.formation.titre}`;
     const bodyConv = `Bonjour ${insc.candidat.prenom},
 
-Vos documents étant signés, nous vous confirmons votre convocation à la formation « ${s.formation.titre} », du ${f(s.dateDebut)} au ${f(s.dateFin)}${s.horaires ? ` (${s.horaires})` : ""}${s.lieu ? `, à ${s.lieu}` : ""}.
+Bienvenue chez ${orgConfig.name} ! Nous avons le plaisir de vous confirmer votre inscription à la formation « ${s.formation.titre} », du ${f(s.dateDebut)} au ${f(s.dateFin)}${s.horaires ? ` (${s.horaires})` : ""}${s.lieu ? `, à ${s.lieu}` : ""}.
 
-Merci de vous présenter muni(e) d'une pièce d'identité.
+Vous trouverez ci-joint votre convocation (PDF). Merci de vous présenter muni(e) d'une pièce d'identité.
+
+Toute l'équipe vous souhaite une excellente formation.
 
 Cordialement,
 ${orgConfig.representant} — ${orgConfig.name}`;
