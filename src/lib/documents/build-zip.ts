@@ -5,6 +5,19 @@ import HTMLtoDOCX from "@turbodocx/html-to-docx";
 import { prisma } from "@/lib/prisma";
 import { DOCUMENTS, renderTemplate } from "@/lib/documents/templates";
 import { buildVariables } from "@/lib/documents/resolve";
+import {
+  signatureRef,
+  signatureMentionHtml,
+} from "@/lib/documents/signature-proof";
+import { buildCertificatPdf } from "@/lib/documents/certificat-signature";
+
+// Documents soumis à la signature du stagiaire (pour le certificat de preuve)
+const SIGNED_DOC_LABELS = [
+  "Fiche d'inscription",
+  "Contrat de formation",
+  "Convention de formation",
+  "Règlement intérieur",
+];
 
 const DOC_STYLE = `<style>
   h1 { font-size: 18pt; text-align: center; margin-bottom: 16pt; }
@@ -36,6 +49,26 @@ export async function buildInscriptionDocsZip(
 
   const vars = buildVariables(inscription);
 
+  // Preuve de signature (si l'inscription est signée)
+  const signed = inscription.signedAt
+    ? {
+        at: inscription.signedAt,
+        ip: inscription.signatureIp,
+        ref: signatureRef(inscription.id, inscription.signedAt),
+        nom:
+          vars.nom_complet ||
+          `${inscription.candidat.prenom} ${inscription.candidat.nom}`,
+      }
+    : null;
+  const mention = signed
+    ? signatureMentionHtml({
+        nom: signed.nom,
+        signedAt: signed.at,
+        ip: signed.ip,
+        ref: signed.ref,
+      })
+    : "";
+
   // Images encodées en base64 (html-to-docx ne charge pas les URL).
   const pub = path.join(process.cwd(), "public");
   const [logoBuf, stampBuf] = await Promise.all([
@@ -61,7 +94,7 @@ export async function buildInscriptionDocsZip(
   );
 
   for (const [, doc] of entries) {
-    const inner = inlineImages(renderTemplate(doc.html, vars));
+    const inner = inlineImages(renderTemplate(doc.html, vars)) + mention;
     const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8" />${DOC_STYLE}</head><body>${inner}</body></html>`;
     const result = (await HTMLtoDOCX(fullHtml, undefined, {
       table: { row: { cantSplit: true } },
@@ -75,6 +108,21 @@ export async function buildInscriptionDocsZip(
     else data = result;
 
     folder.file(`${doc.label}.docx`, data);
+  }
+
+  // Certificat de signature électronique (preuve / piste d'audit)
+  if (signed) {
+    const certif = await buildCertificatPdf({
+      candidatNom: signed.nom,
+      candidatEmail: inscription.candidat.email,
+      formation: inscription.session.formation.titre,
+      documents: SIGNED_DOC_LABELS,
+      signataire: signed.nom,
+      signedAt: signed.at,
+      ip: signed.ip,
+      ref: signed.ref,
+    });
+    folder.file("Certificat-de-signature-electronique.pdf", certif);
   }
 
   const zipBuffer = await zip.generateAsync({ type: "nodebuffer" });

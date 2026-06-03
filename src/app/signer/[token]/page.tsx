@@ -16,6 +16,7 @@ export const dynamic = "force-dynamic";
 // Documents soumis à signature du stagiaire
 const A_SIGNER = [
   "Fiche d'inscription",
+  "Contrat de formation",
   "Convention de formation",
   "Règlement intérieur",
 ];

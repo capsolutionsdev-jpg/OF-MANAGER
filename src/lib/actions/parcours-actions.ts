@@ -243,7 +243,7 @@ Vous pouvez télécharger l'ensemble de vos documents (fiche d'inscription, conv
 
 ${link}
 
-Votre convocation vous parviendra prochainement.
+Vous recevez par ailleurs votre convocation à la formation.
 
 Cordialement,
 ${orgConfig.representant} — ${orgConfig.name}`;
@@ -264,6 +264,40 @@ ${orgConfig.representant} — ${orgConfig.name}`;
     where: { id: insc.id },
     data: { docsCopieSentAt: new Date() },
   });
+
+  // Envoi immédiat de la convocation à la formation (une fois les docs signés)
+  if (!insc.convocationSentAt) {
+    const s = insc.session;
+    const f = (d: Date) => d.toLocaleDateString("fr-FR");
+    const subjectConv = `Convocation — ${s.formation.titre}`;
+    const bodyConv = `Bonjour ${insc.candidat.prenom},
+
+Vos documents étant signés, nous vous confirmons votre convocation à la formation « ${s.formation.titre} », du ${f(s.dateDebut)} au ${f(s.dateFin)}${s.horaires ? ` (${s.horaires})` : ""}${s.lieu ? `, à ${s.lieu}` : ""}.
+
+Merci de vous présenter muni(e) d'une pièce d'identité.
+
+Cordialement,
+${orgConfig.representant} — ${orgConfig.name}`;
+    const resConv = await sendEmail({
+      to: insc.candidat.email,
+      subject: subjectConv,
+      body: bodyConv,
+    });
+    await prisma.emailLog.create({
+      data: {
+        destinataire: insc.candidat.email,
+        sujet: subjectConv,
+        corps: bodyConv,
+        statut: resConv.sent ? EmailStatut.ENVOYE : EmailStatut.EN_ATTENTE,
+        sentAt: resConv.sent ? new Date() : null,
+        sessionId: insc.sessionId,
+      },
+    });
+    await prisma.inscription.update({
+      where: { id: insc.id },
+      data: { convocationSentAt: new Date() },
+    });
+  }
 
   revalidatePath(`/candidats/${insc.candidatId}`);
   return { ok: true };
