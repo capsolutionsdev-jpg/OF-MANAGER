@@ -1,0 +1,200 @@
+import { Fragment } from "react";
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+import { prisma } from "@/lib/prisma";
+import { orgConfig } from "@/lib/org-config";
+import { MODALITE_LABELS } from "@/lib/validators/formation";
+import { PrintButton } from "@/components/documents/print-button";
+import { joursSession, dayKey } from "@/lib/emargement";
+
+export const dynamic = "force-dynamic";
+
+export default async function FeuilleEmargementSessionPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const s = await prisma.session.findUnique({
+    where: { id },
+    include: {
+      formation: true,
+      formateurs: true,
+      seances: { orderBy: { date: "asc" } },
+      emargementSignatures: true,
+      inscriptions: {
+        where: { statut: { not: "ANNULEE" } },
+        include: { candidat: true },
+        orderBy: { candidat: { nom: "asc" } },
+      },
+    },
+  });
+  if (!s) notFound();
+
+  const jours = joursSession(s.seances, s.dateDebut, s.dateFin);
+
+  // Report des signatures électroniques recueillies
+  // clé : `${who}|${dayKey}|${demi}` → heure de signature
+  const sigMap = new Map<string, Date>();
+  for (const e of s.emargementSignatures) {
+    if (!e.signedAt) continue;
+    const who = e.role === "FORMATEUR" ? "FORM" : (e.candidatId ?? e.email);
+    sigMap.set(`${who}|${dayKey(e.date)}|${e.demi}`, e.signedAt);
+  }
+  const heure = (d: Date) =>
+    d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  const cellFor = (who: string, jour: Date, demi: "MATIN" | "APRES_MIDI") => {
+    const sig = sigMap.get(`${who}|${dayKey(jour)}|${demi}`);
+    return sig ? `✓ ${heure(sig)}` : "";
+  };
+  const fmtJour = (d: Date) =>
+    d.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" });
+  const fmt = (d: Date) => d.toLocaleDateString("fr-FR");
+  const formateurs = s.formateurs
+    .map((f) => `${f.prenom} ${f.nom}`)
+    .join(", ");
+
+  return (
+    <div className="space-y-4">
+      {/* Barre d'action (masquée à l'impression) */}
+      <div className="flex items-center justify-between print:hidden">
+        <Link
+          href={`/sessions/${s.id}/emargement`}
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" /> Retour à l&apos;émargement
+        </Link>
+        <PrintButton />
+      </div>
+
+      {/* Feuille imprimable */}
+      <div className="emarge-sheet mx-auto bg-white p-6 text-black shadow-sm">
+        <div className="mb-4 flex items-center gap-4 border-b pb-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/cap-competences-logo.png" alt={orgConfig.name} className="h-14 w-auto" />
+          <div className="text-[11px] leading-snug">
+            <strong className="text-sm">{orgConfig.name}</strong> — {orgConfig.qualiopi}
+            <br />
+            {orgConfig.adresse}
+            <br />
+            SIRET {orgConfig.siret} · NDA {orgConfig.nda}
+          </div>
+        </div>
+
+        <h1 className="mb-1 text-center text-lg font-bold">
+          Feuille d&apos;émargement
+        </h1>
+
+        <table className="info-table mb-3 w-full text-[11px]">
+          <tbody>
+            <tr>
+              <td className="font-semibold">Formation</td>
+              <td>
+                {s.formation.titre} ({s.formation.reference})
+              </td>
+              <td className="font-semibold">Modalité</td>
+              <td>{MODALITE_LABELS[s.modalite]}</td>
+            </tr>
+            <tr>
+              <td className="font-semibold">Dates</td>
+              <td>
+                du {fmt(s.dateDebut)} au {fmt(s.dateFin)}
+              </td>
+              <td className="font-semibold">Lieu</td>
+              <td>{s.lieu ?? "—"}</td>
+            </tr>
+            <tr>
+              <td className="font-semibold">Formateur(s)</td>
+              <td>{formateurs || "—"}</td>
+              <td className="font-semibold">Horaires</td>
+              <td>{s.horaires ?? "—"}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        {/* Tableau principal : candidats × jours (Matin / Après-midi) */}
+        <table className="emarge w-full text-[10px]">
+          <thead>
+            <tr>
+              <th rowSpan={2} className="name-col">
+                Nom et prénom du stagiaire
+              </th>
+              {jours.map((j, i) => (
+                <th key={i} colSpan={2}>
+                  {fmtJour(j)}
+                </th>
+              ))}
+            </tr>
+            <tr>
+              {jours.map((_, i) => (
+                <Fragment key={i}>
+                  <th>Matin</th>
+                  <th>A.-m.</th>
+                </Fragment>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {s.inscriptions.length === 0 ? (
+              <tr>
+                <td colSpan={1 + jours.length * 2}>Aucun stagiaire inscrit.</td>
+              </tr>
+            ) : (
+              s.inscriptions.map((insc) => (
+                <tr key={insc.id}>
+                  <td className="name-col">
+                    {insc.candidat.prenom} {insc.candidat.nom}
+                  </td>
+                  {jours.map((jour, i) => (
+                    <Fragment key={i}>
+                      <td className="sig">{cellFor(insc.candidatId, jour, "MATIN")}</td>
+                      <td className="sig">
+                        {cellFor(insc.candidatId, jour, "APRES_MIDI")}
+                      </td>
+                    </Fragment>
+                  ))}
+                </tr>
+              ))
+            )}
+            {/* Ligne formateur */}
+            <tr className="formateur-row">
+              <td className="name-col">Formateur : {formateurs || "—"}</td>
+              {jours.map((jour, i) => (
+                <Fragment key={i}>
+                  <td className="sig">{cellFor("FORM", jour, "MATIN")}</td>
+                  <td className="sig">{cellFor("FORM", jour, "APRES_MIDI")}</td>
+                </Fragment>
+              ))}
+            </tr>
+          </tbody>
+        </table>
+
+        <div className="mt-6 flex justify-between text-[11px]">
+          <div>
+            <p className="mb-8">Cachet de l&apos;organisme :</p>
+          </div>
+          <div>
+            <p className="mb-8">Signature du formateur :</p>
+          </div>
+        </div>
+      </div>
+
+      <style>{`
+        .emarge-sheet { max-width: 1100px; }
+        .info-table td { border: 1px solid #999; padding: 3px 6px; }
+        table.emarge { border-collapse: collapse; }
+        table.emarge th, table.emarge td { border: 1px solid #555; padding: 4px; text-align: center; }
+        table.emarge th { background: #f1f1f1; font-weight: 600; }
+        table.emarge td.name-col, table.emarge th.name-col { text-align: left; min-width: 180px; white-space: nowrap; }
+        table.emarge tbody td:not(.name-col) { height: 34px; }
+        table.emarge td.sig { color: #047857; font-weight: 600; font-size: 9px; }
+        .formateur-row td { background: #fafafa; font-style: italic; }
+        @media print {
+          @page { size: A4 landscape; margin: 10mm; }
+          body { background: white; }
+        }
+      `}</style>
+    </div>
+  );
+}

@@ -479,6 +479,32 @@ export function contratFormateurHtml(): string {
   );
 }
 
+// ── Compte-rendu pédagogique formateur (rempli) ──
+export function compteRenduFormateurHtml(): string {
+  const ligne = (label: string, varKey: string) =>
+    `<h2>${label}</h2><p>{{${varKey}}}</p>`;
+  return wrap(
+    "Compte rendu pédagogique du formateur",
+    `<table class="doc-table">
+      <tr><td>Intitulé de la formation</td><td><strong>{{formation}}</strong></td></tr>
+      <tr><td>Nom du formateur</td><td>{{formateur_nom}}</td></tr>
+      <tr><td>Date(s) de la formation</td><td>{{dates}}</td></tr>
+    </table>
+    <p class="mt"><em>Ce compte rendu alimente nos indicateurs qualité (Qualiopi)
+    et nous aide à améliorer le déroulement de nos formations. Merci de votre collaboration !</em></p>
+    ${ligne("Conditions matérielles de réalisation", "cr_conditions")}
+    ${ligne("Difficultés rencontrées", "cr_difficultes")}
+    ${ligne("Autres besoins nécessaires aux formateurs", "cr_besoins")}
+    ${ligne("La documentation remise aux stagiaires est-elle adaptée, actualisée et suffisante ?", "cr_documentation")}
+    ${ligne("Remarques particulières / Suggestions", "cr_remarques")}
+    ${ligne("Rencontre avec la direction du centre de formation", "cr_rencontreDirection")}
+    <p class="mt">Fait le {{date_jour}}.</p>
+    <div class="doc-signatures">
+      <div><div class="sig-label">Signature du formateur — {{formateur_nom}}</div><div class="sig-box"></div></div>
+    </div>`,
+  );
+}
+
 export type DocType = keyof typeof DOCUMENTS;
 
 export function isDocType(t: string): boolean {

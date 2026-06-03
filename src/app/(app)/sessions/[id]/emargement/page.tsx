@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card";
 import { genererSeances } from "@/lib/actions/emargement-actions";
 import { PresenceCell } from "@/components/emargement/presence-cell";
+import { PrepareSignaturesButton } from "@/components/emargement/prepare-signatures-button";
 
 export default async function EmargementPage({
   params,
@@ -40,11 +41,26 @@ export default async function EmargementPage({
         >
           <ArrowLeft className="h-4 w-4" /> Retour à la session
         </Link>
-        <h1 className="text-2xl font-bold tracking-tight">Émargement</h1>
-        <p className="text-sm text-muted-foreground">
-          {s.formation.titre} — {s.inscriptions.length} inscrit
-          {s.inscriptions.length > 1 ? "s" : ""}.
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Émargement</h1>
+            <p className="text-sm text-muted-foreground">
+              {s.formation.titre} — {s.inscriptions.length} inscrit
+              {s.inscriptions.length > 1 ? "s" : ""}.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <PrepareSignaturesButton sessionId={s.id} />
+            <Button
+              variant="outline"
+              render={
+                <Link href={`/sessions/${s.id}/emargement/feuille`} target="_blank" />
+              }
+            >
+              <FileText className="mr-2 h-4 w-4" /> Feuille complète (à imprimer)
+            </Button>
+          </div>
+        </div>
       </div>
 
       {s.seances.length === 0 ? (

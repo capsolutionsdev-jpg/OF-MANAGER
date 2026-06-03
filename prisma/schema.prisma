@@ -84,6 +84,11 @@ enum PresenceStatut {
   EXCUSE
 }
 
+enum DemiJournee {
+  MATIN
+  APRES_MIDI
+}
+
 enum EvaluationType {
   POSITIONNEMENT
   ACQUIS
@@ -361,6 +366,12 @@ model Session {
   statut      SessionStatut @default(PLANIFIEE)
   isArchived  Boolean       @default(false)
 
+  // Compte-rendu pédagogique formateur (formulaire post-session → document)
+  crFormateurToken       String?   @unique
+  crFormateurSentAt      DateTime?
+  crFormateurJson        Json?
+  crFormateurCompletedAt DateTime?
+
   formateurs   Formateur[]   @relation("SessionFormateurs")
   inscriptions Inscription[]
   seances      Seance[]
@@ -368,6 +379,7 @@ model Session {
   documents    DocumentGenere[]
   conventions  Convention[]
   emailLogs    EmailLog[]
+  emargementSignatures EmargementSignature[]
 
   createdById String?
   createdBy   User?    @relation("SessionCreeePar", fields: [createdById], references: [id])
@@ -552,6 +564,39 @@ model Presence {
   commentaire String?
 
   @@unique([seanceId, apprenantId])
+}
+
+// Signature d'émargement par demi-journée (lien e-mail → signature électronique)
+model EmargementSignature {
+  id          String      @id @default(cuid())
+  sessionId   String
+  session     Session     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  date        DateTime
+  demi        DemiJournee
+  role        String      // "STAGIAIRE" | "FORMATEUR"
+  nom         String
+  email       String
+  candidatId  String?
+  token       String      @unique
+  sentAt      DateTime?
+  signedAt    DateTime?
+  signatureIp String?
+  createdAt   DateTime    @default(now())
+
+  @@index([sessionId])
+}
+
+// Réglages des automatismes (ligne unique « singleton »)
+model AutomationSettings {
+  id                      String   @id @default("singleton")
+  convocationActive       Boolean  @default(true)
+  convocationJMoins       Int      @default(7)
+  attestationEntreeActive Boolean  @default(true)
+  satisfactionActive      Boolean  @default(true)
+  docsFinActive           Boolean  @default(true)
+  compteRenduActive       Boolean  @default(true)
+  emargementActive        Boolean  @default(true)
+  updatedAt               DateTime @updatedAt
 }
 
 // =============================================================

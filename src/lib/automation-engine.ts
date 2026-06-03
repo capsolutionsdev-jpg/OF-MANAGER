@@ -1,19 +1,19 @@
-import { EmailStatut } from "@prisma/client";
+import { EmailStatut, DemiJournee } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { sendEmail } from "@/lib/email";
 import { orgConfig } from "@/lib/org-config";
 import { generateToken, appBaseUrl } from "@/lib/token";
+import { getAutomationSettings } from "@/lib/automation-settings";
 
 const fmt = (d: Date) => d.toLocaleDateString("fr-FR");
-
-// Nombre de jours avant le début pour envoyer la convocation
-const CONVOCATION_J_MOINS = 7;
 
 type Counts = {
   convocations: number;
   attestationsEntree: number;
   satisfactions: number;
   docsFin: number;
+  compteRendus: number;
+  emargements: number;
 };
 
 async function logAndSend(opts: {
@@ -52,7 +52,11 @@ export async function runAutomations(): Promise<Counts> {
     attestationsEntree: 0,
     satisfactions: 0,
     docsFin: 0,
+    compteRendus: 0,
+    emargements: 0,
   };
+
+  const settings = await getAutomationSettings();
 
   const inscriptions = await prisma.inscription.findMany({
     where: { statut: { not: "ANNULEE" } },
@@ -60,7 +64,7 @@ export async function runAutomations(): Promise<Counts> {
   });
 
   const jMoinsLimite = new Date(
-    now.getTime() + CONVOCATION_J_MOINS * 24 * 60 * 60 * 1000,
+    now.getTime() + settings.convocationJMoins * 24 * 60 * 60 * 1000,
   );
 
   for (const i of inscriptions) {
@@ -71,6 +75,7 @@ export async function runAutomations(): Promise<Counts> {
 
     // ── 1) CONVOCATION (signé, J-7, pas déjà envoyée, session à venir) ──
     if (
+      settings.convocationActive &&
       i.signedAt &&
       !i.convocationSentAt &&
       s.dateDebut >= now &&
@@ -95,6 +100,7 @@ ${orgConfig.representant} — ${orgConfig.name}`;
 
     // ── 2) ATTESTATION D'ENTRÉE (J1 atteint, signé, pas déjà envoyée) ──
     if (
+      settings.attestationEntreeActive &&
       i.signedAt &&
       !i.attestationEntreeSentAt &&
       s.dateDebut <= now &&
@@ -119,7 +125,7 @@ ${orgConfig.representant} — ${orgConfig.name}`;
     }
 
     // ── 3) ENQUÊTE DE SATISFACTION (formation terminée, pas déjà envoyée) ──
-    if (!i.satisfactionSentAt && s.dateFin < now) {
+    if (settings.satisfactionActive && !i.satisfactionSentAt && s.dateFin < now) {
       const satToken = i.satisfactionToken ?? generateToken();
       if (!i.satisfactionToken) {
         await prisma.inscription.update({
@@ -146,7 +152,7 @@ ${orgConfig.representant} — ${orgConfig.name}`;
     }
 
     // ── 4) DOCUMENTS DE FIN DE FORMATION (terminée, pas déjà envoyés) ──
-    if (!i.docsFinSentAt && s.dateFin < now && i.accessToken) {
+    if (settings.docsFinActive && !i.docsFinSentAt && s.dateFin < now && i.accessToken) {
       const subject = `Documents de fin de formation — ${f.titre}`;
       const body = `Bonjour ${prenom},
 
@@ -164,6 +170,81 @@ ${orgConfig.representant} — ${orgConfig.name}`;
       });
       counts.docsFin++;
     }
+  }
+
+  // ── 5) COMPTE-RENDU FORMATEUR (session terminée, formateur avec e-mail, non envoyé) ──
+  const sessionsTerminees = settings.compteRenduActive
+    ? await prisma.session.findMany({
+        where: {
+          statut: { not: "ANNULEE" },
+          dateFin: { lt: now },
+          crFormateurSentAt: null,
+        },
+        include: { formation: true, formateurs: true },
+      })
+    : [];
+
+  for (const s of sessionsTerminees) {
+    const f = s.formateurs[0];
+    if (!f?.email) continue;
+    const token = s.crFormateurToken ?? generateToken();
+    if (!s.crFormateurToken) {
+      await prisma.session.update({
+        where: { id: s.id },
+        data: { crFormateurToken: token },
+      });
+    }
+    const subject = `Compte rendu pédagogique — ${s.formation.titre}`;
+    const body = `Bonjour ${f.prenom},
+
+La formation « ${s.formation.titre} » (du ${fmt(s.dateDebut)} au ${fmt(s.dateFin)}) est terminée.
+
+Merci de compléter votre compte rendu pédagogique via ce lien :
+${base}/compte-rendu/${token}
+
+Ce document alimente nos indicateurs qualité (Qualiopi).
+
+Cordialement,
+${orgConfig.representant} — ${orgConfig.name}`;
+    await logAndSend({ to: f.email, subject, body, sessionId: s.id });
+    await prisma.session.update({
+      where: { id: s.id },
+      data: { crFormateurSentAt: new Date() },
+    });
+    counts.compteRendus++;
+  }
+
+  // ── 6) ÉMARGEMENT DU JOUR (matin avant 13h, après-midi ensuite) ──
+  const startToday = new Date(now);
+  startToday.setHours(0, 0, 0, 0);
+  const endToday = new Date(startToday);
+  endToday.setDate(endToday.getDate() + 1);
+  const demiNow = now.getHours() < 13 ? DemiJournee.MATIN : DemiJournee.APRES_MIDI;
+  const demiLabel = demiNow === DemiJournee.MATIN ? "matin" : "après-midi";
+
+  const emargs = settings.emargementActive
+    ? await prisma.emargementSignature.findMany({
+        where: { date: { gte: startToday, lt: endToday }, demi: demiNow, sentAt: null },
+        include: { session: { include: { formation: true } } },
+      })
+    : [];
+
+  for (const e of emargs) {
+    const link = `${base}/emarger/${e.token}`;
+    const subject = `Émargement ${demiLabel} — ${e.session.formation.titre}`;
+    const body = `Bonjour ${e.nom},
+
+Merci de signer votre présence (${demiLabel}) à la formation « ${e.session.formation.titre} » en cliquant sur ce lien :
+${link}
+
+Cordialement,
+${orgConfig.representant} — ${orgConfig.name}`;
+    await logAndSend({ to: e.email, subject, body, sessionId: e.sessionId });
+    await prisma.emargementSignature.update({
+      where: { id: e.id },
+      data: { sentAt: new Date() },
+    });
+    counts.emargements++;
   }
 
   return counts;

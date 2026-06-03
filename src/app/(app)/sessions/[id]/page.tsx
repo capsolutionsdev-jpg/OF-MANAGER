@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Pencil, Trash2, Users, ClipboardCheck, Mail, FileText, UserCog } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2, Users, ClipboardCheck, FileText, UserCog } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,9 +23,10 @@ import { SESSION_STATUT_LABELS } from "@/lib/validators/session";
 import { INSCRIPTION_STATUT_LABELS } from "@/lib/validators/inscription";
 import { FINANCEMENT_LABELS } from "@/lib/validators/candidat";
 import { deleteInscriptionAction } from "@/lib/actions/inscription-actions";
-import { sendConvocations } from "@/lib/actions/email-actions";
 import { EnrollForm } from "@/components/inscriptions/enroll-form";
 import { DocumentsMenu } from "@/components/documents/documents-menu";
+import { SendConvocationsButton } from "@/components/sessions/send-convocations-button";
+import { SendCompteRenduButton } from "@/components/sessions/send-compte-rendu-button";
 
 function Field({ label, value }: { label: string; value?: string | null }) {
   return (
@@ -83,12 +84,7 @@ export default async function SessionDetailPage({
             <Badge variant="outline">{SESSION_STATUT_LABELS[s.statut]}</Badge>
           </div>
           <div className="flex flex-wrap gap-2">
-            <form action={sendConvocations}>
-              <input type="hidden" name="sessionId" value={s.id} />
-              <Button type="submit" variant="outline">
-                <Mail className="mr-2 h-4 w-4" /> Envoyer les convocations
-              </Button>
-            </form>
+            <SendConvocationsButton sessionId={s.id} />
             <Button
               variant="outline"
               render={<Link href={`/sessions/${s.id}/emargement`} />}
@@ -182,6 +178,46 @@ export default async function SessionDetailPage({
                   )}
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* Compte-rendu pédagogique formateur */}
+          {s.formateurs.length > 0 && (
+            <div className="mt-4 flex flex-wrap items-center gap-3 border-t pt-4">
+              <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Compte-rendu pédagogique :
+              </span>
+              {s.crFormateurCompletedAt ? (
+                <>
+                  <Badge className="bg-emerald-500/10 text-emerald-700">
+                    ✓ Complété
+                  </Badge>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    render={
+                      <a
+                        href={`/compte-rendu/${s.crFormateurToken}/document`}
+                        download
+                      />
+                    }
+                  >
+                    <FileText className="mr-1.5 h-3.5 w-3.5" /> Télécharger
+                  </Button>
+                </>
+              ) : s.crFormateurSentAt ? (
+                <Badge className="bg-amber-500/10 text-amber-700">
+                  Lien envoyé — en attente
+                </Badge>
+              ) : (
+                <span className="text-xs text-muted-foreground">Non envoyé</span>
+              )}
+              <div className="ml-auto">
+                <SendCompteRenduButton
+                  sessionId={s.id}
+                  sent={!!s.crFormateurSentAt}
+                />
+              </div>
             </div>
           )}
         </CardContent>

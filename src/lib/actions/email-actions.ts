@@ -8,10 +8,59 @@ import {
 } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
-import { sendEmail } from "@/lib/email";
+import { sendEmail, emailConfigured } from "@/lib/email";
 import { orgConfig } from "@/lib/org-config";
 
 const fmt = (d: Date) => d.toLocaleDateString("fr-FR");
+
+/**
+ * Envoie les convocations d'une session et RENVOIE un résultat
+ * (pour afficher un retour à l'utilisateur).
+ */
+export async function sendConvocationsForSession(
+  sessionId: string,
+): Promise<{ ok: boolean; total: number; sent: number; demo: boolean; error?: string }> {
+  const session = await auth();
+  if (!session?.user)
+    return { ok: false, total: 0, sent: 0, demo: true, error: "Non autorisé." };
+
+  const s = await prisma.session.findUnique({
+    where: { id: sessionId },
+    include: { formation: true, inscriptions: { include: { candidat: true } } },
+  });
+  if (!s)
+    return { ok: false, total: 0, sent: 0, demo: true, error: "Session introuvable." };
+
+  const demo = !emailConfigured();
+  let sent = 0;
+  for (const insc of s.inscriptions) {
+    const subject = `Convocation — ${s.formation.titre}`;
+    const body = `Bonjour ${insc.candidat.prenom},
+
+Vous êtes convoqué(e) à la formation « ${s.formation.titre} » qui se déroulera du ${fmt(s.dateDebut)} au ${fmt(s.dateFin)}${s.horaires ? ` (${s.horaires})` : ""}${s.lieu ? `, à ${s.lieu}` : ""}.
+
+Merci de vous présenter muni(e) d'une pièce d'identité.
+
+Cordialement,
+${orgConfig.representant} — ${orgConfig.name}`;
+    const res = await sendEmail({ to: insc.candidat.email, subject, body });
+    if (res.sent) sent++;
+    await prisma.emailLog.create({
+      data: {
+        destinataire: insc.candidat.email,
+        sujet: subject,
+        corps: body,
+        statut: res.sent ? EmailStatut.ENVOYE : EmailStatut.EN_ATTENTE,
+        sentAt: res.sent ? new Date() : null,
+        sessionId,
+      },
+    });
+  }
+
+  revalidatePath(`/sessions/${sessionId}`);
+  revalidatePath("/automatisations");
+  return { ok: true, total: s.inscriptions.length, sent, demo };
+}
 
 export async function sendConvocations(formData: FormData) {
   const session = await auth();

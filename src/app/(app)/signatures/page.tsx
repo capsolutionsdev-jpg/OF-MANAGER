@@ -1,8 +1,8 @@
-import { PenLine } from "lucide-react";
+import Link from "next/link";
+import { CheckCircle2, Clock, FileSignature } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -11,104 +11,193 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { yousignConfigured } from "@/lib/yousign";
-import { markSignatureSigned } from "@/lib/actions/signature-actions";
+import { emailConfigured } from "@/lib/email";
+import { RelanceButton } from "@/components/signatures/relance-button";
 
-const STATUT_LABELS: Record<string, string> = {
-  EN_ATTENTE: "En attente",
-  ENVOYEE: "Envoyée",
-  SIGNEE: "Signée",
-  REFUSEE: "Refusée",
-  EXPIREE: "Expirée",
-};
+export const dynamic = "force-dynamic";
 
 export default async function SignaturesPage() {
-  const requests = await prisma.signatureRequest.findMany({
+  // Toutes les inscriptions engagées dans un parcours de signature
+  const inscriptions = await prisma.inscription.findMany({
+    where: { statut: { not: "ANNULEE" } },
+    include: {
+      candidat: { select: { prenom: true, nom: true, email: true } },
+      session: { include: { formation: { select: { titre: true } } } },
+    },
     orderBy: { createdAt: "desc" },
-    include: { inscription: { include: { candidat: true } } },
   });
-  const demo = !yousignConfigured();
+
+  const demo = !emailConfigured();
+  const fmt = (d: Date | null) => (d ? d.toLocaleDateString("fr-FR") : "—");
+
+  const signes = inscriptions.filter((i) => i.signedAt);
+  const enAttente = inscriptions.filter((i) => !i.signedAt);
+
+  const Etape = ({ ok, label }: { ok: boolean; label: string }) => (
+    <Badge
+      className={
+        ok ? "bg-emerald-500/10 text-emerald-700" : "bg-muted text-muted-foreground"
+      }
+    >
+      {ok ? "✓ " : "○ "}
+      {label}
+    </Badge>
+  );
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Signatures électroniques</h1>
+        <h1 className="text-2xl font-bold tracking-tight">
+          Signatures électroniques
+        </h1>
         <p className="text-sm text-muted-foreground">
-          Suivi des demandes de signature (Yousign).
-          {demo && " Mode démo — renseignez YOUSIGN_API_KEY pour l'envoi réel."}
+          Suivi des signatures du parcours candidat (formulaire + documents).
+          {demo && " Mode démo — renseignez BREVO_API_KEY pour l'envoi réel des relances."}
         </p>
       </div>
 
+      {/* KPI */}
+      <div className="grid grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="flex items-center gap-3 p-4">
+            <FileSignature className="h-7 w-7 text-primary" />
+            <div>
+              <p className="text-xl font-bold">{inscriptions.length}</p>
+              <p className="text-xs text-muted-foreground">Dossiers</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="flex items-center gap-3 p-4">
+            <CheckCircle2 className="h-7 w-7 text-emerald-600" />
+            <div>
+              <p className="text-xl font-bold">{signes.length}</p>
+              <p className="text-xs text-muted-foreground">Signés</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="flex items-center gap-3 p-4">
+            <Clock className="h-7 w-7 text-amber-600" />
+            <div>
+              <p className="text-xl font-bold">{enAttente.length}</p>
+              <p className="text-xs text-muted-foreground">En attente</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* En attente de signature */}
       <Card>
-        {requests.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 p-12 text-center">
-            <PenLine className="h-8 w-8 text-muted-foreground" />
-            <p className="font-medium">Aucune demande de signature</p>
-            <p className="text-sm text-muted-foreground">
-              Demandez une signature depuis un document ou une feuille d&apos;émargement.
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Clock className="h-4 w-4" /> En attente ({enAttente.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          {enAttente.length === 0 ? (
+            <p className="p-6 text-sm text-muted-foreground">
+              Aucune signature en attente. 🎉
             </p>
-          </div>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Document</TableHead>
-                <TableHead>Concerné</TableHead>
-                <TableHead>Statut</TableHead>
-                <TableHead>Demandé le</TableHead>
-                <TableHead className="text-right">Action</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {requests.map((r) => {
-                const meta = (r.signataires ?? {}) as { label?: string };
-                return (
-                  <TableRow key={r.id}>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Candidat</TableHead>
+                  <TableHead>Formation</TableHead>
+                  <TableHead>Avancement</TableHead>
+                  <TableHead className="text-right">Relance</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {enAttente.map((i) => (
+                  <TableRow key={i.id}>
                     <TableCell className="font-medium">
-                      {meta.label ?? "Document"}
+                      <Link
+                        href={`/candidats/${i.candidatId}`}
+                        className="hover:underline"
+                      >
+                        {i.candidat.prenom} {i.candidat.nom}
+                      </Link>
+                      <div className="text-xs text-muted-foreground">
+                        {i.candidat.email}
+                      </div>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {r.inscription
-                        ? `${r.inscription.candidat.prenom} ${r.inscription.candidat.nom}`
-                        : "—"}
+                      {i.session.formation.titre}
                     </TableCell>
                     <TableCell>
-                      <Badge
-                        className={
-                          r.statut === "SIGNEE"
-                            ? "bg-emerald-100 text-emerald-700"
-                            : r.statut === "ENVOYEE"
-                              ? "bg-amber-100 text-amber-700"
-                              : "bg-muted text-muted-foreground"
-                        }
-                      >
-                        {STATUT_LABELS[r.statut] ?? r.statut}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {r.createdAt.toLocaleDateString("fr-FR")}
+                      <div className="flex flex-wrap gap-1.5">
+                        <Etape ok={!!i.accessToken} label="Lien envoyé" />
+                        <Etape ok={!!i.formCompletedAt} label="Formulaire" />
+                        <Etape ok={!!i.signedAt} label="Signé" />
+                      </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      {r.statut === "ENVOYEE" ? (
-                        <form action={markSignatureSigned}>
-                          <input type="hidden" name="id" value={r.id} />
-                          <input type="hidden" name="back" value="/signatures" />
-                          <Button type="submit" size="sm" variant="outline">
-                            Marquer signé
-                          </Button>
-                        </form>
-                      ) : r.signedAt ? (
-                        r.signedAt.toLocaleDateString("fr-FR")
+                      <RelanceButton inscriptionId={i.id} />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Signés */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <CheckCircle2 className="h-4 w-4" /> Signés ({signes.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          {signes.length === 0 ? (
+            <p className="p-6 text-sm text-muted-foreground">
+              Aucun document signé pour le moment.
+            </p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Candidat</TableHead>
+                  <TableHead>Formation</TableHead>
+                  <TableHead>Signé le</TableHead>
+                  <TableHead>Copie envoyée</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {signes.map((i) => (
+                  <TableRow key={i.id}>
+                    <TableCell className="font-medium">
+                      <Link
+                        href={`/candidats/${i.candidatId}`}
+                        className="hover:underline"
+                      >
+                        {i.candidat.prenom} {i.candidat.nom}
+                      </Link>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {i.session.formation.titre}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {fmt(i.signedAt)}
+                    </TableCell>
+                    <TableCell>
+                      {i.docsCopieSentAt ? (
+                        <Badge className="bg-emerald-500/10 text-emerald-700">
+                          ✓ {fmt(i.docsCopieSentAt)}
+                        </Badge>
                       ) : (
-                        "—"
+                        <span className="text-xs text-muted-foreground">—</span>
                       )}
                     </TableCell>
                   </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        )}
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
       </Card>
     </div>
   );

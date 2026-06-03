@@ -1,4 +1,4 @@
-import { Bell, Plus, Play, Clock } from "lucide-react";
+import { Bell, Plus, Clock } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,7 +23,9 @@ import {
   createWorkflowRule,
   toggleWorkflowRule,
 } from "@/lib/actions/email-actions";
-import { runAutomationsAction } from "@/lib/actions/automation-actions";
+import { RunAutomationsButton } from "@/components/automatisations/run-automations-button";
+import { getAutomationSettings } from "@/lib/automation-settings";
+import { updateAutomationSettings } from "@/lib/actions/automation-settings-actions";
 
 const TRIGGER_LABELS: Record<string, string> = {
   AVANT_SESSION: "Avant la session",
@@ -50,11 +52,21 @@ const selectClass =
   "h-9 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50";
 
 export default async function AutomatisationsPage() {
-  const [rules, emails] = await Promise.all([
+  const [rules, emails, settings] = await Promise.all([
     prisma.workflowRule.findMany({ orderBy: { createdAt: "desc" } }),
     prisma.emailLog.findMany({ orderBy: { createdAt: "desc" }, take: 25 }),
+    getAutomationSettings(),
   ]);
   const demo = !emailConfigured();
+
+  const toggles: { key: string; label: string; checked: boolean }[] = [
+    { key: "convocationActive", label: "Convocation (avant la session)", checked: settings.convocationActive },
+    { key: "attestationEntreeActive", label: "Attestation d'entrée (1er jour)", checked: settings.attestationEntreeActive },
+    { key: "emargementActive", label: "Émargement quotidien (matin / après-midi)", checked: settings.emargementActive },
+    { key: "satisfactionActive", label: "Enquête de satisfaction (fin)", checked: settings.satisfactionActive },
+    { key: "docsFinActive", label: "Documents de fin de formation", checked: settings.docsFinActive },
+    { key: "compteRenduActive", label: "Compte-rendu pédagogique formateur", checked: settings.compteRenduActive },
+  ];
 
   return (
     <div className="space-y-6">
@@ -66,11 +78,7 @@ export default async function AutomatisationsPage() {
             {demo && " Mode démo — renseignez BREVO_API_KEY pour l'envoi réel."}
           </p>
         </div>
-        <form action={runAutomationsAction}>
-          <Button type="submit">
-            <Play className="mr-2 h-4 w-4" /> Exécuter les automatismes
-          </Button>
-        </form>
+        <RunAutomationsButton />
       </div>
 
       {/* Parcours automatisé (cron quotidien) */}
@@ -103,6 +111,50 @@ export default async function AutomatisationsPage() {
             Vous pouvez aussi déclencher l&apos;ensemble immédiatement avec le bouton
             « Exécuter les automatismes » (utile pour tester).
           </p>
+        </CardContent>
+      </Card>
+
+      {/* Paramètres des automatismes */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Paramètres des automatismes</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form action={updateAutomationSettings} className="space-y-4">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {toggles.map((t) => (
+                <label
+                  key={t.key}
+                  className="flex items-center gap-2 rounded-md border bg-muted/20 px-3 py-2 text-sm"
+                >
+                  <input
+                    type="checkbox"
+                    name={t.key}
+                    defaultChecked={t.checked}
+                    className="h-4 w-4"
+                  />
+                  {t.label}
+                </label>
+              ))}
+            </div>
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="grid gap-1.5">
+                <Label htmlFor="convocationJMoins">
+                  Délai d&apos;envoi de la convocation (jours avant le début)
+                </Label>
+                <Input
+                  id="convocationJMoins"
+                  name="convocationJMoins"
+                  type="number"
+                  min={0}
+                  max={60}
+                  defaultValue={settings.convocationJMoins}
+                  className="w-28"
+                />
+              </div>
+              <Button type="submit">Enregistrer les paramètres</Button>
+            </div>
+          </form>
         </CardContent>
       </Card>
 

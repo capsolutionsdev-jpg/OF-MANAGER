@@ -10,7 +10,7 @@ import {
 } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
-import { sendEmail } from "@/lib/email";
+import { sendEmail, emailConfigured } from "@/lib/email";
 import { orgConfig } from "@/lib/org-config";
 import { generateToken, appBaseUrl } from "@/lib/token";
 
@@ -74,6 +74,17 @@ export async function resendParcoursAction(formData: FormData) {
   if (!session?.user) return;
   const inscriptionId = String(formData.get("inscriptionId"));
   await startParcours(inscriptionId);
+}
+
+/** Relance le lien de parcours/signature et renvoie un résultat (pour le toast). */
+export async function relanceParcours(
+  inscriptionId: string,
+): Promise<{ ok: boolean; demo: boolean; error?: string }> {
+  const session = await auth();
+  if (!session?.user) return { ok: false, demo: true, error: "Non autorisé." };
+  const r = await startParcours(inscriptionId);
+  revalidatePath("/signatures");
+  return { ok: r.ok, demo: !emailConfigured(), error: r.error };
 }
 
 export type ParcoursFormValues = {
