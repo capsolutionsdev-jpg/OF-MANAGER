@@ -10,6 +10,7 @@ import {
   PenLine,
   Bell,
   Shield,
+  BarChart3,
   type LucideIcon,
 } from "lucide-react";
 
@@ -68,6 +69,12 @@ export const navItems: NavItem[] = [
     label: "Formateurs",
     href: "/formateurs",
     icon: UserCog,
+    roles: ["ADMIN", "RESPONSABLE_FORMATION"],
+  },
+  {
+    label: "BPF",
+    href: "/bpf",
+    icon: BarChart3,
     roles: ["ADMIN", "RESPONSABLE_FORMATION"],
   },
   {
