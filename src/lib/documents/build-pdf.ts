@@ -9,6 +9,7 @@ import {
   contratFormateurHtml,
 } from "@/lib/documents/templates";
 import { MODALITE_LABELS } from "@/lib/validators/formation";
+import { SATISFACTION_CRITERES, SATISFACTION_NOTES } from "@/lib/satisfaction";
 import { buildVariables } from "@/lib/documents/resolve";
 import { orgConfig } from "@/lib/org-config";
 import {
@@ -170,6 +171,78 @@ export async function buildSingleDocPdf(
     only: [type],
     includeCertificat: false,
   });
+}
+
+function esc(s: string) {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+/** Génère la fiche de satisfaction remplie + signature du stagiaire, en PDF. */
+export async function buildSatisfactionPdf(
+  inscriptionId: string,
+): Promise<PdfResult> {
+  const i = await prisma.inscription.findUnique({
+    where: { id: inscriptionId },
+    include: { candidat: true, session: { include: { formation: true } } },
+  });
+  if (!i) return null;
+
+  const rep = (i.satisfactionJson ?? {}) as {
+    notes?: Record<string, number>;
+    recommander?: number;
+    commentaire?: string;
+    __signature?: string;
+  };
+  const notes = rep.notes ?? {};
+  const fmtD = (d: Date) => d.toLocaleDateString("fr-FR");
+  const rows = SATISFACTION_CRITERES.map((c) => {
+    const v = notes[c.key];
+    const label = SATISFACTION_NOTES.find((n) => n.value === v)?.label ?? "—";
+    return `<tr><td>${c.label}</td><td>${label}</td></tr>`;
+  }).join("");
+
+  const sig = rep.__signature
+    ? `<img src="${rep.__signature}" alt="Signature" style="max-height:70px" />`
+    : "";
+
+  const inner = `
+    <div class="doc-header">
+      <img src="/cap-competences-logo.png" alt="${orgConfig.name}" class="doc-logo" />
+      <div class="doc-org"><strong>${orgConfig.name}</strong> — ${orgConfig.qualiopi}<br/>
+      ${orgConfig.adresse}<br/>SIRET ${orgConfig.siret} · NDA ${orgConfig.nda}</div>
+    </div>
+    <h1 class="doc-title">Enquête de satisfaction — stagiaire</h1>
+    <table class="doc-table">
+      <tr><td>Stagiaire</td><td>${i.candidat.prenom} ${i.candidat.nom}</td></tr>
+      <tr><td>Formation</td><td>${i.session.formation.titre}</td></tr>
+      <tr><td>Dates</td><td>du ${fmtD(i.session.dateDebut)} au ${fmtD(i.session.dateFin)}</td></tr>
+    </table>
+    <table class="doc-table"><tr><th>Critère</th><th>Appréciation</th></tr>${rows}</table>
+    <p class="mt"><strong>Recommanderiez-vous cette formation ? (0–10) :</strong> ${rep.recommander ?? "—"}</p>
+    <h2>Commentaires / suggestions</h2>
+    <p>${rep.commentaire ? esc(rep.commentaire) : "—"}</p>
+    <p class="mt">Fait le ${new Date().toLocaleDateString("fr-FR")}.</p>
+    <div class="doc-signatures">
+      <div><div class="sig-label">Signature du stagiaire — ${i.candidat.prenom} ${i.candidat.nom}</div><div class="sig-box">${sig}</div></div>
+      <div><div class="sig-label">Cachet de l'organisme</div><div class="sig-box"><img src="/signature-cap-competences.png" class="doc-stamp" alt="Cachet" /></div></div>
+    </div>`;
+
+  const pub = path.join(process.cwd(), "public");
+  const [logoBuf, stampBuf] = await Promise.all([
+    fs.readFile(path.join(pub, "cap-competences-logo.png")),
+    fs.readFile(path.join(pub, "signature-cap-competences.png")),
+  ]);
+  const logo64 = `data:image/png;base64,${logoBuf.toString("base64")}`;
+  const stamp64 = `data:image/png;base64,${stampBuf.toString("base64")}`;
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8" />${DOC_STYLE}</head><body>${inner}</body></html>`
+    .split("/cap-competences-logo.png").join(logo64)
+    .split("/signature-cap-competences.png").join(stamp64);
+
+  const data = await htmlToPdf(html);
+  return {
+    data,
+    filename: `Satisfaction-${safeName(`${i.candidat.prenom}-${i.candidat.nom}`)}.pdf`,
+  };
 }
 
 /** Génère le contrat de sous-traitance du formateur en PDF (tarif/jour, cachet, signature). */

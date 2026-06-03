@@ -48,8 +48,16 @@ export default async function SatisfactionPage({
               <CheckCircle2 className="mx-auto h-10 w-10 text-emerald-600" />
               <p className="font-medium">Merci pour votre retour !</p>
               <p className="text-sm text-muted-foreground">
-                Votre évaluation a bien été enregistrée.
+                Votre évaluation signée a bien été enregistrée.
               </p>
+              <a
+                href={`/satisfaction/${token}/document`}
+                target="_blank"
+                rel="noopener"
+                className="mt-2 inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+              >
+                Voir ma fiche de satisfaction (PDF)
+              </a>
             </CardContent>
           </Card>
         ) : (

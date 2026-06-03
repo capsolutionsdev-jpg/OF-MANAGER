@@ -1,9 +1,10 @@
 import { EmailStatut, DemiJournee } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { sendEmail } from "@/lib/email";
+import { sendEmail, toBase64, type EmailAttachment } from "@/lib/email";
 import { orgConfig } from "@/lib/org-config";
 import { generateToken, appBaseUrl } from "@/lib/token";
 import { getAutomationSettings } from "@/lib/automation-settings";
+import { buildSingleDocPdf } from "@/lib/documents/build-pdf";
 
 const fmt = (d: Date) => d.toLocaleDateString("fr-FR");
 
@@ -21,11 +22,13 @@ async function logAndSend(opts: {
   subject: string;
   body: string;
   sessionId: string;
+  attachments?: EmailAttachment[];
 }) {
   const res = await sendEmail({
     to: opts.to,
     subject: opts.subject,
     body: opts.body,
+    attachments: opts.attachments,
   });
   await prisma.emailLog.create({
     data: {
@@ -111,12 +114,20 @@ ${orgConfig.representant} — ${orgConfig.name}`;
 
 Nous confirmons votre entrée en formation « ${f.titre} » le ${fmt(s.dateDebut)}.
 
-Votre attestation d'entrée est disponible avec vos documents :
-${base}/parcours/${i.accessToken}/documents
+Vous trouverez ci-joint votre attestation d'entrée signée, au format PDF.
 
 Bonne formation,
 ${orgConfig.representant} — ${orgConfig.name}`;
-      await logAndSend({ to, subject, body, sessionId: s.id });
+      const attPdf = await buildSingleDocPdf(i.id, "ATTESTATION_ENTREE");
+      await logAndSend({
+        to,
+        subject,
+        body,
+        sessionId: s.id,
+        attachments: attPdf
+          ? [{ name: "Attestation-entree.pdf", content: toBase64(attPdf.data) }]
+          : undefined,
+      });
       await prisma.inscription.update({
         where: { id: i.id },
         data: { attestationEntreeSentAt: new Date() },

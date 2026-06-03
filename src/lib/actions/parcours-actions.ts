@@ -169,7 +169,11 @@ export async function submitSatisfaction(
     recommander?: number;
     commentaire?: string;
   },
+  signatureDataUrl?: string,
 ): Promise<{ ok: boolean; error?: string }> {
+  if (!signatureDataUrl || !signatureDataUrl.startsWith("data:image/"))
+    return { ok: false, error: "Merci de dessiner votre signature." };
+
   const insc = await prisma.inscription.findUnique({
     where: { satisfactionToken: token },
     select: { id: true, satisfactionCompletedAt: true },
@@ -180,7 +184,7 @@ export async function submitSatisfaction(
   await prisma.inscription.update({
     where: { id: insc.id },
     data: {
-      satisfactionJson: reponses,
+      satisfactionJson: { ...reponses, __signature: signatureDataUrl },
       satisfactionCompletedAt: new Date(),
     },
   });

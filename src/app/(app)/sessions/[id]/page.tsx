@@ -264,6 +264,85 @@ export default async function SessionDetailPage({
         </CardContent>
       </Card>
 
+      {/* Documents de la session */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <FileText className="h-4 w-4" /> Documents de la session
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              render={
+                <a href={`/sessions/${s.id}/emargement/feuille`} target="_blank" />
+              }
+            >
+              <FileText className="mr-1.5 h-3.5 w-3.5" /> Feuille d&apos;émargement
+            </Button>
+            {s.formateurs.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                render={
+                  <a href={`/documents/contrat-formateur/${s.id}`} target="_blank" />
+                }
+              >
+                <FileText className="mr-1.5 h-3.5 w-3.5" /> Contrat formateur
+                {s.contratFormateurSignedAt ? " (signé)" : ""}
+              </Button>
+            )}
+          </div>
+
+          <div>
+            <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Dossiers des candidats
+            </p>
+            {s.inscriptions.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Aucun candidat inscrit.</p>
+            ) : (
+              <ul className="space-y-1.5 text-sm">
+                {s.inscriptions.map((i) => (
+                  <li
+                    key={i.id}
+                    className="flex flex-wrap items-center justify-between gap-2 border-b py-1.5 last:border-0"
+                  >
+                    <span className="flex items-center gap-2">
+                      {i.candidat.prenom} {i.candidat.nom}
+                      {i.signedAt && (
+                        <Badge className="bg-emerald-500/10 text-emerald-700">
+                          signé
+                        </Badge>
+                      )}
+                    </span>
+                    <span className="flex flex-wrap gap-3">
+                      <a
+                        href={`/documents/${i.id}/pdf`}
+                        target="_blank"
+                        className="text-primary hover:underline"
+                      >
+                        Dossier (PDF)
+                      </a>
+                      {i.satisfactionCompletedAt && (
+                        <a
+                          href={`/documents/${i.id}/satisfaction`}
+                          target="_blank"
+                          className="text-primary hover:underline"
+                        >
+                          Satisfaction (PDF)
+                        </a>
+                      )}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Participants */}
       <Card>
         <CardHeader>
