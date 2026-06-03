@@ -582,6 +582,7 @@ model EmargementSignature {
   sentAt      DateTime?
   signedAt    DateTime?
   signatureIp String?
+  signatureDataUrl String? @db.Text
   createdAt   DateTime    @default(now())
 
   @@index([sessionId])

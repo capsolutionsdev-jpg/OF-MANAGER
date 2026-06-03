@@ -99,10 +99,14 @@ export async function prepareEmargementSignatures(
   return { ok: true, created: toCreate.length };
 }
 
-/** Signature publique d'un émargement (clic depuis le lien e-mail). */
+/** Signature publique d'un émargement (signature manuscrite dessinée). */
 export async function signEmargement(
   token: string,
+  signatureDataUrl?: string,
 ): Promise<{ ok: boolean; error?: string }> {
+  if (!signatureDataUrl || !signatureDataUrl.startsWith("data:image/"))
+    return { ok: false, error: "Merci de dessiner votre signature." };
+
   const row = await prisma.emargementSignature.findUnique({ where: { token } });
   if (!row) return { ok: false, error: "Lien invalide." };
   if (row.signedAt) return { ok: true };
@@ -115,7 +119,7 @@ export async function signEmargement(
 
   await prisma.emargementSignature.update({
     where: { token },
-    data: { signedAt: new Date(), signatureIp: ip },
+    data: { signedAt: new Date(), signatureIp: ip, signatureDataUrl },
   });
   return { ok: true };
 }

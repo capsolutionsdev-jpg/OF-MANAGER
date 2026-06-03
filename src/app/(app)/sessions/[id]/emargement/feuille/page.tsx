@@ -35,18 +35,32 @@ export default async function FeuilleEmargementSessionPage({
   const jours = joursSession(s.seances, s.dateDebut, s.dateFin);
 
   // Report des signatures électroniques recueillies
-  // clé : `${who}|${dayKey}|${demi}` → heure de signature
-  const sigMap = new Map<string, Date>();
+  // clé : `${who}|${dayKey}|${demi}` → { heure, image }
+  const sigMap = new Map<string, { at: Date; url: string | null }>();
   for (const e of s.emargementSignatures) {
     if (!e.signedAt) continue;
     const who = e.role === "FORMATEUR" ? "FORM" : (e.candidatId ?? e.email);
-    sigMap.set(`${who}|${dayKey(e.date)}|${e.demi}`, e.signedAt);
+    sigMap.set(`${who}|${dayKey(e.date)}|${e.demi}`, {
+      at: e.signedAt,
+      url: e.signatureDataUrl,
+    });
   }
   const heure = (d: Date) =>
     d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
   const cellFor = (who: string, jour: Date, demi: "MATIN" | "APRES_MIDI") => {
     const sig = sigMap.get(`${who}|${dayKey(jour)}|${demi}`);
-    return sig ? `✓ ${heure(sig)}` : "";
+    if (!sig) return null;
+    return (
+      <div className="sigcell">
+        {sig.url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={sig.url} alt="Signature" className="sigimg" />
+        ) : (
+          <span>✓</span>
+        )}
+        <span className="sigtime">{heure(sig.at)}</span>
+      </div>
+    );
   };
   const fmtJour = (d: Date) =>
     d.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" });
@@ -187,8 +201,11 @@ export default async function FeuilleEmargementSessionPage({
         table.emarge th, table.emarge td { border: 1px solid #555; padding: 4px; text-align: center; }
         table.emarge th { background: #f1f1f1; font-weight: 600; }
         table.emarge td.name-col, table.emarge th.name-col { text-align: left; min-width: 180px; white-space: nowrap; }
-        table.emarge tbody td:not(.name-col) { height: 34px; }
-        table.emarge td.sig { color: #047857; font-weight: 600; font-size: 9px; }
+        table.emarge tbody td:not(.name-col) { height: 40px; }
+        table.emarge td.sig { font-size: 9px; padding: 1px; }
+        .sigcell { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .sigimg { max-height: 34px; max-width: 100%; }
+        .sigtime { font-size: 7px; color: #777; }
         .formateur-row td { background: #fafafa; font-style: italic; }
         @media print {
           @page { size: A4 landscape; margin: 10mm; }
