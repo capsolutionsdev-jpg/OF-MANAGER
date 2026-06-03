@@ -87,7 +87,11 @@ export async function sendCompteRenduAction(
 export async function submitCompteRendu(
   token: string,
   reponses: Record<string, string>,
+  signatureDataUrl?: string,
 ): Promise<{ ok: boolean; error?: string }> {
+  if (!signatureDataUrl || !signatureDataUrl.startsWith("data:image/"))
+    return { ok: false, error: "Merci de dessiner votre signature." };
+
   const s = await prisma.session.findUnique({
     where: { crFormateurToken: token },
     select: { id: true, crFormateurCompletedAt: true },
@@ -97,7 +101,8 @@ export async function submitCompteRendu(
   await prisma.session.update({
     where: { id: s.id },
     data: {
-      crFormateurJson: reponses,
+      // La signature est stockée dans le JSON sous une clé dédiée
+      crFormateurJson: { ...reponses, __signature: signatureDataUrl },
       crFormateurCompletedAt: new Date(),
     },
   });

@@ -51,9 +51,11 @@ export default async function CompteRenduPage({
               <p className="font-medium">Merci, votre compte rendu est enregistré.</p>
               <a
                 href={`/compte-rendu/${token}/document`}
+                target="_blank"
+                rel="noopener"
                 className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/80"
               >
-                <Download className="h-4 w-4" /> Télécharger le document (.docx)
+                <Download className="h-4 w-4" /> Voir mon compte rendu (PDF)
               </a>
             </CardContent>
           </Card>

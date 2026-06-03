@@ -500,7 +500,7 @@ export function compteRenduFormateurHtml(): string {
     ${ligne("Rencontre avec la direction du centre de formation", "cr_rencontreDirection")}
     <p class="mt">Fait le {{date_jour}}.</p>
     <div class="doc-signatures">
-      <div><div class="sig-label">Signature du formateur — {{formateur_nom}}</div><div class="sig-box"></div></div>
+      <div><div class="sig-label">Signature du formateur — {{formateur_nom}}</div><div class="sig-box">{{signature_formateur}}</div></div>
     </div>`,
   );
 }
