@@ -366,6 +366,15 @@ model Session {
   statut      SessionStatut @default(PLANIFIEE)
   isArchived  Boolean       @default(false)
 
+  // Tarif journalier du formateur pour cette session (sinon celui du formateur)
+  tarifFormateurJour Decimal? @db.Decimal(10, 2)
+
+  // Contrat de sous-traitance formateur (envoi → signature → PDF dans la session)
+  contratFormateurToken        String?   @unique
+  contratFormateurSentAt       DateTime?
+  contratFormateurSignedAt     DateTime?
+  contratFormateurSignatureUrl String?   @db.Text
+
   // Compte-rendu pédagogique formateur (formulaire post-session → document)
   crFormateurToken       String?   @unique
   crFormateurSentAt      DateTime?
@@ -403,6 +412,10 @@ model Formateur {
   cvUrl            String?
   experienceAnnees Int?
   academies        Academy[]
+  // Données contrat de sous-traitance
+  adresse          String?
+  siret            String?
+  tarifJournalier  Decimal? @db.Decimal(10, 2)
 
   sessions   Session[]   @relation("SessionFormateurs")
   seances    Seance[]

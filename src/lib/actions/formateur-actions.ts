@@ -19,6 +19,10 @@ function toData(v: FormateurFormValues) {
     v.experienceAnnees && v.experienceAnnees.trim() !== ""
       ? parseInt(v.experienceAnnees, 10)
       : null;
+  const tarif =
+    v.tarifJournalier && v.tarifJournalier.trim() !== ""
+      ? Number(v.tarifJournalier.replace(",", "."))
+      : null;
   return {
     nom: v.nom.trim(),
     prenom: v.prenom.trim(),
@@ -26,6 +30,9 @@ function toData(v: FormateurFormValues) {
     telephone: clean(v.telephone),
     specialites: clean(v.specialites),
     experienceAnnees: exp !== null && !Number.isNaN(exp) ? exp : null,
+    adresse: clean(v.adresse),
+    siret: clean(v.siret),
+    tarifJournalier: tarif !== null && !Number.isNaN(tarif) ? tarif : null,
     academies: v.academies ?? [],
   };
 }

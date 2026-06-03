@@ -433,49 +433,73 @@ export const DOCUMENTS: Record<string, { label: string; html: string }> = {
   },
 };
 
-// ── Contrat de prestation Formateur (prix/jour à remplir manuellement) ──
+// ── Contrat de sous-traitance de formation (formateur) ──
 export function contratFormateurHtml(): string {
-  const sig = `
-  <div class="doc-signatures">
-    <div><div class="sig-label">Pour l'organisme — {{organisme_representant}}</div><div class="sig-box">${stamp}</div></div>
-    <div><div class="sig-label">Le formateur — {{formateur_nom}}</div><div class="sig-box"></div></div>
-  </div>`;
   return wrap(
-    "Contrat de prestation de formation",
+    "Contrat de sous-traitance de formation",
     `<p>Entre les soussignés :</p>
-    <p><strong>{{organisme}}</strong>, {{organisme_adresse}} — SIRET {{organisme_siret}},
-    représenté par {{organisme_representant}}, ci-après « l'Organisme »,</p>
-    <p>Et <strong>{{formateur_nom}}</strong>{{formateur_contact}}, ci-après « le Formateur »,</p>
+    <p><strong>1 — {{organisme}}</strong>, {{organisme_adresse}} — SIRET {{organisme_siret}},
+    organisme de formation enregistré sous le numéro de déclaration d'activité {{organisme_nda}}
+    auprès du Préfet de région Île-de-France, représenté par {{organisme_representant}},
+    ci-après « <strong>le donneur d'ordre</strong> »,</p>
+    <p>Et</p>
+    <p><strong>2 — {{formateur_nom}}</strong>{{formateur_coords}}, ci-après
+    « <strong>le sous-traitant</strong> »,</p>
+    <p>Il a été convenu ce qui suit :</p>
 
-    <h2>Article 1 — Objet</h2>
-    <p>Le Formateur s'engage à assurer l'animation de l'action de formation suivante,
-    pour le compte de l'Organisme :</p>
+    <h2>Article 1 — Nature du contrat</h2>
+    <p>Le présent contrat est conclu dans le cadre d'une prestation de formation ponctuelle
+    réalisée par le sous-traitant au bénéfice du donneur d'ordre.</p>
+
+    <h2>Article 2 — Objet du contrat</h2>
     <table class="doc-table">
       <tr><td>Formation</td><td><strong>{{formation}}</strong> ({{reference_formation}})</td></tr>
-      <tr><td>Référence session</td><td>{{session_reference}}</td></tr>
       <tr><td>Dates</td><td>du {{date_debut}} au {{date_fin}}</td></tr>
       <tr><td>Durée</td><td>{{duree}} — soit {{nb_jours}} jour(s)</td></tr>
       <tr><td>Lieu / modalité</td><td>{{lieu}} — {{modalite}}</td></tr>
     </table>
 
-    <h2>Article 2 — Rémunération</h2>
-    <p>La prestation est rémunérée sur la base d'un tarif journalier (à compléter) :</p>
-    <table class="doc-table">
-      <tr><td>Prix par jour (€ HT)</td><td style="min-width:140px">&nbsp;</td></tr>
-      <tr><td>Nombre de jours</td><td>{{nb_jours}}</td></tr>
-      <tr><td>Total estimé (€ HT)</td><td>&nbsp;</td></tr>
-    </table>
-    <p class="mt">Le règlement interviendra sur présentation d'une facture, après
-    réalisation de la prestation et transmission des feuilles d'émargement signées.</p>
+    <h2>Article 3 — Durée du contrat</h2>
+    <p>Le présent contrat est strictement limité à la prestation de formation visée à
+    l'article 2. Il cesse de plein droit à son terme.</p>
 
-    <h2>Article 3 — Engagements du formateur</h2>
-    <p>Le Formateur s'engage à respecter le programme et les modalités pédagogiques
-    de l'Organisme, à émarger les feuilles de présence, à garantir la confidentialité
-    des informations et à respecter le règlement intérieur ainsi que les exigences du
-    référentiel national qualité (Qualiopi).</p>
+    <h2>Article 4 — Obligations du sous-traitant</h2>
+    <p>Le sous-traitant s'engage à : communiquer au donneur d'ordre une copie de son
+    immatriculation (extrait K-bis / SIRET) avant le début de la formation ; animer la
+    formation dans le respect des objectifs fixés par le donneur d'ordre ; animer
+    personnellement la formation, sauf situation exceptionnelle et après accord du donneur
+    d'ordre ; communiquer ses besoins en matériel (projecteur, tableau, supports…) au moins
+    7 jours avant le début ; assurer l'évaluation des stagiaires à l'issue de l'action de
+    formation (article L.6353-1 du Code du travail) ; participer, en tant que de besoin, aux
+    réunions de préparation, jurys d'examen et remises de diplôme.</p>
+
+    <h2>Article 5 — Obligations du donneur d'ordre</h2>
+    <p>Le donneur d'ordre s'engage à : confier au sous-traitant la formation prévue à
+    l'article 2 ; prendre en charge la gestion administrative et logistique de la formation ;
+    transmettre une copie des feuilles de présence signées par les stagiaires ; transmettre
+    une copie des questionnaires de satisfaction remplis ; prévenir le sous-traitant au moins
+    7 jours à l'avance en cas d'annulation ou de report.</p>
+
+    <h2>Article 6 — Modalités financières</h2>
+    <table class="doc-table">
+      <tr><td>Tarif journalier (€ HT)</td><td><strong>{{prix_jour}}</strong></td></tr>
+      <tr><td>Nombre de jours</td><td>{{nb_jours}}</td></tr>
+      <tr><td>Total (€ HT)</td><td><strong>{{total}}</strong></td></tr>
+    </table>
+    <p>Le paiement sera effectué à réception de la facture signée, datée et tamponnée par le
+    sous-traitant.</p>
+
+    <h2>Article 7 — Dispositions diverses</h2>
+    <p>Le présent contrat ne crée entre les parties aucun lien de subordination, le
+    sous-traitant demeurant libre et responsable du contenu de la formation. Le sous-traitant
+    dispose d'une propriété intellectuelle et/ou artistique sur le contenu de sa formation ;
+    le donneur d'ordre s'engage à ne pas le reproduire ni le diffuser sans son accord.</p>
 
     <p class="mt">Fait à {{organisme_ville}}, le {{date_jour}}, en deux exemplaires.</p>
-    ${sig}`,
+    <div class="doc-signatures">
+      <div><div class="sig-label">Le donneur d'ordre — {{organisme_representant}}</div><div class="sig-box">${stamp}</div></div>
+      <div><div class="sig-label">Le sous-traitant — {{formateur_nom}}</div><div class="sig-box">{{signature_formateur}}</div></div>
+    </div>`,
   );
 }
 

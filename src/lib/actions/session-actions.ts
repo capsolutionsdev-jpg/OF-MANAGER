@@ -18,6 +18,10 @@ const clean = (s?: string) => (s && s.trim() !== "" ? s.trim() : null);
 function toData(v: SessionFormValues) {
   const places =
     v.nbPlaces && v.nbPlaces.trim() !== "" ? parseInt(v.nbPlaces, 10) : 10;
+  const tarif =
+    v.tarifFormateurJour && v.tarifFormateurJour.trim() !== ""
+      ? Number(v.tarifFormateurJour.replace(",", "."))
+      : null;
   return {
     formationId: v.formationId,
     reference: clean(v.reference),
@@ -28,6 +32,7 @@ function toData(v: SessionFormValues) {
     modalite: v.modalite,
     nbPlaces: Number.isNaN(places) ? 10 : places,
     statut: v.statut,
+    tarifFormateurJour: tarif !== null && !Number.isNaN(tarif) ? tarif : null,
   };
 }
 

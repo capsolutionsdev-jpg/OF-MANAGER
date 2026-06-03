@@ -48,6 +48,10 @@ export default async function ModifierFormateurPage({
             specialites: f.specialites ?? "",
             experienceAnnees:
               f.experienceAnnees != null ? String(f.experienceAnnees) : "",
+            adresse: f.adresse ?? "",
+            siret: f.siret ?? "",
+            tarifJournalier:
+              f.tarifJournalier != null ? String(f.tarifJournalier) : "",
             academies: f.academies,
             formationIds: f.formations.map((x) => x.id),
           }}

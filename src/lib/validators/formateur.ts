@@ -10,6 +10,9 @@ export const formateurFormSchema = z.object({
   telephone: optionalText,
   specialites: optionalText,
   experienceAnnees: optionalText,
+  adresse: optionalText,
+  siret: optionalText,
+  tarifJournalier: optionalText,
   academies: z.array(z.nativeEnum(Academy)).optional(),
   formationIds: z.array(z.string()).optional(),
 });

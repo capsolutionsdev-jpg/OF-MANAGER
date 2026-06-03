@@ -71,6 +71,7 @@ export function SessionForm({
       modalite: "MIXTE",
       nbPlaces: "10",
       statut: "PLANIFIEE",
+      tarifFormateurJour: "",
       formateurIds: [],
       ...defaultValues,
     },
@@ -162,6 +163,18 @@ export function SessionForm({
           <div className="grid gap-2">
             <Label htmlFor="reference">Référence (optionnel)</Label>
             <Input id="reference" placeholder="SES-SEO-2026-01" {...register("reference")} />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="tarifFormateurJour">
+              Tarif formateur / jour (€ HT)
+            </Label>
+            <Input
+              id="tarifFormateurJour"
+              type="number"
+              step="0.01"
+              placeholder="ex. 250 (sinon tarif du formateur)"
+              {...register("tarifFormateurJour")}
+            />
           </div>
           <div className="grid gap-2">
             <Label htmlFor="statut">Statut</Label>

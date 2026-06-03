@@ -55,6 +55,8 @@ export default async function ModifierSessionPage({
             modalite: s.modalite,
             nbPlaces: String(s.nbPlaces),
             statut: s.statut,
+            tarifFormateurJour:
+              s.tarifFormateurJour != null ? String(s.tarifFormateurJour) : "",
           }}
         />
       </div>

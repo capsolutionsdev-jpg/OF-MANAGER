@@ -27,6 +27,7 @@ import { EnrollForm } from "@/components/inscriptions/enroll-form";
 import { DocumentsMenu } from "@/components/documents/documents-menu";
 import { SendConvocationsButton } from "@/components/sessions/send-convocations-button";
 import { SendCompteRenduButton } from "@/components/sessions/send-compte-rendu-button";
+import { SendContratButton } from "@/components/sessions/send-contrat-button";
 
 function Field({ label, value }: { label: string; value?: string | null }) {
   return (
@@ -216,6 +217,46 @@ export default async function SessionDetailPage({
                 <SendCompteRenduButton
                   sessionId={s.id}
                   sent={!!s.crFormateurSentAt}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Contrat de sous-traitance formateur */}
+          {s.formateurs.length > 0 && (
+            <div className="mt-4 flex flex-wrap items-center gap-3 border-t pt-4">
+              <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Contrat de sous-traitance :
+              </span>
+              {s.contratFormateurSignedAt ? (
+                <>
+                  <Badge className="bg-emerald-500/10 text-emerald-700">
+                    ✓ Signé
+                  </Badge>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    render={
+                      <a
+                        href={`/contrat-formateur/${s.contratFormateurToken}/document`}
+                        target="_blank"
+                      />
+                    }
+                  >
+                    <FileText className="mr-1.5 h-3.5 w-3.5" /> Contrat signé (PDF)
+                  </Button>
+                </>
+              ) : s.contratFormateurSentAt ? (
+                <Badge className="bg-amber-500/10 text-amber-700">
+                  Envoyé — en attente de signature
+                </Badge>
+              ) : (
+                <span className="text-xs text-muted-foreground">Non envoyé</span>
+              )}
+              <div className="ml-auto">
+                <SendContratButton
+                  sessionId={s.id}
+                  sent={!!s.contratFormateurSentAt}
                 />
               </div>
             </div>

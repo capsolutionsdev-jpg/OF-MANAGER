@@ -6,7 +6,9 @@ import {
   DOCUMENTS,
   renderTemplate,
   compteRenduFormateurHtml,
+  contratFormateurHtml,
 } from "@/lib/documents/templates";
+import { MODALITE_LABELS } from "@/lib/validators/formation";
 import { buildVariables } from "@/lib/documents/resolve";
 import { orgConfig } from "@/lib/org-config";
 import {
@@ -168,6 +170,82 @@ export async function buildSingleDocPdf(
     only: [type],
     includeCertificat: false,
   });
+}
+
+/** Génère le contrat de sous-traitance du formateur en PDF (tarif/jour, cachet, signature). */
+export async function buildContratFormateurPdf(
+  sessionId: string,
+): Promise<PdfResult> {
+  const s = await prisma.session.findUnique({
+    where: { id: sessionId },
+    include: { formation: true, formateurs: true },
+  });
+  if (!s) return null;
+  const f = s.formateurs[0];
+  if (!f) return null;
+
+  const fmtD = (d: Date) => d.toLocaleDateString("fr-FR");
+  const msPerDay = 1000 * 60 * 60 * 24;
+  const nbJours =
+    Math.round((s.dateFin.getTime() - s.dateDebut.getTime()) / msPerDay) + 1;
+
+  const tarif =
+    s.tarifFormateurJour != null
+      ? Number(s.tarifFormateurJour)
+      : f.tarifJournalier != null
+        ? Number(f.tarifJournalier)
+        : null;
+  const total = tarif != null ? tarif * nbJours : null;
+  const euro = (n: number) => `${n.toLocaleString("fr-FR")} € HT`;
+
+  const coords = [f.adresse, f.siret ? `SIRET ${f.siret}` : null]
+    .filter(Boolean)
+    .join(" — ");
+
+  const vars: Record<string, string> = {
+    organisme: orgConfig.name,
+    organisme_representant: orgConfig.representant,
+    organisme_siret: orgConfig.siret,
+    organisme_nda: orgConfig.nda,
+    organisme_adresse: orgConfig.adresse,
+    organisme_email: orgConfig.email,
+    organisme_telephone: orgConfig.telephone,
+    organisme_ville: orgConfig.ville,
+    qualiopi: orgConfig.qualiopi,
+    formation: s.formation.titre,
+    reference_formation: s.formation.reference,
+    date_debut: fmtD(s.dateDebut),
+    date_fin: fmtD(s.dateFin),
+    duree: s.formation.duree ?? (s.formation.dureeHeures ? `${s.formation.dureeHeures}h` : "—"),
+    nb_jours: String(nbJours),
+    lieu: s.lieu ?? "—",
+    modalite: MODALITE_LABELS[s.modalite],
+    date_jour: new Date().toLocaleDateString("fr-FR"),
+    formateur_nom: `${f.prenom} ${f.nom}`,
+    formateur_coords: coords ? `, ${coords}` : "",
+    prix_jour: tarif != null ? euro(tarif) : "____________",
+    total: total != null ? euro(total) : "____________",
+    signature_formateur: s.contratFormateurSignatureUrl
+      ? `<img src="${s.contratFormateurSignatureUrl}" alt="Signature du formateur" style="max-height:70px" />`
+      : "",
+  };
+
+  const pub = path.join(process.cwd(), "public");
+  const [logoBuf, stampBuf] = await Promise.all([
+    fs.readFile(path.join(pub, "cap-competences-logo.png")),
+    fs.readFile(path.join(pub, "signature-cap-competences.png")),
+  ]);
+  const logo64 = `data:image/png;base64,${logoBuf.toString("base64")}`;
+  const stamp64 = `data:image/png;base64,${stampBuf.toString("base64")}`;
+  const inner = renderTemplate(contratFormateurHtml(), vars)
+    .split("/cap-competences-logo.png").join(logo64)
+    .split("/signature-cap-competences.png").join(stamp64);
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8" />${DOC_STYLE}</head><body>${inner}</body></html>`;
+  const data = await htmlToPdf(html);
+  return {
+    data,
+    filename: `Contrat-formateur-${safeName(`${f.prenom}-${f.nom}`)}.pdf`,
+  };
 }
 
 /** Génère le compte-rendu pédagogique du formateur en PDF (avec sa signature). */

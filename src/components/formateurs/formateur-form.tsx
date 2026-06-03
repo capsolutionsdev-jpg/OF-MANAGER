@@ -61,6 +61,9 @@ export function FormateurForm({
       telephone: "",
       specialites: "",
       experienceAnnees: "",
+      adresse: "",
+      siret: "",
+      tarifJournalier: "",
       academies: [],
       formationIds: [],
       ...defaultValues,
@@ -121,6 +124,38 @@ export function FormateurForm({
               id="specialites"
               placeholder="Marketing digital, SEO, sécurité…"
               {...register("specialites")}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">
+            Contrat de sous-traitance (facturation)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid gap-2 sm:col-span-2">
+            <Label htmlFor="adresse">Adresse (sous-traitant)</Label>
+            <Input
+              id="adresse"
+              placeholder="N°, rue, code postal, ville"
+              {...register("adresse")}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="siret">SIRET</Label>
+            <Input id="siret" placeholder="123 456 789 00012" {...register("siret")} />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="tarifJournalier">Tarif journalier (€ HT)</Label>
+            <Input
+              id="tarifJournalier"
+              type="number"
+              step="0.01"
+              placeholder="250"
+              {...register("tarifJournalier")}
             />
           </div>
         </CardContent>
