@@ -19,20 +19,29 @@ export async function GET(
 
   const preview = new URL(req.url).searchParams.get("preview") === "1";
 
-  // Aperçu avant signature : uniquement les documents à signer, sans certificat.
-  const pdf = preview
-    ? await buildInscriptionPdf(insc.id, {
-        only: SIGNED_DOC_TYPES,
-        includeCertificat: false,
-      })
-    : await buildInscriptionPdf(insc.id, { only: SIGNED_DOC_TYPES });
+  try {
+    // Aperçu avant signature : uniquement les documents à signer, sans certificat.
+    const pdf = preview
+      ? await buildInscriptionPdf(insc.id, {
+          only: SIGNED_DOC_TYPES,
+          includeCertificat: false,
+        })
+      : await buildInscriptionPdf(insc.id, { only: SIGNED_DOC_TYPES });
 
-  if (!pdf) return new Response("Documents introuvables", { status: 404 });
+    if (!pdf) return new Response("Documents introuvables", { status: 404 });
 
-  return new Response(new Uint8Array(pdf.data), {
-    headers: {
-      "Content-Type": "application/pdf",
-      "Content-Disposition": `${preview ? "inline" : "attachment"}; filename="${pdf.filename}"`,
-    },
-  });
+    return new Response(new Uint8Array(pdf.data), {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `${preview ? "inline" : "attachment"}; filename="${pdf.filename}"`,
+      },
+    });
+  } catch (e) {
+    // Diagnostic : renvoie l'erreur réelle (génération PDF / Chromium serverless).
+    const msg = e instanceof Error ? `${e.message}\n\n${e.stack ?? ""}` : String(e);
+    return new Response(`Erreur génération PDF:\n${msg}`, {
+      status: 500,
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    });
+  }
 }

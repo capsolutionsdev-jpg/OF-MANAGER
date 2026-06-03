@@ -8,9 +8,14 @@ async function launchBrowser() {
   if (onServerless) {
     const chromium = (await import("@sparticuz/chromium")).default;
     const puppeteer = await import("puppeteer-core");
+    // Désactive le mode graphique (WebGL/animations) : inutile pour le PDF,
+    // réduit la mémoire et les dépendances système manquantes en serverless.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (chromium as any).setGraphicsMode = false;
+    const executablePath = await chromium.executablePath();
     return puppeteer.launch({
-      args: chromium.args,
-      executablePath: await chromium.executablePath(),
+      args: [...chromium.args, "--no-sandbox", "--disable-setuid-sandbox"],
+      executablePath,
       headless: true,
     });
   }
