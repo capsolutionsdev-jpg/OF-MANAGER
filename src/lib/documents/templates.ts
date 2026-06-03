@@ -291,7 +291,7 @@ export const DOCUMENTS: Record<string, { label: string; html: string }> = {
       <p><strong>2. OBJETS ET PRODUITS DANGEREUX.</strong> Il est strictement interdit d'introduire dans l'enceinte de l'établissement tout produit et objet pouvant nuire à la sécurité des membres de la communauté (objets tranchants, produits inflammables, bombe d'autodéfense, etc.).</p>
       <p><strong>3. MISE EN ŒUVRE DU RÈGLEMENT.</strong> L'affichage dans l'établissement vaut acceptation pleine et entière du présent règlement adopté par la direction de l'organisme de formation. Chaque stagiaire fréquentant le centre de formation en prend connaissance et veille à son application. Il importe que chacun sache combien son attitude et son comportement influent sur l'image de l'établissement et sur son environnement. Des sanctions appropriées sont prises à l'encontre de ceux qui ne se conforment pas aux règles : avertissement oral ; observations ou avertissements écrits ; exclusion de la formation.</p>
       <p class="mt">Fait à {{organisme_ville}}, le {{date_jour}}.</p>
-      <div class="doc-signatures"><div><div class="sig-label">Le stagiaire (lu et approuvé)</div><div class="sig-box"></div></div><div><div class="sig-label">Le dirigeant de l'organisme — {{organisme_representant}}</div><div class="sig-box">${stamp}</div></div></div>`,
+      <div class="doc-signatures"><div><div class="sig-label">Le stagiaire (lu et approuvé)</div><div class="sig-box">{{signature_stagiaire}}</div></div><div><div class="sig-label">Le dirigeant de l'organisme — {{organisme_representant}}</div><div class="sig-box">${stamp}</div></div></div>`,
     ),
   },
 
