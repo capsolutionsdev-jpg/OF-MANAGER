@@ -1,4 +1,4 @@
-import { Bell, Plus } from "lucide-react";
+import { Bell, Plus, Play, Clock } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +23,7 @@ import {
   createWorkflowRule,
   toggleWorkflowRule,
 } from "@/lib/actions/email-actions";
+import { runAutomationsAction } from "@/lib/actions/automation-actions";
 
 const TRIGGER_LABELS: Record<string, string> = {
   AVANT_SESSION: "Avant la session",
@@ -57,13 +58,53 @@ export default async function AutomatisationsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Automatisations e-mail</h1>
-        <p className="text-sm text-muted-foreground">
-          Règles d&apos;envoi automatique et journal des e-mails.
-          {demo && " Mode démo — renseignez BREVO_API_KEY pour l'envoi réel."}
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Automatisations e-mail</h1>
+          <p className="text-sm text-muted-foreground">
+            Règles d&apos;envoi automatique et journal des e-mails.
+            {demo && " Mode démo — renseignez BREVO_API_KEY pour l'envoi réel."}
+          </p>
+        </div>
+        <form action={runAutomationsAction}>
+          <Button type="submit">
+            <Play className="mr-2 h-4 w-4" /> Exécuter les automatismes
+          </Button>
+        </form>
       </div>
+
+      {/* Parcours automatisé (cron quotidien) */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Clock className="h-4 w-4" /> Parcours candidat automatisé
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="mb-3 text-sm text-muted-foreground">
+            Une tâche planifiée s&apos;exécute chaque jour et envoie automatiquement,
+            au bon moment, les e-mails du parcours Qualiopi :
+          </p>
+          <ul className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
+            <li className="rounded-md border bg-muted/30 px-3 py-2">
+              📨 <strong>Convocation</strong> — 7 jours avant le début (docs signés)
+            </li>
+            <li className="rounded-md border bg-muted/30 px-3 py-2">
+              ✅ <strong>Attestation d&apos;entrée</strong> — le 1<sup>er</sup> jour
+            </li>
+            <li className="rounded-md border bg-muted/30 px-3 py-2">
+              ⭐ <strong>Enquête de satisfaction</strong> — à la fin (lien)
+            </li>
+            <li className="rounded-md border bg-muted/30 px-3 py-2">
+              📄 <strong>Documents de fin</strong> — à la fin (attestation, certificat)
+            </li>
+          </ul>
+          <p className="mt-3 text-xs text-muted-foreground">
+            Vous pouvez aussi déclencher l&apos;ensemble immédiatement avec le bouton
+            « Exécuter les automatismes » (utile pour tester).
+          </p>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

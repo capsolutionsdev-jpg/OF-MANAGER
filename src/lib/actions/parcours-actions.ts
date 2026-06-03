@@ -145,6 +145,32 @@ export async function submitParcoursForm(
   return { ok: true };
 }
 
+/** Soumission publique de l'enquête de satisfaction (via le token dédié). */
+export async function submitSatisfaction(
+  token: string,
+  reponses: {
+    notes: Record<string, number>;
+    recommander?: number;
+    commentaire?: string;
+  },
+): Promise<{ ok: boolean; error?: string }> {
+  const insc = await prisma.inscription.findUnique({
+    where: { satisfactionToken: token },
+    select: { id: true, satisfactionCompletedAt: true },
+  });
+  if (!insc) return { ok: false, error: "Lien invalide ou expiré." };
+  if (insc.satisfactionCompletedAt) return { ok: true }; // déjà répondu
+
+  await prisma.inscription.update({
+    where: { id: insc.id },
+    data: {
+      satisfactionJson: reponses,
+      satisfactionCompletedAt: new Date(),
+    },
+  });
+  return { ok: true };
+}
+
 /**
  * Signature interne : le candidat signe (clic) ses documents via le lien.
  * Enregistre la trace (horodatage + IP), puis envoie la copie des documents.

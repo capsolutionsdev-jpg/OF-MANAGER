@@ -16,7 +16,9 @@ import {
 } from "@/lib/validators/candidat";
 import { INSCRIPTION_STATUT_LABELS } from "@/lib/validators/inscription";
 import { anonymiseCandidat } from "@/lib/actions/rgpd-actions";
+import { resendParcoursAction } from "@/lib/actions/parcours-actions";
 import { DossierChecklist } from "@/components/inscriptions/dossier-checklist";
+import { Send } from "lucide-react";
 
 function Field({ label, value }: { label: string; value?: string | null }) {
   return (
@@ -176,6 +178,41 @@ export default async function CandidatDetailPage({
                       </Badge>
                     </span>
                   </div>
+                  {/* Avancement du parcours automatisé */}
+                  <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t pt-3">
+                    <span className="mr-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Parcours :
+                    </span>
+                    {(
+                      [
+                        ["Formulaire", i.formCompletedAt],
+                        ["Signé", i.signedAt],
+                        ["Convocation", i.convocationSentAt],
+                        ["Attest. entrée", i.attestationEntreeSentAt],
+                        ["Satisfaction", i.satisfactionCompletedAt ?? i.satisfactionSentAt],
+                        ["Docs fin", i.docsFinSentAt],
+                      ] as [string, Date | null][]
+                    ).map(([label, date]) => (
+                      <Badge
+                        key={label}
+                        className={
+                          date
+                            ? "bg-emerald-500/10 text-emerald-700"
+                            : "bg-muted text-muted-foreground"
+                        }
+                      >
+                        {date ? "✓ " : "○ "}
+                        {label}
+                      </Badge>
+                    ))}
+                    <form action={resendParcoursAction} className="ml-auto">
+                      <input type="hidden" name="inscriptionId" value={i.id} />
+                      <Button type="submit" size="sm" variant="outline">
+                        <Send className="mr-1.5 h-3.5 w-3.5" /> Relancer le lien
+                      </Button>
+                    </form>
+                  </div>
+
                   <div className="mt-3 border-t pt-3">
                     <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                       Dossier administratif
