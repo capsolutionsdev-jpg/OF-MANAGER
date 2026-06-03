@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Pencil, Trash2, Users, ClipboardCheck, Mail } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2, Users, ClipboardCheck, Mail, FileText, UserCog } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -48,6 +48,7 @@ export default async function SessionDetailPage({
     where: { id },
     include: {
       formation: true,
+      formateurs: true,
       inscriptions: {
         include: { candidat: true },
         orderBy: { createdAt: "desc" },
@@ -94,6 +95,19 @@ export default async function SessionDetailPage({
             >
               <ClipboardCheck className="mr-2 h-4 w-4" /> Émargement
             </Button>
+            {s.formateurs.length > 0 && (
+              <Button
+                variant="outline"
+                render={
+                  <a
+                    href={`/documents/contrat-formateur/${s.id}`}
+                    download
+                  />
+                }
+              >
+                <FileText className="mr-2 h-4 w-4" /> Contrat formateur
+              </Button>
+            )}
             <Button
               variant="outline"
               render={<Link href={`/sessions/${s.id}/modifier`} />}
@@ -126,6 +140,50 @@ export default async function SessionDetailPage({
             />
             <Field label="Statut" value={SESSION_STATUT_LABELS[s.statut]} />
           </dl>
+        </CardContent>
+      </Card>
+
+      {/* Formateur(s) */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <UserCog className="h-4 w-4" /> Formateur(s) ({s.formateurs.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {s.formateurs.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Aucun formateur affecté.{" "}
+              <Link
+                href={`/sessions/${s.id}/modifier`}
+                className="text-primary hover:underline"
+              >
+                Affecter un formateur
+              </Link>{" "}
+              pour pouvoir générer son contrat.
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-3">
+              {s.formateurs.map((f) => (
+                <div
+                  key={f.id}
+                  className="flex items-center gap-2 rounded-lg border bg-muted/30 px-3 py-2 text-sm"
+                >
+                  <Link
+                    href={`/formateurs/${f.id}`}
+                    className="font-medium hover:underline"
+                  >
+                    {f.prenom} {f.nom}
+                  </Link>
+                  {f.specialites && (
+                    <span className="text-xs text-muted-foreground">
+                      · {f.specialites}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 

@@ -18,6 +18,10 @@ export const formationFormSchema = z.object({
   publicVise: optionalText,
   methodesPedagogiques: optionalText,
   modalitesEvaluation: optionalText,
+  conditionsAcces: optionalText,
+  delaiAcces: optionalText,
+  // Pièces du dossier administratif : saisies en texte (1 par ligne), converties en tableau côté serveur
+  piecesAttendues: optionalText,
 });
 
 export type FormationFormValues = z.infer<typeof formationFormSchema>;

@@ -93,6 +93,20 @@ export default async function FormationDetailPage({
             <Block label="Public visé" value={f.publicVise} />
             <Block label="Méthodes pédagogiques" value={f.methodesPedagogiques} />
             <Block label="Modalités d'évaluation" value={f.modalitesEvaluation} />
+            <Block label="Conditions d'accès" value={f.conditionsAcces} />
+            <Block label="Délai d'accès" value={f.delaiAcces} />
+            {f.piecesAttendues.length > 0 && (
+              <div>
+                <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Dossier administratif — pièces attendues
+                </h3>
+                <ul className="mt-1 list-inside list-disc space-y-0.5 text-sm">
+                  {f.piecesAttendues.map((p, i) => (
+                    <li key={i}>{p}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
             {!f.objectifs &&
               !f.programme &&
               !f.prerequis &&

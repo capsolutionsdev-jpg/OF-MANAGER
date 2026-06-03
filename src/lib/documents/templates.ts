@@ -433,6 +433,52 @@ export const DOCUMENTS: Record<string, { label: string; html: string }> = {
   },
 };
 
+// ── Contrat de prestation Formateur (prix/jour à remplir manuellement) ──
+export function contratFormateurHtml(): string {
+  const sig = `
+  <div class="doc-signatures">
+    <div><div class="sig-label">Pour l'organisme — {{organisme_representant}}</div><div class="sig-box">${stamp}</div></div>
+    <div><div class="sig-label">Le formateur — {{formateur_nom}}</div><div class="sig-box"></div></div>
+  </div>`;
+  return wrap(
+    "Contrat de prestation de formation",
+    `<p>Entre les soussignés :</p>
+    <p><strong>{{organisme}}</strong>, {{organisme_adresse}} — SIRET {{organisme_siret}},
+    représenté par {{organisme_representant}}, ci-après « l'Organisme »,</p>
+    <p>Et <strong>{{formateur_nom}}</strong>{{formateur_contact}}, ci-après « le Formateur »,</p>
+
+    <h2>Article 1 — Objet</h2>
+    <p>Le Formateur s'engage à assurer l'animation de l'action de formation suivante,
+    pour le compte de l'Organisme :</p>
+    <table class="doc-table">
+      <tr><td>Formation</td><td><strong>{{formation}}</strong> ({{reference_formation}})</td></tr>
+      <tr><td>Référence session</td><td>{{session_reference}}</td></tr>
+      <tr><td>Dates</td><td>du {{date_debut}} au {{date_fin}}</td></tr>
+      <tr><td>Durée</td><td>{{duree}} — soit {{nb_jours}} jour(s)</td></tr>
+      <tr><td>Lieu / modalité</td><td>{{lieu}} — {{modalite}}</td></tr>
+    </table>
+
+    <h2>Article 2 — Rémunération</h2>
+    <p>La prestation est rémunérée sur la base d'un tarif journalier (à compléter) :</p>
+    <table class="doc-table">
+      <tr><td>Prix par jour (€ HT)</td><td style="min-width:140px">&nbsp;</td></tr>
+      <tr><td>Nombre de jours</td><td>{{nb_jours}}</td></tr>
+      <tr><td>Total estimé (€ HT)</td><td>&nbsp;</td></tr>
+    </table>
+    <p class="mt">Le règlement interviendra sur présentation d'une facture, après
+    réalisation de la prestation et transmission des feuilles d'émargement signées.</p>
+
+    <h2>Article 3 — Engagements du formateur</h2>
+    <p>Le Formateur s'engage à respecter le programme et les modalités pédagogiques
+    de l'Organisme, à émarger les feuilles de présence, à garantir la confidentialité
+    des informations et à respecter le règlement intérieur ainsi que les exigences du
+    référentiel national qualité (Qualiopi).</p>
+
+    <p class="mt">Fait à {{organisme_ville}}, le {{date_jour}}, en deux exemplaires.</p>
+    ${sig}`,
+  );
+}
+
 export type DocType = keyof typeof DOCUMENTS;
 
 export function isDocType(t: string): boolean {

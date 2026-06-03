@@ -41,7 +41,19 @@ function toData(v: FormationFormValues) {
     publicVise: clean(v.publicVise),
     methodesPedagogiques: clean(v.methodesPedagogiques),
     modalitesEvaluation: clean(v.modalitesEvaluation),
+    conditionsAcces: clean(v.conditionsAcces),
+    delaiAcces: clean(v.delaiAcces),
+    piecesAttendues: toLines(v.piecesAttendues),
   };
+}
+
+// Convertit un texte multi-lignes en tableau (1 pièce par ligne, vides ignorées)
+function toLines(s?: string): string[] {
+  if (!s) return [];
+  return s
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter((l) => l !== "");
 }
 
 export async function createFormation(
@@ -147,6 +159,9 @@ export async function duplicateFormationAction(formData: FormData) {
       publicVise: src.publicVise,
       methodesPedagogiques: src.methodesPedagogiques,
       modalitesEvaluation: src.modalitesEvaluation,
+      conditionsAcces: src.conditionsAcces,
+      delaiAcces: src.delaiAcces,
+      piecesAttendues: src.piecesAttendues,
       version: src.version + 1,
       parentId: src.id,
     },

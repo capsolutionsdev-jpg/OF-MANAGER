@@ -30,6 +30,7 @@ function toData(v: CandidatFormValues) {
     employeur: clean(v.employeur),
     posteOccupe: clean(v.posteOccupe),
     financementType: v.financementType ? v.financementType : null,
+    formationSouhaiteeId: clean(v.formationSouhaiteeId),
     statut: v.statut,
   };
 }

@@ -16,6 +16,7 @@ import {
 } from "@/lib/validators/candidat";
 import { INSCRIPTION_STATUT_LABELS } from "@/lib/validators/inscription";
 import { anonymiseCandidat } from "@/lib/actions/rgpd-actions";
+import { DossierChecklist } from "@/components/inscriptions/dossier-checklist";
 
 function Field({ label, value }: { label: string; value?: string | null }) {
   return (
@@ -153,26 +154,38 @@ export default async function CandidatDetailPage({
               Ce candidat n&apos;est inscrit à aucune session.
             </p>
           ) : (
-            <ul className="space-y-2 text-sm">
+            <ul className="space-y-4">
               {candidat.inscriptions.map((i) => (
                 <li
                   key={i.id}
-                  className="flex items-center justify-between border-b pb-2 last:border-0"
+                  className="rounded-lg border bg-muted/20 p-3"
                 >
-                  <Link
-                    href={`/sessions/${i.sessionId}`}
-                    className="font-medium hover:underline"
-                  >
-                    {i.session.formation.titre}
-                  </Link>
-                  <span className="flex items-center gap-3 text-muted-foreground">
-                    <span>
-                      {i.session.dateDebut.toLocaleDateString("fr-FR")}
+                  <div className="flex items-center justify-between">
+                    <Link
+                      href={`/sessions/${i.sessionId}`}
+                      className="font-medium hover:underline"
+                    >
+                      {i.session.formation.titre}
+                    </Link>
+                    <span className="flex items-center gap-3 text-sm text-muted-foreground">
+                      <span>
+                        {i.session.dateDebut.toLocaleDateString("fr-FR")}
+                      </span>
+                      <Badge variant="secondary">
+                        {INSCRIPTION_STATUT_LABELS[i.statut]}
+                      </Badge>
                     </span>
-                    <Badge variant="secondary">
-                      {INSCRIPTION_STATUT_LABELS[i.statut]}
-                    </Badge>
-                  </span>
+                  </div>
+                  <div className="mt-3 border-t pt-3">
+                    <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Dossier administratif
+                    </p>
+                    <DossierChecklist
+                      inscriptionId={i.id}
+                      piecesAttendues={i.session.formation.piecesAttendues}
+                      piecesRecues={i.piecesRecues}
+                    />
+                  </div>
                 </li>
               ))}
             </ul>

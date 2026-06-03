@@ -80,6 +80,34 @@ export async function createInscription(
   }
 }
 
+/** Coche/décoche une pièce du dossier administratif d'une inscription. */
+export async function togglePieceRecue(
+  inscriptionId: string,
+  piece: string,
+  recue: boolean,
+): Promise<{ ok: boolean }> {
+  const session = await auth();
+  if (!session?.user) return { ok: false };
+
+  const insc = await prisma.inscription.findUnique({
+    where: { id: inscriptionId },
+    select: { piecesRecues: true, candidatId: true },
+  });
+  if (!insc) return { ok: false };
+
+  const set = new Set(insc.piecesRecues);
+  if (recue) set.add(piece);
+  else set.delete(piece);
+
+  await prisma.inscription.update({
+    where: { id: inscriptionId },
+    data: { piecesRecues: [...set] },
+  });
+
+  revalidatePath(`/candidats/${insc.candidatId}`);
+  return { ok: true };
+}
+
 export async function deleteInscriptionAction(formData: FormData) {
   const session = await auth();
   if (!session?.user) return;

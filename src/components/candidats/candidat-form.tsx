@@ -35,9 +35,11 @@ function ErrorText({ msg }: { msg?: string }) {
 export function CandidatForm({
   candidatId,
   defaultValues,
+  formations = [],
 }: {
   candidatId?: string;
   defaultValues?: Partial<CandidatFormValues>;
+  formations?: { id: string; titre: string }[];
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -62,6 +64,7 @@ export function CandidatForm({
       employeur: "",
       posteOccupe: "",
       financementType: "",
+      formationSouhaiteeId: "",
       statut: "NOUVEAU",
       ...defaultValues,
     },
@@ -166,6 +169,21 @@ export function CandidatForm({
           <CardTitle className="text-base">Financement & suivi</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid gap-2 sm:col-span-2">
+            <Label htmlFor="formationSouhaiteeId">Formation souhaitée</Label>
+            <select
+              id="formationSouhaiteeId"
+              className={selectClass}
+              {...register("formationSouhaiteeId")}
+            >
+              <option value="">— Non précisée —</option>
+              {formations.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {f.titre}
+                </option>
+              ))}
+            </select>
+          </div>
           <div className="grid gap-2">
             <Label htmlFor="financementType">Financement envisagé</Label>
             <select

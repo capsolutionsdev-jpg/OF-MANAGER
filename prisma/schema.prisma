@@ -262,6 +262,10 @@ model Candidat {
   entrepriseId    String?
   entreprise      Entreprise? @relation(fields: [entrepriseId], references: [id])
 
+  // Formation souhaitée (au stade prospect) — permet de classer les prospects par formation
+  formationSouhaiteeId String?
+  formationSouhaitee   Formation? @relation("FormationProspects", fields: [formationSouhaiteeId], references: [id])
+
   statut CandidatStatut @default(NOUVEAU)
 
   // Relations
@@ -316,6 +320,11 @@ model Formation {
   modalitesEvaluation String?  @db.Text
   certification       String? // ex. RS6452
 
+  // Accès & dossier administratif (V2)
+  conditionsAcces String?  @db.Text // conditions d'accès / modalités d'inscription
+  delaiAcces      String? // ex. "Inscription jusqu'à 48h avant le démarrage"
+  piecesAttendues String[] // pièces du dossier administratif attendues (ex. CNI, CV…)
+
   // Versionnage / archivage
   version    Int     @default(1)
   isArchived Boolean @default(false)
@@ -326,6 +335,7 @@ model Formation {
   sessions    Session[]
   evaluations Evaluation[]
   formateurs  Formateur[]
+  prospects   Candidat[]   @relation("FormationProspects")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -349,6 +359,7 @@ model Session {
   modalite    Modalite      @default(MIXTE)
   nbPlaces    Int           @default(10)
   statut      SessionStatut @default(PLANIFIEE)
+  isArchived  Boolean       @default(false)
 
   formateurs   Formateur[]   @relation("SessionFormateurs")
   inscriptions Inscription[]
@@ -423,6 +434,10 @@ model Inscription {
   financementType FinancementType?
   statut          InscriptionStatut @default(EN_ATTENTE)
   montant         Decimal?          @db.Decimal(10, 2)
+
+  // Suivi du dossier administratif (V2) — pièces marquées « reçues »
+  // (la liste attendue provient de Formation.piecesAttendues)
+  piecesRecues String[]
 
   // RGPD & signature (formulaire public)
   consentementRgpd Boolean   @default(false)

@@ -20,6 +20,7 @@ export const candidatFormSchema = z.object({
   posteOccupe: optionalText,
   // Financement & statut
   financementType: z.nativeEnum(FinancementType).or(z.literal("")).optional(),
+  formationSouhaiteeId: optionalText,
   statut: z.nativeEnum(CandidatStatut),
 });
 

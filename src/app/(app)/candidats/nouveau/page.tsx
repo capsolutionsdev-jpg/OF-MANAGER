@@ -1,8 +1,17 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { prisma } from "@/lib/prisma";
 import { CandidatForm } from "@/components/candidats/candidat-form";
 
-export default function NouveauCandidatPage() {
+export const dynamic = "force-dynamic";
+
+export default async function NouveauCandidatPage() {
+  const formations = await prisma.formation.findMany({
+    where: { isArchived: false },
+    select: { id: true, titre: true },
+    orderBy: { titre: "asc" },
+  });
+
   return (
     <div className="space-y-6">
       <div>
@@ -19,7 +28,7 @@ export default function NouveauCandidatPage() {
       </div>
 
       <div className="max-w-3xl">
-        <CandidatForm />
+        <CandidatForm formations={formations} />
       </div>
     </div>
   );

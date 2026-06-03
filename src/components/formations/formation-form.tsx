@@ -67,6 +67,9 @@ export function FormationForm({
       publicVise: "",
       methodesPedagogiques: "",
       modalitesEvaluation: "",
+      conditionsAcces: "",
+      delaiAcces: "",
+      piecesAttendues: "",
       ...defaultValues,
     },
   });
@@ -174,6 +177,49 @@ export function FormationForm({
               <Label htmlFor="modalitesEvaluation">Modalités d&apos;évaluation</Label>
               <Textarea id="modalitesEvaluation" rows={2} {...register("modalitesEvaluation")} />
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Accès &amp; dossier administratif</CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid gap-2">
+            <Label htmlFor="conditionsAcces">Conditions d&apos;accès</Label>
+            <Textarea
+              id="conditionsAcces"
+              rows={3}
+              placeholder="ex. Être majeur, savoir lire/écrire le français…"
+              {...register("conditionsAcces")}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="delaiAcces">Délai d&apos;accès</Label>
+            <Input
+              id="delaiAcces"
+              placeholder="ex. Inscription jusqu'à 48h avant le démarrage"
+              {...register("delaiAcces")}
+            />
+          </div>
+          <div className="grid gap-2 sm:col-span-2">
+            <Label htmlFor="piecesAttendues">
+              Pièces du dossier administratif{" "}
+              <span className="font-normal text-muted-foreground">
+                (une par ligne)
+              </span>
+            </Label>
+            <Textarea
+              id="piecesAttendues"
+              rows={5}
+              placeholder={"Carte nationale d'identité\nCV à jour\nJustificatif de domicile\nDernier diplôme obtenu"}
+              {...register("piecesAttendues")}
+            />
+            <p className="text-xs text-muted-foreground">
+              Ces pièces serviront de checklist pour le suivi du dossier de
+              chaque candidat inscrit à cette formation.
+            </p>
           </div>
         </CardContent>
       </Card>

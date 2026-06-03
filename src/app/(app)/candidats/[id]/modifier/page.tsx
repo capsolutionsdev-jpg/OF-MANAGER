@@ -10,7 +10,14 @@ export default async function ModifierCandidatPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const c = await prisma.candidat.findUnique({ where: { id } });
+  const [c, formations] = await Promise.all([
+    prisma.candidat.findUnique({ where: { id } }),
+    prisma.formation.findMany({
+      where: { isArchived: false },
+      select: { id: true, titre: true },
+      orderBy: { titre: "asc" },
+    }),
+  ]);
   if (!c) notFound();
 
   return (
@@ -30,6 +37,7 @@ export default async function ModifierCandidatPage({
       <div className="max-w-3xl">
         <CandidatForm
           candidatId={c.id}
+          formations={formations}
           defaultValues={{
             nom: c.nom,
             prenom: c.prenom,

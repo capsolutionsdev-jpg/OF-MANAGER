@@ -43,6 +43,9 @@ export default async function ModifierFormationPage({
             publicVise: f.publicVise ?? "",
             methodesPedagogiques: f.methodesPedagogiques ?? "",
             modalitesEvaluation: f.modalitesEvaluation ?? "",
+            conditionsAcces: f.conditionsAcces ?? "",
+            delaiAcces: f.delaiAcces ?? "",
+            piecesAttendues: f.piecesAttendues.join("\n"),
           }}
         />
       </div>
