@@ -12,6 +12,7 @@ import {
 import { SignBox } from "@/components/parcours/sign-box";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 // Documents soumis à signature du stagiaire
 const A_SIGNER = [
@@ -103,11 +104,13 @@ export default async function SignerPage({
                   ))}
                 </ul>
                 <a
-                  href={`/parcours/${token}/documents`}
-                  className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
+                  href={`/parcours/${token}/documents?preview=1`}
+                  target="_blank"
+                  rel="noopener"
+                  className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
                 >
-                  <Download className="h-4 w-4" /> Aperçu de l&apos;ensemble des
-                  documents (.zip)
+                  <Download className="h-4 w-4" /> Lire les documents (PDF) avant
+                  de signer
                 </a>
               </CardContent>
             </Card>

@@ -10,9 +10,14 @@ import {
 } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
-import { sendEmail, emailConfigured } from "@/lib/email";
+import { sendEmail, emailConfigured, toBase64 } from "@/lib/email";
 import { orgConfig } from "@/lib/org-config";
 import { generateToken, appBaseUrl } from "@/lib/token";
+import {
+  buildInscriptionPdf,
+  buildSingleDocPdf,
+  SIGNED_DOC_TYPES,
+} from "@/lib/documents/build-pdf";
 
 /**
  * Démarre le parcours candidat : génère un lien unique et envoie l'e-mail
@@ -236,23 +241,28 @@ export async function signDocuments(
     },
   });
 
-  // Envoi de la copie des documents signés (lien sécurisé tokenisé)
-  const link = `${appBaseUrl()}/parcours/${token}/documents`;
+  // Génère le dossier signé en PDF (joint à l'e-mail) : docs signés + certificat
+  const dossier = await buildInscriptionPdf(insc.id, { only: SIGNED_DOC_TYPES });
   const subject = `Vos documents signés — ${insc.session.formation.titre}`;
   const body = `Bonjour ${insc.candidat.prenom},
 
 Nous vous confirmons la signature de vos documents d'inscription le ${now.toLocaleString("fr-FR")}.
 
-Vous pouvez télécharger l'ensemble de vos documents (fiche d'inscription, convention, règlement intérieur…) via ce lien sécurisé :
-
-${link}
+Vous trouverez ci-joint, au format PDF, l'ensemble de vos documents signés (fiche d'inscription, contrat, convention, règlement intérieur) ainsi que votre certificat de signature électronique.
 
 Vous recevez par ailleurs votre convocation à la formation.
 
 Cordialement,
 ${orgConfig.representant} — ${orgConfig.name}`;
 
-  const res = await sendEmail({ to: insc.candidat.email, subject, body });
+  const res = await sendEmail({
+    to: insc.candidat.email,
+    subject,
+    body,
+    attachments: dossier
+      ? [{ name: dossier.filename, content: toBase64(dossier.data) }]
+      : undefined,
+  });
   await prisma.emailLog.create({
     data: {
       destinataire: insc.candidat.email,
@@ -282,10 +292,14 @@ Merci de vous présenter muni(e) d'une pièce d'identité.
 
 Cordialement,
 ${orgConfig.representant} — ${orgConfig.name}`;
+    const convPdf = await buildSingleDocPdf(insc.id, "CONVOCATION");
     const resConv = await sendEmail({
       to: insc.candidat.email,
       subject: subjectConv,
       body: bodyConv,
+      attachments: convPdf
+        ? [{ name: "Convocation.pdf", content: toBase64(convPdf.data) }]
+        : undefined,
     });
     await prisma.emailLog.create({
       data: {
