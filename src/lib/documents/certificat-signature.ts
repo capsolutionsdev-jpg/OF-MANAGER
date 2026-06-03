@@ -10,6 +10,7 @@ export type CertificatData = {
   signedAt: Date;
   ip: string | null;
   ref: string;
+  signatureDataUrl?: string | null;
 };
 
 /**
@@ -91,7 +92,25 @@ export async function buildCertificatPdf(data: CertificatData): Promise<Uint8Arr
     text(`•  ${doc}`, { size: 10, x: left + 10 });
     y -= 15;
   }
-  y -= 16;
+  y -= 10;
+
+  // Image de la signature manuscrite (si fournie)
+  if (data.signatureDataUrl?.startsWith("data:image/png")) {
+    try {
+      const b64 = data.signatureDataUrl.split(",")[1] ?? "";
+      const png = await pdf.embedPng(Buffer.from(b64, "base64"));
+      text("Signature du signataire :", { size: 9, bold: true, color: navy });
+      y -= 8;
+      const w = 180;
+      const h = (png.height / png.width) * w;
+      y -= h;
+      page.drawImage(png, { x: left, y, width: w, height: h });
+      y -= 10;
+    } catch {
+      // signature illisible : on ignore (la preuve textuelle suffit)
+    }
+  }
+  y -= 8;
 
   page.drawLine({
     start: { x: left, y },

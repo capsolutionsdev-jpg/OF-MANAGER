@@ -31,7 +31,7 @@ const orgStampBlock = `<div class="org-stamp-block"><div class="sig-label">Cache
 const signatures = `
 <div class="doc-signatures">
   <div><div class="sig-label">Pour l'organisme — {{organisme_representant}}</div><div class="sig-box">${stamp}</div></div>
-  <div><div class="sig-label">Le stagiaire — {{nom_complet}}</div><div class="sig-box"></div></div>
+  <div><div class="sig-label">Le stagiaire — {{nom_complet}}</div><div class="sig-box">{{signature_stagiaire}}</div></div>
 </div>`;
 
 function wrap(title: string, body: string) {

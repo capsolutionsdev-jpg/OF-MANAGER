@@ -456,6 +456,7 @@ model Inscription {
   formCompletedAt     DateTime? // le candidat a rempli son formulaire
   signedAt            DateTime? // documents signés électroniquement (interne)
   signatureIp         String?
+  signatureDataUrl    String?   @db.Text // image PNG de la signature manuscrite (dessinée)
   docsCopieSentAt     DateTime? // copie des docs signés envoyée au candidat
   convocationSentAt   DateTime? // convocation envoyée
   attestationEntreeSentAt DateTime? // attestation d'entrée envoyée (J1)

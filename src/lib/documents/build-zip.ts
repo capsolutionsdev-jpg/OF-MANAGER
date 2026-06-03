@@ -69,6 +69,12 @@ export async function buildInscriptionDocsZip(
       })
     : "";
 
+  // Image de la signature manuscrite insérée dans la case « stagiaire » des docs
+  vars.signature_stagiaire =
+    signed && inscription.signatureDataUrl
+      ? `<img src="${inscription.signatureDataUrl}" alt="Signature du stagiaire" style="max-height:70px" />`
+      : "";
+
   // Images encodées en base64 (html-to-docx ne charge pas les URL).
   const pub = path.join(process.cwd(), "public");
   const [logoBuf, stampBuf] = await Promise.all([
@@ -121,6 +127,7 @@ export async function buildInscriptionDocsZip(
       signedAt: signed.at,
       ip: signed.ip,
       ref: signed.ref,
+      signatureDataUrl: inscription.signatureDataUrl,
     });
     folder.file("Certificat-de-signature-electronique.pdf", certif);
   }

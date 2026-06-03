@@ -189,9 +189,12 @@ export async function submitSatisfaction(
 export async function signDocuments(
   token: string,
   signataire: string,
+  signatureDataUrl?: string,
 ): Promise<{ ok: boolean; error?: string }> {
   if (!signataire || signataire.trim().length < 2)
     return { ok: false, error: "Merci d'inscrire votre nom complet." };
+  if (!signatureDataUrl || !signatureDataUrl.startsWith("data:image/"))
+    return { ok: false, error: "Merci de dessiner votre signature." };
 
   const insc = await prisma.inscription.findUnique({
     where: { accessToken: token },
@@ -215,6 +218,7 @@ export async function signDocuments(
     data: {
       signedAt: now,
       signatureIp: ip,
+      signatureDataUrl,
       signatureStatut: SignatureStatut.SIGNEE,
       statut: "VALIDEE",
     },
