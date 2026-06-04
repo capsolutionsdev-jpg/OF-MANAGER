@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Pencil, Trash2, Users, ClipboardCheck, FileText, UserCog } from "lucide-react";
+import { ArrowLeft, Pencil, Users, ClipboardCheck, FileText, UserCog, CreditCard } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,12 +22,21 @@ import { MODALITE_LABELS } from "@/lib/validators/formation";
 import { SESSION_STATUT_LABELS } from "@/lib/validators/session";
 import { INSCRIPTION_STATUT_LABELS } from "@/lib/validators/inscription";
 import { FINANCEMENT_LABELS } from "@/lib/validators/candidat";
-import { deleteInscriptionAction } from "@/lib/actions/inscription-actions";
 import { EnrollForm } from "@/components/inscriptions/enroll-form";
 import { DocumentsMenu } from "@/components/documents/documents-menu";
+import { InscriptionActionsMenu } from "@/components/inscriptions/inscription-actions-menu";
+import { PaiementEditor } from "@/components/inscriptions/paiement-editor";
+import { SendSatisfactionButton } from "@/components/sessions/send-satisfaction-button";
 import { SendConvocationsButton } from "@/components/sessions/send-convocations-button";
 import { SendCompteRenduButton } from "@/components/sessions/send-compte-rendu-button";
 import { SendContratButton } from "@/components/sessions/send-contrat-button";
+
+const STATUT_BADGE_CLS: Record<string, string> = {
+  EN_ATTENTE: "bg-muted text-muted-foreground",
+  VALIDEE: "bg-emerald-500/10 text-emerald-700",
+  SUSPENDUE: "bg-amber-500/10 text-amber-700",
+  ANNULEE: "bg-destructive/10 text-destructive",
+};
 
 function Field({ label, value }: { label: string; value?: string | null }) {
   return (
@@ -303,21 +312,34 @@ export default async function SessionDetailPage({
             {s.inscriptions.length === 0 ? (
               <p className="text-sm text-muted-foreground">Aucun candidat inscrit.</p>
             ) : (
-              <ul className="space-y-1.5 text-sm">
+              <ul className="space-y-2 text-sm">
                 {s.inscriptions.map((i) => (
                   <li
                     key={i.id}
-                    className="flex flex-wrap items-center justify-between gap-2 border-b py-1.5 last:border-0"
+                    className="flex flex-col gap-2 border-b py-2 last:border-0 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between"
                   >
-                    <span className="flex items-center gap-2">
-                      {i.candidat.prenom} {i.candidat.nom}
-                      {i.signedAt && (
+                    <span className="flex flex-wrap items-center gap-2">
+                      <span className="font-medium">
+                        {i.candidat.prenom} {i.candidat.nom}
+                      </span>
+                      {i.signedAt ? (
                         <Badge className="bg-emerald-500/10 text-emerald-700">
-                          signé
+                          dossier signé
                         </Badge>
+                      ) : (
+                        <Badge variant="secondary">non signé</Badge>
                       )}
+                      {i.satisfactionCompletedAt ? (
+                        <Badge className="bg-emerald-500/10 text-emerald-700">
+                          satisfaction reçue
+                        </Badge>
+                      ) : i.satisfactionSentAt ? (
+                        <Badge className="bg-amber-500/10 text-amber-700">
+                          satisfaction envoyée
+                        </Badge>
+                      ) : null}
                     </span>
-                    <span className="flex flex-wrap gap-3">
+                    <span className="flex flex-wrap items-center gap-3">
                       <a
                         href={`/documents/${i.id}/pdf`}
                         target="_blank"
@@ -331,9 +353,13 @@ export default async function SessionDetailPage({
                           target="_blank"
                           className="text-primary hover:underline"
                         >
-                          Satisfaction (PDF)
+                          Satisfaction signée (PDF)
                         </a>
                       )}
+                      <SendSatisfactionButton
+                        inscriptionId={i.id}
+                        sent={!!i.satisfactionSentAt}
+                      />
                     </span>
                   </li>
                 ))}
@@ -361,6 +387,11 @@ export default async function SessionDetailPage({
                 <TableRow>
                   <TableHead>Candidat</TableHead>
                   <TableHead>Financement</TableHead>
+                  <TableHead>
+                    <span className="inline-flex items-center gap-1">
+                      <CreditCard className="h-3.5 w-3.5" /> Paiement
+                    </span>
+                  </TableHead>
                   <TableHead>Statut</TableHead>
                   <TableHead className="text-right">Action</TableHead>
                 </TableRow>
@@ -382,30 +413,29 @@ export default async function SessionDetailPage({
                         : "—"}
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary">
+                      <PaiementEditor
+                        inscriptionId={i.id}
+                        modePaiement={i.modePaiement}
+                        paiementStatut={i.paiementStatut}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant="secondary"
+                        className={STATUT_BADGE_CLS[i.statut]}
+                      >
                         {INSCRIPTION_STATUT_LABELS[i.statut]}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
                         <DocumentsMenu inscriptionId={i.id} />
-                        <form action={deleteInscriptionAction}>
-                          <input type="hidden" name="id" value={i.id} />
-                          <input type="hidden" name="sessionId" value={s.id} />
-                          <input
-                            type="hidden"
-                            name="candidatId"
-                            value={i.candidatId}
-                          />
-                          <Button
-                            type="submit"
-                            variant="ghost"
-                            size="icon-sm"
-                            aria-label="Désinscrire"
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </form>
+                        <InscriptionActionsMenu
+                          inscriptionId={i.id}
+                          sessionId={s.id}
+                          candidatId={i.candidatId}
+                          statut={i.statut}
+                        />
                       </div>
                     </TableCell>
                   </TableRow>

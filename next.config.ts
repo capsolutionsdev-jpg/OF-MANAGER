@@ -34,6 +34,9 @@ const nextConfig: NextConfig = {
     "/api/cron/parcours": [
       "./node_modules/@sparticuz/chromium/bin/**",
     ],
+    "/api/pdf-test": [
+      "./node_modules/@sparticuz/chromium/bin/**",
+    ],
   },
 };
 

@@ -68,7 +68,16 @@ enum SessionStatut {
 enum InscriptionStatut {
   EN_ATTENTE
   VALIDEE
+  SUSPENDUE
   ANNULEE
+}
+
+enum PaiementStatut {
+  EN_ATTENTE
+  ACOMPTE
+  PAYE
+  REMBOURSE
+  ANNULE
 }
 
 enum SeanceType {
@@ -459,6 +468,10 @@ model Inscription {
   financementType FinancementType?
   statut          InscriptionStatut @default(EN_ATTENTE)
   montant         Decimal?          @db.Decimal(10, 2)
+
+  // Paiement (mode + état du règlement)
+  modePaiement   String?         // CPF, OPCO, France Travail, Virement, CB, Chèque, Espèces, Autre
+  paiementStatut PaiementStatut  @default(EN_ATTENTE)
 
   // Suivi du dossier administratif (V2) — pièces marquées « reçues »
   // (la liste attendue provient de Formation.piecesAttendues)

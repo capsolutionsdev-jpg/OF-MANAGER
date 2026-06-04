@@ -5,8 +5,10 @@ import { headers } from "next/headers";
 import { DemiJournee } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
-import { generateToken } from "@/lib/token";
+import { generateToken, appBaseUrl } from "@/lib/token";
 import { joursSession, dayKey } from "@/lib/emargement";
+import { sendEmail } from "@/lib/email";
+import { orgConfig } from "@/lib/org-config";
 
 /**
  * Prépare les lignes de signature d'émargement (jour × demi-journée × personne)
@@ -97,6 +99,56 @@ export async function prepareEmargementSignatures(
 
   revalidatePath(`/sessions/${sessionId}/emargement`);
   return { ok: true, created: toCreate.length };
+}
+
+/**
+ * Envoie (ou relance) immédiatement le lien de signature d'émargement à une
+ * personne pour une demi-journée donnée. Fonctionne pour les stagiaires comme
+ * pour les formateurs.
+ */
+export async function sendEmargementLink(
+  emargementId: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const session = await auth();
+  if (!session?.user) return { ok: false, error: "Non autorisé." };
+
+  const e = await prisma.emargementSignature.findUnique({
+    where: { id: emargementId },
+    include: { session: { include: { formation: true } } },
+  });
+  if (!e) return { ok: false, error: "Ligne d'émargement introuvable." };
+  if (e.signedAt) return { ok: false, error: "Déjà signé." };
+
+  const demiLabel = e.demi === DemiJournee.MATIN ? "matin" : "après-midi";
+  const jour = e.date.toLocaleDateString("fr-FR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+  const link = `${appBaseUrl()}/emarger/${e.token}`;
+  const subject = `Signature d'émargement (${demiLabel}) — ${e.session.formation.titre}`;
+  const body = `Bonjour ${e.nom},
+
+Merci de signer votre présence du ${jour} (${demiLabel}) à la formation « ${e.session.formation.titre} » en cliquant sur ce lien :
+${link}
+
+Vous signerez directement avec votre doigt (sur mobile) ou votre souris (sur ordinateur).
+
+Cordialement,
+${orgConfig.representant} — ${orgConfig.name}`;
+
+  const res = await sendEmail({ to: e.email, subject, body });
+
+  await prisma.emargementSignature.update({
+    where: { id: emargementId },
+    data: { sentAt: new Date() },
+  });
+
+  revalidatePath(`/sessions/${e.sessionId}/emargement`);
+  return {
+    ok: true,
+    error: res.sent ? undefined : "E-mail non envoyé (mode démo : configurez Brevo).",
+  };
 }
 
 /** Signature publique d'un émargement (signature manuscrite dessinée). */

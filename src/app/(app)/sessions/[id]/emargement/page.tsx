@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, FileText, CalendarPlus } from "lucide-react";
+import { ArrowLeft, FileText, CalendarPlus, CheckCircle2, Clock, PenLine } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -12,6 +13,7 @@ import {
 import { genererSeances } from "@/lib/actions/emargement-actions";
 import { PresenceCell } from "@/components/emargement/presence-cell";
 import { PrepareSignaturesButton } from "@/components/emargement/prepare-signatures-button";
+import { SendEmargementLinkButton } from "@/components/emargement/send-emargement-link-button";
 
 export default async function EmargementPage({
   params,
@@ -25,12 +27,28 @@ export default async function EmargementPage({
       formation: true,
       seances: { orderBy: { date: "asc" }, include: { presences: true } },
       inscriptions: { include: { candidat: true } },
+      emargementSignatures: { orderBy: [{ date: "asc" }, { demi: "asc" }] },
     },
   });
   if (!s) notFound();
 
   const fmt = (d: Date) => d.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const fmtCourt = (d: Date) => d.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" });
   const participants = s.inscriptions.filter((i) => i.apprenantId);
+
+  // ── Récapitulatif des signatures d'émargement ──
+  const sigs = s.emargementSignatures;
+  const sigDone = sigs.filter((e) => e.signedAt).length;
+  const sigTotal = sigs.length;
+  // Groupement par jour → demi-journée
+  type Sig = (typeof sigs)[number];
+  const groups = new Map<string, { date: Date; demi: string; rows: Sig[] }>();
+  for (const e of sigs) {
+    const k = `${e.date.toISOString().slice(0, 10)}|${e.demi}`;
+    if (!groups.has(k)) groups.set(k, { date: e.date, demi: e.demi, rows: [] });
+    groups.get(k)!.rows.push(e);
+  }
+  const groupList = [...groups.values()];
 
   return (
     <div className="space-y-6">
@@ -62,6 +80,78 @@ export default async function EmargementPage({
           </div>
         </div>
       </div>
+
+      {/* Récapitulatif des signatures (faites / manquantes + relance) */}
+      {sigTotal > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex flex-wrap items-center justify-between gap-2 text-base">
+              <span className="flex items-center gap-2">
+                <PenLine className="h-4 w-4" /> Suivi des signatures d&apos;émargement
+              </span>
+              <Badge
+                className={
+                  sigDone === sigTotal
+                    ? "bg-emerald-500/10 text-emerald-700"
+                    : "bg-amber-500/10 text-amber-700"
+                }
+              >
+                {sigDone}/{sigTotal} signées
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            {groupList.map((g) => (
+              <div key={`${g.date.toISOString()}|${g.demi}`}>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  {fmtCourt(g.date)} — {g.demi === "MATIN" ? "Matin" : "Après-midi"}
+                </p>
+                <ul className="space-y-1.5">
+                  {g.rows.map((e) => (
+                    <li
+                      key={e.id}
+                      className="flex flex-wrap items-center justify-between gap-2 rounded-md border px-3 py-1.5 text-sm"
+                    >
+                      <span className="flex items-center gap-2">
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] uppercase"
+                        >
+                          {e.role === "FORMATEUR" ? "Formateur" : "Stagiaire"}
+                        </Badge>
+                        <span className="font-medium">{e.nom}</span>
+                        {e.signedAt ? (
+                          <span className="inline-flex items-center gap-1 text-xs text-emerald-700">
+                            <CheckCircle2 className="h-3.5 w-3.5" /> signé à{" "}
+                            {e.signedAt.toLocaleTimeString("fr-FR", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </span>
+                        ) : e.sentAt ? (
+                          <span className="inline-flex items-center gap-1 text-xs text-amber-700">
+                            <Clock className="h-3.5 w-3.5" /> lien envoyé — en attente
+                          </span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">
+                            non envoyé
+                          </span>
+                        )}
+                      </span>
+                      {!e.signedAt && (
+                        <SendEmargementLinkButton
+                          emargementId={e.id}
+                          sent={!!e.sentAt}
+                        />
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       {s.seances.length === 0 ? (
         <Card>
