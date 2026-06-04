@@ -18,6 +18,7 @@ import { INSCRIPTION_STATUT_LABELS } from "@/lib/validators/inscription";
 import { anonymiseCandidat } from "@/lib/actions/rgpd-actions";
 import { resendParcoursAction } from "@/lib/actions/parcours-actions";
 import { DossierChecklist } from "@/components/inscriptions/dossier-checklist";
+import { SendProspectLinkButton } from "@/components/crm/send-prospect-link-button";
 import { Send } from "lucide-react";
 
 function Field({ label, value }: { label: string; value?: string | null }) {
@@ -68,13 +69,28 @@ export default async function CandidatDetailPage({
           <ArrowLeft className="h-4 w-4" /> Retour aux candidats
         </Link>
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-2xl font-bold tracking-tight">
               {candidat.prenom} {candidat.nom}
             </h1>
             <Badge variant="secondary">{STATUT_LABELS[candidat.statut]}</Badge>
+            {candidat.prospectFormCompletedAt ? (
+              <Badge className="bg-emerald-500/10 text-emerald-700">
+                fiche signée
+              </Badge>
+            ) : candidat.prospectFormSentAt ? (
+              <Badge className="bg-amber-500/10 text-amber-700">
+                lien d&apos;inscription envoyé
+              </Badge>
+            ) : null}
           </div>
           <div className="flex flex-wrap gap-2">
+            {candidat.statut !== "INSCRIT" && (
+              <SendProspectLinkButton
+                candidatId={candidat.id}
+                sent={!!candidat.prospectFormSentAt}
+              />
+            )}
             <Button
               variant="outline"
               render={<Link href={`/candidats/${candidat.id}/modifier`} />}
@@ -110,6 +126,8 @@ export default async function CandidatDetailPage({
                 label="Date de naissance"
                 value={fmtDate(candidat.dateNaissance)}
               />
+              <Field label="Lieu de naissance" value={candidat.lieuNaissance} />
+              <Field label="Pays de naissance" value={candidat.paysNaissance} />
               <Field label="Adresse" value={candidat.adresse} />
               <Field label="Code postal" value={candidat.codePostal} />
               <Field label="Ville" value={candidat.ville} />
@@ -130,6 +148,11 @@ export default async function CandidatDetailPage({
               />
               <Field label="Employeur" value={candidat.employeur} />
               <Field label="Poste occupé" value={candidat.posteOccupe} />
+              <Field label="Dernier diplôme obtenu" value={candidat.dernierDiplome} />
+              <Field
+                label="Comment nous a-t-il connus"
+                value={candidat.sourceConnaissance}
+              />
               <Field
                 label="Financement envisagé"
                 value={
