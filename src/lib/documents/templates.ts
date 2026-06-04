@@ -53,9 +53,13 @@ export const DOCUMENTS: Record<string, { label: string; html: string }> = {
       <table class="doc-table">
         <tr><td>Nom</td><td>{{nom}}</td></tr>
         <tr><td>Prénom</td><td>{{prenom}}</td></tr>
+        <tr><td>Date de naissance</td><td>{{date_naissance}}</td></tr>
+        <tr><td>Lieu de naissance</td><td>{{lieu_naissance}}</td></tr>
+        <tr><td>Pays de naissance</td><td>{{pays_naissance}}</td></tr>
         <tr><td>Email</td><td>{{email}}</td></tr>
         <tr><td>Téléphone</td><td>{{telephone}}</td></tr>
         <tr><td>Adresse</td><td>{{adresse_candidat}}</td></tr>
+        <tr><td>Dernier diplôme obtenu</td><td>{{dernier_diplome}}</td></tr>
       </table>
       <h2>Formation</h2>
       <table class="doc-table">
@@ -94,6 +98,28 @@ export const DOCUMENTS: Record<string, { label: string; html: string }> = {
     ),
   },
 
+  CONVOCATION_EXAMEN: {
+    label: "Convocation à l'examen",
+    html: wrap(
+      "Convocation à l'examen de certification",
+      `<p>Madame, Monsieur <strong>{{nom_complet}}</strong>,</p>
+      <p>Né(e) le {{date_naissance}} à {{lieu_naissance}} ({{pays_naissance}}).</p>
+      <p>Nous vous convoquons à l'épreuve de certification de la formation suivante :</p>
+      <table class="doc-table">
+        <tr><td>Formation</td><td><strong>{{formation}}</strong></td></tr>
+        <tr><td>Certification</td><td>{{certification}}</td></tr>
+        <tr><td>Référence session</td><td>{{session_reference}}</td></tr>
+        <tr><td>Date de l'examen</td><td>le {{date_fin}}</td></tr>
+        <tr><td>Horaires</td><td>{{horaires}}</td></tr>
+        <tr><td>Lieu / modalité</td><td>{{lieu}} — {{modalite}}</td></tr>
+      </table>
+      <p>Vous devez vous présenter <strong>muni(e) d'une pièce d'identité en cours de validité</strong>. Tout retard ou absence non justifié(e) pourra entraîner l'impossibilité de passer l'épreuve.</p>
+      <p>Pour toute question : {{organisme_telephone}} — {{organisme_email}}.</p>
+      <p>Cordialement,<br/>{{organisme_representant}} — {{organisme}}</p>
+      ${orgStampBlock}`,
+    ),
+  },
+
   CONVENTION_FORMATION: {
     label: "Convention de formation",
     html: wrap(
@@ -101,7 +127,7 @@ export const DOCUMENTS: Record<string, { label: string; html: string }> = {
       `<p><strong>ENTRE LES SOUSSIGNÉS :</strong></p>
       <p>1° <strong>{{organisme}}</strong>, représenté par {{organisme_representant}}, déclaré sous le n° de SIRET {{organisme_siret}}, dont le siège est au {{organisme_adresse}}, <strong>D'UNE PART,</strong></p>
       <p>ET</p>
-      <p>2° Le bénéficiaire : <strong>{{nom_complet}}</strong>, demeurant {{adresse_candidat}}, <strong>D'AUTRE PART,</strong></p>
+      <p>2° Le bénéficiaire : <strong>{{nom_complet}}</strong>, né(e) le {{date_naissance}} à {{lieu_naissance}} ({{pays_naissance}}), demeurant {{adresse_candidat}}, <strong>D'AUTRE PART,</strong></p>
       <p>Il est arrêté et convenu ce qui suit :</p>
 
       <h2>ARTICLE 1 — Objet de la convention</h2>
@@ -157,7 +183,7 @@ export const DOCUMENTS: Record<string, { label: string; html: string }> = {
       <p><strong>ENTRE LES SOUSSIGNÉS :</strong></p>
       <p>1° <strong>{{organisme}}</strong>, organisme de formation représenté par {{organisme_representant}}, SIRET {{organisme_siret}}, dont le siège est au {{organisme_adresse}}, déclaration d'activité n° {{organisme_nda}}, <strong>D'UNE PART,</strong></p>
       <p>ET</p>
-      <p>2° Le stagiaire : <strong>{{nom_complet}}</strong>, demeurant {{adresse_candidat}}, <strong>D'AUTRE PART,</strong></p>
+      <p>2° Le stagiaire : <strong>{{nom_complet}}</strong>, né(e) le {{date_naissance}} à {{lieu_naissance}} ({{pays_naissance}}), demeurant {{adresse_candidat}}, <strong>D'AUTRE PART,</strong></p>
       <p>Il est conclu le présent contrat de formation professionnelle :</p>
 
       <h2>ARTICLE 1 — Objet</h2>

@@ -10,6 +10,7 @@ const fmt = (d: Date) => d.toLocaleDateString("fr-FR");
 
 type Counts = {
   convocations: number;
+  convocationsExamen: number;
   attestationsEntree: number;
   satisfactions: number;
   docsFin: number;
@@ -52,6 +53,7 @@ export async function runAutomations(): Promise<Counts> {
   const base = appBaseUrl();
   const counts: Counts = {
     convocations: 0,
+    convocationsExamen: 0,
     attestationsEntree: 0,
     satisfactions: 0,
     docsFin: 0,
@@ -99,6 +101,40 @@ ${orgConfig.representant} — ${orgConfig.name}`;
         data: { convocationSentAt: new Date() },
       });
       counts.convocations++;
+    }
+
+    // ── 1bis) CONVOCATION À L'EXAMEN (signé, J-7 avant la fin, mail séparé + PDF) ──
+    if (
+      settings.convocationActive &&
+      i.signedAt &&
+      !i.convocationExamenSentAt &&
+      s.dateFin >= now &&
+      s.dateFin <= jMoinsLimite
+    ) {
+      const subject = `Convocation à l'examen — ${f.titre}`;
+      const body = `Bonjour ${prenom},
+
+Vous êtes convoqué(e) à l'épreuve de certification de la formation « ${f.titre} », prévue le ${fmt(s.dateFin)}${s.horaires ? ` (${s.horaires})` : ""}${s.lieu ? `, à ${s.lieu}` : ""}.
+
+Vous trouverez votre convocation à l'examen en pièce jointe (PDF). Merci de vous présenter muni(e) d'une pièce d'identité en cours de validité.
+
+Cordialement,
+${orgConfig.representant} — ${orgConfig.name}`;
+      const cvxPdf = await buildSingleDocPdf(i.id, "CONVOCATION_EXAMEN");
+      await logAndSend({
+        to,
+        subject,
+        body,
+        sessionId: s.id,
+        attachments: cvxPdf
+          ? [{ name: "Convocation-examen.pdf", content: toBase64(cvxPdf.data) }]
+          : undefined,
+      });
+      await prisma.inscription.update({
+        where: { id: i.id },
+        data: { convocationExamenSentAt: new Date() },
+      });
+      counts.convocationsExamen++;
     }
 
     // ── 2) ATTESTATION D'ENTRÉE (J1 atteint, signé, pas déjà envoyée) ──
@@ -164,17 +200,26 @@ ${orgConfig.representant} — ${orgConfig.name}`;
 
     // ── 4) DOCUMENTS DE FIN DE FORMATION (terminée, pas déjà envoyés) ──
     if (settings.docsFinActive && !i.docsFinSentAt && s.dateFin < now && i.accessToken) {
-      const subject = `Documents de fin de formation — ${f.titre}`;
+      const subject = `Attestation de fin de formation — ${f.titre}`;
       const body = `Bonjour ${prenom},
 
 Félicitations pour avoir suivi la formation « ${f.titre} » (du ${fmt(s.dateDebut)} au ${fmt(s.dateFin)}).
 
-Vos documents de fin de formation (attestation de fin, certificat de réalisation…) sont disponibles ici :
+Vous trouverez ci-joint votre attestation de fin de formation (PDF). L'ensemble de vos documents reste disponible ici :
 ${base}/parcours/${i.accessToken}/documents
 
 Cordialement,
 ${orgConfig.representant} — ${orgConfig.name}`;
-      await logAndSend({ to, subject, body, sessionId: s.id });
+      const finPdf = await buildSingleDocPdf(i.id, "ATTESTATION_FIN");
+      await logAndSend({
+        to,
+        subject,
+        body,
+        sessionId: s.id,
+        attachments: finPdf
+          ? [{ name: "Attestation-fin.pdf", content: toBase64(finPdf.data) }]
+          : undefined,
+      });
       await prisma.inscription.update({
         where: { id: i.id },
         data: { docsFinSentAt: new Date() },

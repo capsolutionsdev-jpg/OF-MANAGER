@@ -80,6 +80,13 @@ enum PaiementStatut {
   ANNULE
 }
 
+enum CertificationResultat {
+  NON_EVALUE
+  CERTIFIE
+  AJOURNE
+  ABANDON
+}
+
 enum SeanceType {
   JOURNEE
   MATIN
@@ -111,6 +118,7 @@ enum DocumentType {
   CONTRAT_FORMATION
   CONVENTION_FORMATION
   CONVOCATION
+  CONVOCATION_EXAMEN
   PROGRAMME
   ATTESTATION_ENTREE
   ATTESTATION_FIN
@@ -259,6 +267,8 @@ model Candidat {
   nom           String
   prenom        String
   dateNaissance DateTime?
+  lieuNaissance String?
+  paysNaissance String?
   telephone     String?
   email         String
   adresse       String?
@@ -267,9 +277,13 @@ model Candidat {
   pays          String? @default("France")
 
   // Informations professionnelles
-  situationPro String?
-  employeur    String?
-  posteOccupe  String?
+  situationPro   String?
+  employeur      String?
+  posteOccupe    String?
+  dernierDiplome String? // dernier diplôme obtenu (niveau + intitulé)
+
+  // Acquisition : comment le prospect nous a connus (TikTok, Facebook, Google, CPF…)
+  sourceConnaissance String?
 
   // Financement envisagé
   financementType FinancementType?
@@ -281,6 +295,13 @@ model Candidat {
   formationSouhaitee   Formation? @relation("FormationProspects", fields: [formationSouhaiteeId], references: [id])
 
   statut CandidatStatut @default(NOUVEAU)
+
+  // ── Formulaire prospect public (lien envoyé par e-mail → fiche renseignée + signée) ──
+  prospectToken          String?   @unique
+  prospectFormSentAt     DateTime? // lien du formulaire prospect envoyé
+  prospectFormCompletedAt DateTime? // prospect a rempli & signé sa fiche
+  prospectSignatureUrl   String?   @db.Text // signature manuscrite (dessinée) du prospect
+  prospectSignatureIp    String?
 
   // Relations
   apprenant    Apprenant?
@@ -472,6 +493,13 @@ model Inscription {
   // Paiement (mode + état du règlement)
   modePaiement   String?         // CPF, OPCO, France Travail, Virement, CB, Chèque, Espèces, Autre
   paiementStatut PaiementStatut  @default(EN_ATTENTE)
+
+  // Résultat de certification (alimente le BPF)
+  resultatCertification CertificationResultat @default(NON_EVALUE)
+  certificationDate     DateTime?
+
+  // Convocation à l'examen (e-mail séparé avec PDF)
+  convocationExamenSentAt DateTime?
 
   // Suivi du dossier administratif (V2) — pièces marquées « reçues »
   // (la liste attendue provient de Formation.piecesAttendues)

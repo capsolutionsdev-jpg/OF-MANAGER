@@ -1,7 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { Prisma, InscriptionStatut, PaiementStatut } from "@prisma/client";
+import {
+  Prisma,
+  InscriptionStatut,
+  PaiementStatut,
+  CertificationResultat,
+} from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import {
@@ -107,6 +112,42 @@ export async function setInscriptionPaiement(
 
   revalidatePath(`/sessions/${insc.sessionId}`);
   revalidatePath(`/candidats/${insc.candidatId}`);
+  return { ok: true };
+}
+
+/** Renseigne le résultat de certification (Certifié / Ajourné / Abandon → BPF). */
+export async function setCertification(
+  inscriptionId: string,
+  resultat: CertificationResultat,
+): Promise<SimpleResult> {
+  const session = await auth();
+  if (!session?.user) return { ok: false, error: "Non autorisé." };
+
+  const insc = await prisma.inscription.findUnique({
+    where: { id: inscriptionId },
+    select: { sessionId: true },
+  });
+  if (!insc) return { ok: false, error: "Inscription introuvable." };
+
+  await prisma.inscription.update({
+    where: { id: inscriptionId },
+    data: {
+      resultatCertification: resultat,
+      certificationDate: resultat === "NON_EVALUE" ? null : new Date(),
+    },
+  });
+
+  await prisma.auditLog.create({
+    data: {
+      userId: session.user.id,
+      action: `CERTIFICATION_${resultat}`,
+      entityType: "Inscription",
+      entityId: inscriptionId,
+    },
+  });
+
+  revalidatePath(`/sessions/${insc.sessionId}`);
+  revalidatePath("/bpf");
   return { ok: true };
 }
 

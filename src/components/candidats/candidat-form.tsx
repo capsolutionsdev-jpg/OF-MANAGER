@@ -12,6 +12,8 @@ import {
   type CandidatFormValues,
   FINANCEMENT_LABELS,
   STATUT_LABELS,
+  SOURCE_CONNAISSANCE_OPTIONS,
+  DIPLOME_OPTIONS,
 } from "@/lib/validators/candidat";
 import { createCandidat, updateCandidat } from "@/lib/actions/candidat-actions";
 import { Button } from "@/components/ui/button";
@@ -56,6 +58,8 @@ export function CandidatForm({
       email: "",
       telephone: "",
       dateNaissance: "",
+      lieuNaissance: "",
+      paysNaissance: "",
       adresse: "",
       ville: "",
       codePostal: "",
@@ -63,6 +67,8 @@ export function CandidatForm({
       situationPro: "",
       employeur: "",
       posteOccupe: "",
+      dernierDiplome: "",
+      sourceConnaissance: "",
       financementType: "",
       formationSouhaiteeId: "",
       statut: "NOUVEAU",
@@ -118,6 +124,22 @@ export function CandidatForm({
             <Input id="dateNaissance" type="date" {...register("dateNaissance")} />
           </div>
           <div className="grid gap-2">
+            <Label htmlFor="lieuNaissance">Lieu de naissance</Label>
+            <Input
+              id="lieuNaissance"
+              placeholder="Ville de naissance"
+              {...register("lieuNaissance")}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="paysNaissance">Pays de naissance</Label>
+            <Input
+              id="paysNaissance"
+              placeholder="France"
+              {...register("paysNaissance")}
+            />
+          </div>
+          <div className="grid gap-2">
             <Label htmlFor="adresse">Adresse</Label>
             <Input id="adresse" {...register("adresse")} />
           </div>
@@ -159,6 +181,20 @@ export function CandidatForm({
           <div className="grid gap-2">
             <Label htmlFor="posteOccupe">Poste occupé</Label>
             <Input id="posteOccupe" {...register("posteOccupe")} />
+          </div>
+          <div className="grid gap-2 sm:col-span-3">
+            <Label htmlFor="dernierDiplome">Dernier diplôme obtenu</Label>
+            <Input
+              id="dernierDiplome"
+              list="diplome-options"
+              placeholder="Choisissez ou saisissez…"
+              {...register("dernierDiplome")}
+            />
+            <datalist id="diplome-options">
+              {DIPLOME_OPTIONS.map((d) => (
+                <option key={d} value={d} />
+              ))}
+            </datalist>
           </div>
         </CardContent>
       </Card>
@@ -208,6 +244,22 @@ export function CandidatForm({
                 </option>
               ))}
             </select>
+          </div>
+          <div className="grid gap-2 sm:col-span-2">
+            <Label htmlFor="sourceConnaissance">
+              Comment nous a-t-il connus ?
+            </Label>
+            <Input
+              id="sourceConnaissance"
+              list="source-options"
+              placeholder="TikTok, Google, recommandation…"
+              {...register("sourceConnaissance")}
+            />
+            <datalist id="source-options">
+              {SOURCE_CONNAISSANCE_OPTIONS.map((s) => (
+                <option key={s} value={s} />
+              ))}
+            </datalist>
           </div>
         </CardContent>
       </Card>

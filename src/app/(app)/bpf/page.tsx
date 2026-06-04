@@ -72,7 +72,11 @@ export default async function BpfPage({
       formateurs: { select: { id: true, nom: true, prenom: true } },
       inscriptions: {
         where: { statut: { not: "ANNULEE" } },
-        select: { financementType: true, montant: true },
+        select: {
+          financementType: true,
+          montant: true,
+          resultatCertification: true,
+        },
       },
     },
     orderBy: { dateDebut: "asc" },
@@ -108,6 +112,9 @@ export default async function BpfPage({
 
   // ── Agrégation par financement ──
   const parFinancement = new Map<string, { nb: number; montant: number }>();
+
+  // ── Agrégation certification ──
+  const cert = { CERTIFIE: 0, AJOURNE: 0, ABANDON: 0, NON_EVALUE: 0 };
 
   let totalHeures = 0;
   let totalStagiaires = 0;
@@ -145,13 +152,15 @@ export default async function BpfPage({
       parFormateur.set(f.id, cur);
     }
 
-    // Financement
+    // Financement + certification
     for (const i of s.inscriptions) {
       const fk = i.financementType ?? "NON_PRECISE";
       const cur = parFinancement.get(fk) ?? { nb: 0, montant: 0 };
       cur.nb += 1;
       cur.montant += i.montant ? Number(i.montant) : 0;
       parFinancement.set(fk, cur);
+
+      cert[i.resultatCertification] += 1;
     }
 
     totalHeures += h;
@@ -168,6 +177,10 @@ export default async function BpfPage({
   const financements = [...parFinancement.entries()].sort(
     (a, b) => b[1].nb - a[1].nb,
   );
+
+  const certEvalues = cert.CERTIFIE + cert.AJOURNE + cert.ABANDON;
+  const tauxReussite =
+    certEvalues > 0 ? Math.round((cert.CERTIFIE / certEvalues) * 100) : null;
 
   const finLabel = (k: string) =>
     k === "NON_PRECISE"
@@ -282,6 +295,52 @@ export default async function BpfPage({
                   </TableRow>
                 </TableBody>
               </Table>
+            </CardContent>
+          </Card>
+
+          {/* Résultats de certification */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="flex flex-wrap items-center gap-2 text-base">
+                <GraduationCap className="h-4 w-4" /> Résultats de certification
+                {tauxReussite !== null && (
+                  <Badge className="bg-emerald-500/10 text-emerald-700">
+                    Taux de réussite : {tauxReussite}%
+                  </Badge>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div className="rounded-lg border bg-emerald-500/5 p-3 text-center">
+                  <p className="text-2xl font-bold text-emerald-700">
+                    {cert.CERTIFIE}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Certifiés</p>
+                </div>
+                <div className="rounded-lg border bg-amber-500/5 p-3 text-center">
+                  <p className="text-2xl font-bold text-amber-700">
+                    {cert.AJOURNE}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Ajournés</p>
+                </div>
+                <div className="rounded-lg border bg-destructive/5 p-3 text-center">
+                  <p className="text-2xl font-bold text-destructive">
+                    {cert.ABANDON}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Abandons</p>
+                </div>
+                <div className="rounded-lg border bg-muted/30 p-3 text-center">
+                  <p className="text-2xl font-bold text-muted-foreground">
+                    {cert.NON_EVALUE}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Non évalués</p>
+                </div>
+              </div>
+              <p className="mt-3 text-xs text-muted-foreground">
+                Le taux de réussite est calculé sur les stagiaires évalués
+                (certifiés / (certifiés + ajournés + abandons)).
+              </p>
             </CardContent>
           </Card>
 

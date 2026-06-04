@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { FinancementType, InscriptionStatut, PaiementStatut } from "@prisma/client";
+import {
+  FinancementType,
+  InscriptionStatut,
+  PaiementStatut,
+  CertificationResultat,
+} from "@prisma/client";
 
 const optionalText = z.string().trim().optional().or(z.literal(""));
 
@@ -26,6 +31,13 @@ export const PAIEMENT_STATUT_LABELS: Record<PaiementStatut, string> = {
   PAYE: "Payé",
   REMBOURSE: "Remboursé",
   ANNULE: "Annulé",
+};
+
+export const CERTIFICATION_LABELS: Record<CertificationResultat, string> = {
+  NON_EVALUE: "Non évalué",
+  CERTIFIE: "Certifié",
+  AJOURNE: "Ajourné",
+  ABANDON: "Abandon",
 };
 
 /** Modes de paiement proposés (valeur libre stockée en texte). */

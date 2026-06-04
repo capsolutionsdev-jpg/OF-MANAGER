@@ -26,6 +26,7 @@ import { EnrollForm } from "@/components/inscriptions/enroll-form";
 import { DocumentsMenu } from "@/components/documents/documents-menu";
 import { InscriptionActionsMenu } from "@/components/inscriptions/inscription-actions-menu";
 import { PaiementEditor } from "@/components/inscriptions/paiement-editor";
+import { CertificationSelect } from "@/components/inscriptions/certification-select";
 import { SendSatisfactionButton } from "@/components/sessions/send-satisfaction-button";
 import { SendConvocationsButton } from "@/components/sessions/send-convocations-button";
 import { SendCompteRenduButton } from "@/components/sessions/send-compte-rendu-button";
@@ -393,6 +394,7 @@ export default async function SessionDetailPage({
                     </span>
                   </TableHead>
                   <TableHead>Statut</TableHead>
+                  <TableHead>Certification</TableHead>
                   <TableHead className="text-right">Action</TableHead>
                 </TableRow>
               </TableHeader>
@@ -426,6 +428,12 @@ export default async function SessionDetailPage({
                       >
                         {INSCRIPTION_STATUT_LABELS[i.statut]}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <CertificationSelect
+                        inscriptionId={i.id}
+                        value={i.resultatCertification}
+                      />
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">

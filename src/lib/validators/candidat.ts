@@ -10,6 +10,8 @@ export const candidatFormSchema = z.object({
   email: z.string().trim().email("Email invalide"),
   telephone: optionalText,
   dateNaissance: optionalText, // chaîne "AAAA-MM-JJ" issue de l'input date
+  lieuNaissance: optionalText,
+  paysNaissance: optionalText,
   adresse: optionalText,
   ville: optionalText,
   codePostal: optionalText,
@@ -18,6 +20,9 @@ export const candidatFormSchema = z.object({
   situationPro: optionalText,
   employeur: optionalText,
   posteOccupe: optionalText,
+  dernierDiplome: optionalText,
+  // Acquisition
+  sourceConnaissance: optionalText,
   // Financement & statut
   financementType: z.nativeEnum(FinancementType).or(z.literal("")).optional(),
   formationSouhaiteeId: optionalText,
@@ -42,3 +47,30 @@ export const STATUT_LABELS: Record<CandidatStatut, string> = {
   REFUSE: "Refusé",
   ARCHIVE: "Archivé",
 };
+
+/** Comment le prospect nous a connus (sert au suivi des sources de trafic). */
+export const SOURCE_CONNAISSANCE_OPTIONS = [
+  "TikTok",
+  "Facebook",
+  "Instagram",
+  "Google",
+  "Mon Compte Formation (CPF)",
+  "Recommandation d'un ami",
+  "LinkedIn",
+  "Site internet",
+  "France Travail",
+  "Autre",
+] as const;
+
+/** Niveaux / derniers diplômes proposés (avec « Autre » pour saisie libre). */
+export const DIPLOME_OPTIONS = [
+  "Sans diplôme",
+  "Brevet des collèges",
+  "CAP / BEP",
+  "Baccalauréat",
+  "BAC+2 (BTS, DUT, DEUG)",
+  "BAC+3 (Licence, Bachelor)",
+  "BAC+5 (Master, Ingénieur)",
+  "Doctorat",
+  "Autre",
+] as const;

@@ -14,10 +14,12 @@ import {
 } from "@/components/ui/table";
 import { STATUT_LABELS, FINANCEMENT_LABELS } from "@/lib/validators/candidat";
 import { StatutSelect } from "@/components/crm/statut-select";
+import { SendProspectLinkButton } from "@/components/crm/send-prospect-link-button";
 import {
   QuickEnrollModal,
   type SessionOption,
 } from "@/components/inscriptions/quick-enroll-modal";
+import { TrendingUp } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -88,6 +90,15 @@ export default async function CrmPage() {
 
   const total = candidats.length;
 
+  // Récapitulatif des sources d'acquisition (d'où vient le trafic)
+  const sourceCounts = new Map<string, number>();
+  for (const c of candidats) {
+    const key = c.sourceConnaissance?.trim() || "Non renseigné";
+    sourceCounts.set(key, (sourceCounts.get(key) ?? 0) + 1);
+  }
+  const sources = [...sourceCounts.entries()].sort((a, b) => b[1] - a[1]);
+  const maxSource = sources.length ? sources[0][1] : 0;
+
   return (
     <div className="space-y-6">
       {/* En-tête */}
@@ -106,6 +117,36 @@ export default async function CrmPage() {
           Nouveau prospect
         </Button>
       </div>
+
+      {/* Sources d'acquisition — d'où vient le trafic */}
+      {total > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <TrendingUp className="h-4 w-4" /> Sources d&apos;acquisition
+              <span className="text-xs font-normal text-muted-foreground">
+                (comment les prospects nous ont connus)
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {sources.map(([src, n]) => (
+              <div key={src} className="flex items-center gap-3 text-sm">
+                <span className="w-44 shrink-0 truncate">{src}</span>
+                <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="h-full rounded-full bg-primary"
+                    style={{ width: `${maxSource ? (n / maxSource) * 100 : 0}%` }}
+                  />
+                </div>
+                <span className="w-16 shrink-0 text-right text-muted-foreground">
+                  {n} ({Math.round((n / total) * 100)}%)
+                </span>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       {total === 0 ? (
         <Card>
@@ -193,7 +234,24 @@ export default async function CrmPage() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1.5">
+                        <div className="flex flex-wrap items-center justify-end gap-1.5">
+                          {/* Fiche prospect : statut */}
+                          {c.prospectFormCompletedAt ? (
+                            <Badge className="bg-emerald-500/10 text-emerald-700">
+                              fiche signée
+                            </Badge>
+                          ) : c.prospectFormSentAt ? (
+                            <Badge className="bg-amber-500/10 text-amber-700">
+                              lien envoyé
+                            </Badge>
+                          ) : null}
+                          {/* Envoi du lien de la fiche d'inscription */}
+                          {c.statut !== "INSCRIT" && (
+                            <SendProspectLinkButton
+                              candidatId={c.id}
+                              sent={!!c.prospectFormSentAt}
+                            />
+                          )}
                           {/* Changement de statut rapide */}
                           <StatutSelect id={c.id} statut={c.statut} />
                           {/* Inscription rapide à une session */}

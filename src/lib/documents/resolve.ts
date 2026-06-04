@@ -33,6 +33,15 @@ export function buildVariables(i: InscriptionComplete): Record<string, string> {
     nom_complet: `${c.prenom} ${c.nom}`,
     email: c.email,
     telephone: c.telephone ?? "",
+    date_naissance: d(c.dateNaissance),
+    lieu_naissance: c.lieuNaissance ?? "—",
+    pays_naissance: c.paysNaissance ?? "—",
+    naissance:
+      [d(c.dateNaissance), c.lieuNaissance, c.paysNaissance]
+        .filter(Boolean)
+        .join(" à ") || "—",
+    dernier_diplome: c.dernierDiplome ?? "—",
+    source_connaissance: c.sourceConnaissance ?? "—",
     adresse_candidat:
       [c.adresse, c.codePostal, c.ville].filter(Boolean).join(", ") || "—",
     // Formation

@@ -46,6 +46,8 @@ export default async function ModifierCandidatPage({
             dateNaissance: c.dateNaissance
               ? c.dateNaissance.toISOString().slice(0, 10)
               : "",
+            lieuNaissance: c.lieuNaissance ?? "",
+            paysNaissance: c.paysNaissance ?? "",
             adresse: c.adresse ?? "",
             ville: c.ville ?? "",
             codePostal: c.codePostal ?? "",
@@ -53,6 +55,8 @@ export default async function ModifierCandidatPage({
             situationPro: c.situationPro ?? "",
             employeur: c.employeur ?? "",
             posteOccupe: c.posteOccupe ?? "",
+            dernierDiplome: c.dernierDiplome ?? "",
+            sourceConnaissance: c.sourceConnaissance ?? "",
             financementType: c.financementType ?? undefined,
             statut: c.statut,
           }}
