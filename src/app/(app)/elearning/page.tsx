@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus, GraduationCap, BookOpen } from "lucide-react";
+import { Plus, GraduationCap, BookOpen, Users } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -32,9 +32,14 @@ export default async function ElearningPage() {
             Créez et organisez vos cours en ligne par academy et par formation.
           </p>
         </div>
-        <Button render={<Link href="/elearning/nouveau" />}>
-          <Plus className="mr-1.5 h-4 w-4" /> Nouveau cours
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" render={<Link href="/elearning/apprenants" />}>
+            <Users className="mr-1.5 h-4 w-4" /> Élèves &amp; accès
+          </Button>
+          <Button render={<Link href="/elearning/nouveau" />}>
+            <Plus className="mr-1.5 h-4 w-4" /> Nouveau cours
+          </Button>
+        </div>
       </div>
 
       {cours.length === 0 ? (

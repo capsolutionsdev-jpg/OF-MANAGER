@@ -13,8 +13,30 @@ import {
 
 export const dynamic = "force-dynamic";
 
+import type { LeconQuizItem, LeconImage } from "@/lib/validators/cours";
+
 type Ressource = { label: string; url: string };
-type QuizItem = { enonce: string; options: string[]; reponse: number };
+
+// Normalise un item de quiz (compat ascendante : ancien format { reponse }).
+function normQuiz(raw: unknown): LeconQuizItem {
+  const q = (raw ?? {}) as Record<string, unknown>;
+  if (q.type === "QCU" || q.type === "QCM" || q.type === "REDIGEE") {
+    return {
+      type: q.type as LeconQuizItem["type"],
+      enonce: String(q.enonce ?? ""),
+      options: Array.isArray(q.options) ? (q.options as string[]) : [],
+      bonnes: Array.isArray(q.bonnes) ? (q.bonnes as number[]) : [],
+      corrige: q.corrige ? String(q.corrige) : undefined,
+    };
+  }
+  // Ancien format { enonce, options, reponse } → QCU
+  return {
+    type: "QCU",
+    enonce: String(q.enonce ?? ""),
+    options: Array.isArray(q.options) ? (q.options as string[]) : [],
+    bonnes: typeof q.reponse === "number" ? [q.reponse] : [],
+  };
+}
 
 export default async function CoursManagePage({
   params,
@@ -49,10 +71,13 @@ export default async function CoursManagePage({
       contenu: l.contenu ?? "",
       videoUrl: l.videoUrl ?? "",
       dureeMin: l.dureeMin,
+      images: (Array.isArray(l.imagesJson)
+        ? (l.imagesJson as LeconImage[])
+        : []) as LeconImage[],
       ressources: (Array.isArray(l.ressourcesJson)
         ? (l.ressourcesJson as Ressource[])
         : []) as Ressource[],
-      quiz: (Array.isArray(l.quizJson) ? (l.quizJson as QuizItem[]) : []) as QuizItem[],
+      quiz: (Array.isArray(l.quizJson) ? l.quizJson : []).map(normQuiz),
       isPublished: l.isPublished,
     })),
   }));

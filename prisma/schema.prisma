@@ -503,6 +503,7 @@ model Apprenant {
   documents          DocumentGenere[]
   progressions       ProgressionLecon[]
   quizResultats      QuizResultat[]
+  coursAssignes      CoursApprenant[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1024,7 +1025,8 @@ model Cours {
   isPublished Boolean  @default(false)
   ordre       Int      @default(0)
 
-  modules CoursModule[]
+  modules    CoursModule[]
+  apprenants CoursApprenant[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1053,9 +1055,10 @@ model Lecon {
   ordre       Int     @default(0)
   contenu     String? @db.Text // texte riche (HTML)
   videoUrl    String? // lien YouTube / Vimeo
+  imagesJson  Json? // [{ url, legende }]
   dureeMin    Int?
   ressourcesJson Json? // [{ label, url }]
-  quizJson    Json? // [{ enonce, options[], reponse }]
+  quizJson    Json? // [{ type: QCU|QCM|REDIGEE, enonce, options[], bonnes[], corrige }]
   isPublished Boolean @default(true)
 
   progressions  ProgressionLecon[]
@@ -1090,4 +1093,18 @@ model QuizResultat {
 
   @@unique([apprenantId, leconId])
   @@index([apprenantId])
+}
+
+// Attribution d'un cours à un apprenant (accès e-learning géré par l'admin)
+model CoursApprenant {
+  id          String    @id @default(cuid())
+  coursId     String
+  cours       Cours     @relation(fields: [coursId], references: [id], onDelete: Cascade)
+  apprenantId String
+  apprenant   Apprenant @relation(fields: [apprenantId], references: [id], onDelete: Cascade)
+  assignedAt  DateTime  @default(now())
+
+  @@unique([coursId, apprenantId])
+  @@index([apprenantId])
+  @@index([coursId])
 }

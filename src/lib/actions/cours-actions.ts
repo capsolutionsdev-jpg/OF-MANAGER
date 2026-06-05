@@ -9,6 +9,7 @@ import {
   type CoursFormValues,
   type LeconRessource,
   type LeconQuizItem,
+  type LeconImage,
 } from "@/lib/validators/cours";
 
 type Res = { ok: boolean; error?: string };
@@ -161,6 +162,7 @@ export async function updateLecon(
     contenu?: string;
     videoUrl?: string;
     dureeMin?: number | null;
+    images?: LeconImage[];
     ressources?: LeconRessource[];
     quiz?: LeconQuizItem[];
     isPublished?: boolean;
@@ -176,11 +178,20 @@ export async function updateLecon(
       ...(data.contenu !== undefined ? { contenu: data.contenu || null } : {}),
       ...(data.videoUrl !== undefined ? { videoUrl: data.videoUrl.trim() || null } : {}),
       ...(data.dureeMin !== undefined ? { dureeMin: data.dureeMin } : {}),
+      ...(data.images !== undefined
+        ? { imagesJson: data.images.filter((i) => i.url) }
+        : {}),
       ...(data.ressources !== undefined
         ? { ressourcesJson: data.ressources.filter((r) => r.label && r.url) }
         : {}),
       ...(data.quiz !== undefined
-        ? { quizJson: data.quiz.filter((q) => q.enonce && q.options.length >= 2) }
+        ? {
+            quizJson: data.quiz.filter(
+              (q) =>
+                q.enonce &&
+                (q.type === "REDIGEE" || q.options.filter((o) => o.trim()).length >= 2),
+            ),
+          }
         : {}),
       ...(data.isPublished !== undefined ? { isPublished: data.isPublished } : {}),
     },
@@ -198,5 +209,57 @@ export async function deleteLecon(leconId: string): Promise<Res> {
     select: { module: { select: { coursId: true } } },
   });
   revalidatePath(`/elearning/${lecon.module.coursId}`);
+  return { ok: true };
+}
+
+// ── Réordonnancement (échange avec le voisin) ──
+export async function moveModule(
+  moduleId: string,
+  dir: "up" | "down",
+): Promise<Res> {
+  const session = await auth();
+  if (!session?.user) return { ok: false, error: "Non autorisé." };
+  const m = await prisma.coursModule.findUnique({ where: { id: moduleId } });
+  if (!m) return { ok: false, error: "Introuvable." };
+  const voisin = await prisma.coursModule.findFirst({
+    where: {
+      coursId: m.coursId,
+      ordre: dir === "up" ? { lt: m.ordre } : { gt: m.ordre },
+    },
+    orderBy: { ordre: dir === "up" ? "desc" : "asc" },
+  });
+  if (!voisin) return { ok: true };
+  await prisma.$transaction([
+    prisma.coursModule.update({ where: { id: m.id }, data: { ordre: voisin.ordre } }),
+    prisma.coursModule.update({ where: { id: voisin.id }, data: { ordre: m.ordre } }),
+  ]);
+  revalidatePath(`/elearning/${m.coursId}`);
+  return { ok: true };
+}
+
+export async function moveLecon(
+  leconId: string,
+  dir: "up" | "down",
+): Promise<Res> {
+  const session = await auth();
+  if (!session?.user) return { ok: false, error: "Non autorisé." };
+  const l = await prisma.lecon.findUnique({
+    where: { id: leconId },
+    include: { module: { select: { coursId: true } } },
+  });
+  if (!l) return { ok: false, error: "Introuvable." };
+  const voisin = await prisma.lecon.findFirst({
+    where: {
+      moduleId: l.moduleId,
+      ordre: dir === "up" ? { lt: l.ordre } : { gt: l.ordre },
+    },
+    orderBy: { ordre: dir === "up" ? "desc" : "asc" },
+  });
+  if (!voisin) return { ok: true };
+  await prisma.$transaction([
+    prisma.lecon.update({ where: { id: l.id }, data: { ordre: voisin.ordre } }),
+    prisma.lecon.update({ where: { id: voisin.id }, data: { ordre: l.ordre } }),
+  ]);
+  revalidatePath(`/elearning/${l.module.coursId}`);
   return { ok: true };
 }
