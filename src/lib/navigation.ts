@@ -11,6 +11,7 @@ import {
   Bell,
   Shield,
   BarChart3,
+  GraduationCap,
   type LucideIcon,
 } from "lucide-react";
 
@@ -52,6 +53,12 @@ export const navItems: NavItem[] = [
     href: "/sessions",
     icon: CalendarDays,
     roles: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT", "FORMATEUR"],
+  },
+  {
+    label: "E-learning",
+    href: "/elearning",
+    icon: GraduationCap,
+    roles: ["ADMIN", "RESPONSABLE_FORMATION", "FORMATEUR"],
   },
   {
     label: "Signatures",

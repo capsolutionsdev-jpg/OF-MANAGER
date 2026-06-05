@@ -401,6 +401,7 @@ model Formation {
   evaluations Evaluation[]
   formateurs  Formateur[]
   prospects   Candidat[]   @relation("FormationProspects")
+  cours       Cours[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -500,6 +501,8 @@ model Apprenant {
   presences          Presence[]
   resultats          EvaluationResultat[]
   documents          DocumentGenere[]
+  progressions       ProgressionLecon[]
+  quizResultats      QuizResultat[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1000,4 +1003,91 @@ model AuditLog {
 
   @@index([entityType, entityId])
   @@index([userId])
+}
+
+// =============================================================
+//  MODULE E-LEARNING (LMS) — cours par academy/formation
+//  Cours → Modules → Leçons (texte + vidéo + ressources + quiz)
+//  Accès réservé aux apprenants inscrits à la formation du cours.
+// =============================================================
+
+model Cours {
+  id          String   @id @default(cuid())
+  titre       String
+  slug        String   @unique
+  description String?  @db.Text
+  academy     Academy
+  formationId String?
+  formation   Formation? @relation(fields: [formationId], references: [id])
+  niveau      String? // ex. « Débutant », « B1 »…
+  imageUrl    String?
+  isPublished Boolean  @default(false)
+  ordre       Int      @default(0)
+
+  modules CoursModule[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([academy])
+  @@index([formationId])
+}
+
+model CoursModule {
+  id      String  @id @default(cuid())
+  coursId String
+  cours   Cours   @relation(fields: [coursId], references: [id], onDelete: Cascade)
+  titre   String
+  ordre   Int     @default(0)
+
+  lecons Lecon[]
+
+  @@index([coursId])
+}
+
+model Lecon {
+  id          String  @id @default(cuid())
+  moduleId    String
+  module      CoursModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  titre       String
+  ordre       Int     @default(0)
+  contenu     String? @db.Text // texte riche (HTML)
+  videoUrl    String? // lien YouTube / Vimeo
+  dureeMin    Int?
+  ressourcesJson Json? // [{ label, url }]
+  quizJson    Json? // [{ enonce, options[], reponse }]
+  isPublished Boolean @default(true)
+
+  progressions  ProgressionLecon[]
+  quizResultats QuizResultat[]
+
+  @@index([moduleId])
+}
+
+// Suivi de progression : une ligne = une leçon terminée par un apprenant
+model ProgressionLecon {
+  id          String    @id @default(cuid())
+  apprenantId String
+  apprenant   Apprenant @relation(fields: [apprenantId], references: [id], onDelete: Cascade)
+  leconId     String
+  lecon       Lecon     @relation(fields: [leconId], references: [id], onDelete: Cascade)
+  completedAt DateTime  @default(now())
+
+  @@unique([apprenantId, leconId])
+  @@index([apprenantId])
+}
+
+// Résultat de quiz d'une leçon pour un apprenant
+model QuizResultat {
+  id          String    @id @default(cuid())
+  apprenantId String
+  apprenant   Apprenant @relation(fields: [apprenantId], references: [id], onDelete: Cascade)
+  leconId     String
+  lecon       Lecon     @relation(fields: [leconId], references: [id], onDelete: Cascade)
+  score       Int
+  total       Int
+  completedAt DateTime  @default(now())
+
+  @@unique([apprenantId, leconId])
+  @@index([apprenantId])
 }
