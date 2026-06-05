@@ -37,6 +37,9 @@ const nextConfig: NextConfig = {
     "/api/pdf-test": [
       "./node_modules/@sparticuz/chromium/bin/**",
     ],
+    "/mes-cours/[coursId]/attestation": [
+      "./node_modules/@sparticuz/chromium/bin/**",
+    ],
   },
 };
 

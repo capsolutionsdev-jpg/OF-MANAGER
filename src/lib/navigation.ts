@@ -31,6 +31,12 @@ export const navItems: NavItem[] = [
     roles: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT", "FORMATEUR", "APPRENANT"],
   },
   {
+    label: "Mes cours",
+    href: "/mes-cours",
+    icon: GraduationCap,
+    roles: ["APPRENANT"],
+  },
+  {
     label: "CRM Prospects",
     href: "/crm",
     icon: Target,
