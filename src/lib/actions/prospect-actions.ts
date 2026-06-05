@@ -8,6 +8,7 @@ import { auth } from "@/auth";
 import { sendEmail } from "@/lib/email";
 import { orgConfig } from "@/lib/org-config";
 import { generateToken, appBaseUrl } from "@/lib/token";
+import { logProspectEmail } from "@/lib/actions/crm-actions";
 
 export type ProspectFormValues = {
   telephone: string;
@@ -71,6 +72,8 @@ ${orgConfig.representant} — ${orgConfig.name}`;
     where: { id: candidatId },
     data: { prospectFormSentAt: new Date() },
   });
+
+  await logProspectEmail(candidatId, "Envoi du lien de la fiche d'inscription");
 
   await prisma.auditLog.create({
     data: {

@@ -99,6 +99,15 @@ export default async function CrmPage() {
   const sources = [...sourceCounts.entries()].sort((a, b) => b[1] - a[1]);
   const maxSource = sources.length ? sources[0][1] : 0;
 
+  // Taux de conversion (gagnés / total) + relances en retard
+  const gagnes = candidats.filter((c) => c.crmStage === "GAGNE").length;
+  const inscrits = candidats.filter((c) => c.statut === "INSCRIT").length;
+  const tauxConversion = total > 0 ? Math.round((gagnes / total) * 100) : 0;
+  const now = new Date();
+  const relancesEnRetard = candidats.filter(
+    (c) => c.relanceDate && c.relanceDate <= now && c.statut !== "INSCRIT",
+  ).length;
+
   return (
     <div className="space-y-6">
       {/* En-tête */}
@@ -112,11 +121,60 @@ export default async function CrmPage() {
             {total !== 1 ? "s" : ""}, classés par formation souhaitée.
           </p>
         </div>
-        <Button render={<Link href="/candidats/nouveau" />}>
-          <Plus className="mr-1.5 h-4 w-4" />
-          Nouveau prospect
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" render={<Link href="/crm/pipeline" />}>
+            <TrendingUp className="mr-1.5 h-4 w-4" />
+            Pipeline
+          </Button>
+          <Button render={<Link href="/candidats/nouveau" />}>
+            <Plus className="mr-1.5 h-4 w-4" />
+            Nouveau prospect
+          </Button>
+        </div>
       </div>
+
+      {/* KPI commerciaux */}
+      {total > 0 && (
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                Prospects actifs
+              </p>
+              <p className="text-2xl font-bold">{total}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                Taux de conversion
+              </p>
+              <p className="text-2xl font-bold">{tauxConversion}%</p>
+              <p className="text-xs text-muted-foreground">{gagnes} gagné(s)</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                Inscrits
+              </p>
+              <p className="text-2xl font-bold">{inscrits}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                Relances en retard
+              </p>
+              <p
+                className={`text-2xl font-bold ${relancesEnRetard > 0 ? "text-red-600" : ""}`}
+              >
+                {relancesEnRetard}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Sources d'acquisition — d'où vient le trafic */}
       {total > 0 && (

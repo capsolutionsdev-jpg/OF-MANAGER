@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Pencil, History, CalendarDays, FileDown, Trash2 } from "lucide-react";
+import { ArrowLeft, Pencil, History, CalendarDays, FileDown, Trash2, Target, MessageSquare } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,10 +15,13 @@ import {
   FINANCEMENT_LABELS,
 } from "@/lib/validators/candidat";
 import { INSCRIPTION_STATUT_LABELS } from "@/lib/validators/inscription";
+import { INTERACTION_LABELS } from "@/lib/validators/crm";
 import { anonymiseCandidat } from "@/lib/actions/rgpd-actions";
 import { resendParcoursAction } from "@/lib/actions/parcours-actions";
 import { DossierChecklist } from "@/components/inscriptions/dossier-checklist";
 import { SendProspectLinkButton } from "@/components/crm/send-prospect-link-button";
+import { CrmPanel } from "@/components/crm/crm-panel";
+import { AddInteractionForm } from "@/components/crm/add-interaction-form";
 import { Send } from "lucide-react";
 
 function Field({ label, value }: { label: string; value?: string | null }) {
@@ -45,9 +48,19 @@ export default async function CandidatDetailPage({
         include: { session: { include: { formation: true } } },
         orderBy: { createdAt: "desc" },
       },
+      interactionsCandidat: {
+        include: { user: { select: { name: true } } },
+        orderBy: { date: "desc" },
+      },
     },
   });
   if (!candidat) notFound();
+
+  const users = await prisma.user.findMany({
+    where: { isActive: true },
+    select: { id: true, name: true },
+    orderBy: { name: "asc" },
+  });
 
   const logs = await prisma.auditLog.findMany({
     where: { entityType: "Candidat", entityId: id },
@@ -162,6 +175,79 @@ export default async function CandidatDetailPage({
                 }
               />
             </dl>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* CRM commercial + Échanges */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Target className="h-4 w-4" /> Suivi commercial (CRM)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CrmPanel
+              candidatId={candidat.id}
+              crmStage={candidat.crmStage}
+              assignedToId={candidat.assignedToId}
+              valeurEstimee={
+                candidat.valeurEstimee ? String(Number(candidat.valeurEstimee)) : ""
+              }
+              relanceDate={
+                candidat.relanceDate
+                  ? candidat.relanceDate.toISOString().slice(0, 10)
+                  : ""
+              }
+              tags={candidat.tags}
+              users={users}
+            />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <MessageSquare className="h-4 w-4" /> Historique des échanges (
+              {candidat.interactionsCandidat.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <AddInteractionForm candidatId={candidat.id} />
+            {candidat.interactionsCandidat.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Aucun échange enregistré.
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {candidat.interactionsCandidat.map((it) => (
+                  <li key={it.id} className="rounded-lg border bg-muted/20 p-2.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="flex items-center gap-2 text-sm font-medium">
+                        <Badge variant="outline" className="text-[10px] uppercase">
+                          {INTERACTION_LABELS[it.type]}
+                        </Badge>
+                        {it.sujet ?? "—"}
+                      </span>
+                      <span className="shrink-0 text-xs text-muted-foreground">
+                        {it.date.toLocaleDateString("fr-FR")}
+                      </span>
+                    </div>
+                    {it.contenu && (
+                      <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
+                        {it.contenu}
+                      </p>
+                    )}
+                    {it.user?.name && (
+                      <p className="mt-1 text-[11px] text-muted-foreground">
+                        par {it.user.name}
+                      </p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
           </CardContent>
         </Card>
       </div>

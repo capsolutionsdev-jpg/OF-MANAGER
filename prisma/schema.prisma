@@ -248,6 +248,8 @@ model User {
   documentsGeneres   DocumentGenere[]   @relation("DocumentGenerePar")
   piecesUploadees    PieceJointe[]      @relation("PieceUploadeePar")
   candidatsCrees     Candidat[]         @relation("CandidatCreePar")
+  candidatsAssignes  Candidat[]         @relation("CandidatAssigne")
+  candidatInteractions CandidatInteraction[] @relation("CandidatInteractionUser")
   sessionsCreees     Session[]          @relation("SessionCreeePar")
   interactionsCrm    CrmInteraction[]
   qualiopiResponsable QualiopiIndicateur[] @relation("IndicateurResponsable")
@@ -296,6 +298,16 @@ model Candidat {
 
   statut CandidatStatut @default(NOUVEAU)
 
+  // ── CRM commercial (pipeline, opportunité, affectation, relance, tags) ──
+  crmStage      CrmStage  @default(NOUVEAU) // étape du pipeline commercial
+  tags          String[]  // étiquettes de segmentation
+  valeurEstimee Decimal?  @db.Decimal(10, 2) // valeur estimée de l'opportunité
+  relanceDate   DateTime? // prochaine relance commerciale
+  assignedToId  String?
+  assignedTo    User?     @relation("CandidatAssigne", fields: [assignedToId], references: [id])
+
+  interactionsCandidat CandidatInteraction[]
+
   // ── Formulaire prospect public (lien envoyé par e-mail → fiche renseignée + signée) ──
   prospectToken          String?   @unique
   prospectFormSentAt     DateTime? // lien du formulaire prospect envoyé
@@ -316,6 +328,24 @@ model Candidat {
 
   @@index([statut])
   @@index([email])
+  @@index([crmStage])
+  @@index([assignedToId])
+}
+
+// Interaction commerciale avec un prospect/candidat (timeline des échanges)
+model CandidatInteraction {
+  id         String          @id @default(cuid())
+  candidatId String
+  candidat   Candidat        @relation(fields: [candidatId], references: [id], onDelete: Cascade)
+  type       InteractionType
+  date       DateTime        @default(now())
+  sujet      String?
+  contenu    String?         @db.Text
+  userId     String?
+  user       User?           @relation("CandidatInteractionUser", fields: [userId], references: [id])
+  createdAt  DateTime        @default(now())
+
+  @@index([candidatId])
 }
 
 model PieceJointe {
