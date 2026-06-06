@@ -1,8 +1,45 @@
 import { NextResponse } from "next/server";
 import { FinancementType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { sendEmail } from "@/lib/email";
+import { orgConfig } from "@/lib/org-config";
+import { appBaseUrl } from "@/lib/token";
 
 export const runtime = "nodejs";
+
+// Envoie la notification "nouveau prospect" à l'organisme (e-mail de la plateforme,
+// déjà fonctionnel). Non bloquant : n'échoue jamais la création du prospect.
+async function notifierNouveauProspect(infos: {
+  prenom: string;
+  nom: string;
+  email: string;
+  telephone: string | null;
+  formationTitre: string;
+  financement: string;
+  origine: string;
+  sourceConnaissance: string;
+  message: string | null;
+  dejaConnu: boolean;
+}) {
+  try {
+    const to = process.env.LEAD_NOTIF_EMAIL || orgConfig.email;
+    if (!to) return;
+    const sujet = `🎓 ${infos.dejaConnu ? "Nouvelle demande" : "NOUVEAU PROSPECT"} (site) — à rappeler : ${infos.prenom} ${infos.nom}`;
+    const corps = `Un ${infos.dejaConnu ? "prospect connu a refait une demande" : "nouveau prospect s'est inscrit"} depuis le site web.
+
+Nom        : ${infos.prenom} ${infos.nom}
+E-mail     : ${infos.email}
+Téléphone  : ${infos.telephone ?? "—"}
+Formation  : ${infos.formationTitre || "—"}
+Financement: ${infos.financement || "—"}
+Origine    : ${infos.origine} · ${infos.sourceConnaissance}
+${infos.message ? `Message    : ${infos.message}\n` : ""}
+➡️ À rappeler. Fiche dans le CRM : ${appBaseUrl()}/crm`;
+    await sendEmail({ to, subject: sujet, body: corps });
+  } catch (e) {
+    console.error("[api/lead] notif e-mail échouée (non bloquant):", e);
+  }
+}
 
 // Réception des prospects venant du site vitrine → création dans le CRM.
 // Protégé par un secret partagé (en-tête x-lead-secret = env LEAD_API_SECRET).
@@ -81,6 +118,11 @@ export async function POST(req: Request) {
           data: { sourceConnaissance },
         });
       }
+      await notifierNouveauProspect({
+        prenom, nom, email, telephone,
+        formationTitre, financement: financementRaw,
+        origine: formOrigine, sourceConnaissance, message, dejaConnu: true,
+      });
       return NextResponse.json({ ok: true, candidatId: existing.id, dedup: true });
     }
 
@@ -103,6 +145,11 @@ export async function POST(req: Request) {
           },
         },
       },
+    });
+    await notifierNouveauProspect({
+      prenom, nom, email, telephone,
+      formationTitre, financement: financementRaw,
+      origine: formOrigine, sourceConnaissance, message, dejaConnu: false,
     });
     return NextResponse.json({ ok: true, candidatId: candidat.id });
   } catch (e) {
