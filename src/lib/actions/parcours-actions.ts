@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
+import bcrypt from "bcryptjs";
 import {
   EmailStatut,
   FinancementType,
@@ -323,6 +324,117 @@ ${orgConfig.representant} — ${orgConfig.name}`;
     });
   }
 
+  // ── Provisionnement automatique de l'accès e-learning ──
+  try {
+    await provisionElearning(insc.id);
+  } catch (e) {
+    console.error("[elearning provision]", e);
+  }
+
   revalidatePath(`/candidats/${insc.candidatId}`);
   return { ok: true };
+}
+
+/**
+ * À la signature : crée le compte e-learning du candidat (s'il n'existe pas),
+ * lui attribue les cours publiés de sa formation, et lui envoie un e-mail
+ * d'accès (lien + identifiants). N'envoie l'e-mail que s'il y a des cours.
+ */
+async function provisionElearning(inscriptionId: string) {
+  const insc = await prisma.inscription.findUnique({
+    where: { id: inscriptionId },
+    include: { candidat: true, session: { include: { formation: true } } },
+  });
+  if (!insc?.candidat?.email) return;
+  const email = insc.candidat.email.toLowerCase();
+  const name = `${insc.candidat.prenom} ${insc.candidat.nom}`.trim();
+
+  // Dossier apprenant
+  const apprenant = await prisma.apprenant.upsert({
+    where: { candidatId: insc.candidatId },
+    update: {},
+    create: { candidatId: insc.candidatId },
+    select: { id: true, userId: true },
+  });
+
+  // Cours publiés de la formation suivie
+  const cours = await prisma.cours.findMany({
+    where: { formationId: insc.session.formationId, isPublished: true },
+    select: { id: true, titre: true },
+  });
+
+  // Attribue les cours (idempotent)
+  for (const c of cours) {
+    await prisma.coursApprenant.upsert({
+      where: { coursId_apprenantId: { coursId: c.id, apprenantId: apprenant.id } },
+      update: {},
+      create: { coursId: c.id, apprenantId: apprenant.id },
+    });
+  }
+
+  // Compte de connexion
+  let motDePasse: string | null = null;
+  if (!apprenant.userId) {
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing) {
+      await prisma.user.update({
+        where: { id: existing.id },
+        data: { role: "APPRENANT", isActive: true },
+      });
+      await prisma.apprenant.update({
+        where: { id: apprenant.id },
+        data: { userId: existing.id },
+      });
+    } else {
+      motDePasse = `CAP-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+      const user = await prisma.user.create({
+        data: {
+          email,
+          name,
+          role: "APPRENANT",
+          passwordHash: await bcrypt.hash(motDePasse, 10),
+        },
+      });
+      await prisma.apprenant.update({
+        where: { id: apprenant.id },
+        data: { userId: user.id },
+      });
+    }
+  }
+
+  // E-mail d'accès uniquement s'il y a des cours à suivre
+  if (cours.length === 0) return;
+
+  const loginUrl = `${appBaseUrl()}/login`;
+  const listeCours = cours.map((c) => `• ${c.titre}`).join("\n");
+  const ident = motDePasse
+    ? `Identifiant : ${email}\nMot de passe provisoire : ${motDePasse}\n(Vous pourrez le modifier après connexion.)`
+    : `Connectez-vous avec votre adresse e-mail (${email}) et votre mot de passe habituel.`;
+  const subject = `Votre accès à l'espace e-learning — ${orgConfig.name}`;
+  const body = `Bonjour ${insc.candidat.prenom},
+
+Votre espace e-learning est prêt ! Vous pouvez dès maintenant accéder à vos cours en ligne :
+${loginUrl}
+
+${ident}
+
+Vos cours :
+${listeCours}
+
+Une fois connecté(e), cliquez sur « Mes cours ».
+
+Bonne formation,
+${orgConfig.representant} — ${orgConfig.name}`;
+
+  const res = await sendEmail({ to: email, subject, body });
+  await prisma.emailLog.create({
+    data: {
+      destinataire: email,
+      sujet: subject,
+      corps: body,
+      statut: res.sent ? EmailStatut.ENVOYE : EmailStatut.EN_ATTENTE,
+      sentAt: res.sent ? new Date() : null,
+      sessionId: insc.sessionId,
+    },
+  });
 }
