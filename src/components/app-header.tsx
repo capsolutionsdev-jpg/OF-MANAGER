@@ -1,6 +1,7 @@
 "use client";
 
-import { Menu, LogOut } from "lucide-react";
+import Link from "next/link";
+import { Menu, LogOut, UserCog } from "lucide-react";
 import type { Role } from "@prisma/client";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -70,6 +71,14 @@ export function AppHeader({ user }: { user: HeaderUser }) {
             <div className="font-medium">{user.name}</div>
             <div className="text-xs text-muted-foreground">{user.email}</div>
           </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <Link
+            href="/mon-compte"
+            className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-muted"
+          >
+            <UserCog className="h-4 w-4" />
+            Mon compte
+          </Link>
           <DropdownMenuSeparator />
           <form action={doSignOut}>
             <button
