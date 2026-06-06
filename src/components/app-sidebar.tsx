@@ -22,10 +22,10 @@ function NavLinks({ role, onNavigate }: { role: Role; onNavigate?: () => void })
             href={item.href}
             onClick={onNavigate}
             className={cn(
-              "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+              "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
               active
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
             )}
           >
             <item.icon className="h-4 w-4 shrink-0" />
