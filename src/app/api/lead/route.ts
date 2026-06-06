@@ -1,0 +1,104 @@
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+
+export const runtime = "nodejs";
+
+// Réception des prospects venant du site vitrine → création dans le CRM.
+// Protégé par un secret partagé (en-tête x-lead-secret = env LEAD_API_SECRET).
+// Si LEAD_API_SECRET n'est pas défini, l'endpoint accepte (mode ouvert).
+export async function POST(req: Request) {
+  const secret = process.env.LEAD_API_SECRET;
+  if (secret && req.headers.get("x-lead-secret") !== secret) {
+    return NextResponse.json({ ok: false, error: "Non autorisé." }, { status: 401 });
+  }
+
+  let body: Record<string, unknown>;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ ok: false, error: "Requête invalide." }, { status: 400 });
+  }
+
+  const prenom = String(body.prenom ?? "").trim();
+  const nom = String(body.nom ?? "").trim();
+  const email = String(body.email ?? "").trim().toLowerCase();
+  const telephone = String(body.telephone ?? body.tel ?? "").trim() || null;
+  const message = String(body.message ?? "").trim() || null;
+  const formationTitre = String(body.formation ?? body.formationTitre ?? "").trim();
+  const formOrigine = String(body.source ?? "site").trim();
+  const utmSource = String(body.utmSource ?? "").trim();
+  const utmCampaign = String(body.utmCampaign ?? "").trim();
+
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return NextResponse.json({ ok: false, error: "E-mail invalide." }, { status: 422 });
+  }
+
+  // Source d'acquisition : la campagne UTM prime, sinon « Site web »
+  const sourceConnaissance = utmSource
+    ? `${utmSource}${utmCampaign ? ` / ${utmCampaign}` : ""}`
+    : "Site web";
+
+  // Rattachement à une formation (best-effort, par titre)
+  let formationSouhaiteeId: string | null = null;
+  if (formationTitre) {
+    const f = await prisma.formation.findFirst({
+      where: { titre: { contains: formationTitre, mode: "insensitive" } },
+      select: { id: true },
+    });
+    formationSouhaiteeId = f?.id ?? null;
+  }
+
+  const detail = [
+    `Demande via le site (${formOrigine}).`,
+    formationTitre ? `Formation : ${formationTitre}.` : "",
+    message ? `Message : ${message}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  try {
+    const existing = await prisma.candidat.findFirst({ where: { email } });
+
+    if (existing) {
+      await prisma.candidatInteraction.create({
+        data: {
+          candidatId: existing.id,
+          type: "EMAIL",
+          sujet: `Nouvelle demande depuis le site (${formOrigine})`,
+          contenu: detail,
+        },
+      });
+      if (!existing.sourceConnaissance) {
+        await prisma.candidat.update({
+          where: { id: existing.id },
+          data: { sourceConnaissance },
+        });
+      }
+      return NextResponse.json({ ok: true, candidatId: existing.id, dedup: true });
+    }
+
+    const candidat = await prisma.candidat.create({
+      data: {
+        nom: nom || "—",
+        prenom: prenom || "—",
+        email,
+        telephone,
+        statut: "NOUVEAU",
+        crmStage: "NOUVEAU",
+        sourceConnaissance,
+        formationSouhaiteeId,
+        interactionsCandidat: {
+          create: {
+            type: "EMAIL",
+            sujet: `Lead site (${formOrigine})`,
+            contenu: detail,
+          },
+        },
+      },
+    });
+    return NextResponse.json({ ok: true, candidatId: candidat.id });
+  } catch (e) {
+    console.error("[api/lead]", e);
+    return NextResponse.json({ ok: false, error: "Erreur serveur." }, { status: 500 });
+  }
+}
