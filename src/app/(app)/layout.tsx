@@ -20,7 +20,7 @@ export default async function AppLayout({
       <AppSidebar role={session.user.role} />
       <div className="flex min-w-0 flex-1 flex-col">
         <AppHeader user={session.user} />
-        <main className="flex-1 bg-muted/30 p-4 md:p-6">{children}</main>
+        <main className="flex-1 bg-muted/60 p-4 md:p-6">{children}</main>
       </div>
     </div>
   );

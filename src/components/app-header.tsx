@@ -32,7 +32,7 @@ export function AppHeader({ user }: { user: HeaderUser }) {
   const initials = label.slice(0, 2).toUpperCase();
 
   return (
-    <header className="flex h-16 items-center justify-between gap-4 border-b bg-card px-4 md:px-6">
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b bg-card/80 px-4 backdrop-blur-md md:px-6">
       <div className="flex items-center gap-2">
         <Sheet>
           <SheetTrigger
@@ -47,7 +47,7 @@ export function AppHeader({ user }: { user: HeaderUser }) {
             <NavLinks role={user.role} />
           </SheetContent>
         </Sheet>
-        <span className="text-sm font-medium text-muted-foreground">
+        <span className="inline-flex items-center rounded-full bg-muted px-3 py-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           {roleLabels[user.role]}
         </span>
       </div>
@@ -59,7 +59,9 @@ export function AppHeader({ user }: { user: HeaderUser }) {
           }
         >
           <Avatar className="h-8 w-8">
-            <AvatarFallback className="text-xs">{initials}</AvatarFallback>
+            <AvatarFallback className="bg-[#0e1c3f] text-xs font-semibold text-white">
+              {initials}
+            </AvatarFallback>
           </Avatar>
           <span className="hidden text-sm sm:inline">{label}</span>
         </DropdownMenuTrigger>
