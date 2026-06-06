@@ -88,10 +88,10 @@ export default async function DashboardPage() {
     totalPlaces > 0 ? Math.round((inscriptionsTotal / totalPlaces) * 100) : 0;
 
   const kpis = [
-    { label: "Candidats", value: candidats, icon: Users, color: "bg-blue-500/10 text-blue-600" },
-    { label: "Apprenants", value: apprenants, icon: GraduationCap, color: "bg-emerald-500/10 text-emerald-600" },
-    { label: "Sessions à venir", value: sessionsAVenir, icon: CalendarClock, color: "bg-amber-500/10 text-amber-600" },
-    { label: "Formations actives", value: formations, icon: BookOpen, color: "bg-violet-500/10 text-violet-600" },
+    { label: "Candidats", value: candidats, icon: Users, color: "bg-gradient-to-br from-blue-500 to-blue-600" },
+    { label: "Apprenants", value: apprenants, icon: GraduationCap, color: "bg-gradient-to-br from-emerald-500 to-emerald-600" },
+    { label: "Sessions à venir", value: sessionsAVenir, icon: CalendarClock, color: "bg-gradient-to-br from-amber-500 to-orange-500" },
+    { label: "Formations actives", value: formations, icon: BookOpen, color: "bg-gradient-to-br from-violet-500 to-purple-600" },
   ];
 
   const statutMax = Math.max(1, ...parStatut.map((s) => s._count._all));
@@ -100,11 +100,14 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl bg-gradient-to-r from-primary to-blue-600 p-6 text-primary-foreground shadow-sm">
-        <h1 className="text-2xl font-bold tracking-tight">Tableau de bord</h1>
-        <p className="mt-1 text-sm text-primary-foreground/80">
-          Vue d&apos;ensemble de l&apos;activité de CAP Compétences.
-        </p>
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#0e1c3f] via-[#142a5c] to-[#1A5FD4] p-6 text-white shadow-sm">
+        <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-white/10 blur-2xl" />
+        <div className="relative z-10">
+          <h1 className="text-2xl font-bold tracking-tight">Tableau de bord</h1>
+          <p className="mt-1 text-sm text-white/75">
+            Vue d&apos;ensemble de l&apos;activité de CAP Compétences.
+          </p>
+        </div>
       </div>
 
       {/* KPIs */}
@@ -113,7 +116,7 @@ export default async function DashboardPage() {
           <Card key={s.label} className="transition-shadow hover:shadow-md">
             <CardContent className="flex items-center gap-4 p-5">
               <div
-                className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${s.color}`}
+                className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-white shadow-sm ${s.color}`}
               >
                 <s.icon className="h-6 w-6" />
               </div>
