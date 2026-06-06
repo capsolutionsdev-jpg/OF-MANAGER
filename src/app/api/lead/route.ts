@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { FinancementType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
@@ -26,6 +27,12 @@ export async function POST(req: Request) {
   const message = String(body.message ?? "").trim() || null;
   const formationTitre = String(body.formation ?? body.formationTitre ?? "").trim();
   const formOrigine = String(body.source ?? "site").trim();
+  const financementRaw = String(body.financement ?? "").trim().toUpperCase();
+  const financementType = (Object.values(FinancementType) as string[]).includes(
+    financementRaw,
+  )
+    ? (financementRaw as FinancementType)
+    : null;
   const utmSource = String(body.utmSource ?? "").trim();
   const utmCampaign = String(body.utmCampaign ?? "").trim();
 
@@ -87,6 +94,7 @@ export async function POST(req: Request) {
         crmStage: "NOUVEAU",
         sourceConnaissance,
         formationSouhaiteeId,
+        financementType,
         interactionsCandidat: {
           create: {
             type: "EMAIL",
