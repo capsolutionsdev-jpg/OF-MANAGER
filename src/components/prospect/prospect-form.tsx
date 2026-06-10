@@ -12,6 +12,7 @@ import {
   SOURCE_CONNAISSANCE_OPTIONS,
   DIPLOME_OPTIONS,
 } from "@/lib/validators/candidat";
+import { PhotoCapture } from "@/components/parcours/photo-capture";
 import {
   submitProspectForm,
   type ProspectFormValues,
@@ -47,6 +48,7 @@ export function ProspectForm({
     sourceConnaissance: defaults.sourceConnaissance ?? "",
     formationSouhaiteeId: defaults.formationSouhaiteeId ?? "",
     financementType: defaults.financementType ?? "",
+    photoDataUrl: defaults.photoDataUrl ?? "",
     consent: false,
   });
 
@@ -124,6 +126,14 @@ export function ProspectForm({
 
   return (
     <form onSubmit={onSubmit} className="space-y-5">
+      {/* Photo d'identité */}
+      <PhotoCapture
+        value={v.photoDataUrl || undefined}
+        onChange={(dataUrl) =>
+          setV((p) => ({ ...p, photoDataUrl: dataUrl ?? "" }))
+        }
+      />
+
       {/* Coordonnées */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="grid gap-1.5">

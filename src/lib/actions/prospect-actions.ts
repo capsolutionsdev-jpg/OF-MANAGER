@@ -26,6 +26,7 @@ export type ProspectFormValues = {
   sourceConnaissance: string;
   formationSouhaiteeId: string;
   financementType: string;
+  photoDataUrl?: string; // photo d'identité (data URL JPEG compressée côté client)
   consent: boolean;
 };
 
@@ -142,6 +143,10 @@ export async function submitProspectForm(
       sourceConnaissance: clean(v.sourceConnaissance),
       formationSouhaiteeId: clean(v.formationSouhaiteeId),
       financementType: finType,
+      // Photo d'identité : uniquement si fournie et bien une image encodée
+      ...(v.photoDataUrl?.startsWith("data:image/")
+        ? { photoUrl: v.photoDataUrl }
+        : {}),
       prospectFormCompletedAt: new Date(),
       prospectSignatureUrl: signatureDataUrl,
       prospectSignatureIp: ip,
