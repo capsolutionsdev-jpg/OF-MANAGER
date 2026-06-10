@@ -1,4 +1,5 @@
-import { ShieldCheck } from "lucide-react";
+import Link from "next/link";
+import { ShieldCheck, MessageSquareWarning, Newspaper, Handshake } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,12 +35,23 @@ export default async function QualiopiPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Conformité Qualiopi</h1>
           <p className="text-sm text-muted-foreground">
             Suivi des 32 indicateurs du Référentiel National Qualité (RNQ).
           </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" render={<Link href="/qualiopi/reclamations" />}>
+            <MessageSquareWarning className="mr-1.5 h-4 w-4" /> Réclamations
+          </Button>
+          <Button variant="outline" size="sm" render={<Link href="/qualiopi/veille" />}>
+            <Newspaper className="mr-1.5 h-4 w-4" /> Veille
+          </Button>
+          <Button variant="outline" size="sm" render={<Link href="/qualiopi/partenaires" />}>
+            <Handshake className="mr-1.5 h-4 w-4" /> Partenaires
+          </Button>
         </div>
       </div>
 

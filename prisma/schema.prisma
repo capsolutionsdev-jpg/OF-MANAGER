@@ -1108,3 +1108,76 @@ model CoursApprenant {
   @@index([apprenantId])
   @@index([coursId])
 }
+
+// ───── Registres Qualiopi (critère 6 & 7) ─────
+
+enum ReclamationOrigine {
+  STAGIAIRE
+  FORMATEUR
+  ENTREPRISE
+  FINANCEUR
+  AUTRE
+}
+
+enum ReclamationStatut {
+  NOUVELLE
+  ACCUSE_RECEPTION // AR envoyé (sous 5 jours ouvrés)
+  EN_TRAITEMENT
+  CLOTUREE
+}
+
+// Registre des réclamations / aléas (indicateurs 31-32)
+model Reclamation {
+  id          String             @id @default(cuid())
+  date        DateTime           @default(now())
+  origine     ReclamationOrigine @default(STAGIAIRE)
+  declarant   String // nom du réclamant
+  contact     String? // email / téléphone
+  formation   String? // formation ou session concernée
+  objet       String
+  description String             @db.Text
+  gravite     Int                @default(1) // 1 mineure · 2 modérée · 3 majeure
+  statut      ReclamationStatut  @default(NOUVELLE)
+  arDate      DateTime? // date de l'accusé de réception (objectif : 5 j ouvrés)
+  analyse     String?            @db.Text // causes identifiées
+  actions     String?            @db.Text // actions correctives / préventives
+  reponseDate DateTime? // date de la réponse argumentée (objectif : 15 j ouvrés)
+  clotureDate DateTime?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@index([statut])
+}
+
+enum VeilleType {
+  LEGALE // indicateur 23 — légale et réglementaire
+  METIERS // indicateur 24 — compétences, métiers, emplois
+  PEDAGOGIQUE // indicateur 25 — innovations pédagogiques et technologiques
+}
+
+// Registre de veille (indicateurs 23-24-25)
+model VeilleEntree {
+  id        String     @id @default(cuid())
+  type      VeilleType
+  date      DateTime   @default(now())
+  source    String // ex. Légifrance, Centre Inffo, INRS…
+  sujet     String
+  resume    String?    @db.Text
+  action    String?    @db.Text // mise en œuvre dans l'organisme
+  lien      String?
+  createdAt DateTime   @default(now())
+
+  @@index([type])
+}
+
+// Registre des partenaires (indicateurs 26-27 : handicap + réseau socio-économique)
+model Partenaire {
+  id        String   @id @default(cuid())
+  nom       String
+  categorie String // ex. Handicap, Emploi, Entreprise, Institutionnel
+  contact   String?
+  telephone String?
+  email     String?
+  objet     String?  @db.Text // nature du partenariat / services
+  createdAt DateTime @default(now())
+}

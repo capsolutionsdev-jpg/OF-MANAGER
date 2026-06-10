@@ -14,6 +14,8 @@ export function buildVariables(i: InscriptionComplete): Record<string, string> {
   const s = i.session;
   const f = s.formation;
   const d = (date: Date | null) => (date ? date.toLocaleDateString("fr-FR") : "");
+  // Texte long (multi-lignes) → HTML avec retours à la ligne préservés.
+  const ml = (t: string | null) => (t ? t.replace(/\n/g, "<br/>") : "—");
 
   return {
     // Organisme
@@ -56,6 +58,14 @@ export function buildVariables(i: InscriptionComplete): Record<string, string> {
         : "—",
     modalite: MODALITE_LABELS[f.modalite],
     financement: i.financementType ? FINANCEMENT_LABELS[i.financementType] : "—",
+    // Contenu pédagogique détaillé (programme Qualiopi)
+    objectifs: ml(f.objectifs),
+    programme_detail: ml(f.programme),
+    prerequis: ml(f.prerequis),
+    public_vise: ml(f.publicVise),
+    methodes_pedagogiques: ml(f.methodesPedagogiques),
+    modalites_evaluation: ml(f.modalitesEvaluation),
+    delai_acces: f.delaiAcces ?? "—",
     // Session
     session_reference: s.reference ?? "—",
     date_debut: d(s.dateDebut),

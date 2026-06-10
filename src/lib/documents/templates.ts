@@ -457,6 +457,154 @@ export const DOCUMENTS: Record<string, { label: string; html: string }> = {
       ${orgStampBlock}`,
     ),
   },
+
+  // ───── Trames Qualiopi (dossier d'audit) ─────
+
+  PROGRAMME: {
+    label: "Programme de formation (Qualiopi)",
+    html: wrap(
+      "Programme de formation",
+      `<table class="doc-table">
+        <tr><td>Intitulé</td><td><strong>{{formation}}</strong> (réf. {{reference_formation}})</td></tr>
+        <tr><td>Certification visée</td><td>{{certification}} — Certificateur : {{certificateur}}</td></tr>
+        <tr><td>Durée</td><td>{{duree}}</td></tr>
+        <tr><td>Modalité</td><td>{{modalite}}</td></tr>
+        <tr><td>Tarif</td><td>{{tarif}}</td></tr>
+        <tr><td>Délai d'accès</td><td>{{delai_acces}}</td></tr>
+      </table>
+      <h2>Public visé</h2><p>{{public_vise}}</p>
+      <h2>Prérequis</h2><p>{{prerequis}}</p>
+      <h2>Objectifs pédagogiques</h2><p>{{objectifs}}</p>
+      <h2>Contenu / déroulé</h2><p>{{programme_detail}}</p>
+      <h2>Méthodes pédagogiques</h2><p>{{methodes_pedagogiques}}</p>
+      <h2>Modalités d'évaluation</h2><p>{{modalites_evaluation}}</p>
+      <h2>Accessibilité aux personnes en situation de handicap</h2>
+      <p>Nos formations sont accessibles aux personnes en situation de handicap.
+      Contactez notre référent handicap ({{organisme_telephone}} — {{organisme_email}})
+      afin d'étudier les adaptations possibles (rythmes, supports, locaux).</p>
+      <p class="mt">Document établi le {{date_jour}}.</p>
+      ${orgStampBlock}`,
+    ),
+  },
+
+  FICHE_BESOIN: {
+    label: "Fiche d'expression du besoin",
+    html: wrap(
+      "Fiche d'expression du besoin",
+      `<p><em>Cette fiche formalise l'analyse du besoin du bénéficiaire avant l'entrée en
+      formation (indicateur 4 du Référentiel National Qualité).</em></p>
+      <table class="doc-table">
+        <tr><td>Bénéficiaire</td><td><strong>{{nom_complet}}</strong> — {{email}} — {{telephone}}</td></tr>
+        <tr><td>Formation envisagée</td><td>{{formation}} (réf. {{reference_formation}})</td></tr>
+        <tr><td>Mode de financement</td><td>{{financement}}</td></tr>
+        <tr><td>Date de l'entretien</td><td>{{date_jour}}</td></tr>
+      </table>
+      <h2>1. Situation actuelle du bénéficiaire</h2>
+      <p>Situation professionnelle (poste, secteur, demandeur d'emploi…) :</p><div class="fill"></div><div class="fill"></div>
+      <p class="mt">Dernier diplôme / niveau : {{dernier_diplome}}</p>
+      <h2>2. Expression du besoin</h2>
+      <p>Quel est l'objectif professionnel visé par cette formation ?</p><div class="fill"></div><div class="fill"></div>
+      <p class="mt">Quelles compétences souhaitez-vous acquérir ou développer ?</p><div class="fill"></div><div class="fill"></div>
+      <p class="mt">Le projet s'inscrit-il dans le cadre de l'entreprise / d'un financeur ? Précisez :</p><div class="fill"></div>
+      <h2>3. Contraintes et adaptations</h2>
+      <p>Contraintes (disponibilités, mobilité, matérielles) :</p><div class="fill"></div>
+      <p class="mt">Situation de handicap nécessitant une adaptation ? &nbsp; ☐ NON &nbsp;&nbsp; ☐ OUI (le référent handicap prendra contact)</p>
+      <h2>4. Préconisation de l'organisme</h2>
+      <p>Formation / parcours préconisé, adaptations prévues :</p><div class="fill"></div><div class="fill"></div>
+      ${signatures}`,
+    ),
+  },
+
+  TEST_POSITIONNEMENT: {
+    label: "Test de positionnement (entrée)",
+    html: wrap(
+      "Test de positionnement",
+      `<p><em>Ce questionnaire permet d'évaluer vos connaissances avant l'entrée en formation
+      afin d'adapter le contenu et le rythme (indicateurs 8 et 9 du RNQ). Les réponses restent
+      confidentielles.</em></p>
+      <table class="doc-table">
+        <tr><td>Stagiaire</td><td><strong>{{nom_complet}}</strong></td></tr>
+        <tr><td>Formation</td><td>{{formation}} (réf. {{reference_formation}})</td></tr>
+        <tr><td>Session</td><td>du {{date_debut}} au {{date_fin}}</td></tr>
+      </table>
+      <h2>1. Votre expérience</h2>
+      <p>Avez-vous déjà suivi une formation dans ce domaine ? &nbsp; ☐ OUI &nbsp;&nbsp; ☐ NON — Si oui, laquelle et quand ?</p><div class="fill"></div>
+      <p class="mt">Exercez-vous (ou avez-vous exercé) une activité en lien avec cette formation ? Précisez :</p><div class="fill"></div>
+      <h2>2. Auto-évaluation de vos connaissances</h2>
+      <table class="rate">
+        ${rateHead(["Débutant", "Notions", "Intermédiaire", "Avancé"])}
+        ${rateRow("Connaissances théoriques du domaine", 4)}
+        ${rateRow("Pratique / mise en œuvre", 4)}
+        ${rateRow("Outils et équipements associés", 4)}
+        ${rateRow("Réglementation applicable", 4)}
+      </table>
+      <h2>3. Vos attentes</h2>
+      <p>Qu'attendez-vous en priorité de cette formation ?</p><div class="fill"></div><div class="fill"></div>
+      <p class="mt">Points particuliers à signaler au formateur (rythme, difficultés, adaptations…) :</p><div class="fill"></div>
+      <p class="mt">Fait le {{date_jour}}.</p>
+      <div class="doc-signatures">
+        <div><div class="sig-label">Signature du stagiaire — {{nom_complet}}</div><div class="sig-box">{{signature_stagiaire}}</div></div>
+      </div>`,
+    ),
+  },
+
+  EVALUATION_ACQUIS: {
+    label: "Évaluation des acquis (fin de formation)",
+    html: wrap(
+      "Évaluation des acquis de la formation",
+      `<p><em>Cette grille atteste de l'évaluation de l'atteinte des objectifs par le
+      bénéficiaire (indicateur 11 du RNQ).</em></p>
+      <table class="doc-table">
+        <tr><td>Stagiaire</td><td><strong>{{nom_complet}}</strong></td></tr>
+        <tr><td>Formation</td><td>{{formation}} (réf. {{reference_formation}})</td></tr>
+        <tr><td>Période</td><td>du {{date_debut}} au {{date_fin}} — {{duree}}</td></tr>
+        <tr><td>Évaluateur (formateur)</td><td class="fillcell"></td></tr>
+      </table>
+      <h2>Objectifs pédagogiques de la formation</h2>
+      <p>{{objectifs}}</p>
+      <h2>Grille d'évaluation</h2>
+      <table class="rate">
+        ${rateHead(["Acquis", "En cours d'acquisition", "Non acquis"])}
+        ${rateRow("Objectif / compétence 1 : ______________________________", 3)}
+        ${rateRow("Objectif / compétence 2 : ______________________________", 3)}
+        ${rateRow("Objectif / compétence 3 : ______________________________", 3)}
+        ${rateRow("Objectif / compétence 4 : ______________________________", 3)}
+        ${rateRow("Objectif / compétence 5 : ______________________________", 3)}
+      </table>
+      <h2>Modalités d'évaluation utilisées</h2>
+      <p>{{modalites_evaluation}}</p>
+      <h2>Résultat global</h2>
+      <p>☐ Objectifs atteints &nbsp;&nbsp; ☐ Objectifs partiellement atteints &nbsp;&nbsp; ☐ Objectifs non atteints</p>
+      <p class="mt">Observations / préconisations :</p><div class="fill"></div><div class="fill"></div>
+      <p class="mt">Fait le {{date_jour}}.</p>
+      <div class="doc-signatures">
+        <div><div class="sig-label">Le formateur / évaluateur</div><div class="sig-box"></div></div>
+        <div><div class="sig-label">Le stagiaire — {{nom_complet}}</div><div class="sig-box">{{signature_stagiaire}}</div></div>
+      </div>
+      ${orgStampBlock}`,
+    ),
+  },
+
+  REMISE_SUPPORTS: {
+    label: "Attestation de remise des supports",
+    html: wrap(
+      "Attestation de remise des supports de formation",
+      `<p><em>À remettre à l'organisme de formation (indicateur 19 du RNQ — mise à
+      disposition des ressources pédagogiques).</em></p>
+      <p class="mt">Je soussigné(e) <strong>{{nom_complet}}</strong>, stagiaire de la formation
+      <strong>{{formation}}</strong> (réf. {{reference_formation}}) qui s'est déroulée
+      du {{date_debut}} au {{date_fin}},</p>
+      <p>déclare avoir reçu les supports pédagogiques de la formation remis par l'organisme
+      <strong>{{organisme}}</strong> :</p>
+      <table class="doc-table">
+        <tr><td>☐ Support de cours (papier / numérique)</td><td>☐ Accès plateforme e-learning</td></tr>
+        <tr><td>☐ Mémentos / fiches pratiques</td><td>☐ Documentation réglementaire</td></tr>
+        <tr><td colspan="2">☐ Autre : ______________________________________________</td></tr>
+      </table>
+      <p class="mt">Fait à {{organisme_ville}}, le {{date_jour}}.</p>
+      ${signatures}`,
+    ),
+  },
 };
 
 // ── Contrat de sous-traitance de formation (formateur) ──
@@ -563,12 +711,17 @@ export function isDocType(t: string): boolean {
 
 export const DOCUMENT_MENU = [
   "FICHE_INSCRIPTION",
+  "FICHE_BESOIN",
+  "TEST_POSITIONNEMENT",
+  "PROGRAMME",
   "CONVOCATION",
   "CONVENTION_FORMATION",
   "CONTRAT_FORMATION",
   "CONDITIONS_GENERALES",
   "REGLEMENT_INTERIEUR",
   "ATTESTATION_ENTREE",
+  "EVALUATION_ACQUIS",
+  "REMISE_SUPPORTS",
   "ATTESTATION_FIN",
   "CERTIFICAT_REALISATION",
   "SATISFACTION_STAGIAIRE",
