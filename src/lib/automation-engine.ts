@@ -65,7 +65,7 @@ export async function runAutomations(): Promise<Counts> {
 
   const inscriptions = await prisma.inscription.findMany({
     where: { statut: { not: "ANNULEE" } },
-    include: { candidat: true, session: { include: { formation: true } } },
+    include: { candidat: { include: { entreprise: true } }, session: { include: { formation: true } } },
   });
 
   const jMoinsLimite = new Date(
@@ -77,6 +77,10 @@ export async function runAutomations(): Promise<Counts> {
     const f = s.formation;
     const to = i.candidat.email;
     const prenom = i.candidat.prenom;
+    // Client professionnel : copies des documents à l'entreprise (B2B)
+    const entEmail = i.candidat.entreprise?.contactEmail ?? null;
+    const entNom = i.candidat.entreprise?.raisonSociale ?? "";
+    const stagiaire = `${i.candidat.prenom} ${i.candidat.nom}`;
 
     // ── 1) CONVOCATION (signé, J-7, pas déjà envoyée, session à venir) ──
     if (
@@ -96,6 +100,19 @@ Merci de vous présenter muni(e) d'une pièce d'identité.
 Cordialement,
 ${orgConfig.representant} — ${orgConfig.name}`;
       await logAndSend({ to, subject, body, sessionId: s.id });
+      if (entEmail) {
+        await logAndSend({
+          to: entEmail,
+          subject: `Convocation de votre salarié — ${f.titre}`,
+          body: `Bonjour,
+
+Votre salarié(e) ${stagiaire} est convoqué(e) à la formation « ${f.titre} », du ${fmt(s.dateDebut)} au ${fmt(s.dateFin)}${s.horaires ? ` (${s.horaires})` : ""}${s.lieu ? `, à ${s.lieu}` : ""}.
+
+Cordialement,
+${orgConfig.representant} — ${orgConfig.name}`,
+          sessionId: s.id,
+        });
+      }
       await prisma.inscription.update({
         where: { id: i.id },
         data: { convocationSentAt: new Date() },
@@ -155,15 +172,26 @@ Vous trouverez ci-joint votre attestation d'entrée signée, au format PDF.
 Bonne formation,
 ${orgConfig.representant} — ${orgConfig.name}`;
       const attPdf = await buildSingleDocPdf(i.id, "ATTESTATION_ENTREE");
-      await logAndSend({
-        to,
-        subject,
-        body,
-        sessionId: s.id,
-        attachments: attPdf
-          ? [{ name: "Attestation-entree.pdf", content: toBase64(attPdf.data) }]
-          : undefined,
-      });
+      const attPj = attPdf
+        ? [{ name: "Attestation-entree.pdf", content: toBase64(attPdf.data) }]
+        : undefined;
+      await logAndSend({ to, subject, body, sessionId: s.id, attachments: attPj });
+      if (entEmail) {
+        await logAndSend({
+          to: entEmail,
+          subject: `Attestation d'entrée en formation de votre salarié — ${f.titre}`,
+          body: `Bonjour,
+
+Nous confirmons l'entrée en formation de votre salarié(e) ${stagiaire} — « ${f.titre} », le ${fmt(s.dateDebut)}.
+
+Vous trouverez l'attestation d'entrée en pièce jointe (PDF).
+
+Cordialement,
+${orgConfig.representant} — ${orgConfig.name}`,
+          sessionId: s.id,
+          attachments: attPj,
+        });
+      }
       await prisma.inscription.update({
         where: { id: i.id },
         data: { attestationEntreeSentAt: new Date() },
@@ -256,6 +284,28 @@ ${orgConfig.representant} — ${orgConfig.name}`;
           ? [{ name: "Attestation-fin.pdf", content: toBase64(finPdf.data) }]
           : undefined,
       });
+      if (entEmail) {
+        // B2B : attestation de fin + certificat de réalisation à l'entreprise
+        const certPdf = await buildSingleDocPdf(i.id, "CERTIFICAT_REALISATION");
+        const pj = [
+          ...(finPdf ? [{ name: "Attestation-fin.pdf", content: toBase64(finPdf.data) }] : []),
+          ...(certPdf ? [{ name: "Certificat-realisation.pdf", content: toBase64(certPdf.data) }] : []),
+        ];
+        await logAndSend({
+          to: entEmail,
+          subject: `Fin de formation de votre salarié — ${f.titre}`,
+          body: `Bonjour,
+
+La formation « ${f.titre} » suivie par votre salarié(e) ${stagiaire} s'est achevée le ${fmt(s.dateFin)}.
+
+Vous trouverez en pièces jointes l'attestation de fin de formation et le certificat de réalisation (PDF), pour votre dossier${entNom ? ` (${entNom})` : ""} et votre financeur le cas échéant.
+
+Cordialement,
+${orgConfig.representant} — ${orgConfig.name}`,
+          sessionId: s.id,
+          attachments: pj.length ? pj : undefined,
+        });
+      }
       await prisma.inscription.update({
         where: { id: i.id },
         data: { docsFinSentAt: new Date() },

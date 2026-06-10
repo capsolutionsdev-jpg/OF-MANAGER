@@ -21,7 +21,7 @@ export default async function DocumentPage({
 
   const inscription = await prisma.inscription.findUnique({
     where: { id: inscriptionId },
-    include: { candidat: true, session: { include: { formation: true } } },
+    include: { candidat: { include: { entreprise: true } }, session: { include: { formation: true } } },
   });
   if (!inscription) notFound();
 

@@ -1,10 +1,10 @@
-import type { Candidat, Formation, Inscription, Session } from "@prisma/client";
+import type { Candidat, Entreprise, Formation, Inscription, Session } from "@prisma/client";
 import { orgConfig } from "@/lib/org-config";
 import { MODALITE_LABELS } from "@/lib/validators/formation";
 import { FINANCEMENT_LABELS } from "@/lib/validators/candidat";
 
 export type InscriptionComplete = Inscription & {
-  candidat: Candidat;
+  candidat: Candidat & { entreprise?: Entreprise | null };
   session: Session & { formation: Formation };
 };
 
@@ -66,6 +66,19 @@ export function buildVariables(i: InscriptionComplete): Record<string, string> {
     methodes_pedagogiques: ml(f.methodesPedagogiques),
     modalites_evaluation: ml(f.modalitesEvaluation),
     delai_acces: f.delaiAcces ?? "—",
+    // Entreprise cliente (B2B — vide si candidat particulier)
+    entreprise_raison_sociale: c.entreprise?.raisonSociale ?? "—",
+    entreprise_siret: c.entreprise?.siret ?? "—",
+    entreprise_tva: c.entreprise?.numeroTva ?? "—",
+    entreprise_adresse:
+      [c.entreprise?.adresse, c.entreprise?.codePostal, c.entreprise?.ville]
+        .filter(Boolean)
+        .join(", ") || "—",
+    entreprise_representant: c.entreprise?.representant ?? "—",
+    entreprise_fonction: c.entreprise?.fonction ?? "—",
+    entreprise_email: c.entreprise?.contactEmail ?? "—",
+    entreprise_telephone: c.entreprise?.contactTel ?? "—",
+    entreprise_opco: c.entreprise?.opco ?? "—",
     // Session
     session_reference: s.reference ?? "—",
     date_debut: d(s.dateDebut),

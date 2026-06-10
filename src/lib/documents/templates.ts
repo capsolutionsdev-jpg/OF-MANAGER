@@ -460,6 +460,63 @@ export const DOCUMENTS: Record<string, { label: string; html: string }> = {
 
   // ───── Trames Qualiopi (dossier d'audit) ─────
 
+  CONVENTION_ENTREPRISE: {
+    label: "Convention de formation — entreprise (B2B)",
+    html: wrap(
+      "Convention de formation professionnelle",
+      `<p><em>(Articles L.6353-1 et suivants du Code du travail)</em></p>
+      <p><strong>ENTRE LES SOUSSIGNÉS :</strong></p>
+      <p>1° <strong>{{organisme}}</strong>, organisme de formation déclaré sous le
+      numéro d'activité {{organisme_nda}}, SIRET {{organisme_siret}}, dont le siège est
+      au {{organisme_adresse}}, représenté par {{organisme_representant}},
+      ci-après « <strong>l'organisme de formation</strong> », <strong>D'UNE PART,</strong></p>
+      <p>ET</p>
+      <p>2° <strong>{{entreprise_raison_sociale}}</strong>, SIRET {{entreprise_siret}},
+      dont le siège est au {{entreprise_adresse}}, représentée par
+      {{entreprise_representant}} ({{entreprise_fonction}}),
+      ci-après « <strong>l'entreprise bénéficiaire</strong> », <strong>D'AUTRE PART,</strong></p>
+      <p>il est conclu la présente convention de formation professionnelle.</p>
+
+      <h2>Article 1 — Objet, nature et durée de la formation</h2>
+      <table class="doc-table">
+        <tr><td>Action de formation</td><td><strong>{{formation}}</strong> (réf. {{reference_formation}})</td></tr>
+        <tr><td>Certification visée</td><td>{{certification}}</td></tr>
+        <tr><td>Stagiaire</td><td><strong>{{nom_complet}}</strong>, salarié(e) de l'entreprise</td></tr>
+        <tr><td>Dates</td><td>du {{date_debut}} au {{date_fin}} — {{horaires}}</td></tr>
+        <tr><td>Durée</td><td>{{duree}}</td></tr>
+        <tr><td>Lieu</td><td>{{lieu}} — {{modalite}}</td></tr>
+      </table>
+
+      <h2>Article 2 — Engagements de l'organisme</h2>
+      <p>L'organisme s'engage à réaliser l'action prévue, à fournir le programme,
+      à assurer le suivi de l'exécution (feuilles d'émargement signées) et à délivrer
+      en fin de formation les attestations et le certificat de réalisation.</p>
+
+      <h2>Article 3 — Dispositions financières</h2>
+      <table class="doc-table">
+        <tr><td>Prix de l'action (net de taxe)</td><td><strong>{{tarif}}</strong></td></tr>
+        <tr><td>Mode de financement</td><td>{{financement}} {{entreprise_opco}}</td></tr>
+      </table>
+      <p>En cas de prise en charge partielle par le financeur, le solde reste dû par
+      l'entreprise bénéficiaire.</p>
+
+      <h2>Article 4 — Non-réalisation ou abandon</h2>
+      <p>En cas de résiliation par l'entreprise à moins de 7 jours du début de l'action,
+      ou d'abandon en cours de formation du fait du stagiaire, l'organisme facturera
+      au prorata les sommes réellement dues au titre des heures réalisées.</p>
+
+      <h2>Article 5 — Différends</h2>
+      <p>En cas de litige non résolu à l'amiable, le tribunal compétent du siège de
+      l'organisme de formation sera seul compétent.</p>
+
+      <p class="mt">Fait à {{organisme_ville}}, le {{date_jour}}, en deux exemplaires.</p>
+      <div class="doc-signatures">
+        <div><div class="sig-label">Pour l'organisme — {{organisme_representant}}</div><div class="sig-box">${stamp}</div></div>
+        <div><div class="sig-label">Pour l'entreprise — {{entreprise_representant}}<br/>(cachet et signature)</div><div class="sig-box"></div></div>
+      </div>`,
+    ),
+  },
+
   PROGRAMME: {
     label: "Programme de formation (Qualiopi)",
     html: wrap(
@@ -716,6 +773,7 @@ export const DOCUMENT_MENU = [
   "PROGRAMME",
   "CONVOCATION",
   "CONVENTION_FORMATION",
+  "CONVENTION_ENTREPRISE",
   "CONTRAT_FORMATION",
   "CONDITIONS_GENERALES",
   "REGLEMENT_INTERIEUR",
