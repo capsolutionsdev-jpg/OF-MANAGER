@@ -83,6 +83,19 @@ export default async function CandidatDetailPage({
         </Link>
         <div className="flex items-center justify-between">
           <div className="flex flex-wrap items-center gap-3">
+            {candidat.photoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={candidat.photoUrl}
+                alt={`Photo de ${candidat.prenom} ${candidat.nom}`}
+                className="h-14 w-14 rounded-full border-2 border-white object-cover shadow-md ring-1 ring-black/10"
+              />
+            ) : (
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-lg font-bold text-primary">
+                {candidat.prenom.charAt(0)}
+                {candidat.nom.charAt(0)}
+              </div>
+            )}
             <h1 className="text-2xl font-bold tracking-tight">
               {candidat.prenom} {candidat.nom}
             </h1>

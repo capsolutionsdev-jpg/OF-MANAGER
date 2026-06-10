@@ -394,12 +394,18 @@ export default async function SessionDetailPage({
                     </span>
                   </TableHead>
                   <TableHead>Statut</TableHead>
+                  <TableHead>Dossier</TableHead>
+                  <TableHead>Positionnement</TableHead>
                   <TableHead>Certification</TableHead>
                   <TableHead className="text-right">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {s.inscriptions.map((i) => (
+                {s.inscriptions.map((i) => {
+                  const manquantes = s.formation.piecesAttendues.filter(
+                    (p) => !i.piecesRecues.includes(p),
+                  );
+                  return (
                   <TableRow key={i.id}>
                     <TableCell className="font-medium">
                       <Link
@@ -430,6 +436,44 @@ export default async function SessionDetailPage({
                       </Badge>
                     </TableCell>
                     <TableCell>
+                      {s.formation.piecesAttendues.length === 0 ? (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      ) : manquantes.length === 0 ? (
+                        <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">
+                          Complet
+                        </Badge>
+                      ) : (
+                        <Link
+                          href={`/candidats/${i.candidatId}`}
+                          title={`Pièces manquantes : ${manquantes.join(", ")}`}
+                        >
+                          <Badge variant="secondary" className="bg-red-100 text-red-700 hover:bg-red-200">
+                            {manquantes.length} pièce{manquantes.length > 1 ? "s" : ""} manquante{manquantes.length > 1 ? "s" : ""}
+                          </Badge>
+                        </Link>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {i.positionnementCompletedAt ? (
+                        <a
+                          href={`/positionnement/${i.positionnementToken}`}
+                          target="_blank"
+                          rel="noopener"
+                          title="Voir les réponses signées"
+                        >
+                          <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200">
+                            Répondu
+                          </Badge>
+                        </a>
+                      ) : i.positionnementSentAt ? (
+                        <Badge variant="secondary" className="bg-amber-100 text-amber-700">
+                          Envoyé
+                        </Badge>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
                       <CertificationSelect
                         inscriptionId={i.id}
                         value={i.resultatCertification}
@@ -447,7 +491,8 @@ export default async function SessionDetailPage({
                       </div>
                     </TableCell>
                   </TableRow>
-                ))}
+                  );
+                })}
               </TableBody>
             </Table>
           )}

@@ -171,6 +171,38 @@ ${orgConfig.representant} — ${orgConfig.name}`;
       counts.attestationsEntree++;
     }
 
+    // ── 2ter) TEST DE POSITIONNEMENT (1er jour de formation, lien en ligne) ──
+    // Envoyé au passage du cron du matin (~9h) le jour du démarrage de la session.
+    if (!i.positionnementSentAt && s.dateDebut <= now && s.dateFin >= now) {
+      const posToken = i.positionnementToken ?? generateToken();
+      if (!i.positionnementToken) {
+        await prisma.inscription.update({
+          where: { id: i.id },
+          data: { positionnementToken: posToken },
+        });
+      }
+      const posSubject = `Test de positionnement — ${f.titre}`;
+      const posBody = `Bonjour ${prenom},
+
+Bienvenue dans votre formation « ${f.titre} » !
+
+Avant de commencer, merci de répondre à ce court test de positionnement
+(une dizaine de questions, 5 minutes). Il nous permet d'adapter le contenu
+et le rythme à votre profil :
+
+${base}/positionnement/${posToken}
+
+Vos réponses, signées, seront conservées dans votre dossier de formation.
+
+Bonne formation,
+${orgConfig.representant} — ${orgConfig.name}`;
+      await logAndSend({ to, subject: posSubject, body: posBody, sessionId: s.id });
+      await prisma.inscription.update({
+        where: { id: i.id },
+        data: { positionnementSentAt: new Date() },
+      });
+    }
+
     // ── 3) ENQUÊTE DE SATISFACTION (formation terminée, pas déjà envoyée) ──
     if (settings.satisfactionActive && !i.satisfactionSentAt && s.dateFin < now) {
       const satToken = i.satisfactionToken ?? generateToken();
@@ -187,6 +219,10 @@ Vous venez de terminer la formation « ${f.titre} ». Votre retour est précieux
 
 Merci de compléter ce court questionnaire de satisfaction :
 ${base}/satisfaction/${satToken}
+
+Une remarque ou une difficulté à nous signaler ? Vous pouvez déposer une
+réclamation via ce formulaire (traitée sous 15 jours ouvrés) :
+${base}/reclamer/${satToken}
 
 Cordialement,
 ${orgConfig.representant} — ${orgConfig.name}`;

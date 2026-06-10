@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FINANCEMENT_LABELS } from "@/lib/validators/candidat";
+import { PhotoCapture } from "@/components/parcours/photo-capture";
 import {
   submitParcoursForm,
   type ParcoursFormValues,
@@ -33,6 +34,7 @@ export function ParcoursForm({
     situationPro: defaults.situationPro ?? "",
     employeur: defaults.employeur ?? "",
     financementType: defaults.financementType ?? "",
+    photoDataUrl: defaults.photoDataUrl ?? "",
     consent: false,
   });
 
@@ -58,6 +60,12 @@ export function ParcoursForm({
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
+      <PhotoCapture
+        value={v.photoDataUrl}
+        onChange={(dataUrl) =>
+          setV((p) => ({ ...p, photoDataUrl: dataUrl ?? "" }))
+        }
+      />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="grid gap-1.5">
           <Label htmlFor="telephone">Téléphone</Label>

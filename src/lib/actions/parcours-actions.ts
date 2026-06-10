@@ -102,6 +102,7 @@ export type ParcoursFormValues = {
   situationPro?: string;
   employeur?: string;
   financementType?: string;
+  photoDataUrl?: string; // photo d'identité (data URL JPEG compressée côté client)
   consent: boolean;
 };
 
@@ -138,6 +139,10 @@ export async function submitParcoursForm(
       situationPro: clean(values.situationPro) ?? insc.candidat.situationPro,
       employeur: clean(values.employeur) ?? insc.candidat.employeur,
       financementType: fin ?? insc.candidat.financementType,
+      // Photo d'identité : uniquement si fournie et bien une image encodée
+      ...(values.photoDataUrl?.startsWith("data:image/")
+        ? { photoUrl: values.photoDataUrl }
+        : {}),
     },
   });
 
@@ -187,6 +192,67 @@ export async function submitSatisfaction(
     data: {
       satisfactionJson: { ...reponses, __signature: signatureDataUrl },
       satisfactionCompletedAt: new Date(),
+    },
+  });
+  return { ok: true };
+}
+
+/** Soumission publique du test de positionnement (via le token dédié). */
+export async function submitPositionnement(
+  token: string,
+  reponses: Record<string, string | string[]>,
+  signatureDataUrl?: string,
+): Promise<{ ok: boolean; error?: string }> {
+  if (!signatureDataUrl || !signatureDataUrl.startsWith("data:image/"))
+    return { ok: false, error: "Merci de dessiner votre signature." };
+
+  const insc = await prisma.inscription.findUnique({
+    where: { positionnementToken: token },
+    select: { id: true, positionnementCompletedAt: true },
+  });
+  if (!insc) return { ok: false, error: "Lien invalide ou expiré." };
+  if (insc.positionnementCompletedAt) return { ok: true }; // déjà répondu
+
+  await prisma.inscription.update({
+    where: { id: insc.id },
+    data: {
+      positionnementJson: reponses,
+      positionnementSignature: signatureDataUrl,
+      positionnementCompletedAt: new Date(),
+    },
+  });
+  return { ok: true };
+}
+
+/**
+ * Dépôt public d'une réclamation (lien joint à l'e-mail de satisfaction).
+ * Alimente directement le registre des réclamations (indicateurs 31-32).
+ */
+export async function submitReclamationPublique(
+  token: string,
+  data: { objet: string; description: string },
+  signatureDataUrl?: string,
+): Promise<{ ok: boolean; error?: string }> {
+  if (!data.objet.trim() || !data.description.trim())
+    return { ok: false, error: "Merci de renseigner l'objet et la description." };
+  if (!signatureDataUrl || !signatureDataUrl.startsWith("data:image/"))
+    return { ok: false, error: "Merci de dessiner votre signature." };
+
+  const insc = await prisma.inscription.findUnique({
+    where: { satisfactionToken: token },
+    include: { candidat: true, session: { include: { formation: true } } },
+  });
+  if (!insc) return { ok: false, error: "Lien invalide ou expiré." };
+
+  await prisma.reclamation.create({
+    data: {
+      origine: "STAGIAIRE",
+      declarant: `${insc.candidat.prenom} ${insc.candidat.nom}`,
+      contact: insc.candidat.email,
+      formation: `${insc.session.formation.titre} (du ${insc.session.dateDebut.toLocaleDateString("fr-FR")} au ${insc.session.dateFin.toLocaleDateString("fr-FR")})`,
+      objet: data.objet.trim().slice(0, 200),
+      description: data.description.trim().slice(0, 5000),
+      signatureDataUrl,
     },
   });
   return { ok: true };

@@ -283,6 +283,7 @@ model Candidat {
   employeur      String?
   posteOccupe    String?
   dernierDiplome String? // dernier diplôme obtenu (niveau + intitulé)
+  photoUrl       String? @db.Text // photo d'identité (data URL compressée, fournie à l'inscription)
 
   // Acquisition : comment le prospect nous a connus (TikTok, Facebook, Google, CPF…)
   sourceConnaissance String?
@@ -383,6 +384,7 @@ model Formation {
   publicVise          String?  @db.Text
   methodesPedagogiques String? @db.Text
   modalitesEvaluation String?  @db.Text
+  positionnementQuestions Json? // ~10 questions QCU/QCM/courtes (lien envoyé le 1er jour à 9h)
   certification       String? // ex. RS6452
 
   // Accès & dossier administratif (V2)
@@ -552,6 +554,11 @@ model Inscription {
   satisfactionSentAt  DateTime? // enquête de satisfaction envoyée (fin)
   satisfactionJson    Json? // réponses à l'enquête
   satisfactionCompletedAt DateTime?
+  positionnementToken       String?   @unique // lien test de positionnement (J1 9h)
+  positionnementSentAt      DateTime?
+  positionnementJson        Json? // réponses du candidat
+  positionnementCompletedAt DateTime?
+  positionnementSignature   String?   @db.Text // signature manuscrite (PNG data URL)
   docsFinSentAt       DateTime? // documents de fin de formation envoyés
 
   // RGPD & signature (formulaire public)
@@ -814,6 +821,10 @@ model Entreprise {
   contactNom    String?
   contactEmail  String?
   contactTel    String?
+  representant  String? // signataire légal (nom + prénom)
+  fonction      String? // fonction du signataire
+  numeroTva     String? // n° TVA intracommunautaire
+  opco          String? // financeur habituel (AKTO, autre OPCO, autofinancement…)
   stage         CrmStage @default(NOUVEAU)
   notes         String?  @db.Text
 
@@ -1143,6 +1154,7 @@ model Reclamation {
   actions     String?            @db.Text // actions correctives / préventives
   reponseDate DateTime? // date de la réponse argumentée (objectif : 15 j ouvrés)
   clotureDate DateTime?
+  signatureDataUrl String? @db.Text // signature du déclarant (formulaire en ligne)
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
 

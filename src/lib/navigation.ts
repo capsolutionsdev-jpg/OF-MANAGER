@@ -12,6 +12,7 @@ import {
   Shield,
   BarChart3,
   GraduationCap,
+  Building2,
   type LucideIcon,
 } from "lucide-react";
 
@@ -46,6 +47,12 @@ export const navItems: NavItem[] = [
     label: "Candidats",
     href: "/candidats",
     icon: Users,
+    roles: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
+  },
+  {
+    label: "Clients pro",
+    href: "/clients-pro",
+    icon: Building2,
     roles: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
   },
   {
