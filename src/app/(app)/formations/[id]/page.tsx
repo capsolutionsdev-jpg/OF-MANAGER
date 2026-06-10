@@ -59,6 +59,12 @@ export default async function FormationDetailPage({
           <div className="flex gap-2">
             <Button
               variant="outline"
+              render={<Link href={`/formations/${f.id}/positionnement`} />}
+            >
+              Test de positionnement
+            </Button>
+            <Button
+              variant="outline"
               render={<Link href={`/formations/${f.id}/modifier`} />}
             >
               <Pencil className="mr-2 h-4 w-4" /> Modifier

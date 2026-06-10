@@ -197,6 +197,39 @@ export async function submitSatisfaction(
   return { ok: true };
 }
 
+/** Soumission publique de l'enquête de satisfaction ENTREPRISE (B2B, via token dédié). */
+export async function submitSatisfactionEntreprise(
+  token: string,
+  reponses: {
+    notes: Record<string, string>;
+    competences?: string;
+    objectifsAtteints?: string;
+    avisGlobal?: string;
+    suggestions?: string;
+    remplisseur?: string;
+  },
+  signatureDataUrl?: string,
+): Promise<{ ok: boolean; error?: string }> {
+  if (!signatureDataUrl || !signatureDataUrl.startsWith("data:image/"))
+    return { ok: false, error: "Merci de dessiner votre signature." };
+
+  const insc = await prisma.inscription.findUnique({
+    where: { satisfactionEntrepriseToken: token },
+    select: { id: true, satisfactionEntrepriseCompletedAt: true },
+  });
+  if (!insc) return { ok: false, error: "Lien invalide ou expiré." };
+  if (insc.satisfactionEntrepriseCompletedAt) return { ok: true }; // déjà répondu
+
+  await prisma.inscription.update({
+    where: { id: insc.id },
+    data: {
+      satisfactionEntrepriseJson: { ...reponses, __signature: signatureDataUrl },
+      satisfactionEntrepriseCompletedAt: new Date(),
+    },
+  });
+  return { ok: true };
+}
+
 /** Soumission publique du test de positionnement (via le token dédié). */
 export async function submitPositionnement(
   token: string,

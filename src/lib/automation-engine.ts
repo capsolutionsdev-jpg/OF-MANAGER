@@ -239,6 +239,7 @@ ${orgConfig.representant} — ${orgConfig.name}`;
           where: { id: i.id },
           data: { satisfactionToken: satToken },
         });
+        i.satisfactionToken = satToken; // garde l'objet local cohérent (réutilisé en 3bis)
       }
       const subject = `Votre avis sur la formation — ${f.titre}`;
       const body = `Bonjour ${prenom},
@@ -260,6 +261,45 @@ ${orgConfig.representant} — ${orgConfig.name}`;
         data: { satisfactionSentAt: new Date() },
       });
       counts.satisfactions++;
+    }
+
+    // ── 3bis) SATISFACTION ENTREPRISE (B2B : formation terminée, client pro) ──
+    if (
+      settings.satisfactionActive &&
+      entEmail &&
+      !i.satisfactionEntrepriseSentAt &&
+      s.dateFin < now
+    ) {
+      const entToken = i.satisfactionEntrepriseToken ?? generateToken();
+      if (!i.satisfactionEntrepriseToken) {
+        await prisma.inscription.update({
+          where: { id: i.id },
+          data: { satisfactionEntrepriseToken: entToken },
+        });
+      }
+      await logAndSend({
+        to: entEmail,
+        subject: `Votre évaluation de la formation — ${f.titre}`,
+        body: `Bonjour,
+
+La formation « ${f.titre} » suivie par votre salarié(e) ${stagiaire} est terminée.
+
+Dans le cadre de notre démarche qualité (Qualiopi), merci de compléter
+cette courte évaluation en ligne (à remplir et signer, 3 minutes) :
+
+${base}/satisfaction-entreprise/${entToken}
+
+Une remarque ou une difficulté ? Vous pouvez aussi déposer une réclamation :
+${base}/reclamer/${i.satisfactionToken ?? entToken}
+
+Cordialement,
+${orgConfig.representant} — ${orgConfig.name}`,
+        sessionId: s.id,
+      });
+      await prisma.inscription.update({
+        where: { id: i.id },
+        data: { satisfactionEntrepriseSentAt: new Date() },
+      });
     }
 
     // ── 4) DOCUMENTS DE FIN DE FORMATION (terminée, pas déjà envoyés) ──
