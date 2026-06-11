@@ -8,7 +8,10 @@ import {
   History,
   BellRing,
   Megaphone,
+  ArrowRight,
+  Clock,
 } from "lucide-react";
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import {
   Card,
@@ -17,6 +20,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { StatCard } from "@/components/ui/stat-card";
 import { INSCRIPTION_STATUT_LABELS } from "@/lib/validators/inscription";
 import { FINANCEMENT_LABELS } from "@/lib/validators/candidat";
 
@@ -81,6 +85,13 @@ const ENTITY_LABELS: Record<string, string> = {
 
 export default async function DashboardPage() {
   const now = new Date();
+  const session = await auth();
+  const prenom = (session?.user?.name ?? "").split(" ")[0] || "à vous";
+  const aujourdhui = now.toLocaleDateString("fr-FR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
 
   const [
     candidats,
@@ -131,13 +142,12 @@ export default async function DashboardPage() {
   ]);
 
   const kpis = [
-    { label: "Candidats", value: candidats, icon: Users, color: "bg-gradient-to-br from-blue-500 to-blue-600" },
-    { label: "Apprenants", value: apprenants, icon: GraduationCap, color: "bg-gradient-to-br from-emerald-500 to-emerald-600" },
-    { label: "Sessions à venir", value: sessionsAVenir, icon: CalendarClock, color: "bg-gradient-to-br from-amber-500 to-orange-500" },
-    { label: "Formations actives", value: formations, icon: BookOpen, color: "bg-gradient-to-br from-violet-500 to-purple-600" },
+    { label: "Candidats", value: candidats, icon: Users, tint: "blue" as const },
+    { label: "Apprenants", value: apprenants, icon: GraduationCap, tint: "emerald" as const },
+    { label: "Sessions à venir", value: sessionsAVenir, icon: CalendarClock, tint: "amber" as const },
+    { label: "Formations actives", value: formations, icon: BookOpen, tint: "violet" as const },
   ];
 
-  const statutMax = Math.max(1, ...parStatut.map((s) => s._count._all));
   const finMax = Math.max(1, ...parFinancement.map((s) => s._count._all));
   const sourceMax = Math.max(1, ...parSource.map((s) => s._count._all));
   const fmt = (d: Date) => d.toLocaleDateString("fr-FR");
@@ -173,30 +183,30 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#0e1c3f] via-[#142a5c] to-[#1A5FD4] p-6 text-white shadow-sm">
-        <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-white/10 blur-2xl" />
-        <div className="relative z-10">
-          <h1 className="text-2xl font-bold tracking-tight">Tableau de bord</h1>
-          <p className="mt-1 text-sm text-white/75">
-            Vue d&apos;ensemble de l&apos;activité de CAP Compétences.
-          </p>
+      {/* En-tête : salutation */}
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Bonjour, {prenom}</h1>
+          <p className="mt-0.5 text-sm capitalize text-muted-foreground">{aujourdhui}</p>
         </div>
+        <Link
+          href="/candidats/nouveau"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:opacity-90"
+        >
+          <Users className="h-4 w-4" /> Nouveau candidat
+        </Link>
       </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {kpis.map((s) => (
-          <Card key={s.label} className="transition-shadow hover:shadow-md">
-            <CardContent className="flex items-center gap-4 p-5">
-              <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-white shadow-sm ${s.color}`}>
-                <s.icon className="h-6 w-6" />
-              </div>
-              <div className="min-w-0">
-                <div className="text-3xl font-bold leading-none">{s.value}</div>
-                <div className="mt-1 truncate text-xs text-muted-foreground">{s.label}</div>
-              </div>
-            </CardContent>
-          </Card>
+          <StatCard
+            key={s.label}
+            label={s.label}
+            value={s.value}
+            icon={s.icon}
+            tint={s.tint}
+          />
         ))}
       </div>
 
@@ -238,24 +248,32 @@ export default async function DashboardPage() {
               <PieChart className="h-4 w-4" /> Inscriptions par statut
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-2">
             {parStatut.length === 0 ? (
               <p className="text-sm text-muted-foreground">Aucune inscription.</p>
             ) : (
-              parStatut.map((s) => (
-                <Bar
-                  key={s.statut}
-                  label={INSCRIPTION_STATUT_LABELS[s.statut]}
-                  value={s._count._all}
-                  max={statutMax}
-                  color="bg-blue-500"
-                  href={s.statut === "EN_ATTENTE" ? "#a-relancer" : undefined}
-                />
-              ))
+              parStatut.map((s) =>
+                s.statut === "EN_ATTENTE" ? (
+                  <Link
+                    key={s.statut}
+                    href="#a-relancer"
+                    className="flex items-center justify-between rounded-lg bg-amber-50 px-3 py-2 text-sm transition-colors hover:bg-amber-100 dark:bg-amber-500/10 dark:hover:bg-amber-500/20"
+                  >
+                    <span className="flex items-center gap-1.5 font-medium text-amber-700 dark:text-amber-400">
+                      <Clock className="h-3.5 w-3.5" /> En attente
+                    </span>
+                    <span className="flex items-center gap-1 text-xs font-medium text-amber-700 dark:text-amber-400">
+                      {s._count._all} · à relancer <ArrowRight className="h-3.5 w-3.5" />
+                    </span>
+                  </Link>
+                ) : (
+                  <div key={s.statut} className="flex items-center justify-between px-3 py-1.5 text-sm">
+                    <span className="text-muted-foreground">{INSCRIPTION_STATUT_LABELS[s.statut]}</span>
+                    <span className="font-semibold">{s._count._all}</span>
+                  </div>
+                ),
+              )
             )}
-            <p className="text-xs text-muted-foreground">
-              Cliquez sur « En attente » pour voir qui relancer.
-            </p>
           </CardContent>
         </Card>
 
@@ -395,22 +413,33 @@ export default async function DashboardPage() {
             {logs.length === 0 ? (
               <p className="text-sm text-muted-foreground">Aucune activité.</p>
             ) : (
-              <ul className="space-y-2.5 text-sm">
+              <ul className="space-y-3 text-sm">
                 {logs.map((log) => {
                   const who = log.user?.name ?? "Système";
+                  const initials = who
+                    .split(" ")
+                    .map((p) => p[0])
+                    .slice(0, 2)
+                    .join("")
+                    .toUpperCase();
                   const actionTxt = ACTION_LABELS[log.action] ?? log.action.toLowerCase();
                   const entityTxt = ENTITY_LABELS[log.entityType] ?? log.entityType;
                   const cible = log.entityId ? names.get(`${log.entityType}:${log.entityId}`) : null;
                   return (
-                    <li key={log.id} className="flex flex-col gap-0.5 border-b pb-2 last:border-0">
-                      <span className="leading-snug">
-                        <span className="font-semibold">{who}</span>{" "}
-                        {actionTxt} {entityTxt}
-                        {cible && <span className="font-medium"> {cible}</span>}
+                    <li key={log.id} className="flex gap-3">
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-semibold text-primary">
+                        {initials || "•"}
                       </span>
-                      <span className="text-xs text-muted-foreground">
-                        {fmtDateHeure(log.createdAt)}
-                      </span>
+                      <div className="min-w-0 leading-snug">
+                        <span>
+                          <span className="font-semibold">{who}</span>{" "}
+                          {actionTxt} {entityTxt}
+                          {cible && <span className="font-medium"> {cible}</span>}
+                        </span>
+                        <div className="text-xs text-muted-foreground">
+                          {fmtDateHeure(log.createdAt)}
+                        </div>
+                      </div>
                     </li>
                   );
                 })}
