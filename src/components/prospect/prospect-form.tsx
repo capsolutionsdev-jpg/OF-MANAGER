@@ -104,6 +104,11 @@ export function ProspectForm({
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!v.photoDataUrl) {
+      toast.error("Merci d'ajouter votre photo d'identité (choisir ou prendre une photo).");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
     if (!v.consent) {
       toast.error("Merci d'accepter le traitement de vos données (RGPD).");
       return;
@@ -126,8 +131,9 @@ export function ProspectForm({
 
   return (
     <form onSubmit={onSubmit} className="space-y-5">
-      {/* Photo d'identité */}
+      {/* Photo d'identité (obligatoire) */}
       <PhotoCapture
+        required
         value={v.photoDataUrl || undefined}
         onChange={(dataUrl) =>
           setV((p) => ({ ...p, photoDataUrl: dataUrl ?? "" }))
