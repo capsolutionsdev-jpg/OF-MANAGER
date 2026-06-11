@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Building2, Users } from "lucide-react";
+import { ArrowLeft, Building2, Users, FileText } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -72,6 +72,9 @@ export default async function ClientProPage({
               .join(" · ") || "Fiche client professionnel"}
           </p>
         </div>
+        <Button render={<Link href={`/clients-pro/${client.id}/convention`} />}>
+          <FileText className="mr-1.5 h-4 w-4" /> Bon de convention
+        </Button>
       </div>
 
       {/* Coordonnées légales (modifiables) */}

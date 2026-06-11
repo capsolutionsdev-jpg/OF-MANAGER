@@ -31,6 +31,7 @@ import { SendSatisfactionButton } from "@/components/sessions/send-satisfaction-
 import { SendConvocationsButton } from "@/components/sessions/send-convocations-button";
 import { SendCompteRenduButton } from "@/components/sessions/send-compte-rendu-button";
 import { SendContratButton } from "@/components/sessions/send-contrat-button";
+import { DossierChecklist } from "@/components/inscriptions/dossier-checklist";
 
 const STATUT_BADGE_CLS: Record<string, string> = {
   EN_ATTENTE: "bg-muted text-muted-foreground",
@@ -503,6 +504,59 @@ export default async function SessionDetailPage({
           </div>
         </CardContent>
       </Card>
+
+      {/* Dossiers administratifs (pièces à fournir) */}
+      {s.formation.piecesAttendues.length > 0 && s.inscriptions.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <ClipboardCheck className="h-4 w-4" /> Dossiers administratifs
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Cochez les pièces reçues au fur et à mesure. Relancez les candidats dont le dossier est incomplet.
+            </p>
+            {s.inscriptions.map((i) => {
+              const manquantes = s.formation.piecesAttendues.filter(
+                (p) => !i.piecesRecues.includes(p),
+              );
+              return (
+                <div key={i.id} className="rounded-lg border p-4">
+                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                    <Link href={`/candidats/${i.candidatId}`} className="font-medium hover:underline">
+                      {i.candidat.prenom} {i.candidat.nom}
+                    </Link>
+                    {manquantes.length === 0 ? (
+                      <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">
+                        Dossier complet
+                      </Badge>
+                    ) : (
+                      i.candidat.email && (
+                        <a
+                          href={`mailto:${i.candidat.email}?subject=${encodeURIComponent(
+                            `Pièces manquantes — ${s.formation.titre}`,
+                          )}&body=${encodeURIComponent(
+                            `Bonjour ${i.candidat.prenom},\n\nPour finaliser votre dossier d'inscription à la formation « ${s.formation.titre} », merci de nous transmettre les pièces suivantes :\n\n- ${manquantes.join("\n- ")}\n\nMerci par avance.\nCordialement,`,
+                          )}`}
+                          className="rounded-md border px-2 py-1 text-xs font-medium text-primary hover:bg-muted"
+                        >
+                          Relancer ({manquantes.length} manquante{manquantes.length > 1 ? "s" : ""})
+                        </a>
+                      )
+                    )}
+                  </div>
+                  <DossierChecklist
+                    inscriptionId={i.id}
+                    piecesAttendues={s.formation.piecesAttendues}
+                    piecesRecues={i.piecesRecues}
+                  />
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
