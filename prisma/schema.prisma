@@ -236,6 +236,9 @@ model User {
   name         String
   role         Role     @default(ASSISTANT)
   isActive     Boolean  @default(true)
+  // Sections autorisées pour un collaborateur (clés de lib/permissions).
+  // Ignoré pour ADMIN (accès total). Vide = aucun accès aux sections.
+  permissions  String[] @default([])
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

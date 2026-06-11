@@ -17,7 +17,10 @@ export default async function AppLayout({
 
   return (
     <div className="flex min-h-screen">
-      <AppSidebar role={session.user.role} />
+      <AppSidebar
+        role={session.user.role}
+        permissions={session.user.permissions ?? []}
+      />
       <div className="flex min-w-0 flex-1 flex-col">
         <AppHeader user={session.user} />
         <main className="flex-1 bg-muted/60 p-4 md:p-6">{children}</main>

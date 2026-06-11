@@ -4,22 +4,24 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import type { Role } from "@prisma/client";
-import { navItems } from "@/lib/navigation";
+import { visibleNavItems } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 
 type Tone = "light" | "dark";
 
 function NavLinks({
   role,
+  permissions = [],
   onNavigate,
   tone = "light",
 }: {
   role: Role;
+  permissions?: string[];
   onNavigate?: () => void;
   tone?: Tone;
 }) {
   const pathname = usePathname();
-  const items = navItems.filter((item) => item.roles.includes(role));
+  const items = visibleNavItems(role, permissions);
   const dark = tone === "dark";
 
   return (
@@ -93,11 +95,17 @@ function Brand({ tone = "light" }: { tone?: Tone }) {
   );
 }
 
-export function AppSidebar({ role }: { role: Role }) {
+export function AppSidebar({
+  role,
+  permissions = [],
+}: {
+  role: Role;
+  permissions?: string[];
+}) {
   return (
     <aside className="hidden w-64 shrink-0 flex-col bg-[#0e1c3f] md:flex">
       <Brand tone="dark" />
-      <NavLinks role={role} tone="dark" />
+      <NavLinks role={role} permissions={permissions} tone="dark" />
       <div className="border-t border-white/10 p-4">
         <p className="text-[11px] leading-relaxed text-white/40">
           CAP Compétences — Manager

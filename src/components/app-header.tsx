@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Menu, LogOut, UserCog } from "lucide-react";
+import { Menu, LogOut, UserCog, ShieldCheck } from "lucide-react";
 import type { Role } from "@prisma/client";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,7 @@ type HeaderUser = {
   name?: string | null;
   email?: string | null;
   role: Role;
+  permissions?: string[];
 };
 
 export function AppHeader({ user }: { user: HeaderUser }) {
@@ -45,7 +46,7 @@ export function AppHeader({ user }: { user: HeaderUser }) {
           <SheetContent side="left" className="w-64 p-0">
             <SheetTitle className="sr-only">Navigation</SheetTitle>
             <Brand />
-            <NavLinks role={user.role} />
+            <NavLinks role={user.role} permissions={user.permissions ?? []} />
           </SheetContent>
         </Sheet>
         <span className="inline-flex items-center rounded-full bg-muted px-3 py-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -79,6 +80,15 @@ export function AppHeader({ user }: { user: HeaderUser }) {
             <UserCog className="h-4 w-4" />
             Mon compte
           </Link>
+          {user.role === "ADMIN" && (
+            <Link
+              href="/administration"
+              className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-muted"
+            >
+              <ShieldCheck className="h-4 w-4" />
+              Administration
+            </Link>
+          )}
           <DropdownMenuSeparator />
           <form action={doSignOut}>
             <button
