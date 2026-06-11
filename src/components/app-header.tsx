@@ -49,9 +49,20 @@ export function AppHeader({ user }: { user: HeaderUser }) {
             <NavLinks role={user.role} permissions={user.permissions ?? []} />
           </SheetContent>
         </Sheet>
-        <span className="inline-flex items-center rounded-full bg-muted px-3 py-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          {roleLabels[user.role]}
-        </span>
+        {user.role === "ADMIN" ? (
+          <Link
+            href="/administration"
+            title="Administration"
+            className="inline-flex items-center gap-1 rounded-full bg-muted px-3 py-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
+          >
+            <ShieldCheck className="h-3.5 w-3.5" />
+            {roleLabels[user.role]}
+          </Link>
+        ) : (
+          <span className="inline-flex items-center rounded-full bg-muted px-3 py-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {roleLabels[user.role]}
+          </span>
+        )}
       </div>
 
       <DropdownMenu>
@@ -73,20 +84,21 @@ export function AppHeader({ user }: { user: HeaderUser }) {
             <div className="text-xs text-muted-foreground">{user.email}</div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <Link
-            href="/mon-compte"
-            className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-muted"
-          >
-            <UserCog className="h-4 w-4" />
-            Mon compte
-          </Link>
-          {user.role === "ADMIN" && (
+          {user.role === "ADMIN" ? (
             <Link
               href="/administration"
               className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-muted"
             >
               <ShieldCheck className="h-4 w-4" />
               Administration
+            </Link>
+          ) : (
+            <Link
+              href="/mon-compte"
+              className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-muted"
+            >
+              <UserCog className="h-4 w-4" />
+              Mon compte
             </Link>
           )}
           <DropdownMenuSeparator />

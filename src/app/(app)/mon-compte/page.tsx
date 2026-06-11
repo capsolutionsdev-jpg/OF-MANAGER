@@ -16,6 +16,8 @@ export const dynamic = "force-dynamic";
 export default async function MonComptePage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
+  // Le gérant gère son compte depuis la page Administration (plus complète).
+  if (session.user.role === "ADMIN") redirect("/administration");
   const user = session.user;
 
   return (
