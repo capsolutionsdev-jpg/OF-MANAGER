@@ -38,10 +38,12 @@ export function CandidatForm({
   candidatId,
   defaultValues,
   formations = [],
+  collaborateurs = [],
 }: {
   candidatId?: string;
   defaultValues?: Partial<CandidatFormValues>;
   formations?: { id: string; titre: string }[];
+  collaborateurs?: { id: string; name: string }[];
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -69,6 +71,7 @@ export function CandidatForm({
       posteOccupe: "",
       dernierDiplome: "",
       sourceConnaissance: "",
+      assignedToId: "",
       financementType: "",
       formationSouhaiteeId: "",
       statut: "NOUVEAU",
@@ -245,21 +248,33 @@ export function CandidatForm({
               ))}
             </select>
           </div>
-          <div className="grid gap-2 sm:col-span-2">
+          <div className="grid gap-2">
             <Label htmlFor="sourceConnaissance">
               Comment nous a-t-il connus ?
             </Label>
-            <Input
+            <select
               id="sourceConnaissance"
-              list="source-options"
-              placeholder="TikTok, Google, recommandation…"
+              className={selectClass}
               {...register("sourceConnaissance")}
-            />
-            <datalist id="source-options">
+            >
+              <option value="">— Sélectionner —</option>
               {SOURCE_CONNAISSANCE_OPTIONS.map((s) => (
-                <option key={s} value={s} />
+                <option key={s} value={s}>{s}</option>
               ))}
-            </datalist>
+            </select>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="assignedToId">Suivi par (collaborateur)</Label>
+            <select
+              id="assignedToId"
+              className={selectClass}
+              {...register("assignedToId")}
+            >
+              <option value="">— Non attribué —</option>
+              {collaborateurs.map((u) => (
+                <option key={u.id} value={u.id}>{u.name}</option>
+              ))}
+            </select>
           </div>
         </CardContent>
       </Card>

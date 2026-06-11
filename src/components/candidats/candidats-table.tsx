@@ -24,6 +24,7 @@ export type CandidatRow = {
   id: string;
   prenom: string;
   nom: string;
+  photoUrl?: string | null;
   email: string;
   telephone: string | null;
   ville: string | null;
@@ -153,8 +154,21 @@ export function CandidatsTable({
               {filtered.map((c) => (
                 <TableRow key={c.id}>
                   <TableCell className="font-medium">
-                    <Link href={`/candidats/${c.id}`} className="hover:underline">
-                      {c.prenom} {c.nom}
+                    <Link href={`/candidats/${c.id}`} className="flex items-center gap-2.5 hover:underline">
+                      {c.photoUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={c.photoUrl}
+                          alt=""
+                          className="h-8 w-8 shrink-0 rounded-full object-cover ring-1 ring-black/10"
+                        />
+                      ) : (
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-semibold text-primary">
+                          {c.prenom.charAt(0)}
+                          {c.nom.charAt(0)}
+                        </span>
+                      )}
+                      <span>{c.prenom} {c.nom}</span>
                     </Link>
                   </TableCell>
                   <TableCell className="text-muted-foreground">{c.email}</TableCell>

@@ -40,6 +40,7 @@ export default async function CandidatsPage() {
     id: c.id,
     prenom: c.prenom,
     nom: c.nom,
+    photoUrl: c.photoUrl,
     email: c.email,
     telephone: c.telephone,
     ville: c.ville,

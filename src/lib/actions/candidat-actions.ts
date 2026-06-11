@@ -33,6 +33,7 @@ function toData(v: CandidatFormValues) {
     posteOccupe: clean(v.posteOccupe),
     dernierDiplome: clean(v.dernierDiplome),
     sourceConnaissance: clean(v.sourceConnaissance),
+    assignedToId: clean(v.assignedToId),
     financementType: v.financementType ? v.financementType : null,
     formationSouhaiteeId: clean(v.formationSouhaiteeId),
     statut: v.statut,

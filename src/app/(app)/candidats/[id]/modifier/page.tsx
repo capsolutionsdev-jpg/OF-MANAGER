@@ -10,12 +10,20 @@ export default async function ModifierCandidatPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [c, formations] = await Promise.all([
+  const [c, formations, collaborateurs] = await Promise.all([
     prisma.candidat.findUnique({ where: { id } }),
     prisma.formation.findMany({
       where: { isArchived: false },
       select: { id: true, titre: true },
       orderBy: { titre: "asc" },
+    }),
+    prisma.user.findMany({
+      where: {
+        isActive: true,
+        role: { in: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"] },
+      },
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
     }),
   ]);
   if (!c) notFound();
@@ -38,6 +46,7 @@ export default async function ModifierCandidatPage({
         <CandidatForm
           candidatId={c.id}
           formations={formations}
+          collaborateurs={collaborateurs}
           defaultValues={{
             nom: c.nom,
             prenom: c.prenom,
@@ -57,6 +66,7 @@ export default async function ModifierCandidatPage({
             posteOccupe: c.posteOccupe ?? "",
             dernierDiplome: c.dernierDiplome ?? "",
             sourceConnaissance: c.sourceConnaissance ?? "",
+            assignedToId: c.assignedToId ?? "",
             financementType: c.financementType ?? undefined,
             statut: c.statut,
           }}

@@ -23,6 +23,8 @@ export const candidatFormSchema = z.object({
   dernierDiplome: optionalText,
   // Acquisition
   sourceConnaissance: optionalText,
+  // Suivi : collaborateur qui suit le dossier
+  assignedToId: optionalText,
   // Financement & statut
   financementType: z.nativeEnum(FinancementType).or(z.literal("")).optional(),
   formationSouhaiteeId: optionalText,
@@ -55,7 +57,9 @@ export const SOURCE_CONNAISSANCE_OPTIONS = [
   "Instagram",
   "Google",
   "Mon Compte Formation (CPF)",
+  "Bouche à oreille",
   "Recommandation d'un ami",
+  "Entreprise partenaire",
   "LinkedIn",
   "Site internet",
   "France Travail",

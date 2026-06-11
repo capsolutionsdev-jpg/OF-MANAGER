@@ -6,11 +6,21 @@ import { CandidatForm } from "@/components/candidats/candidat-form";
 export const dynamic = "force-dynamic";
 
 export default async function NouveauCandidatPage() {
-  const formations = await prisma.formation.findMany({
-    where: { isArchived: false },
-    select: { id: true, titre: true },
-    orderBy: { titre: "asc" },
-  });
+  const [formations, collaborateurs] = await Promise.all([
+    prisma.formation.findMany({
+      where: { isArchived: false },
+      select: { id: true, titre: true },
+      orderBy: { titre: "asc" },
+    }),
+    prisma.user.findMany({
+      where: {
+        isActive: true,
+        role: { in: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"] },
+      },
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    }),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -28,7 +38,7 @@ export default async function NouveauCandidatPage() {
       </div>
 
       <div className="max-w-3xl">
-        <CandidatForm formations={formations} />
+        <CandidatForm formations={formations} collaborateurs={collaborateurs} />
       </div>
     </div>
   );
