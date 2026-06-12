@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { AppSidebar } from "@/components/app-sidebar";
-import { AppHeader } from "@/components/app-header";
+import { AppTopNav } from "@/components/app-topnav";
 
 // Rendu dynamique : ces pages lisent la base de données et la session,
 // elles ne doivent pas être pré-générées au build.
@@ -16,15 +15,9 @@ export default async function AppLayout({
   if (!session?.user) redirect("/login");
 
   return (
-    <div className="flex min-h-screen">
-      <AppSidebar
-        role={session.user.role}
-        permissions={session.user.permissions ?? []}
-      />
-      <div className="flex min-w-0 flex-1 flex-col">
-        <AppHeader user={session.user} />
-        <main className="flex-1 bg-muted/60 p-4 md:p-6">{children}</main>
-      </div>
+    <div className="min-h-screen bg-muted/40">
+      <AppTopNav user={session.user} />
+      <main className="mx-auto max-w-[1500px] p-4 md:p-6">{children}</main>
     </div>
   );
 }
