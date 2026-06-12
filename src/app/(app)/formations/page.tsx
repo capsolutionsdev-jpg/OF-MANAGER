@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Plus, BookOpen } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -47,21 +48,15 @@ export default async function FormationsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Formations</h1>
-          <p className="text-sm text-muted-foreground">
-            Catalogue — {formations.length} formation
-            {formations.length > 1 ? "s" : ""} active
-            {formations.length > 1 ? "s" : ""}, classée
-            {formations.length > 1 ? "s" : ""} par académie.
-          </p>
-        </div>
+      <PageHeader
+        title="Formations"
+        subtitle={`Catalogue — ${formations.length} formation${formations.length > 1 ? "s" : ""} active${formations.length > 1 ? "s" : ""}, classée${formations.length > 1 ? "s" : ""} par académie`}
+      >
         <Button render={<Link href="/formations/nouvelle" />}>
           <Plus className="mr-2 h-4 w-4" />
           Nouvelle formation
         </Button>
-      </div>
+      </PageHeader>
 
       {formations.length === 0 ? (
         <Card>

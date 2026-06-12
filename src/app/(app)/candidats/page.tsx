@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Plus, Users } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
 import { Card } from "@/components/ui/card";
 import {
   CandidatsTable,
@@ -51,19 +52,15 @@ export default async function CandidatsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Candidats</h1>
-          <p className="text-sm text-muted-foreground">
-            {candidats.length} candidat{candidats.length > 1 ? "s" : ""}{" "}
-            enregistré{candidats.length > 1 ? "s" : ""}.
-          </p>
-        </div>
+      <PageHeader
+        title="Candidats"
+        subtitle={`${candidats.length} candidat${candidats.length > 1 ? "s" : ""} enregistré${candidats.length > 1 ? "s" : ""}`}
+      >
         <Button render={<Link href="/candidats/nouveau" />}>
           <Plus className="mr-2 h-4 w-4" />
           Nouveau candidat
         </Button>
-      </div>
+      </PageHeader>
 
       {candidats.length === 0 ? (
         <Card>

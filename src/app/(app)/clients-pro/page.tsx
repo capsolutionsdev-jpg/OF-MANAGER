@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Building2, Plus } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -25,17 +26,14 @@ export default async function ClientsProPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Clients professionnels</h1>
-          <p className="text-sm text-muted-foreground">
-            Entreprises clientes : coordonnées légales, salariés à former, conventions.
-          </p>
-        </div>
+      <PageHeader
+        title="Clients professionnels"
+        subtitle="Entreprises clientes : coordonnées légales, salariés à former, conventions"
+      >
         <Button render={<Link href="/clients-pro/nouveau" />}>
           <Plus className="mr-1.5 h-4 w-4" /> Nouveau client pro
         </Button>
-      </div>
+      </PageHeader>
 
       <Card>
         <CardContent className="p-0">

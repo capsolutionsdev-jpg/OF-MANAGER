@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Plus, Users } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -111,27 +112,19 @@ export default async function CrmPage() {
   return (
     <div className="space-y-6">
       {/* En-tête */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            CRM — Prospects & inscriptions
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            {total} prospect{total !== 1 ? "s" : ""} actif
-            {total !== 1 ? "s" : ""}, classés par formation souhaitée.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" render={<Link href="/crm/pipeline" />}>
-            <TrendingUp className="mr-1.5 h-4 w-4" />
-            Pipeline
-          </Button>
-          <Button render={<Link href="/candidats/nouveau" />}>
-            <Plus className="mr-1.5 h-4 w-4" />
-            Nouveau prospect
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title="CRM — Prospects & inscriptions"
+        subtitle={`${total} prospect${total !== 1 ? "s" : ""} actif${total !== 1 ? "s" : ""}, classés par formation souhaitée`}
+      >
+        <Button variant="outline" render={<Link href="/crm/pipeline" />}>
+          <TrendingUp className="mr-1.5 h-4 w-4" />
+          Pipeline
+        </Button>
+        <Button render={<Link href="/candidats/nouveau" />}>
+          <Plus className="mr-1.5 h-4 w-4" />
+          Nouveau prospect
+        </Button>
+      </PageHeader>
 
       {/* KPI commerciaux */}
       {total > 0 && (
