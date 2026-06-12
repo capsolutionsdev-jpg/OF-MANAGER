@@ -17,6 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { PageHeader } from "@/components/ui/page-header";
 import {
   MODALITE_LABELS,
   ACADEMY_LABELS,
@@ -73,18 +74,15 @@ export default async function SessionsPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Sessions</h1>
-          <p className="text-sm text-muted-foreground">
-            {sessions.length} session{sessions.length > 1 ? "s" : ""} au total.
-          </p>
-        </div>
+      <PageHeader
+        title="Sessions"
+        subtitle={`${sessions.length} session${sessions.length > 1 ? "s" : ""} au total`}
+      >
         <Button render={<Link href="/sessions/nouvelle" />}>
           <Plus className="mr-2 h-4 w-4" />
           Nouvelle session
         </Button>
-      </div>
+      </PageHeader>
 
       {sessions.length === 0 ? (
         <Card>
@@ -145,13 +143,16 @@ export default async function SessionsPage() {
                             Lieu
                           </TableHead>
                           <TableHead>Modalité</TableHead>
-                          <TableHead>Places</TableHead>
+                          <TableHead className="w-36">Places</TableHead>
                           <TableHead>Statut</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {g.items.map((s) => (
-                          <TableRow key={s.id}>
+                        {g.items.map((s) => {
+                          const pct = s.nbPlaces > 0 ? Math.round((s._count.inscriptions / s.nbPlaces) * 100) : 0;
+                          const barColor = pct >= 100 ? "bg-emerald-500" : pct >= 60 ? "bg-blue-500" : "bg-amber-500";
+                          return (
+                          <TableRow key={s.id} className="hover:bg-muted/40">
                             <TableCell className="font-medium">
                               <Link
                                 href={`/sessions/${s.id}`}
@@ -178,8 +179,15 @@ export default async function SessionsPage() {
                                 {MODALITE_LABELS[s.modalite]}
                               </Badge>
                             </TableCell>
-                            <TableCell className="text-muted-foreground">
-                              {s._count.inscriptions}/{s.nbPlaces}
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <div className="h-1.5 w-16 overflow-hidden rounded-full bg-muted">
+                                  <div className={`h-full rounded-full ${barColor}`} style={{ width: `${Math.min(100, pct)}%` }} />
+                                </div>
+                                <span className="text-xs text-muted-foreground">
+                                  {s._count.inscriptions}/{s.nbPlaces}
+                                </span>
+                              </div>
                             </TableCell>
                             <TableCell>
                               <Badge variant="outline">
@@ -187,7 +195,8 @@ export default async function SessionsPage() {
                               </Badge>
                             </TableCell>
                           </TableRow>
-                        ))}
+                          );
+                        })}
                       </TableBody>
                     </Table>
                   </CardContent>
