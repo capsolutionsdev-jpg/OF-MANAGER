@@ -29,6 +29,8 @@ function toData(v: SessionFormValues) {
     dateFin: new Date(v.dateFin),
     horaires: clean(v.horaires),
     lieu: clean(v.lieu),
+    dateExamen: v.dateExamen && v.dateExamen.trim() !== "" ? new Date(v.dateExamen) : null,
+    lieuExamen: clean(v.lieuExamen),
     salleId: clean(v.salleId),
     modalite: v.modalite,
     nbPlaces: Number.isNaN(places) ? 10 : places,

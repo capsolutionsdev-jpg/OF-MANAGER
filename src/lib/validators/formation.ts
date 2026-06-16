@@ -22,6 +22,8 @@ export const formationFormSchema = z.object({
   delaiAcces: optionalText,
   // Pièces du dossier administratif : saisies en texte (1 par ligne), converties en tableau côté serveur
   piecesAttendues: optionalText,
+  // Formation soumise à un examen (→ convocation d'examen).
+  examen: z.boolean().optional(),
 });
 
 export type FormationFormValues = z.infer<typeof formationFormSchema>;

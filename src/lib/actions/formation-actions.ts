@@ -44,6 +44,7 @@ function toData(v: FormationFormValues) {
     conditionsAcces: clean(v.conditionsAcces),
     delaiAcces: clean(v.delaiAcces),
     piecesAttendues: toLines(v.piecesAttendues),
+    examen: Boolean(v.examen),
   };
 }
 
@@ -166,6 +167,7 @@ export async function duplicateFormationAction(formData: FormData) {
       conditionsAcces: src.conditionsAcces,
       delaiAcces: src.delaiAcces,
       piecesAttendues: src.piecesAttendues,
+      examen: src.examen,
       version: src.version + 1,
       parentId: src.id,
     },

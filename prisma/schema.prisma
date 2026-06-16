@@ -499,6 +499,10 @@ model Formation {
   delaiAcces      String? // ex. "Inscription jusqu'à 48h avant le démarrage"
   piecesAttendues String[] // pièces du dossier administratif attendues (ex. CNI, CV…)
 
+  // La formation est sanctionnée par un examen → convocation d'examen pertinente
+  // (sinon : pas de convocation d'examen, ex. SST / MAC SST / MAC APS).
+  examen Boolean @default(false)
+
   // Versionnage / archivage
   version    Int     @default(1)
   isArchived Boolean @default(false)
@@ -533,6 +537,9 @@ model Session {
   dateFin     DateTime
   horaires    String? // ex. "9h-12h30 / 13h30-17h"
   lieu        String?
+  // Examen (formations soumises à examen, ex. TFP APS) : date + lieu dédiés.
+  dateExamen  DateTime?
+  lieuExamen  String? // adresse de l'examen (OF ou autre centre d'examen)
   modalite    Modalite      @default(MIXTE)
   nbPlaces    Int           @default(10)
   statut      SessionStatut @default(PLANIFIEE)

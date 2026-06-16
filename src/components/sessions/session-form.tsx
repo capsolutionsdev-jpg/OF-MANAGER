@@ -70,6 +70,8 @@ export function SessionForm({
       dateFin: "",
       horaires: "",
       lieu: "",
+      dateExamen: "",
+      lieuExamen: "",
       salleId: "",
       modalite: "MIXTE",
       nbPlaces: "10",
@@ -146,6 +148,14 @@ export function SessionForm({
               placeholder="Les Lilas (93) ou 100% en ligne"
               {...register("lieu")}
             />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="dateExamen">Date d&apos;examen <span className="font-normal text-muted-foreground">(si soumise à examen)</span></Label>
+            <Input id="dateExamen" type="date" {...register("dateExamen")} />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="lieuExamen">Lieu d&apos;examen</Label>
+            <Input id="lieuExamen" placeholder="Adresse de l'OF ou autre centre d'examen" {...register("lieuExamen")} />
           </div>
 
           {salles.length > 0 && (

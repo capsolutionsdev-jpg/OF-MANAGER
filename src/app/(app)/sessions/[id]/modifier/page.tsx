@@ -59,6 +59,8 @@ export default async function ModifierSessionPage({
             dateFin: s.dateFin.toISOString().slice(0, 10),
             horaires: s.horaires ?? "",
             lieu: s.lieu ?? "",
+            dateExamen: s.dateExamen ? s.dateExamen.toISOString().slice(0, 10) : "",
+            lieuExamen: s.lieuExamen ?? "",
             salleId: s.salleId ?? "",
             modalite: s.modalite,
             nbPlaces: String(s.nbPlaces),

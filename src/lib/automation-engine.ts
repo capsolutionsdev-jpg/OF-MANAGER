@@ -128,7 +128,10 @@ ${org.representant} — ${org.name}`,
     }
 
     // ── 1bis) CONVOCATION À L'EXAMEN (signé, J-7 avant la fin, mail séparé + PDF) ──
+    // Uniquement pour les formations soumises à examen (ex. TFP APS) — jamais
+    // pour SST / MAC SST / MAC APS.
     if (
+      f.examen &&
       settings.convocationActive &&
       i.signedAt &&
       !i.convocationExamenSentAt &&
@@ -138,7 +141,7 @@ ${org.representant} — ${org.name}`,
       const subject = `Convocation à l'examen — ${f.titre}`;
       const body = `Bonjour ${prenom},
 
-Vous êtes convoqué(e) à l'épreuve de certification de la formation « ${f.titre} », prévue le ${fmt(s.dateFin)}${s.horaires ? ` (${s.horaires})` : ""}${s.lieu ? `, à ${s.lieu}` : ""}.
+Vous êtes convoqué(e) à l'épreuve de certification de la formation « ${f.titre} », prévue le ${fmt(s.dateExamen ?? s.dateFin)}${s.horaires ? ` (${s.horaires})` : ""}${(s.lieuExamen ?? s.lieu) ? `, à ${s.lieuExamen ?? s.lieu}` : ""}.
 
 Vous trouverez votre convocation à l'examen en pièce jointe (PDF). Merci de vous présenter muni(e) d'une pièce d'identité en cours de validité.
 

@@ -47,6 +47,7 @@ export default async function ModifierFormationPage({
             conditionsAcces: f.conditionsAcces ?? "",
             delaiAcces: f.delaiAcces ?? "",
             piecesAttendues: f.piecesAttendues.join("\n"),
+            examen: f.examen,
           }}
         />
       </div>

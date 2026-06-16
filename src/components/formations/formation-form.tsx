@@ -70,6 +70,7 @@ export function FormationForm({
       conditionsAcces: "",
       delaiAcces: "",
       piecesAttendues: "",
+      examen: false,
       ...defaultValues,
     },
   });
@@ -220,6 +221,15 @@ export function FormationForm({
               Ces pièces serviront de checklist pour le suivi du dossier de
               chaque candidat inscrit à cette formation.
             </p>
+          </div>
+          <div className="sm:col-span-2">
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" className="h-4 w-4 rounded border" {...register("examen")} />
+              Formation soumise à un examen{" "}
+              <span className="font-normal text-muted-foreground">
+                (génère une convocation d&apos;examen ; à décocher pour SST / MAC SST / MAC APS)
+              </span>
+            </label>
           </div>
         </CardContent>
       </Card>

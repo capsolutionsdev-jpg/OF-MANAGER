@@ -21,6 +21,7 @@ const FORMATIONS = [
     piecesAttendues: [...ID] },
   { reference: "DEMO-SP-TFPAPS", titre: "TFP APS — Agent de Prévention et de Sécurité", dureeHeures: 175,
     prerequis: "Autorisation préalable du CNAPS obligatoire.", certification: "RNCP — TFP APS",
+    examen: true, // seule formation soumise à examen → convocation d'examen
     piecesAttendues: [...ID, "Autorisation préalable CNAPS", ...APS_COMMUN] },
   { reference: "DEMO-SP-MACAPS", titre: "MAC APS — Maintien et Actualisation des Compétences APS", dureeHeures: 31,
     prerequis: "Carte professionnelle valide OU autorisation préalable du CNAPS.", certification: "RNCP — MAC APS",
@@ -67,7 +68,11 @@ const FORMATIONS = [
 
   for (const f of FORMATIONS) {
     const exists = await p.formation.findUnique({ where: { reference: f.reference } });
-    if (exists) { console.log("Formation déjà présente:", f.reference); continue; }
+    if (exists) {
+      await p.formation.update({ where: { reference: f.reference }, data: { examen: f.examen ?? false, piecesAttendues: f.piecesAttendues } });
+      console.log("Formation mise à jour (examen/pièces):", f.reference);
+      continue;
+    }
     await p.formation.create({
       data: {
         organismeId: org.id,
@@ -77,6 +82,7 @@ const FORMATIONS = [
         duree: `${f.dureeHeures} h`,
         prerequis: f.prerequis,
         certification: f.certification,
+        examen: f.examen ?? false,
         publicVise: "Agents et futurs agents de sécurité privée.",
         piecesAttendues: f.piecesAttendues,
       },
