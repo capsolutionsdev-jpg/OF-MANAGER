@@ -44,11 +44,13 @@ type FormationOption = { id: string; titre: string; reference: string };
 export function SessionForm({
   formations,
   formateurs = [],
+  salles = [],
   sessionId,
   defaultValues,
 }: {
   formations: FormationOption[];
   formateurs?: { id: string; nom: string; prenom: string; academies?: string[] }[];
+  salles?: { id: string; nom: string }[];
   sessionId?: string;
   defaultValues?: Partial<SessionFormValues>;
 }) {
@@ -68,6 +70,7 @@ export function SessionForm({
       dateFin: "",
       horaires: "",
       lieu: "",
+      salleId: "",
       modalite: "MIXTE",
       nbPlaces: "10",
       statut: "PLANIFIEE",
@@ -144,6 +147,20 @@ export function SessionForm({
               {...register("lieu")}
             />
           </div>
+
+          {salles.length > 0 && (
+            <div className="grid gap-2">
+              <Label htmlFor="salleId">Salle</Label>
+              <select id="salleId" className={selectClass} {...register("salleId")}>
+                <option value="">— Aucune —</option>
+                {salles.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.nom}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div className="grid gap-2">
             <Label htmlFor="modalite">Modalité</Label>

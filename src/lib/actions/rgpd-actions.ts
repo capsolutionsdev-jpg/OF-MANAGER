@@ -2,10 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { DataRequestType, DataRequestStatut } from "@prisma/client";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { auth } from "@/auth";
 
 export async function createDataRequest(formData: FormData) {
+  const db = await getTenantDb();
   const session = await auth();
   if (!session?.user) return;
 
@@ -13,16 +14,17 @@ export async function createDataRequest(formData: FormData) {
   const type = String(formData.get("type")) as DataRequestType;
   if (!subjectEmail) return;
 
-  await prisma.dataRequest.create({ data: { subjectEmail, type } });
+  await db.dataRequest.create({ data: { subjectEmail, type } });
   revalidatePath("/rgpd");
 }
 
 export async function processDataRequest(formData: FormData) {
+  const db = await getTenantDb();
   const session = await auth();
   if (!session?.user) return;
 
   const id = String(formData.get("id"));
-  await prisma.dataRequest.update({
+  await db.dataRequest.update({
     where: { id },
     data: {
       statut: DataRequestStatut.TRAITEE,
@@ -36,14 +38,15 @@ export async function processDataRequest(formData: FormData) {
 // Anonymisation (droit à l'effacement) : on conserve les enregistrements liés
 // (obligations Qualiopi/comptables) mais on efface les données personnelles.
 export async function anonymiseCandidat(formData: FormData) {
+  const db = await getTenantDb();
   const session = await auth();
   if (!session?.user) return;
 
   const candidatId = String(formData.get("candidatId"));
-  const c = await prisma.candidat.findUnique({ where: { id: candidatId } });
+  const c = await db.candidat.findUnique({ where: { id: candidatId } });
   if (!c) return;
 
-  await prisma.candidat.update({
+  await db.candidat.update({
     where: { id: candidatId },
     data: {
       nom: "Anonymisé",
@@ -60,7 +63,7 @@ export async function anonymiseCandidat(formData: FormData) {
       statut: "ARCHIVE",
     },
   });
-  await prisma.auditLog.create({
+  await db.auditLog.create({
     data: {
       userId: session.user.id,
       action: "ANONYMISATION_RGPD",

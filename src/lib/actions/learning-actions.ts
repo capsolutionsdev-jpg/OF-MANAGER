@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { auth } from "@/auth";
 
 type Res = { ok: boolean; error?: string };
@@ -10,18 +10,20 @@ type Res = { ok: boolean; error?: string };
 async function currentApprenant() {
   const session = await auth();
   if (!session?.user?.id) return null;
-  return prisma.apprenant.findUnique({ where: { userId: session.user.id } });
+  const db = await getTenantDb();
+  return db.apprenant.findUnique({ where: { userId: session.user.id } });
 }
 
 /** Vérifie que l'apprenant a bien accès au cours d'une leçon (cours attribué). */
 async function leconAutorisee(apprenantId: string, leconId: string) {
-  const lecon = await prisma.lecon.findUnique({
+  const db = await getTenantDb();
+  const lecon = await db.lecon.findUnique({
     where: { id: leconId },
     select: { module: { select: { coursId: true } } },
   });
   if (!lecon) return null;
   const coursId = lecon.module.coursId;
-  const acces = await prisma.coursApprenant.findUnique({
+  const acces = await db.coursApprenant.findUnique({
     where: { coursId_apprenantId: { coursId, apprenantId } },
   });
   return acces ? coursId : null;
@@ -32,19 +34,20 @@ export async function setLeconDone(
   leconId: string,
   done: boolean,
 ): Promise<Res> {
+  const db = await getTenantDb();
   const apprenant = await currentApprenant();
   if (!apprenant) return { ok: false, error: "Non autorisé." };
   const coursId = await leconAutorisee(apprenant.id, leconId);
   if (!coursId) return { ok: false, error: "Accès refusé." };
 
   if (done) {
-    await prisma.progressionLecon.upsert({
+    await db.progressionLecon.upsert({
       where: { apprenantId_leconId: { apprenantId: apprenant.id, leconId } },
       update: {},
       create: { apprenantId: apprenant.id, leconId },
     });
   } else {
-    await prisma.progressionLecon.deleteMany({
+    await db.progressionLecon.deleteMany({
       where: { apprenantId: apprenant.id, leconId },
     });
   }
@@ -59,18 +62,19 @@ export async function submitQuizResultat(
   score: number,
   total: number,
 ): Promise<Res> {
+  const db = await getTenantDb();
   const apprenant = await currentApprenant();
   if (!apprenant) return { ok: false, error: "Non autorisé." };
   const coursId = await leconAutorisee(apprenant.id, leconId);
   if (!coursId) return { ok: false, error: "Accès refusé." };
 
-  await prisma.quizResultat.upsert({
+  await db.quizResultat.upsert({
     where: { apprenantId_leconId: { apprenantId: apprenant.id, leconId } },
     update: { score, total },
     create: { apprenantId: apprenant.id, leconId, score, total },
   });
   // Réussir le quiz marque aussi la leçon comme vue
-  await prisma.progressionLecon.upsert({
+  await db.progressionLecon.upsert({
     where: { apprenantId_leconId: { apprenantId: apprenant.id, leconId } },
     update: {},
     create: { apprenantId: apprenant.id, leconId },

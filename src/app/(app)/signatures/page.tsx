@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { CheckCircle2, Clock, FileSignature } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -17,8 +17,9 @@ import { RelanceButton } from "@/components/signatures/relance-button";
 export const dynamic = "force-dynamic";
 
 export default async function SignaturesPage() {
+  const db = await getTenantDb();
   // Toutes les inscriptions engagées dans un parcours de signature
-  const inscriptions = await prisma.inscription.findMany({
+  const inscriptions = await db.inscription.findMany({
     where: { statut: { not: "ANNULEE" } },
     include: {
       candidat: { select: { prenom: true, nom: true, email: true } },

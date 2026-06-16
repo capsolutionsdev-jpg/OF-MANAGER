@@ -128,3 +128,90 @@
     @apply font-sans;
   }
 }
+
+/* ============================================================
+   DESIGNS (peaux par organisme) — effets de surface.
+   La couleur/mode/arrondi/police viennent des variables CSS
+   injectées par le layout (lib/themes.ts designVars). Ici, on
+   ajoute uniquement les traitements visuels propres à chaque skin,
+   déclenchés par l'attribut data-design sur le conteneur de l'app.
+   ============================================================ */
+[data-design] {
+  background: var(--background);
+}
+/* Titres : police d'en-tête du design (serif pour Éditorial/Humaniste). */
+[data-design] :is(h1, h2, h3, [data-slot="card-title"]) {
+  font-family: var(--font-heading);
+}
+
+/* Aurora — dégradé maillé + verre dépoli */
+[data-design="aurora"] {
+  background:
+    radial-gradient(40% 50% at 15% 10%, rgba(124, 77, 255, 0.30), transparent 60%),
+    radial-gradient(45% 45% at 85% 12%, rgba(0, 194, 255, 0.24), transparent 60%),
+    radial-gradient(55% 55% at 72% 92%, rgba(255, 77, 148, 0.18), transparent 60%),
+    #070a14;
+}
+[data-design="aurora"] [data-slot="card"] {
+  background: color-mix(in oklab, var(--card) 70%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid color-mix(in oklab, white 14%, transparent);
+  box-shadow: 0 22px 60px -26px rgba(0, 0, 0, 0.6);
+}
+[data-design="aurora"] header {
+  background: color-mix(in oklab, var(--card) 68%, transparent);
+}
+
+/* Néumorphisme — reliefs extrudés, champs en creux */
+[data-design="neumorphisme"] [data-slot="card"] {
+  border: none;
+  box-shadow: 7px 7px 16px #c4c8d0, -7px -7px 16px #ffffff;
+}
+[data-design="neumorphisme"] input,
+[data-design="neumorphisme"] textarea,
+[data-design="neumorphisme"] select {
+  box-shadow: inset 3px 3px 6px #c8ccd5, inset -3px -3px 6px #ffffff;
+  border-color: transparent;
+}
+
+/* Éditorial / Enterprise / Linear — filets nets, sans ombre */
+[data-design="editorial"] [data-slot="card"],
+[data-design="enterprise"] [data-slot="card"],
+[data-design="linear"] [data-slot="card"] {
+  box-shadow: none;
+  border: 1px solid var(--border);
+}
+
+/* Humaniste — cartes douces */
+[data-design="humaniste"] [data-slot="card"] {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  border: 1px solid var(--border);
+}
+
+/* Bento — tuiles sans bordure, ombre portée douce */
+[data-design="bento"] [data-slot="card"] {
+  border: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 10px 30px -18px rgba(20, 20, 40, 0.3);
+}
+
+/* Agenda — cartes blanches nettes, filet fin */
+[data-design="agenda"] [data-slot="card"] {
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 2px rgba(15, 27, 45, 0.04);
+}
+
+/* Mobile-first — fond dégradé doux, cartes très arrondies en relief */
+[data-design="mobile"] {
+  background: linear-gradient(160deg, #e8ecff, #f6f4ff) fixed;
+}
+[data-design="mobile"] [data-slot="card"] {
+  border: none;
+  box-shadow: 0 6px 18px -10px rgba(40, 30, 90, 0.3);
+}
+
+/* Kanban — cartes nettes, ombre légère (style tickets de pipeline) */
+[data-design="kanban"] [data-slot="card"] {
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}

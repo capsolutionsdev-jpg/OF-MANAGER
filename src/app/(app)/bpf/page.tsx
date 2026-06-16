@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { BarChart3, Clock, Users, GraduationCap, Wallet } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -54,6 +54,7 @@ export default async function BpfPage({
 }: {
   searchParams: Promise<{ annee?: string }>;
 }) {
+  const db = await getTenantDb();
   const sp = await searchParams;
   const nowYear = new Date().getFullYear();
   const annee = sp.annee ? parseInt(sp.annee, 10) : nowYear;
@@ -62,7 +63,7 @@ export default async function BpfPage({
   const debut = new Date(annee, 0, 1);
   const fin = new Date(annee + 1, 0, 1);
 
-  const sessions = await prisma.session.findMany({
+  const sessions = await db.session.findMany({
     where: {
       statut: { not: "ANNULEE" },
       dateDebut: { gte: debut, lt: fin },
@@ -83,7 +84,7 @@ export default async function BpfPage({
   });
 
   // Années disponibles pour le sélecteur
-  const allYears = await prisma.session.findMany({
+  const allYears = await db.session.findMany({
     select: { dateDebut: true },
     orderBy: { dateDebut: "desc" },
   });

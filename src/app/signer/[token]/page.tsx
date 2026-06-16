@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { CheckCircle2, FileText, Download } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { orgConfig } from "@/lib/org-config";
+import { orgConfigFor } from "@/lib/org-identity";
 import {
   Card,
   CardContent,
@@ -33,6 +33,7 @@ export default async function SignerPage({
     include: { candidat: true, session: { include: { formation: true } } },
   });
   if (!insc) notFound();
+  const org = await orgConfigFor(insc.organismeId);
 
   const c = insc.candidat;
   const fmt = (d: Date) => d.toLocaleDateString("fr-FR");
@@ -44,7 +45,7 @@ export default async function SignerPage({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/cap-competences-logo.png"
-            alt={orgConfig.name}
+            alt={org.name}
             className="mb-3 h-12 w-auto object-contain"
           />
           <h1 className="text-xl font-bold">Signature de vos documents</h1>
@@ -120,7 +121,7 @@ export default async function SignerPage({
         )}
 
         <p className="text-center text-xs text-muted-foreground">
-          {orgConfig.name} — {orgConfig.email} · {orgConfig.telephone}
+          {org.name} — {org.email} · {org.telephone}
         </p>
       </div>
     </main>

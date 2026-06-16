@@ -3,7 +3,7 @@
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 
 export type ChangePasswordState = {
   ok?: boolean;
@@ -29,6 +29,7 @@ export async function changePassword(
   _prev: ChangePasswordState | undefined,
   formData: FormData,
 ): Promise<ChangePasswordState> {
+  const db = await getTenantDb();
   const session = await auth();
   if (!session?.user?.id) {
     return { error: "Session expirée. Reconnectez-vous." };
@@ -43,7 +44,7 @@ export async function changePassword(
     return { error: parsed.error.issues[0]?.message ?? "Champs invalides." };
   }
 
-  const user = await prisma.user.findUnique({
+  const user = await db.user.findUnique({
     where: { id: session.user.id },
   });
   if (!user) return { error: "Compte introuvable." };
@@ -56,7 +57,7 @@ export async function changePassword(
   }
 
   const passwordHash = await bcrypt.hash(parsed.data.next, 10);
-  await prisma.user.update({
+  await db.user.update({
     where: { id: user.id },
     data: { passwordHash },
   });

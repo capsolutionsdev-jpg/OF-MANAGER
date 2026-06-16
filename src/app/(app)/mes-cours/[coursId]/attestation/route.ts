@@ -1,7 +1,7 @@
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { auth } from "@/auth";
 import { htmlToPdf } from "@/lib/pdf";
-import { orgConfig } from "@/lib/org-config";
+import { orgConfigFor } from "@/lib/org-identity";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -12,20 +12,20 @@ export async function GET(
 ) {
   const { coursId } = await params;
   const session = await auth();
-  const apprenant = session?.user?.id
-    ? await prisma.apprenant.findUnique({
-        where: { userId: session.user.id },
-        include: { candidat: { select: { prenom: true, nom: true } } },
-      })
-    : null;
+  if (!session?.user?.id) return new Response("Non autorisé", { status: 401 });
+  const db = await getTenantDb();
+  const apprenant = await db.apprenant.findUnique({
+    where: { userId: session.user.id },
+    include: { candidat: { select: { prenom: true, nom: true } } },
+  });
   if (!apprenant) return new Response("Non autorisé", { status: 401 });
 
-  const acces = await prisma.coursApprenant.findUnique({
+  const acces = await db.coursApprenant.findUnique({
     where: { coursId_apprenantId: { coursId, apprenantId: apprenant.id } },
   });
   if (!acces) return new Response("Accès refusé", { status: 403 });
 
-  const cours = await prisma.cours.findUnique({
+  const cours = await db.cours.findUnique({
     where: { id: coursId },
     include: {
       formation: { select: { titre: true } },
@@ -35,7 +35,7 @@ export async function GET(
   if (!cours) return new Response("Cours introuvable", { status: 404 });
 
   const lecons = cours.modules.flatMap((m) => m.lecons.map((l) => l.id));
-  const done = await prisma.progressionLecon.count({
+  const done = await db.progressionLecon.count({
     where: { apprenantId: apprenant.id, leconId: { in: lecons } },
   });
   if (lecons.length === 0 || done < lecons.length) {
@@ -49,6 +49,7 @@ export async function GET(
     year: "numeric",
   });
 
+  const org = await orgConfigFor(session.user.organismeId);
   const html = `<!doctype html><html><head><meta charset="utf-8"><style>
     body { font-family: Georgia, "Times New Roman", serif; color: #0D1B3E; padding: 0; margin: 0; }
     .sheet { padding: 60px; border: 6px double #1A5FD4; margin: 24px; text-align: center; }
@@ -61,7 +62,7 @@ export async function GET(
     .foot { font-size: 11px; color: #777; margin-top: 40px; border-top: 1px solid #ccc; padding-top: 10px; }
   </style></head><body>
     <div class="sheet">
-      <div class="org"><strong>${orgConfig.name}</strong> — ${orgConfig.qualiopi}</div>
+      <div class="org"><strong>${org.name}</strong> — ${org.qualiopi}</div>
       <p class="sub">Attestation de réalisation</p>
       <h1>ATTESTATION</h1>
       <p>Le présent document atteste que</p>
@@ -70,8 +71,8 @@ export async function GET(
       <div class="cours">« ${cours.titre} »${cours.formation ? `<br/><span style="font-size:13px;color:#555">${cours.formation.titre}</span>` : ""}</div>
       <p class="meta">Fait le ${date}.</p>
       <div class="foot">
-        ${orgConfig.name} · SIRET ${orgConfig.siret} · NDA ${orgConfig.nda}<br/>
-        ${orgConfig.representant}, représentant légal
+        ${org.name} · SIRET ${org.siret} · NDA ${org.nda}<br/>
+        ${org.representant}, représentant légal
       </div>
     </div>
   </body></html>`;

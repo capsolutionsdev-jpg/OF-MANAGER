@@ -12,16 +12,18 @@ type Tone = "light" | "dark";
 function NavLinks({
   role,
   permissions = [],
+  fonctionnalites = [],
   onNavigate,
   tone = "light",
 }: {
   role: Role;
   permissions?: string[];
+  fonctionnalites?: string[];
   onNavigate?: () => void;
   tone?: Tone;
 }) {
   const pathname = usePathname();
-  const items = visibleNavItems(role, permissions);
+  const items = visibleNavItems(role, permissions, fonctionnalites);
   const dark = tone === "dark";
 
   return (
@@ -98,14 +100,16 @@ function Brand({ tone = "light" }: { tone?: Tone }) {
 export function AppSidebar({
   role,
   permissions = [],
+  fonctionnalites = [],
 }: {
   role: Role;
   permissions?: string[];
+  fonctionnalites?: string[];
 }) {
   return (
     <aside className="hidden w-64 shrink-0 flex-col bg-[#0e1c3f] md:flex">
       <Brand tone="dark" />
-      <NavLinks role={role} permissions={permissions} tone="dark" />
+      <NavLinks role={role} permissions={permissions} fonctionnalites={fonctionnalites} tone="dark" />
       <div className="border-t border-white/10 p-4">
         <p className="text-[11px] leading-relaxed text-white/40">
           CAP Compétences — Manager

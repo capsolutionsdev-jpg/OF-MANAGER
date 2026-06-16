@@ -1,20 +1,26 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { SessionForm } from "@/components/sessions/session-form";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
 export default async function NouvelleSessionPage() {
-  const [formations, formateurs] = await Promise.all([
-    prisma.formation.findMany({
+  const db = await getTenantDb();
+  const [formations, formateurs, salles] = await Promise.all([
+    db.formation.findMany({
       where: { isArchived: false },
       orderBy: { titre: "asc" },
       select: { id: true, titre: true, reference: true },
     }),
-    prisma.formateur.findMany({
+    db.formateur.findMany({
       orderBy: { nom: "asc" },
       select: { id: true, nom: true, prenom: true, academies: true },
+    }),
+    db.salle.findMany({
+      where: { actif: true },
+      orderBy: { nom: "asc" },
+      select: { id: true, nom: true },
     }),
   ]);
 
@@ -39,7 +45,7 @@ export default async function NouvelleSessionPage() {
             </Link>
           </Card>
         ) : (
-          <SessionForm formations={formations} formateurs={formateurs} />
+          <SessionForm formations={formations} formateurs={formateurs} salles={salles} />
         )}
       </div>
     </div>

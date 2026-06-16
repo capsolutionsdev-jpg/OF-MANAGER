@@ -6,10 +6,10 @@ import {
   WorkflowTrigger,
   WorkflowAction,
 } from "@prisma/client";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { auth } from "@/auth";
 import { sendEmail, emailConfigured } from "@/lib/email";
-import { orgConfig } from "@/lib/org-config";
+import { orgConfigFor } from "@/lib/org-identity";
 
 const fmt = (d: Date) => d.toLocaleDateString("fr-FR");
 
@@ -24,12 +24,14 @@ export async function sendConvocationsForSession(
   if (!session?.user)
     return { ok: false, total: 0, sent: 0, demo: true, error: "Non autorisé." };
 
-  const s = await prisma.session.findUnique({
+  const db = await getTenantDb();
+  const s = await db.session.findUnique({
     where: { id: sessionId },
     include: { formation: true, inscriptions: { include: { candidat: true } } },
   });
   if (!s)
     return { ok: false, total: 0, sent: 0, demo: true, error: "Session introuvable." };
+  const org = await orgConfigFor(s.organismeId);
 
   const demo = !emailConfigured();
   let sent = 0;
@@ -42,10 +44,10 @@ Vous êtes convoqué(e) à la formation « ${s.formation.titre} » qui se dérou
 Merci de vous présenter muni(e) d'une pièce d'identité.
 
 Cordialement,
-${orgConfig.representant} — ${orgConfig.name}`;
+${org.representant} — ${org.name}`;
     const res = await sendEmail({ to: insc.candidat.email, subject, body });
     if (res.sent) sent++;
-    await prisma.emailLog.create({
+    await db.emailLog.create({
       data: {
         destinataire: insc.candidat.email,
         sujet: subject,
@@ -63,15 +65,17 @@ ${orgConfig.representant} — ${orgConfig.name}`;
 }
 
 export async function sendConvocations(formData: FormData) {
+  const db = await getTenantDb();
   const session = await auth();
   if (!session?.user) return;
 
   const sessionId = String(formData.get("sessionId"));
-  const s = await prisma.session.findUnique({
+  const s = await db.session.findUnique({
     where: { id: sessionId },
     include: { formation: true, inscriptions: { include: { candidat: true } } },
   });
   if (!s) return;
+  const org = await orgConfigFor(s.organismeId);
 
   for (const insc of s.inscriptions) {
     const subject = `Convocation — ${s.formation.titre}`;
@@ -82,10 +86,10 @@ Vous êtes convoqué(e) à la formation « ${s.formation.titre} » qui se dérou
 Merci de vous présenter muni(e) d'une pièce d'identité.
 
 Cordialement,
-${orgConfig.representant} — ${orgConfig.name}`;
+${org.representant} — ${org.name}`;
 
     const res = await sendEmail({ to: insc.candidat.email, subject, body });
-    await prisma.emailLog.create({
+    await db.emailLog.create({
       data: {
         destinataire: insc.candidat.email,
         sujet: subject,
@@ -102,6 +106,7 @@ ${orgConfig.representant} — ${orgConfig.name}`;
 }
 
 export async function createWorkflowRule(formData: FormData) {
+  const db = await getTenantDb();
   const session = await auth();
   if (!session?.user) return;
 
@@ -111,20 +116,21 @@ export async function createWorkflowRule(formData: FormData) {
   const offsetDays = parseInt(String(formData.get("offsetDays") ?? "0"), 10) || 0;
   if (!nom) return;
 
-  await prisma.workflowRule.create({
+  await db.workflowRule.create({
     data: { nom, trigger, action, offsetDays },
   });
   revalidatePath("/automatisations");
 }
 
 export async function toggleWorkflowRule(formData: FormData) {
+  const db = await getTenantDb();
   const session = await auth();
   if (!session?.user) return;
 
   const id = String(formData.get("id"));
-  const rule = await prisma.workflowRule.findUnique({ where: { id } });
+  const rule = await db.workflowRule.findUnique({ where: { id } });
   if (rule) {
-    await prisma.workflowRule.update({
+    await db.workflowRule.update({
       where: { id },
       data: { isActive: !rule.isActive },
     });

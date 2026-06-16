@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft, ExternalLink } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -23,7 +23,8 @@ const TYPES: Record<string, { label: string; ind: string; cls: string }> = {
 };
 
 export default async function VeillePage() {
-  const entrees = await prisma.veilleEntree.findMany({ orderBy: { date: "desc" } });
+  const db = await getTenantDb();
+  const entrees = await db.veilleEntree.findMany({ orderBy: { date: "desc" } });
   const fmt = (d: Date) => d.toLocaleDateString("fr-FR");
 
   return (

@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Menu, Search, Bell, LogOut, UserCog, ShieldCheck, ChevronDown } from "lucide-react";
 import type { Role } from "@prisma/client";
@@ -21,8 +20,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { NavLinks, Brand } from "@/components/app-sidebar";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 import { visibleNavItems, roleLabels } from "@/lib/navigation";
-import { doSignOut } from "@/lib/actions/auth-actions";
+import type { NotificationsData } from "@/lib/notifications";
 import { cn } from "@/lib/utils";
 
 type NavUser = {
@@ -30,14 +30,23 @@ type NavUser = {
   email?: string | null;
   role: Role;
   permissions?: string[];
+  fonctionnalites?: string[];
 };
 
 // Nombre d'items affichés directement dans la barre ; le reste va dans « Plus ».
 const INLINE = 6;
 
-export function AppTopNav({ user }: { user: NavUser }) {
+export function AppTopNav({
+  user,
+  brand,
+  notifications,
+}: {
+  user: NavUser;
+  brand?: { nom: string; logoUrl: string | null };
+  notifications?: NotificationsData;
+}) {
   const pathname = usePathname();
-  const items = visibleNavItems(user.role, user.permissions ?? []);
+  const items = visibleNavItems(user.role, user.permissions ?? [], user.fonctionnalites ?? []);
   const inline = items.slice(0, INLINE);
   const overflow = items.slice(INLINE);
   const label = user.name || user.email || "Utilisateur";
@@ -68,20 +77,25 @@ export function AppTopNav({ user }: { user: NavUser }) {
           <SheetContent side="left" className="w-64 p-0">
             <SheetTitle className="sr-only">Navigation</SheetTitle>
             <Brand />
-            <NavLinks role={user.role} permissions={user.permissions ?? []} />
+            <NavLinks
+              role={user.role}
+              permissions={user.permissions ?? []}
+              fonctionnalites={user.fonctionnalites ?? []}
+            />
           </SheetContent>
         </Sheet>
 
         {/* Logo */}
         <Link href="/dashboard" className="flex shrink-0 items-center">
-          <Image
-            src="/cap-competences-logo.png"
-            alt="CAP Compétences"
-            width={150}
-            height={48}
-            priority
-            className="h-8 w-auto"
-          />
+          {brand?.logoUrl ? (
+            // Logo personnalisé (data URL en base) — next/image ne gère pas les data: URLs
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={brand.logoUrl} alt={brand.nom} className="h-8 w-auto" />
+          ) : (
+            <span className="font-display text-base font-bold tracking-tight text-foreground">
+              {brand?.nom ?? "CAP Compétences"}
+            </span>
+          )}
         </Link>
 
         {/* Navigation inline (desktop) */}
@@ -128,9 +142,13 @@ export function AppTopNav({ user }: { user: NavUser }) {
           <Button variant="ghost" size="icon" className="text-muted-foreground" aria-label="Rechercher">
             <Search className="h-[18px] w-[18px]" />
           </Button>
-          <Button variant="ghost" size="icon" className="text-muted-foreground" aria-label="Notifications">
-            <Bell className="h-[18px] w-[18px]" />
-          </Button>
+          {notifications ? (
+            <NotificationBell data={notifications} />
+          ) : (
+            <Button variant="ghost" size="icon" className="text-muted-foreground" aria-label="Notifications">
+              <Bell className="h-[18px] w-[18px]" />
+            </Button>
+          )}
 
           <DropdownMenu>
             <DropdownMenuTrigger
@@ -170,17 +188,28 @@ export function AppTopNav({ user }: { user: NavUser }) {
                 </Link>
               )}
               <DropdownMenuSeparator />
-              <form action={doSignOut}>
-                <button
-                  type="submit"
-                  className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-destructive hover:bg-muted"
-                >
-                  <LogOut className="h-4 w-4" />
-                  Se déconnecter
-                </button>
-              </form>
+              <Link
+                href="/deconnexion"
+                prefetch={false}
+                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-destructive hover:bg-muted"
+              >
+                <LogOut className="h-4 w-4" />
+                Se déconnecter
+              </Link>
             </DropdownMenuContent>
           </DropdownMenu>
+
+          {/* Déconnexion visible (1 clic) — navigation GET robuste */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-1.5 text-muted-foreground hover:text-destructive"
+            title="Se déconnecter"
+            render={<Link href="/deconnexion" prefetch={false} />}
+          >
+            <LogOut className="h-[18px] w-[18px]" />
+            <span className="hidden sm:inline">Déconnexion</span>
+          </Button>
         </div>
       </div>
     </header>

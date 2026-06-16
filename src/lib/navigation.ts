@@ -10,10 +10,24 @@ import {
   UserCog,
   PenLine,
   Bell,
+  BellRing,
   Shield,
   BarChart3,
   GraduationCap,
   Building2,
+  Wallet,
+  CalendarRange,
+  DoorOpen,
+  FileText,
+  Columns3,
+  ListTodo,
+  Inbox,
+  Gauge,
+  MessageSquare,
+  Sparkles,
+  PieChart,
+  KeyRound,
+  LifeBuoy,
   type LucideIcon,
 } from "lucide-react";
 
@@ -27,12 +41,23 @@ export type NavItem = {
   permission?: string;
 };
 
-/** Entrées de menu visibles pour un utilisateur (rôle + sections autorisées). */
-export function visibleNavItems(role: Role, permissions: string[]): NavItem[] {
+/**
+ * Entrées de menu visibles pour un utilisateur : rôle + sections autorisées
+ * (permissions collaborateur) + fonctionnalités activées pour l'organisme.
+ * `fonctionnalites` vide = tout activé (cf. hasFeature).
+ */
+export function visibleNavItems(
+  role: Role,
+  permissions: string[],
+  fonctionnalites: string[] = [],
+): NavItem[] {
   return navItems.filter(
     (item) =>
       item.roles.includes(role) &&
-      (!item.permission || canAccessSection(role, permissions, item.permission)),
+      (!item.permission || canAccessSection(role, permissions, item.permission)) &&
+      (!item.permission ||
+        fonctionnalites.length === 0 ||
+        fonctionnalites.includes(item.permission)),
   );
 }
 
@@ -56,6 +81,69 @@ export const navItems: NavItem[] = [
     icon: Target,
     roles: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
     permission: "crm",
+  },
+  {
+    label: "Kanban",
+    href: "/kanban",
+    icon: Columns3,
+    roles: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
+    permission: "kanban",
+  },
+  {
+    label: "Tâches",
+    href: "/taches",
+    icon: ListTodo,
+    roles: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
+    permission: "taches",
+  },
+  {
+    label: "Notifications",
+    href: "/notifications",
+    icon: BellRing,
+    roles: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
+    permission: "notifications",
+  },
+  {
+    label: "Leads multi-canal",
+    href: "/leads-multicanal",
+    icon: Inbox,
+    roles: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
+    permission: "leads-multicanal",
+  },
+  {
+    label: "Scoring",
+    href: "/scoring",
+    icon: Gauge,
+    roles: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
+    permission: "scoring",
+  },
+  {
+    label: "SMS",
+    href: "/sms",
+    icon: MessageSquare,
+    roles: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
+    permission: "sms",
+  },
+  {
+    label: "Assistant IA",
+    href: "/ia",
+    icon: Sparkles,
+    roles: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
+    permission: "ia",
+  },
+  {
+    label: "Rapports",
+    href: "/rapports",
+    icon: PieChart,
+    roles: ["ADMIN", "RESPONSABLE_FORMATION"],
+    permission: "rapports",
+  },
+  {
+    label: "Espace client",
+    href: "/portail-client",
+    icon: KeyRound,
+    roles: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
+    permission: "portail-client",
   },
   {
     label: "Candidats",
@@ -86,6 +174,20 @@ export const navItems: NavItem[] = [
     permission: "sessions",
   },
   {
+    label: "Planning",
+    href: "/planning",
+    icon: CalendarRange,
+    roles: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT", "FORMATEUR"],
+    permission: "planning",
+  },
+  {
+    label: "Salles",
+    href: "/salles",
+    icon: DoorOpen,
+    roles: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
+    permission: "salles",
+  },
+  {
     label: "E-learning",
     href: "/elearning",
     icon: GraduationCap,
@@ -114,6 +216,20 @@ export const navItems: NavItem[] = [
     permission: "formateurs",
   },
   {
+    label: "Suivi comptable",
+    href: "/comptabilite",
+    icon: Wallet,
+    roles: ["ADMIN", "RESPONSABLE_FORMATION"],
+    permission: "comptabilite",
+  },
+  {
+    label: "Devis",
+    href: "/devis",
+    icon: FileText,
+    roles: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
+    permission: "facturation",
+  },
+  {
     label: "BPF",
     href: "/bpf",
     icon: BarChart3,
@@ -134,9 +250,17 @@ export const navItems: NavItem[] = [
     roles: ["ADMIN", "RESPONSABLE_FORMATION"],
     permission: "rgpd",
   },
+  {
+    label: "Support",
+    href: "/support",
+    icon: LifeBuoy,
+    roles: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
+    permission: "support",
+  },
 ];
 
 export const roleLabels: Record<Role, string> = {
+  SUPERADMIN: "Super-administrateur (éditeur)",
   ADMIN: "Administrateur",
   RESPONSABLE_FORMATION: "Responsable formation",
   ASSISTANT: "Assistant administratif",

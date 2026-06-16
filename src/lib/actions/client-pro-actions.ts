@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 
 async function requireUser() {
   const session = await auth();
@@ -31,29 +31,32 @@ function champs(formData: FormData) {
 }
 
 export async function creerClientPro(formData: FormData) {
+  const db = await getTenantDb();
   await requireUser();
   const data = champs(formData);
   if (!data.raisonSociale) throw new Error("Raison sociale requise.");
-  const client = await prisma.entreprise.create({ data });
+  const client = await db.entreprise.create({ data });
   revalidatePath("/clients-pro");
   redirect(`/clients-pro/${client.id}`);
 }
 
 export async function majClientPro(formData: FormData) {
+  const db = await getTenantDb();
   await requireUser();
   const id = String(formData.get("id") ?? "");
   if (!id) return;
-  await prisma.entreprise.update({ where: { id }, data: champs(formData) });
+  await db.entreprise.update({ where: { id }, data: champs(formData) });
   revalidatePath(`/clients-pro/${id}`);
   revalidatePath("/clients-pro");
 }
 
 export async function rattacherCandidat(formData: FormData) {
+  const db = await getTenantDb();
   await requireUser();
   const entrepriseId = String(formData.get("entrepriseId") ?? "");
   const candidatId = String(formData.get("candidatId") ?? "");
   if (!entrepriseId || !candidatId) return;
-  await prisma.candidat.update({
+  await db.candidat.update({
     where: { id: candidatId },
     data: { entrepriseId },
   });
@@ -61,11 +64,12 @@ export async function rattacherCandidat(formData: FormData) {
 }
 
 export async function detacherCandidat(formData: FormData) {
+  const db = await getTenantDb();
   await requireUser();
   const entrepriseId = String(formData.get("entrepriseId") ?? "");
   const candidatId = String(formData.get("candidatId") ?? "");
   if (!candidatId) return;
-  await prisma.candidat.update({
+  await db.candidat.update({
     where: { id: candidatId },
     data: { entrepriseId: null },
   });

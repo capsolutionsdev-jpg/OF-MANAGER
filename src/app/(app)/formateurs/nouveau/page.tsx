@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { FormateurForm } from "@/components/formateurs/formateur-form";
 
 export default async function NouveauFormateurPage() {
-  const formations = await prisma.formation.findMany({
+  const db = await getTenantDb();
+  const formations = await db.formation.findMany({
     where: { isArchived: false },
     orderBy: { titre: "asc" },
     select: { id: true, titre: true, academy: true },

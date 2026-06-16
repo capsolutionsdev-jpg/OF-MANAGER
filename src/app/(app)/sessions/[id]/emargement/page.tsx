@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, FileText, CalendarPlus, CheckCircle2, Clock, PenLine } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -20,8 +20,9 @@ export default async function EmargementPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const db = await getTenantDb();
   const { id } = await params;
-  const s = await prisma.session.findUnique({
+  const s = await db.session.findUnique({
     where: { id },
     include: {
       formation: true,

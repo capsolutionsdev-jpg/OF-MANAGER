@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Pencil, History, CalendarDays, FileDown, Trash2, Target, MessageSquare } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import { auth } from "@/auth";
+import { canAccessSection, roleAllowedInSection } from "@/lib/permissions";
+import { getTenantDb } from "@/lib/tenant";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -19,6 +21,7 @@ import { INTERACTION_LABELS } from "@/lib/validators/crm";
 import { anonymiseCandidat } from "@/lib/actions/rgpd-actions";
 import { resendParcoursAction } from "@/lib/actions/parcours-actions";
 import { DossierChecklist } from "@/components/inscriptions/dossier-checklist";
+import { RecordPaymentDialog } from "@/components/comptabilite/record-payment-dialog";
 import { SendProspectLinkButton } from "@/components/crm/send-prospect-link-button";
 import { CrmPanel } from "@/components/crm/crm-panel";
 import { AddInteractionForm } from "@/components/crm/add-interaction-form";
@@ -40,12 +43,25 @@ export default async function CandidatDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const db = await getTenantDb();
   const { id } = await params;
-  const candidat = await prisma.candidat.findUnique({
+  const candidat = await db.candidat.findUnique({
     where: { id },
     include: {
       inscriptions: {
-        include: { session: { include: { formation: true } } },
+        include: {
+          session: { include: { formation: true } },
+          paiements: {
+            select: {
+              id: true,
+              montant: true,
+              date: true,
+              mode: true,
+              enregistrePar: { select: { name: true } },
+            },
+            orderBy: { date: "desc" },
+          },
+        },
         orderBy: { createdAt: "desc" },
       },
       interactionsCandidat: {
@@ -56,13 +72,24 @@ export default async function CandidatDetailPage({
   });
   if (!candidat) notFound();
 
-  const users = await prisma.user.findMany({
+  // Le visiteur peut-il enregistrer un règlement ? (accès section comptabilité)
+  const session = await auth();
+  const peutEncaisser =
+    !!session?.user &&
+    roleAllowedInSection(session.user.role, "comptabilite") &&
+    canAccessSection(session.user.role, session.user.permissions ?? [], "comptabilite");
+
+  // Format monétaire FR
+  const eur = (n: number) =>
+    n.toLocaleString("fr-FR", { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + " €";
+
+  const users = await db.user.findMany({
     where: { isActive: true },
     select: { id: true, name: true },
     orderBy: { name: "asc" },
   });
 
-  const logs = await prisma.auditLog.findMany({
+  const logs = await db.auditLog.findMany({
     where: { entityType: "Candidat", entityId: id },
     orderBy: { createdAt: "desc" },
     take: 20,
@@ -279,7 +306,14 @@ export default async function CandidatDetailPage({
             </p>
           ) : (
             <ul className="space-y-4">
-              {candidat.inscriptions.map((i) => (
+              {candidat.inscriptions.map((i) => {
+                const du = i.montant != null ? Number(i.montant) : 0;
+                const paye = i.paiements.reduce((s, p) => s + Number(p.montant), 0);
+                const restant = Math.max(0, du - paye);
+                const modeDefaut =
+                  i.modePaiement ??
+                  (i.financementType ? FINANCEMENT_LABELS[i.financementType] : undefined);
+                return (
                 <li
                   key={i.id}
                   className="rounded-lg border bg-muted/20 p-3"
@@ -345,8 +379,55 @@ export default async function CandidatDetailPage({
                       piecesRecues={i.piecesRecues}
                     />
                   </div>
+
+                  {/* Paiement */}
+                  <div className="mt-3 border-t pt-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Paiement
+                      </p>
+                      {peutEncaisser && (
+                        <RecordPaymentDialog
+                          inscriptionId={i.id}
+                          candidatNom={`${candidat.prenom} ${candidat.nom}`}
+                          formation={i.session.formation.titre}
+                          restant={restant}
+                          defaultMode={modeDefaut}
+                        />
+                      )}
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-4 text-sm">
+                      <span>
+                        Dû :{" "}
+                        <span className="font-medium">{du > 0 ? eur(du) : "—"}</span>
+                      </span>
+                      <span>
+                        Payé :{" "}
+                        <span className="font-medium text-emerald-700">{eur(paye)}</span>
+                      </span>
+                      <span>
+                        Restant :{" "}
+                        <span className="font-medium">{du > 0 ? eur(restant) : "—"}</span>
+                      </span>
+                    </div>
+                    {i.paiements.length > 0 && (
+                      <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+                        {i.paiements.map((p) => (
+                          <li key={p.id} className="flex flex-wrap gap-2">
+                            <span>{p.date.toLocaleDateString("fr-FR")}</span>
+                            <span className="font-medium text-foreground">
+                              {eur(Number(p.montant))}
+                            </span>
+                            {p.mode && <span>· {p.mode}</span>}
+                            <span>· par {p.enregistrePar?.name ?? "—"}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
                 </li>
-              ))}
+                );
+              })}
             </ul>
           )}
         </CardContent>

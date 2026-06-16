@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { auth } from "@/auth";
 
 export const runtime = "nodejs";
@@ -10,9 +10,10 @@ export async function GET(
 ) {
   const session = await auth();
   if (!session?.user) return new Response("Non autorisé", { status: 401 });
+  const db = await getTenantDb();
 
   const { id } = await params;
-  const candidat = await prisma.candidat.findUnique({
+  const candidat = await db.candidat.findUnique({
     where: { id },
     include: {
       inscriptions: {

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft, Table2, TrendingUp } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -25,7 +25,8 @@ function Kpi({ label, value, sub }: { label: string; value: string; sub?: string
 }
 
 export default async function PipelinePage() {
-  const candidats = await prisma.candidat.findMany({
+  const db = await getTenantDb();
+  const candidats = await db.candidat.findMany({
     where: { statut: { not: "ARCHIVE" } },
     include: {
       formationSouhaitee: { select: { titre: true } },

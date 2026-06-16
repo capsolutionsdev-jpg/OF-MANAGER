@@ -19,11 +19,102 @@ datasource db {
 // =============================================================
 
 enum Role {
+  SUPERADMIN // éditeur de la plateforme (compte développeur, hors organisme)
   ADMIN
   RESPONSABLE_FORMATION
   ASSISTANT
   FORMATEUR
   APPRENANT
+}
+
+enum OrganismeStatut {
+  ESSAI
+  ACTIF
+  SUSPENDU
+}
+
+// Formule d'abonnement vendue à l'organisme (cf. lib/plans.ts).
+enum FormuleAbonnement {
+  BASIQUE
+  MEDIUM
+  COMPLET
+}
+
+enum SupportPriorite {
+  BASSE
+  NORMALE
+  HAUTE
+  URGENTE
+}
+
+enum SupportStatut {
+  OUVERT
+  EN_COURS
+  RESOLU
+}
+
+// Tenant : un organisme de formation client. Toutes les données « métier »
+// seront rattachées à un Organisme (multi-tenant, cloisonnement par organismeId).
+model Organisme {
+  id String @id @default(cuid())
+
+  // Identité & légal
+  nom                 String // nom commercial
+  raisonSociale       String?
+  representant        String? // gérant : nom + prénom
+  representantQualite String? // fonction/qualité (pour la signature des documents)
+  siret               String?
+  nda                 String? // n° de déclaration d'activité
+  numeroTva           String?
+  adresse             String?
+  codePostal          String?
+  ville               String?
+  telephone           String?
+  email               String?
+  siteWeb             String?
+  certificateur       String?
+  qualiopiNumero      String?
+  assujettiTva        Boolean @default(true)
+
+  // Identité visuelle (data URL ou chemin)
+  logoUrl           String? @db.Text
+  cachetUrl         String? @db.Text
+  signatureUrl      String? @db.Text
+  faviconUrl        String? @db.Text
+  couleurPrimaire   String? @default("#1A5FD4")
+  couleurSecondaire String?
+  theme             String? // (legacy) palette de couleur seule ; repli si design vide
+  design            String? // habillage/skin choisi (cf. lib/themes.ts DESIGNS) : mode + surfaces + police + arrondi
+  // Catalogue client : clients « externes » hébergés sur leur propre déploiement
+  // (ex. ASPR Manager). appUrl = URL de l'app ; version = libellé de version/MAJ.
+  appUrl            String?
+  version           String?
+
+  // Communication
+  emailExpediteurNom String?
+  emailExpediteur    String?
+  brevoApiKey        String?
+  sousDomaine        String? @unique
+
+  // Fonctionnalités activées (clés de features cochées dans la console)
+  fonctionnalites String[] @default([])
+
+  // Choix des documents : { "reglement_interieur": "modele" | "client", ... }
+  documentsConfig Json?
+
+  // Pilotage SaaS (côté éditeur)
+  statut          OrganismeStatut    @default(ESSAI)
+  formule         FormuleAbonnement? // abonnement vendu (pilote la facturation + le bundle de features)
+  maxUtilisateurs Int?
+  notes           String?            @db.Text
+
+  users          User[]
+  supportTickets SupportTicket[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([statut])
 }
 
 enum Modalite {
@@ -236,9 +327,14 @@ model User {
   name         String
   role         Role     @default(ASSISTANT)
   isActive     Boolean  @default(true)
+  // Tenant : organisme de rattachement. NULL pour le SUPERADMIN (éditeur).
+  organismeId  String?
+  organisme    Organisme? @relation(fields: [organismeId], references: [id])
   // Sections autorisées pour un collaborateur (clés de lib/permissions).
   // Ignoré pour ADMIN (accès total). Vide = aucun accès aux sections.
   permissions  String[] @default([])
+  // Centre de notifications : date de dernière consultation (badge « non lus »).
+  notificationsSeenAt DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -248,6 +344,7 @@ model User {
 
   // Traçabilité
   auditLogs          AuditLog[]
+  paiementsEnregistres Paiement[]       @relation("PaiementEnregistrePar")
   documentsGeneres   DocumentGenere[]   @relation("DocumentGenerePar")
   piecesUploadees    PieceJointe[]      @relation("PieceUploadeePar")
   candidatsCrees     Candidat[]         @relation("CandidatCreePar")
@@ -267,6 +364,7 @@ model User {
 
 model Candidat {
   id String @id @default(cuid())
+  organismeId String? // tenant (multi-OF)
 
   // Informations personnelles
   nom           String
@@ -334,11 +432,13 @@ model Candidat {
   @@index([email])
   @@index([crmStage])
   @@index([assignedToId])
+  @@index([organismeId])
 }
 
 // Interaction commerciale avec un prospect/candidat (timeline des échanges)
 model CandidatInteraction {
   id         String          @id @default(cuid())
+  organismeId String? // tenant (multi-OF)
   candidatId String
   candidat   Candidat        @relation(fields: [candidatId], references: [id], onDelete: Cascade)
   type       InteractionType
@@ -350,10 +450,12 @@ model CandidatInteraction {
   createdAt  DateTime        @default(now())
 
   @@index([candidatId])
+  @@index([organismeId])
 }
 
 model PieceJointe {
   id        String   @id @default(cuid())
+  organismeId String? // tenant (multi-OF)
   candidatId String
   candidat  Candidat @relation(fields: [candidatId], references: [id], onDelete: Cascade)
   label     String
@@ -366,6 +468,7 @@ model PieceJointe {
   createdAt DateTime @default(now())
 
   @@index([candidatId])
+  @@index([organismeId])
 }
 
 // =============================================================
@@ -374,6 +477,7 @@ model PieceJointe {
 
 model Formation {
   id                  String   @id @default(cuid())
+  organismeId String? // tenant (multi-OF)
   titre               String
   reference           String   @unique
   objectifs           String?  @db.Text
@@ -412,6 +516,7 @@ model Formation {
   updatedAt DateTime @updatedAt
 
   @@index([isArchived])
+  @@index([organismeId])
 }
 
 // =============================================================
@@ -420,6 +525,7 @@ model Formation {
 
 model Session {
   id          String        @id @default(cuid())
+  organismeId String? // tenant (multi-OF)
   formationId String
   formation   Formation     @relation(fields: [formationId], references: [id])
   reference   String?       @unique
@@ -431,6 +537,10 @@ model Session {
   nbPlaces    Int           @default(10)
   statut      SessionStatut @default(PLANIFIEE)
   isArchived  Boolean       @default(false)
+
+  // Salle (gestion des salles / planning)
+  salleId     String?
+  salle       Salle?        @relation(fields: [salleId], references: [id])
 
   // Tarif journalier du formateur pour cette session (sinon celui du formateur)
   tarifFormateurJour Decimal? @db.Decimal(10, 2)
@@ -463,10 +573,32 @@ model Session {
 
   @@index([statut])
   @@index([dateDebut])
+  @@index([organismeId])
+}
+
+// Salle de formation (gestion des salles + planning). Cloisonnée par organisme.
+model Salle {
+  id          String  @id @default(cuid())
+  organismeId String? // tenant (multi-OF)
+  nom         String
+  capacite    Int?
+  lieu        String? // adresse / bâtiment / étage
+  equipements String? // ex. "Vidéoprojecteur, tableau, 12 postes"
+  couleur     String? @default("#1A5FD4") // pastille planning
+  actif       Boolean @default(true)
+  notes       String? @db.Text
+
+  sessions Session[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organismeId])
 }
 
 model Formateur {
   id               String  @id @default(cuid())
+  organismeId String? // tenant (multi-OF)
   userId           String? @unique
   user             User?   @relation(fields: [userId], references: [id])
   nom              String
@@ -489,6 +621,7 @@ model Formateur {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  @@index([organismeId])
 }
 
 // =============================================================
@@ -497,6 +630,7 @@ model Formateur {
 
 model Apprenant {
   id         String   @id @default(cuid())
+  organismeId String? // tenant (multi-OF)
   candidatId String   @unique
   candidat   Candidat @relation(fields: [candidatId], references: [id])
   userId     String?  @unique // accès à l'espace apprenant
@@ -512,10 +646,12 @@ model Apprenant {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  @@index([organismeId])
 }
 
 model Inscription {
   id          String   @id @default(cuid())
+  organismeId String? // tenant (multi-OF)
   candidatId  String
   candidat    Candidat @relation(fields: [candidatId], references: [id])
   sessionId   String
@@ -578,6 +714,7 @@ model Inscription {
   contrat    Contrat?
   convention Convention?
   factures   Facture[]
+  paiements  Paiement[]
   signatures SignatureRequest[]
 
   createdAt DateTime @default(now())
@@ -585,6 +722,7 @@ model Inscription {
 
   @@unique([candidatId, sessionId])
   @@index([statut])
+  @@index([organismeId])
 }
 
 // =============================================================
@@ -593,6 +731,7 @@ model Inscription {
 
 model DocumentTemplate {
   id        String       @id @default(cuid())
+  organismeId String? // tenant (multi-OF)
   nom       String
   type      DocumentType
   fileUrl   String? // modèle Word/PDF source
@@ -603,10 +742,12 @@ model DocumentTemplate {
   updatedAt DateTime     @updatedAt
 
   documents DocumentGenere[]
+  @@index([organismeId])
 }
 
 model DocumentGenere {
   id         String       @id @default(cuid())
+  organismeId String? // tenant (multi-OF)
   type       DocumentType
   templateId String?
   template   DocumentTemplate? @relation(fields: [templateId], references: [id])
@@ -631,6 +772,7 @@ model DocumentGenere {
 
   @@index([type])
   @@index([inscriptionId])
+  @@index([organismeId])
 }
 
 // =============================================================
@@ -639,6 +781,7 @@ model DocumentGenere {
 
 model Seance {
   id        String     @id @default(cuid())
+  organismeId String? // tenant (multi-OF)
   sessionId String
   session   Session    @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   date      DateTime
@@ -653,10 +796,12 @@ model Seance {
   presences Presence[]
 
   @@index([sessionId])
+  @@index([organismeId])
 }
 
 model Presence {
   id          String         @id @default(cuid())
+  organismeId String? // tenant (multi-OF)
   seanceId    String
   seance      Seance         @relation(fields: [seanceId], references: [id], onDelete: Cascade)
   apprenantId String
@@ -667,11 +812,13 @@ model Presence {
   commentaire String?
 
   @@unique([seanceId, apprenantId])
+  @@index([organismeId])
 }
 
 // Signature d'émargement par demi-journée (lien e-mail → signature électronique)
 model EmargementSignature {
   id          String      @id @default(cuid())
+  organismeId String? // tenant (multi-OF)
   sessionId   String
   session     Session     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   date        DateTime
@@ -688,11 +835,13 @@ model EmargementSignature {
   createdAt   DateTime    @default(now())
 
   @@index([sessionId])
+  @@index([organismeId])
 }
 
 // Réglages des automatismes (ligne unique « singleton »)
 model AutomationSettings {
   id                      String   @id @default("singleton")
+  organismeId String? // tenant (multi-OF)
   convocationActive       Boolean  @default(true)
   convocationJMoins       Int      @default(7)
   attestationEntreeActive Boolean  @default(true)
@@ -701,6 +850,7 @@ model AutomationSettings {
   compteRenduActive       Boolean  @default(true)
   emargementActive        Boolean  @default(true)
   updatedAt               DateTime @updatedAt
+  @@index([organismeId])
 }
 
 // =============================================================
@@ -709,6 +859,7 @@ model AutomationSettings {
 
 model Evaluation {
   id           String         @id @default(cuid())
+  organismeId String? // tenant (multi-OF)
   titre        String
   type         EvaluationType
   formationId  String?
@@ -719,10 +870,12 @@ model Evaluation {
   createdAt    DateTime       @default(now())
 
   resultats EvaluationResultat[]
+  @@index([organismeId])
 }
 
 model EvaluationResultat {
   id           String     @id @default(cuid())
+  organismeId String? // tenant (multi-OF)
   evaluationId String
   evaluation   Evaluation @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
   apprenantId  String
@@ -735,6 +888,7 @@ model EvaluationResultat {
   createdAt    DateTime   @default(now())
 
   @@unique([evaluationId, apprenantId])
+  @@index([organismeId])
 }
 
 // =============================================================
@@ -743,6 +897,7 @@ model EvaluationResultat {
 
 model Convention {
   id            String   @id @default(cuid())
+  organismeId String? // tenant (multi-OF)
   reference     String   @unique
   inscriptionId String?  @unique
   inscription   Inscription? @relation(fields: [inscriptionId], references: [id])
@@ -756,10 +911,12 @@ model Convention {
   fileUrl       String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  @@index([organismeId])
 }
 
 model Contrat {
   id            String   @id @default(cuid())
+  organismeId String? // tenant (multi-OF)
   reference     String   @unique
   inscriptionId String   @unique
   inscription   Inscription @relation(fields: [inscriptionId], references: [id])
@@ -769,6 +926,7 @@ model Contrat {
   fileUrl       String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  @@index([organismeId])
 }
 
 // =============================================================
@@ -777,6 +935,7 @@ model Contrat {
 
 model QualiopiIndicateur {
   id            String         @id @default(cuid())
+  organismeId String? // tenant (multi-OF)
   numero        Int // 1 à 32 (RNQ)
   libelle       String
   description   String?        @db.Text
@@ -789,10 +948,12 @@ model QualiopiIndicateur {
   preuves QualiopiPreuve[]
 
   @@unique([numero])
+  @@index([organismeId])
 }
 
 model QualiopiPreuve {
   id           String   @id @default(cuid())
+  organismeId String? // tenant (multi-OF)
   indicateurId String
   indicateur   QualiopiIndicateur @relation(fields: [indicateurId], references: [id], onDelete: Cascade)
   label        String
@@ -800,10 +961,12 @@ model QualiopiPreuve {
   dateAjout    DateTime @default(now())
 
   @@index([indicateurId])
+  @@index([organismeId])
 }
 
 model Audit {
   id               String    @id @default(cuid())
+  organismeId String? // tenant (multi-OF)
   type             AuditType
   date             DateTime
   auditeur         String?
@@ -812,6 +975,7 @@ model Audit {
   rapportUrl       String?
   notes            String?   @db.Text
   createdAt        DateTime  @default(now())
+  @@index([organismeId])
 }
 
 // =============================================================
@@ -820,6 +984,7 @@ model Audit {
 
 model Entreprise {
   id            String   @id @default(cuid())
+  organismeId String? // tenant (multi-OF)
   raisonSociale String
   siret         String?
   adresse       String?
@@ -834,6 +999,10 @@ model Entreprise {
   opco          String? // financeur habituel (AKTO, autre OPCO, autofinancement…)
   stage         CrmStage @default(NOUVEAU)
   notes         String?  @db.Text
+  // Espace client (portail self-service B2B) : lien tokenisé en lecture seule.
+  // Jeton aléatoire (24 octets) → recherche par findFirst ; pas de contrainte
+  // unique (évite une migration destructive sur la base partagée).
+  portalToken   String?
 
   candidats    Candidat[]
   inscriptions Inscription[]
@@ -846,10 +1015,13 @@ model Entreprise {
   updatedAt DateTime @updatedAt
 
   @@index([stage])
+  @@index([organismeId])
+  @@index([portalToken])
 }
 
 model CrmInteraction {
   id           String          @id @default(cuid())
+  organismeId String? // tenant (multi-OF)
   entrepriseId String
   entreprise   Entreprise      @relation(fields: [entrepriseId], references: [id], onDelete: Cascade)
   type         InteractionType
@@ -860,6 +1032,7 @@ model CrmInteraction {
   user         User?           @relation(fields: [userId], references: [id])
 
   @@index([entrepriseId])
+  @@index([organismeId])
 }
 
 // =============================================================
@@ -868,9 +1041,14 @@ model CrmInteraction {
 
 model Devis {
   id           String   @id @default(cuid())
-  reference    String   @unique
+  organismeId String? // tenant (multi-OF)
+  reference    String
+  // Destinataire : entreprise cliente OU client libre (particulier)
   entrepriseId String?
   entreprise   Entreprise? @relation(fields: [entrepriseId], references: [id])
+  clientNom    String?
+  clientEmail  String?
+  objet        String?
   dateEmission DateTime @default(now())
   validUntil   DateTime?
   montantHT    Decimal  @default(0) @db.Decimal(10, 2)
@@ -878,12 +1056,54 @@ model Devis {
   montantTTC   Decimal  @default(0) @db.Decimal(10, 2)
   lignesJson   Json?
   statut       FactureStatut @default(BROUILLON)
+  // Acceptation/signature en ligne du devis (bon pour accord)
+  acceptToken  String?  @unique
+  acceptedAt   DateTime?
+  signataire   String?
+  signatureUrl String?  @db.Text
+  signatureIp  String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  @@unique([organismeId, reference])
+  @@index([organismeId])
+}
+
+// Tâche / rappel (agenda commercial). Cloisonnée par organisme.
+model Tache {
+  id          String    @id @default(cuid())
+  organismeId String?
+  titre       String
+  description String?   @db.Text
+  dueDate     DateTime?
+  done        Boolean   @default(false)
+  candidatId  String? // lien optionnel vers un prospect/candidat (id, sans relation)
+  createdById String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([organismeId])
+  @@index([done])
+}
+
+// SMS sortant (module avancé « SMS & séquences »). Envoi via Brevo SMS si une
+// clé est configurée pour l'OF, sinon journalisé en mode démo.
+model SmsLog {
+  id          String   @id @default(cuid())
+  organismeId String?
+  destinataire String  // numéro au format international (+33…)
+  body        String   @db.Text
+  candidatId  String? // lien optionnel vers un prospect/candidat
+  statut      String   @default("EN_ATTENTE") // EN_ATTENTE / ENVOYE / ECHEC / DEMO
+  providerId  String? // id renvoyé par le fournisseur (Brevo)
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  @@index([organismeId])
 }
 
 model Facture {
   id            String        @id @default(cuid())
+  organismeId String? // tenant (multi-OF)
   reference     String        @unique
   entrepriseId  String?
   entreprise    Entreprise?   @relation(fields: [entrepriseId], references: [id])
@@ -907,18 +1127,32 @@ model Facture {
   updatedAt DateTime @updatedAt
 
   @@index([statut])
+  @@index([organismeId])
 }
 
 model Paiement {
   id        String   @id @default(cuid())
-  factureId String
-  facture   Facture  @relation(fields: [factureId], references: [id], onDelete: Cascade)
+  organismeId String? // tenant (multi-OF)
+  // Un règlement est rattaché à une facture OU directement à une inscription
+  // (saisie « Enregistrer un règlement » depuis le suivi comptable).
+  factureId String?
+  facture   Facture?  @relation(fields: [factureId], references: [id], onDelete: Cascade)
+  inscriptionId String?
+  inscription   Inscription? @relation(fields: [inscriptionId], references: [id], onDelete: Cascade)
   montant   Decimal  @db.Decimal(10, 2)
   date      DateTime @default(now())
   mode      String? // VIREMENT, CB, CPF, OPCO...
   reference String?
+  // Traçabilité : collaborateur ayant saisi le règlement
+  enregistreParId String?
+  enregistrePar   User?   @relation("PaiementEnregistrePar", fields: [enregistreParId], references: [id])
+
+  createdAt DateTime @default(now())
 
   @@index([factureId])
+  @@index([inscriptionId])
+  @@index([enregistreParId])
+  @@index([organismeId])
 }
 
 // =============================================================
@@ -927,6 +1161,7 @@ model Paiement {
 
 model WorkflowRule {
   id         String          @id @default(cuid())
+  organismeId String? // tenant (multi-OF)
   nom        String
   trigger    WorkflowTrigger
   offsetDays Int             @default(0) // J-X / J+X
@@ -937,10 +1172,12 @@ model WorkflowRule {
   updatedAt  DateTime        @updatedAt
 
   emailLogs EmailLog[]
+  @@index([organismeId])
 }
 
 model EmailLog {
   id             String      @id @default(cuid())
+  organismeId String? // tenant (multi-OF)
   destinataire   String
   sujet          String
   corps          String?     @db.Text
@@ -953,6 +1190,7 @@ model EmailLog {
   createdAt      DateTime    @default(now())
 
   @@index([statut])
+  @@index([organismeId])
 }
 
 // =============================================================
@@ -961,6 +1199,7 @@ model EmailLog {
 
 model SignatureRequest {
   id               String            @id @default(cuid())
+  organismeId String? // tenant (multi-OF)
   provider         SignatureProvider @default(INTERNE)
   documentGenereId String?
   documentGenere   DocumentGenere?   @relation(fields: [documentGenereId], references: [id])
@@ -974,6 +1213,7 @@ model SignatureRequest {
   signedAt         DateTime?
 
   @@index([statut])
+  @@index([organismeId])
 }
 
 // =============================================================
@@ -982,6 +1222,7 @@ model SignatureRequest {
 
 model Consentement {
   id         String   @id @default(cuid())
+  organismeId String? // tenant (multi-OF)
   candidatId String?
   candidat   Candidat? @relation(fields: [candidatId], references: [id])
   type       String // "traitement_donnees", "communications"...
@@ -992,10 +1233,12 @@ model Consentement {
   retireLe   DateTime?
 
   @@index([candidatId])
+  @@index([organismeId])
 }
 
 model DataRequest {
   id           String            @id @default(cuid())
+  organismeId String? // tenant (multi-OF)
   subjectEmail String
   type         DataRequestType
   statut       DataRequestStatut @default(RECUE)
@@ -1004,6 +1247,7 @@ model DataRequest {
   processedById String?
   processedBy   User?            @relation("DataRequestTraitePar", fields: [processedById], references: [id])
   notes        String?           @db.Text
+  @@index([organismeId])
 }
 
 // =============================================================
@@ -1012,6 +1256,7 @@ model DataRequest {
 
 model AuditLog {
   id         String   @id @default(cuid())
+  organismeId String? // tenant (multi-OF)
   userId     String?
   user       User?    @relation(fields: [userId], references: [id])
   action     String // CREATE / UPDATE / DELETE / LOGIN / GENERATE_DOC...
@@ -1022,6 +1267,7 @@ model AuditLog {
 
   @@index([entityType, entityId])
   @@index([userId])
+  @@index([organismeId])
 }
 
 // =============================================================
@@ -1032,6 +1278,7 @@ model AuditLog {
 
 model Cours {
   id          String   @id @default(cuid())
+  organismeId String? // tenant (multi-OF)
   titre       String
   slug        String   @unique
   description String?  @db.Text
@@ -1051,10 +1298,12 @@ model Cours {
 
   @@index([academy])
   @@index([formationId])
+  @@index([organismeId])
 }
 
 model CoursModule {
   id      String  @id @default(cuid())
+  organismeId String? // tenant (multi-OF)
   coursId String
   cours   Cours   @relation(fields: [coursId], references: [id], onDelete: Cascade)
   titre   String
@@ -1063,10 +1312,12 @@ model CoursModule {
   lecons Lecon[]
 
   @@index([coursId])
+  @@index([organismeId])
 }
 
 model Lecon {
   id          String  @id @default(cuid())
+  organismeId String? // tenant (multi-OF)
   moduleId    String
   module      CoursModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
   titre       String
@@ -1083,11 +1334,13 @@ model Lecon {
   quizResultats QuizResultat[]
 
   @@index([moduleId])
+  @@index([organismeId])
 }
 
 // Suivi de progression : une ligne = une leçon terminée par un apprenant
 model ProgressionLecon {
   id          String    @id @default(cuid())
+  organismeId String? // tenant (multi-OF)
   apprenantId String
   apprenant   Apprenant @relation(fields: [apprenantId], references: [id], onDelete: Cascade)
   leconId     String
@@ -1096,11 +1349,13 @@ model ProgressionLecon {
 
   @@unique([apprenantId, leconId])
   @@index([apprenantId])
+  @@index([organismeId])
 }
 
 // Résultat de quiz d'une leçon pour un apprenant
 model QuizResultat {
   id          String    @id @default(cuid())
+  organismeId String? // tenant (multi-OF)
   apprenantId String
   apprenant   Apprenant @relation(fields: [apprenantId], references: [id], onDelete: Cascade)
   leconId     String
@@ -1111,11 +1366,13 @@ model QuizResultat {
 
   @@unique([apprenantId, leconId])
   @@index([apprenantId])
+  @@index([organismeId])
 }
 
 // Attribution d'un cours à un apprenant (accès e-learning géré par l'admin)
 model CoursApprenant {
   id          String    @id @default(cuid())
+  organismeId String? // tenant (multi-OF)
   coursId     String
   cours       Cours     @relation(fields: [coursId], references: [id], onDelete: Cascade)
   apprenantId String
@@ -1125,6 +1382,7 @@ model CoursApprenant {
   @@unique([coursId, apprenantId])
   @@index([apprenantId])
   @@index([coursId])
+  @@index([organismeId])
 }
 
 // ───── Registres Qualiopi (critère 6 & 7) ─────
@@ -1147,6 +1405,7 @@ enum ReclamationStatut {
 // Registre des réclamations / aléas (indicateurs 31-32)
 model Reclamation {
   id          String             @id @default(cuid())
+  organismeId String? // tenant (multi-OF)
   date        DateTime           @default(now())
   origine     ReclamationOrigine @default(STAGIAIRE)
   declarant   String // nom du réclamant
@@ -1166,6 +1425,7 @@ model Reclamation {
   updatedAt   DateTime           @updatedAt
 
   @@index([statut])
+  @@index([organismeId])
 }
 
 enum VeilleType {
@@ -1177,6 +1437,7 @@ enum VeilleType {
 // Registre de veille (indicateurs 23-24-25)
 model VeilleEntree {
   id        String     @id @default(cuid())
+  organismeId String? // tenant (multi-OF)
   type      VeilleType
   date      DateTime   @default(now())
   source    String // ex. Légifrance, Centre Inffo, INRS…
@@ -1187,11 +1448,13 @@ model VeilleEntree {
   createdAt DateTime   @default(now())
 
   @@index([type])
+  @@index([organismeId])
 }
 
 // Registre des partenaires (indicateurs 26-27 : handicap + réseau socio-économique)
 model Partenaire {
   id        String   @id @default(cuid())
+  organismeId String? // tenant (multi-OF)
   nom       String
   categorie String // ex. Handicap, Emploi, Entreprise, Institutionnel
   contact   String?
@@ -1199,4 +1462,44 @@ model Partenaire {
   email     String?
   objet     String?  @db.Text // nature du partenariat / services
   createdAt DateTime @default(now())
+  @@index([organismeId])
+}
+
+// =============================================================
+//  SUPPORT TECHNIQUE — tickets entre un organisme client et l'éditeur
+//  (le client ouvre/répond depuis sa plateforme ; l'éditeur traite
+//   depuis la console SUPERADMIN /console/support).
+// =============================================================
+model SupportTicket {
+  id          String          @id @default(cuid())
+  organismeId String
+  organisme   Organisme       @relation(fields: [organismeId], references: [id], onDelete: Cascade)
+  sujet       String
+  priorite    SupportPriorite @default(NORMALE)
+  statut      SupportStatut   @default(OUVERT)
+  demandeurNom   String?
+  demandeurEmail String?
+  // Suivi « non lu » de chaque côté (badges).
+  nonLuSupport Boolean @default(true)  // un nouveau message client attend l'éditeur
+  nonLuClient  Boolean @default(false) // une réponse éditeur attend le client
+
+  messages SupportMessage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organismeId])
+  @@index([statut])
+}
+
+model SupportMessage {
+  id        String        @id @default(cuid())
+  ticketId  String
+  ticket    SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  corps     String        @db.Text
+  parSupport Boolean      @default(false) // true = message de l'éditeur, false = du client
+  auteurNom String?
+  createdAt DateTime       @default(now())
+
+  @@index([ticketId])
 }

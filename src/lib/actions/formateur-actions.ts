@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { auth } from "@/auth";
 import {
   formateurFormSchema,
@@ -40,16 +40,17 @@ function toData(v: FormateurFormValues) {
 export async function createFormateur(
   values: FormateurFormValues,
 ): Promise<ActionResult> {
+  const db = await getTenantDb();
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Non autorisé." };
   const parsed = formateurFormSchema.safeParse(values);
   if (!parsed.success) return { ok: false, error: "Données invalides." };
 
   const ids = parsed.data.formationIds ?? [];
-  const formateur = await prisma.formateur.create({
+  const formateur = await db.formateur.create({
     data: { ...toData(parsed.data), formations: { connect: ids.map((fid) => ({ id: fid })) } },
   });
-  await prisma.auditLog.create({
+  await db.auditLog.create({
     data: {
       userId: session.user.id,
       action: "CREATE",
@@ -65,13 +66,14 @@ export async function updateFormateur(
   id: string,
   values: FormateurFormValues,
 ): Promise<ActionResult> {
+  const db = await getTenantDb();
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Non autorisé." };
   const parsed = formateurFormSchema.safeParse(values);
   if (!parsed.success) return { ok: false, error: "Données invalides." };
 
   const ids = parsed.data.formationIds ?? [];
-  await prisma.formateur.update({
+  await db.formateur.update({
     where: { id },
     data: { ...toData(parsed.data), formations: { set: ids.map((fid) => ({ id: fid })) } },
   });

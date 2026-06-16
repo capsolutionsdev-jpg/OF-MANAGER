@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Building2, Users, FileText } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -26,8 +26,9 @@ export default async function ClientProPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const db = await getTenantDb();
   const { id } = await params;
-  const client = await prisma.entreprise.findUnique({
+  const client = await db.entreprise.findUnique({
     where: { id },
     include: {
       candidats: {
@@ -44,7 +45,7 @@ export default async function ClientProPage({
   });
   if (!client) notFound();
 
-  const candidatsLibres = await prisma.candidat.findMany({
+  const candidatsLibres = await db.candidat.findMany({
     where: { entrepriseId: null },
     orderBy: { nom: "asc" },
     select: { id: true, nom: true, prenom: true },

@@ -2,8 +2,8 @@ import { Fragment } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { prisma } from "@/lib/prisma";
-import { orgConfig } from "@/lib/org-config";
+import { getTenantDb } from "@/lib/tenant";
+import { orgConfigFor } from "@/lib/org-identity";
 import { MODALITE_LABELS } from "@/lib/validators/formation";
 import { PrintButton } from "@/components/documents/print-button";
 import { joursSession, dayKey } from "@/lib/emargement";
@@ -15,8 +15,9 @@ export default async function FeuilleEmargementSessionPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const db = await getTenantDb();
   const { id } = await params;
-  const s = await prisma.session.findUnique({
+  const s = await db.session.findUnique({
     where: { id },
     include: {
       formation: true,
@@ -31,6 +32,7 @@ export default async function FeuilleEmargementSessionPage({
     },
   });
   if (!s) notFound();
+  const org = await orgConfigFor(s.organismeId);
 
   const jours = joursSession(s.seances, s.dateDebut, s.dateFin);
 
@@ -86,13 +88,13 @@ export default async function FeuilleEmargementSessionPage({
       <div className="emarge-sheet mx-auto bg-white p-6 text-black shadow-sm">
         <div className="mb-4 flex items-center gap-4 border-b pb-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/cap-competences-logo.png" alt={orgConfig.name} className="h-14 w-auto" />
+          <img src={org.logoUrl ?? "/cap-competences-logo.png"} alt={org.name} className="h-14 w-auto" />
           <div className="text-[11px] leading-snug">
-            <strong className="text-sm">{orgConfig.name}</strong> — {orgConfig.qualiopi}
+            <strong className="text-sm">{org.name}</strong> — {org.qualiopi}
             <br />
-            {orgConfig.adresse}
+            {org.adresse}
             <br />
-            SIRET {orgConfig.siret} · NDA {orgConfig.nda}
+            SIRET {org.siret} · NDA {org.nda}
           </div>
         </div>
 

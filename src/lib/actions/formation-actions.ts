@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { Prisma } from "@prisma/client";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { auth } from "@/auth";
 import {
   formationFormSchema,
@@ -59,6 +59,7 @@ function toLines(s?: string): string[] {
 export async function createFormation(
   values: FormationFormValues,
 ): Promise<ActionResult> {
+  const db = await getTenantDb();
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Non autorisé." };
 
@@ -66,10 +67,10 @@ export async function createFormation(
   if (!parsed.success) return { ok: false, error: "Données invalides." };
 
   try {
-    const formation = await prisma.formation.create({
+    const formation = await db.formation.create({
       data: toData(parsed.data),
     });
-    await prisma.auditLog.create({
+    await db.auditLog.create({
       data: {
         userId: session.user.id,
         action: "CREATE",
@@ -91,6 +92,7 @@ export async function updateFormation(
   id: string,
   values: FormationFormValues,
 ): Promise<ActionResult> {
+  const db = await getTenantDb();
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Non autorisé." };
 
@@ -98,8 +100,8 @@ export async function updateFormation(
   if (!parsed.success) return { ok: false, error: "Données invalides." };
 
   try {
-    await prisma.formation.update({ where: { id }, data: toData(parsed.data) });
-    await prisma.auditLog.create({
+    await db.formation.update({ where: { id }, data: toData(parsed.data) });
+    await db.auditLog.create({
       data: {
         userId: session.user.id,
         action: "UPDATE",
@@ -121,11 +123,12 @@ export async function updateFormation(
 // --- Actions déclenchées par des boutons (formulaires serveur) ---
 
 export async function archiveFormationAction(formData: FormData) {
+  const db = await getTenantDb();
   const session = await auth();
   if (!session?.user) return;
   const id = String(formData.get("id"));
-  await prisma.formation.update({ where: { id }, data: { isArchived: true } });
-  await prisma.auditLog.create({
+  await db.formation.update({ where: { id }, data: { isArchived: true } });
+  await db.auditLog.create({
     data: {
       userId: session.user.id,
       action: "ARCHIVE",
@@ -138,13 +141,14 @@ export async function archiveFormationAction(formData: FormData) {
 }
 
 export async function duplicateFormationAction(formData: FormData) {
+  const db = await getTenantDb();
   const session = await auth();
   if (!session?.user) return;
   const id = String(formData.get("id"));
-  const src = await prisma.formation.findUnique({ where: { id } });
+  const src = await db.formation.findUnique({ where: { id } });
   if (!src) redirect("/formations");
 
-  const copy = await prisma.formation.create({
+  const copy = await db.formation.create({
     data: {
       titre: `${src.titre} (copie)`,
       reference: `${src.reference}-COPIE-${Date.now().toString().slice(-5)}`,
@@ -166,7 +170,7 @@ export async function duplicateFormationAction(formData: FormData) {
       parentId: src.id,
     },
   });
-  await prisma.auditLog.create({
+  await db.auditLog.create({
     data: {
       userId: session.user.id,
       action: "DUPLICATE",

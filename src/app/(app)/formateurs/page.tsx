@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Plus, UserCog } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -13,7 +13,8 @@ import {
 } from "@/components/ui/table";
 
 export default async function FormateursPage() {
-  const formateurs = await prisma.formateur.findMany({
+  const db = await getTenantDb();
+  const formateurs = await db.formateur.findMany({
     orderBy: { nom: "asc" },
     include: { _count: { select: { sessions: true } } },
   });

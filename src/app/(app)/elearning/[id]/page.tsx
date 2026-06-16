@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, ListTree } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ACADEMY_LABELS } from "@/lib/validators/formation";
@@ -43,9 +43,10 @@ export default async function CoursManagePage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const db = await getTenantDb();
   const { id } = await params;
   const [cours, formations] = await Promise.all([
-    prisma.cours.findUnique({
+    db.cours.findUnique({
       where: { id },
       include: {
         modules: {
@@ -54,7 +55,7 @@ export default async function CoursManagePage({
         },
       },
     }),
-    prisma.formation.findMany({
+    db.formation.findMany({
       where: { isArchived: false },
       select: { id: true, titre: true, academy: true },
       orderBy: { titre: "asc" },

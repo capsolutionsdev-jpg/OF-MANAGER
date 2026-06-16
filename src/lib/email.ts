@@ -1,6 +1,12 @@
 // Envoi d'e-mails. En l'absence de clé Brevo (BREVO_API_KEY), l'application
 // fonctionne en MODE DÉMO : les e-mails sont journalisés (statut « en attente »)
 // sans envoi réel.
+//
+// Multi-tenant : passez `organismeId` pour envoyer via le compte Brevo de l'OF
+// (clé + expéditeur propres, cf. Organisme.brevoApiKey / emailExpediteur). À
+// défaut, repli sur la configuration globale (variables d'environnement).
+
+import { prisma } from "@/lib/prisma";
 
 export function emailConfigured(): boolean {
   return Boolean(process.env.BREVO_API_KEY);
@@ -12,24 +18,45 @@ export type EmailAttachment = {
   content: string;
 };
 
+type Sender = { name: string; email: string; apiKey: string | undefined };
+
+/** Résout l'expéditeur Brevo : config de l'OF si fournie, sinon globale. */
+async function resolveSender(organismeId?: string | null): Promise<Sender> {
+  const fallback: Sender = {
+    name: "CAP Compétences",
+    email: process.env.BREVO_SENDER ?? "contact@cap-competences.fr",
+    apiKey: process.env.BREVO_API_KEY,
+  };
+  if (!organismeId) return fallback;
+  const o = await prisma.organisme.findUnique({
+    where: { id: organismeId },
+    select: { nom: true, emailExpediteurNom: true, emailExpediteur: true, brevoApiKey: true },
+  });
+  if (!o) return fallback;
+  return {
+    name: o.emailExpediteurNom || o.nom || fallback.name,
+    email: o.emailExpediteur || fallback.email,
+    apiKey: o.brevoApiKey || fallback.apiKey,
+  };
+}
+
 export async function sendEmail(params: {
   to: string;
   subject: string;
   body: string;
   attachments?: EmailAttachment[];
+  /** Tenant émetteur (utilise son compte Brevo si configuré). */
+  organismeId?: string | null;
 }): Promise<{ sent: boolean }> {
-  const apiKey = process.env.BREVO_API_KEY;
-  if (!apiKey) {
+  const sender = await resolveSender(params.organismeId);
+  if (!sender.apiKey) {
     // Mode démo : pas d'envoi réel (l'e-mail est seulement journalisé).
     return { sent: false };
   }
 
   try {
     const payload: Record<string, unknown> = {
-      sender: {
-        name: "CAP Compétences",
-        email: process.env.BREVO_SENDER ?? "contact@cap-competences.fr",
-      },
+      sender: { name: sender.name, email: sender.email },
       to: [{ email: params.to }],
       subject: params.subject,
       textContent: params.body,
@@ -43,7 +70,7 @@ export async function sendEmail(params: {
     const res = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
       headers: {
-        "api-key": apiKey,
+        "api-key": sender.apiKey,
         "Content-Type": "application/json",
         accept: "application/json",
       },

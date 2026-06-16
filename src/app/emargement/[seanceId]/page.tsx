@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, PenLine } from "lucide-react";
-import { prisma } from "@/lib/prisma";
-import { orgConfig } from "@/lib/org-config";
+import { getTenantDb } from "@/lib/tenant";
+import { orgConfigFor } from "@/lib/org-identity";
 import { PRESENCE_LABELS } from "@/lib/presence";
 import { MODALITE_LABELS } from "@/lib/validators/formation";
 import { PrintButton } from "@/components/documents/print-button";
@@ -20,7 +20,8 @@ export default async function FeuilleEmargementPage({
   params: Promise<{ seanceId: string }>;
 }) {
   const { seanceId } = await params;
-  const seance = await prisma.seance.findUnique({
+  const db = await getTenantDb();
+  const seance = await db.seance.findUnique({
     where: { id: seanceId },
     include: {
       presences: true,
@@ -33,8 +34,9 @@ export default async function FeuilleEmargementPage({
     },
   });
   if (!seance) notFound();
+  const org = await orgConfigFor(seance.organismeId);
 
-  const sig = await prisma.signatureRequest.findFirst({
+  const sig = await db.signatureRequest.findFirst({
     where: { signataires: { path: ["seanceId"], equals: seanceId } },
     orderBy: { createdAt: "desc" },
   });
@@ -98,17 +100,18 @@ export default async function FeuilleEmargementPage({
 
         <article className="doc-page mx-auto bg-white p-12 text-black shadow-sm">
           <div className="doc-header">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/cap-competences-logo.png"
-              alt="CAP Compétences"
+              src={org.logoUrl ?? "/cap-competences-logo.png"}
+              alt={org.name}
               className="doc-logo"
             />
             <div className="doc-org">
-              <strong>{orgConfig.name}</strong> — {orgConfig.qualiopi}
+              <strong>{org.name}</strong> — {org.qualiopi}
               <br />
-              {orgConfig.adresse}
+              {org.adresse}
               <br />
-              SIRET {orgConfig.siret} · NDA {orgConfig.nda}
+              SIRET {org.siret} · NDA {org.nda}
             </div>
           </div>
 
@@ -183,12 +186,13 @@ export default async function FeuilleEmargementPage({
             </div>
             <div>
               <div className="sig-label">
-                Cachet et signature de l&apos;organisme — {orgConfig.representant}
+                Cachet et signature de l&apos;organisme — {org.representant}
               </div>
               <div className="sig-box">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src="/signature-cap-competences.png"
-                  alt="Cachet CAP Compétences"
+                  src={org.cachetUrl ?? "/signature-cap-competences.png"}
+                  alt={`Cachet ${org.name}`}
                   className="doc-stamp"
                 />
               </div>
@@ -196,7 +200,7 @@ export default async function FeuilleEmargementPage({
           </div>
 
           <div className="doc-footer">
-            {orgConfig.name} — Déclaration d&apos;activité n° {orgConfig.nda}. Cet
+            {org.name} — Déclaration d&apos;activité n° {org.nda}. Cet
             enregistrement ne vaut pas agrément de l&apos;État.
           </div>
         </article>

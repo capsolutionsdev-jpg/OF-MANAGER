@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { CandidatForm } from "@/components/candidats/candidat-form";
 
 export default async function ModifierCandidatPage({
@@ -9,15 +9,16 @@ export default async function ModifierCandidatPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const db = await getTenantDb();
   const { id } = await params;
   const [c, formations, collaborateurs] = await Promise.all([
-    prisma.candidat.findUnique({ where: { id } }),
-    prisma.formation.findMany({
+    db.candidat.findUnique({ where: { id } }),
+    db.formation.findMany({
       where: { isArchived: false },
       select: { id: true, titre: true },
       orderBy: { titre: "asc" },
     }),
-    prisma.user.findMany({
+    db.user.findMany({
       where: {
         isActive: true,
         role: { in: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"] },

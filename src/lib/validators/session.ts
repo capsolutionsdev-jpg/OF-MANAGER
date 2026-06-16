@@ -11,6 +11,7 @@ export const sessionFormSchema = z
     dateFin: z.string().trim().min(1, "Date de fin requise"),
     horaires: optionalText,
     lieu: optionalText,
+    salleId: optionalText,
     modalite: z.nativeEnum(Modalite),
     nbPlaces: optionalText,
     statut: z.nativeEnum(SessionStatut),

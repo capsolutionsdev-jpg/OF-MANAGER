@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle2, Circle, PlayCircle, FileDown, Award } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { auth } from "@/auth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -41,20 +41,21 @@ export default async function CoursPlayerPage({
   params: Promise<{ coursId: string }>;
   searchParams: Promise<{ l?: string }>;
 }) {
+  const db = await getTenantDb();
   const { coursId } = await params;
   const { l } = await searchParams;
   const session = await auth();
   const apprenant = session?.user?.id
-    ? await prisma.apprenant.findUnique({ where: { userId: session.user.id } })
+    ? await db.apprenant.findUnique({ where: { userId: session.user.id } })
     : null;
   if (!apprenant) notFound();
 
-  const acces = await prisma.coursApprenant.findUnique({
+  const acces = await db.coursApprenant.findUnique({
     where: { coursId_apprenantId: { coursId, apprenantId: apprenant.id } },
   });
   if (!acces) notFound();
 
-  const cours = await prisma.cours.findUnique({
+  const cours = await db.cours.findUnique({
     where: { id: coursId },
     include: {
       formation: { select: { titre: true } },
@@ -67,11 +68,11 @@ export default async function CoursPlayerPage({
   if (!cours) notFound();
 
   const [progressions, quizResultats] = await Promise.all([
-    prisma.progressionLecon.findMany({
+    db.progressionLecon.findMany({
       where: { apprenantId: apprenant.id },
       select: { leconId: true },
     }),
-    prisma.quizResultat.findMany({
+    db.quizResultat.findMany({
       where: { apprenantId: apprenant.id },
       select: { leconId: true, score: true, total: true },
     }),

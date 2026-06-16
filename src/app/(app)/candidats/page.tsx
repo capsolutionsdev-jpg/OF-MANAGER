@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Plus, Users } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card } from "@/components/ui/card";
@@ -13,14 +13,15 @@ import type { SessionOption } from "@/components/inscriptions/quick-enroll-modal
 export const dynamic = "force-dynamic";
 
 export default async function CandidatsPage() {
+  const db = await getTenantDb();
   const [candidats, sessions] = await Promise.all([
-    prisma.candidat.findMany({
+    db.candidat.findMany({
       orderBy: [{ nom: "asc" }, { prenom: "asc" }],
       include: {
         formationSouhaitee: { select: { id: true, titre: true } },
       },
     }),
-    prisma.session.findMany({
+    db.session.findMany({
       where: { statut: { in: ["PLANIFIEE", "OUVERTE", "EN_COURS"] } },
       include: { formation: { select: { id: true, titre: true } } },
       orderBy: { dateDebut: "asc" },

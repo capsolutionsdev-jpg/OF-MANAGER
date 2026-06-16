@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, FileText } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import {
   Card,
   CardContent,
@@ -18,15 +18,16 @@ export default async function ConventionPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const db = await getTenantDb();
   const { id } = await params;
   const [client, formations, sessions] = await Promise.all([
-    prisma.entreprise.findUnique({ where: { id } }),
-    prisma.formation.findMany({
+    db.entreprise.findUnique({ where: { id } }),
+    db.formation.findMany({
       where: { isArchived: false },
       orderBy: { titre: "asc" },
       select: { id: true, titre: true, reference: true, certification: true, duree: true, modalite: true },
     }),
-    prisma.session.findMany({
+    db.session.findMany({
       where: { statut: { not: "ANNULEE" } },
       orderBy: { dateDebut: "desc" },
       take: 100,

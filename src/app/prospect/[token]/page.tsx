@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { CheckCircle2 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { orgConfig } from "@/lib/org-config";
+import { orgConfigFor } from "@/lib/org-identity";
 import {
   Card,
   CardContent,
@@ -22,6 +22,7 @@ export default async function ProspectPage({
     where: { prospectToken: token },
   });
   if (!c) notFound();
+  const org = await orgConfigFor(c.organismeId);
 
   const formations = await prisma.formation.findMany({
     where: { isArchived: false },
@@ -37,12 +38,12 @@ export default async function ProspectPage({
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/cap-competences-logo.png"
-          alt={orgConfig.name}
+          alt={org.name}
           className="h-12 w-auto"
         />
         <div>
-          <p className="font-semibold">{orgConfig.name}</p>
-          <p className="text-xs text-muted-foreground">{orgConfig.qualiopi}</p>
+          <p className="font-semibold">{org.name}</p>
+          <p className="text-xs text-muted-foreground">{org.qualiopi}</p>
         </div>
       </div>
 
@@ -97,7 +98,7 @@ export default async function ProspectPage({
       )}
 
       <p className="text-center text-xs text-muted-foreground">
-        {orgConfig.name} — SIRET {orgConfig.siret} · NDA {orgConfig.nda}
+        {org.name} — SIRET {org.siret} · NDA {org.nda}
       </p>
     </div>
   );

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Plus, CalendarDays } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -52,7 +52,8 @@ const ETATS = [
 export const dynamic = "force-dynamic";
 
 export default async function SessionsPage() {
-  const sessions = await prisma.session.findMany({
+  const db = await getTenantDb();
+  const sessions = await db.session.findMany({
     orderBy: { dateDebut: "asc" },
     include: {
       formation: true,

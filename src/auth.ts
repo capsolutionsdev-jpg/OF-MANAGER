@@ -23,7 +23,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (!parsed.success) return null;
 
         const { email, password } = parsed.data;
-        const user = await prisma.user.findUnique({ where: { email } });
+        const user = await prisma.user.findUnique({
+          where: { email },
+          include: { organisme: { select: { fonctionnalites: true } } },
+        });
         if (!user || !user.isActive) return null;
 
         const valid = await bcrypt.compare(password, user.passwordHash);
@@ -35,6 +38,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           email: user.email,
           role: user.role,
           permissions: user.permissions ?? [],
+          organismeId: user.organismeId ?? null,
+          fonctionnalites: user.organisme?.fonctionnalites ?? [],
         };
       },
     }),

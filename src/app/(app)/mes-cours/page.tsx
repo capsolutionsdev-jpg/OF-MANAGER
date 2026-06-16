@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { GraduationCap, PlayCircle, CheckCircle2 } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { auth } from "@/auth";
 import { Card, CardContent } from "@/components/ui/card";
 import { ACADEMY_LABELS } from "@/lib/validators/formation";
@@ -9,9 +9,10 @@ import { pct } from "@/lib/elearning";
 export const dynamic = "force-dynamic";
 
 export default async function MesCoursPage() {
+  const db = await getTenantDb();
   const session = await auth();
   const apprenant = session?.user?.id
-    ? await prisma.apprenant.findUnique({ where: { userId: session.user.id } })
+    ? await db.apprenant.findUnique({ where: { userId: session.user.id } })
     : null;
 
   if (!apprenant) {
@@ -28,7 +29,7 @@ export default async function MesCoursPage() {
     );
   }
 
-  const acces = await prisma.coursApprenant.findMany({
+  const acces = await db.coursApprenant.findMany({
     where: { apprenantId: apprenant.id },
     include: {
       cours: {
@@ -43,7 +44,7 @@ export default async function MesCoursPage() {
     orderBy: { assignedAt: "desc" },
   });
 
-  const progressions = await prisma.progressionLecon.findMany({
+  const progressions = await db.progressionLecon.findMany({
     where: { apprenantId: apprenant.id },
     select: { leconId: true },
   });

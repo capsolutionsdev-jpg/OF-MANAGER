@@ -57,13 +57,18 @@ function DropdownMenuLabel({
   className,
   inset,
   ...props
-}: MenuPrimitive.GroupLabel.Props & {
+}: React.ComponentProps<"div"> & {
   inset?: boolean
 }) {
+  // Libellé décoratif rendu en <div> : MenuPrimitive.GroupLabel exigerait un
+  // <Menu.Group> parent (sinon Base UI lève « MenuGroupContext is missing » →
+  // erreur React non capturée → page blanche). Un label autonome ne porte pas
+  // de sémantique de groupe : un div suffit et ne peut pas planter.
   return (
-    <MenuPrimitive.GroupLabel
+    <div
       data-slot="dropdown-menu-label"
       data-inset={inset}
+      role="presentation"
       className={cn(
         "px-1.5 py-1 text-xs font-medium text-muted-foreground data-inset:pl-7",
         className

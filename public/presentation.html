@@ -1,0 +1,828 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OFManager — Vidéo de présentation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#0D1B3E; --navy2:#13245e; --brand:#1A5FD4; --brand-light:#4D9FFF;
+    --surface:#F4F7FC; --success:#10B981; --amber:#F59E0B; --rose:#E11D48;
+    --ink:#11131a; --muted:#5a6480; --line:#e6ebf4; --card:#ffffff;
+    --font:'Inter',system-ui,sans-serif; --display:'Poppins',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:radial-gradient(1200px 700px at 50% -10%, #16245a, #070b1c 70%);
+    font-family:var(--font); color:#fff; overflow:hidden;
+    display:flex; align-items:center; justify-content:center;
+  }
+  /* ---- Player shell ---- */
+  #player{position:relative; width:min(96vw,1280px); aspect-ratio:16/9;
+    border-radius:18px; overflow:hidden; background:#0a1230;
+    box-shadow:0 40px 120px -30px rgba(0,0,0,.8), 0 0 0 1px rgba(255,255,255,.06);}
+  #stage{position:absolute; inset:0}
+  .scene{position:absolute; inset:0; opacity:0; pointer-events:none;
+    transition:opacity .7s ease; display:flex; align-items:center; justify-content:center;}
+  .scene.on{opacity:1; pointer-events:auto}
+  .scene.on .kb{animation:kb 14s ease forwards}
+  @keyframes kb{from{transform:scale(1.04)}to{transform:scale(1.11)}}
+  .scene.on .rise{animation:rise .8s cubic-bezier(.2,.7,.2,1) both}
+  .scene.on .rise2{animation:rise .8s .12s cubic-bezier(.2,.7,.2,1) both}
+  .scene.on .rise3{animation:rise .8s .24s cubic-bezier(.2,.7,.2,1) both}
+  @keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+  .scene.on .pop{animation:pop .6s .2s cubic-bezier(.2,.9,.3,1.3) both}
+  @keyframes pop{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:none}}
+
+  /* ---- Lower-third caption ---- */
+  #cap{position:absolute; left:0; right:0; bottom:0; z-index:40; padding:0 0 64px;
+    background:linear-gradient(0deg, rgba(5,9,24,.92) 22%, rgba(5,9,24,0)); }
+  #cap .inner{max-width:78%; margin:0 auto; padding:0 26px}
+  #cap .step{font:600 12px/1 var(--font); letter-spacing:.16em; text-transform:uppercase;
+    color:var(--brand-light); margin-bottom:9px; display:flex; align-items:center; gap:9px}
+  #cap .step b{background:var(--brand); color:#fff; border-radius:6px; padding:3px 8px; letter-spacing:.04em}
+  #cap h2{font:700 27px/1.15 var(--display); letter-spacing:-.01em; margin-bottom:7px}
+  #cap p{font:400 15.5px/1.5 var(--font); color:#c7d2ea; max-width:60ch}
+  #cap .key,.tg .key{color:#fff; font-weight:600}
+  .capwrap{animation:capin .55s ease both}
+  @keyframes capin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+  /* ---- Controls ---- */
+  #ctrl{position:absolute; left:0; right:0; bottom:0; z-index:60; padding:10px 16px 12px;
+    display:flex; align-items:center; gap:14px; opacity:0; transition:.25s}
+  #player:hover #ctrl{opacity:1}
+  #bar{flex:1; height:6px; border-radius:6px; background:rgba(255,255,255,.18); position:relative; cursor:pointer}
+  #fill{position:absolute; left:0; top:0; bottom:0; width:0; background:var(--brand-light); border-radius:6px}
+  #ticks{position:absolute; inset:0; display:flex}
+  #ticks span{flex:1; border-right:2px solid rgba(10,18,48,.6)}
+  #ticks span:last-child{border:none}
+  .cbtn{background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.15); color:#fff;
+    width:38px; height:34px; border-radius:9px; font-size:15px; cursor:pointer; display:grid; place-items:center}
+  .cbtn:hover{background:rgba(255,255,255,.22)}
+  #time{font:600 12px var(--font); color:#aab6d4; min-width:78px; text-align:center; font-variant-numeric:tabular-nums}
+  /* big center play (paused state) */
+  #bigplay{position:absolute; inset:0; z-index:70; display:none; place-items:center;
+    background:rgba(6,10,26,.45); cursor:pointer}
+  #bigplay.show{display:grid}
+  #bigplay .b{width:84px; height:84px; border-radius:50%; background:rgba(255,255,255,.92); color:var(--navy);
+    display:grid; place-items:center; font-size:34px; padding-left:6px; box-shadow:0 20px 50px -10px rgba(0,0,0,.6)}
+
+  /* =================== APP CHROME (recreated UI) =================== */
+  .app{position:absolute; inset:0; background:var(--surface); color:var(--ink); overflow:hidden}
+  .topnav{height:58px; background:rgba(255,255,255,.92); backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--line); display:flex; align-items:center; gap:18px; padding:0 22px}
+  .topnav .logo{display:flex; align-items:center; gap:9px; font:800 16px var(--display); color:var(--navy)}
+  .topnav .logo img{height:26px; width:auto}
+  .topnav nav{display:flex; gap:3px; margin-left:6px}
+  .topnav nav a{font:500 13.5px var(--font); color:var(--muted); padding:7px 11px; border-radius:8px}
+  .topnav nav a.act{background:#eef3fd; color:var(--brand)}
+  .topnav .right{margin-left:auto; display:flex; align-items:center; gap:12px; color:var(--muted)}
+  .topnav .av{width:32px; height:32px; border-radius:50%; background:var(--navy); color:#fff;
+    display:grid; place-items:center; font:700 12px var(--font)}
+  .body{padding:24px 30px}
+  .h1{font:700 24px var(--display); color:var(--navy); letter-spacing:-.01em}
+  .sub{color:var(--muted); font-size:13.5px; margin-top:2px}
+  .row{display:flex; gap:16px}
+  .grid4{display:grid; grid-template-columns:repeat(4,1fr); gap:16px}
+  .grid3{display:grid; grid-template-columns:repeat(3,1fr); gap:16px}
+  .grid2{display:grid; grid-template-columns:1.5fr 1fr; gap:16px}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:18px;
+    box-shadow:0 1px 2px rgba(16,24,64,.04)}
+  .card.np{padding:0; overflow:hidden}
+  .kpi .l{font-size:12.5px; color:var(--muted); display:flex; align-items:center; gap:7px}
+  .kpi .v{font:700 32px var(--display); color:var(--navy); margin-top:8px; letter-spacing:-.02em}
+  .kpi .d{font-size:12px; color:var(--success); margin-top:3px; font-weight:600}
+  .ic{width:30px; height:30px; border-radius:9px; background:#eef3fd; color:var(--brand);
+    display:grid; place-items:center; font-size:15px}
+  .sect{font:700 15px var(--display); color:var(--navy); margin-bottom:14px; display:flex; align-items:center; gap:8px}
+  /* table */
+  table{width:100%; border-collapse:collapse; font-size:13px}
+  th{text-align:left; font:600 10.5px var(--font); letter-spacing:.05em; text-transform:uppercase;
+    color:#94a0b8; padding:11px 16px; background:#f8fafd; border-bottom:1px solid var(--line)}
+  td{padding:11px 16px; border-bottom:1px solid #f1f4f9}
+  tr:last-child td{border:none}
+  .who{display:flex; align-items:center; gap:10px}
+  .ava{width:30px; height:30px; border-radius:9px; display:grid; place-items:center; color:#fff; font:700 11px var(--font)}
+  .tag{font:600 11px var(--font); padding:3px 9px; border-radius:20px}
+  .tag.g{background:#dcfce7; color:#15803d}.tag.b{background:#dbeafe; color:#1d4ed8}
+  .tag.a{background:#fef3c7; color:#a16207}.tag.s{background:#eef1f6; color:#64748b}
+  .btn{background:var(--brand); color:#fff; font:600 12.5px var(--font); border-radius:9px; padding:7px 13px; display:inline-flex; gap:6px; align-items:center}
+  .btn.o{background:#fff; color:var(--brand); border:1px solid #cfe0fb}
+  /* bars chart */
+  .bars{display:flex; align-items:flex-end; gap:12px; height:130px; padding-top:8px}
+  .bars .b{flex:1; border-radius:8px 8px 0 0; background:linear-gradient(180deg,var(--brand-light),var(--brand)); position:relative}
+  .bars .b span{position:absolute; top:-18px; left:0; right:0; text-align:center; font:700 11px var(--font); color:var(--navy)}
+  .bars .b small{position:absolute; bottom:-20px; left:0; right:0; text-align:center; font-size:10.5px; color:var(--muted)}
+  /* donut */
+  .donut{width:128px; height:128px; border-radius:50%; display:grid; place-items:center;
+    background:conic-gradient(var(--success) 0 86%, #e7ecf4 0); }
+  .donut .in{width:92px; height:92px; border-radius:50%; background:#fff; display:grid; place-items:center; text-align:center}
+  .donut .in b{font:700 26px var(--display); color:var(--navy)}.donut .in span{font-size:11px;color:var(--muted)}
+  /* kanban */
+  .kb-cols{display:grid; grid-template-columns:repeat(4,1fr); gap:13px}
+  .kcol{background:#eef1f7; border-radius:14px; padding:11px}
+  .kcol .ch{display:flex; align-items:center; gap:7px; font:700 12.5px var(--font); margin:2px 4px 11px}
+  .kcol .ch .dot{width:9px;height:9px;border-radius:50%}
+  .kcol .ch .ct{margin-left:auto; background:#fff; border-radius:20px; padding:1px 8px; font-size:11px; color:var(--muted)}
+  .kcard{background:#fff; border-radius:11px; padding:11px; margin-bottom:8px; border:1px solid #eef1f5; box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  .kcard .t{font:600 12.5px var(--font)}.kcard .m{font-size:11px; color:var(--muted); margin-top:3px}
+  .kcard .f{display:flex; align-items:center; gap:6px; margin-top:9px}
+  /* calendar */
+  .week{display:grid; grid-template-columns:repeat(5,1fr); gap:10px}
+  .day{background:#fff; border:1px solid var(--line); border-radius:12px; padding:10px; min-height:230px}
+  .day.today{border:2px solid var(--brand)}
+  .day .dh{font:600 10.5px var(--font); text-transform:uppercase; letter-spacing:.05em; color:#94a0b8}
+  .day .dn{font:700 18px var(--display); color:var(--navy); margin:2px 0 10px}
+  .day.today .dn{color:var(--brand)}
+  .slot{border-radius:9px; padding:8px; font-size:11px; margin-bottom:7px; border-left:3px solid var(--brand); background:#eef3fd}
+  .slot.g{border-color:var(--success); background:#e7f7f0}
+  .slot.a{border-color:var(--amber); background:#fef6e7}
+  .slot b{display:block; color:var(--navy); font-size:11.5px}
+  .slot span{color:var(--muted)}
+  /* qualiopi checklist */
+  .crit{display:flex; gap:12px; align-items:flex-start; padding:11px 0; border-bottom:1px solid #f1f4f9}
+  .crit:last-child{border:none}
+  .crit .ck{width:24px; height:24px; border-radius:7px; background:var(--success); color:#fff; display:grid; place-items:center; font-size:13px; flex:none}
+  .crit .tx b{font:600 13.5px var(--font); color:var(--ink)}
+  .crit .tx p{font-size:12px; color:var(--muted); margin-top:1px}
+  .crit .pct{margin-left:auto; font:700 13px var(--display); color:var(--success)}
+  /* signature pad */
+  .sigpad{border:2px dashed #cfe0fb; border-radius:14px; background:#f8fbff; height:150px; display:grid; place-items:center; position:relative; overflow:hidden}
+  .sigpad svg{width:60%}
+  .sig-path{stroke:var(--navy); stroke-width:3; fill:none; stroke-linecap:round; stroke-linejoin:round;
+    stroke-dasharray:1400; stroke-dashoffset:1400}
+  .scene.on .sig-path{animation:draw 2.4s 1.2s ease forwards}
+  @keyframes draw{to{stroke-dashoffset:0}}
+  /* doc preview */
+  .doc{background:#fff; border:1px solid var(--line); border-radius:10px; padding:18px; font-size:11px; color:#475065}
+  .doc .dl{height:8px; background:#eef1f7; border-radius:6px; margin:7px 0}
+  .doc .dl.s{width:55%}.doc .dl.m{width:80%}
+  .doc .stamp{position:absolute; right:18px; bottom:16px; width:84px; opacity:.9; transform:rotate(-9deg)}
+  /* white-label gallery */
+  .gal{display:grid; grid-template-columns:repeat(5,1fr); gap:11px}
+  .skin{border-radius:13px; overflow:hidden; border:1px solid rgba(255,255,255,.12); height:96px; padding:11px; position:relative}
+  .skin .sl{display:flex; gap:5px; margin-bottom:9px}
+  .skin .sl i{width:22px; height:5px; border-radius:5px; display:block}
+  .skin .sc{border-radius:8px; padding:8px; font:700 12px var(--display)}
+  .skin .nm{position:absolute; bottom:8px; left:11px; font:600 10.5px var(--font)}
+  .pals{display:flex; gap:8px; flex-wrap:wrap; margin-top:14px}
+  .pals i{width:26px; height:26px; border-radius:50%; display:block; box-shadow:0 0 0 2px rgba(255,255,255,.15)}
+  /* panorama complet des fonctionnalités */
+  .featgrid{display:grid; grid-template-columns:repeat(5,1fr); gap:14px; width:min(94%,1060px)}
+  .featcol{background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); border-radius:14px; padding:14px 13px; text-align:left}
+  .featcol h4{font:700 12px var(--font); letter-spacing:.08em; text-transform:uppercase; color:var(--brand-light); margin-bottom:11px; display:flex; align-items:center; gap:7px}
+  .fchip{display:flex; align-items:center; gap:7px; font:500 12.5px var(--font); color:#dbe4f7; padding:4px 0}
+  .fchip .ck{color:var(--success); font-size:11px}
+  /* intro / outro */
+  .center{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:0 8%}
+  .center.intro{background:radial-gradient(900px 520px at 50% 0%, #1c2f6e, #0a1230 72%)}
+  .center .logo-xl{display:flex; align-items:center; gap:14px; margin-bottom:26px}
+  .center .logo-xl img{height:62px}
+  .center .logo-xl b{font:800 34px var(--display)}
+  .center h1{font:800 46px/1.08 var(--display); letter-spacing:-.02em; max-width:18ch}
+  .center h1 em{font-style:normal; color:var(--brand-light)}
+  .center .tg{font-size:18px; color:#bccbe9; margin-top:18px; max-width:46ch}
+  .badges{display:flex; gap:12px; margin-top:30px; flex-wrap:wrap; justify-content:center}
+  .pill{background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.16); border-radius:30px;
+    padding:9px 16px; font:600 13px var(--font); display:flex; align-items:center; gap:8px}
+  .pill .ck{color:var(--success)}
+  .cta{margin-top:30px; background:var(--brand); color:#fff; font:700 16px var(--display); padding:15px 30px; border-radius:13px; display:inline-flex; gap:10px; align-items:center}
+  .contact{margin-top:22px; color:#9fb0d6; font-size:14px; display:flex; gap:22px; flex-wrap:wrap; justify-content:center}
+  /* problem scene */
+  .chaos{display:flex; gap:14px; flex-wrap:wrap; justify-content:center; max-width:760px}
+  .chaos .t{background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:14px;
+    padding:16px 20px; font:600 14px var(--font); color:#cdd8f0; display:flex; align-items:center; gap:10px; opacity:.85}
+  .chaos .t .e{font-size:22px}
+  .arrow{font-size:30px; color:var(--brand-light); margin:18px 0}
+  .float{position:absolute; font-size:13px; color:#8fa2ca; background:rgba(255,255,255,.06);
+    border:1px solid rgba(255,255,255,.1); padding:6px 12px; border-radius:20px}
+  /* misc */
+  .muted{color:var(--muted)} .navy{color:var(--navy)} .succ{color:var(--success)}
+  .legend{display:flex; gap:16px; font-size:12px; color:var(--muted); margin-top:14px}
+  .legend i{display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:6px; vertical-align:-1px}
+  .src{display:flex; align-items:center; justify-content:space-between; padding:9px 0; border-bottom:1px solid #f1f4f9; font-size:12.5px}
+  .src:last-child{border:none}
+  .src .bar2{height:8px; border-radius:6px; background:var(--brand); }
+  .progress{height:7px; border-radius:6px; background:#eef1f7; overflow:hidden; margin-top:7px}
+  .progress i{display:block; height:100%; background:linear-gradient(90deg,var(--brand-light),var(--brand))}
+  @media(max-width:640px){
+    #cap .inner{max-width:94%}
+    #cap h2{font-size:19px} #cap p{font-size:12.5px}
+    .center h1{font-size:30px}
+  }
+</style>
+</head>
+<body>
+<div id="player">
+  <div id="stage"></div>
+  <!-- Musique de fond optionnelle : dépose un fichier public/presentation-music.mp3
+       pour l'utiliser. Sinon, une nappe d'ambiance libre de droits est synthétisée. -->
+  <audio id="bgm" loop preload="auto" src="presentation-music.mp3"></audio>
+
+  <!-- caption -->
+  <div id="cap"><div class="inner" id="capinner"></div></div>
+
+  <!-- big play overlay -->
+  <div id="bigplay"><div class="b">▶</div></div>
+
+  <!-- controls -->
+  <div id="ctrl">
+    <button class="cbtn" id="bPlay" title="Lecture/Pause">⏸</button>
+    <button class="cbtn" id="bPrev" title="Scène précédente">⏮</button>
+    <button class="cbtn" id="bNext" title="Scène suivante">⏭</button>
+    <div id="bar"><div id="ticks"></div><div id="fill"></div></div>
+    <div id="time">0:00 / 0:00</div>
+    <button class="cbtn" id="bMusic" title="Musique de fond">🔊</button>
+    <button class="cbtn" id="bFull" title="Plein écran">⛶</button>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   OFManager — moteur de présentation (auto-play)
+   Chaque scène = { dur (s), step, title, html, caption }
+   ============================================================ */
+const LOGO = "ofmanager-logo.png";
+
+const avatar = (txt,bg)=>`<span class="ava" style="background:${bg}">${txt}</span>`;
+const appTop = (active)=>`
+  <div class="topnav">
+    <div class="logo"><span style="color:var(--navy)">OF</span><span style="color:var(--brand)">Manager</span></div>
+    <nav>
+      ${["Tableau de bord","CRM","Candidats","Sessions","Planning","Qualiopi"].map(n=>
+        `<a class="${n===active?'act':''}">${n}</a>`).join("")}
+      <a>Plus ▾</a>
+    </nav>
+    <div class="right"><span>🔍</span><span>🔔</span><span class="av">SC</span></div>
+  </div>`;
+
+const SCENES = [
+ /* 1 — INTRO */
+ { dur:9, essential:true, sdur:8, step:"Présentation", title:"", caption:"", html:`
+   <div class="center intro kb">
+     <div class="logo-xl rise"><img src="${LOGO}" onerror="this.style.display='none'"></div>
+     <h1 class="rise2"><em>OFManager</em><br>le logiciel tout-en-un des organismes de formation</h1>
+     <p class="tg rise3">Gérez tout votre organisme, restez conforme <span class="key">Qualiopi</span> sans effort — sur une plateforme <span class="key">100% à votre marque</span>.</p>
+     <div class="badges rise3">
+       <span class="pill"><span class="ck">✔</span> Conforme Qualiopi</span>
+       <span class="pill"><span class="ck">✔</span> BPF automatisé</span>
+       <span class="pill"><span class="ck">✔</span> 100% à votre marque</span>
+     </div>
+   </div>` },
+
+ /* 2 — PROBLÈME */
+ { dur:13, step:"Le constat", title:"Trop d'outils, trop de paperasse",
+   caption:`Tableurs, e-mails, signatures papier, relances manuelles… Piloter un organisme de formation devient vite <span class="key">ingérable</span> — et risqué à l'audit.`,
+   html:`
+   <div class="center">
+     <div class="chaos rise">
+       <div class="t"><span class="e">📊</span> 5 tableurs Excel</div>
+       <div class="t"><span class="e">📧</span> Relances à la main</div>
+       <div class="t"><span class="e">🖊️</span> Émargements papier</div>
+       <div class="t"><span class="e">📁</span> Dossiers éparpillés</div>
+       <div class="t"><span class="e">⏰</span> Heures perdues</div>
+       <div class="t"><span class="e">⚠️</span> Risque à l'audit Qualiopi</div>
+     </div>
+     <div class="arrow rise2">↓</div>
+     <h1 class="rise2" style="font-size:30px">Et si tout tenait dans <em>un seul</em> outil ?</h1>
+   </div>` },
+
+ /* 2b — PANORAMA COMPLET DES FONCTIONNALITÉS */
+ { dur:17, essential:true, sdur:13, step:"Tout-en-un", title:"Une seule plateforme, tous vos métiers",
+   caption:`OFManager couvre <span class="key">tout le cycle de vie</span> de votre organisme. Voici l'ensemble des modules — nous détaillons ensuite les <span class="key">plus essentiels</span> en images.`,
+   html:`<div class="center" style="background:radial-gradient(900px 520px at 50% 8%, #16245a, #0a1230 75%)">
+     <h1 class="rise" style="font-size:27px;margin-bottom:20px">De l'acquisition à la conformité, <em>tout y est</em></h1>
+     <div class="featgrid rise2">
+       <div class="featcol"><h4>🎯 Acquisition</h4>
+         <div class="fchip"><span class="ck">✔</span> CRM</div>
+         <div class="fchip"><span class="ck">✔</span> Leads multicanal</div>
+         <div class="fchip"><span class="ck">✔</span> Scoring IA</div>
+         <div class="fchip"><span class="ck">✔</span> Devis & factures</div>
+         <div class="fchip"><span class="ck">✔</span> Espace / portail client</div>
+         <div class="fchip"><span class="ck">✔</span> Clients pro (B2B)</div>
+       </div>
+       <div class="featcol"><h4>🗂️ Gestion</h4>
+         <div class="fchip"><span class="ck">✔</span> Candidats</div>
+         <div class="fchip"><span class="ck">✔</span> Inscriptions</div>
+         <div class="fchip"><span class="ck">✔</span> Sessions</div>
+         <div class="fchip"><span class="ck">✔</span> Planning</div>
+         <div class="fchip"><span class="ck">✔</span> Salles</div>
+         <div class="fchip"><span class="ck">✔</span> Formateurs</div>
+         <div class="fchip"><span class="ck">✔</span> Kanban & tâches</div>
+       </div>
+       <div class="featcol"><h4>🎓 Pédagogie</h4>
+         <div class="fchip"><span class="ck">✔</span> Formations</div>
+         <div class="fchip"><span class="ck">✔</span> E-learning</div>
+         <div class="fchip"><span class="ck">✔</span> Positionnement</div>
+         <div class="fchip"><span class="ck">✔</span> Émargement</div>
+         <div class="fchip"><span class="ck">✔</span> Signatures électroniques</div>
+         <div class="fchip"><span class="ck">✔</span> Satisfaction</div>
+       </div>
+       <div class="featcol"><h4>🛡️ Conformité</h4>
+         <div class="fchip"><span class="ck">✔</span> Qualiopi (32 indic.)</div>
+         <div class="fchip"><span class="ck">✔</span> BPF automatisé</div>
+         <div class="fchip"><span class="ck">✔</span> RGPD</div>
+         <div class="fchip"><span class="ck">✔</span> Réclamations</div>
+         <div class="fchip"><span class="ck">✔</span> Documents conformes</div>
+       </div>
+       <div class="featcol"><h4>🚀 Pilotage & marque</h4>
+         <div class="fchip"><span class="ck">✔</span> Tableau de bord</div>
+         <div class="fchip"><span class="ck">✔</span> Rapports</div>
+         <div class="fchip"><span class="ck">✔</span> Automatisations</div>
+         <div class="fchip"><span class="ck">✔</span> Notifications & SMS</div>
+         <div class="fchip"><span class="ck">✔</span> Assistant IA</div>
+         <div class="fchip"><span class="ck">✔</span> Marque blanche</div>
+       </div>
+     </div>
+   </div>` },
+
+ /* 3 — TABLEAU DE BORD */
+ { dur:16, essential:true, sdur:13, step:"Tableau de bord", title:"Votre activité en un coup d'œil",
+   caption:`Dès la connexion, vos <span class="key">indicateurs clés</span> sont à jour en temps réel : candidats, sessions, taux de réussite, chiffre d'affaires. Plus besoin de consolider quoi que ce soit.`,
+   html:`<div class="app"><div class="kb">${appTop("Tableau de bord")}
+     <div class="body">
+       <div class="h1 rise">Bonjour Sophie 👋</div>
+       <div class="sub rise">Voici l'activité de votre organisme aujourd'hui.</div>
+       <div class="grid4 rise2" style="margin-top:18px">
+         <div class="card kpi"><div class="l"><span class="ic">👥</span> Candidats</div><div class="v">248</div><div class="d">▲ +18 ce mois</div></div>
+         <div class="card kpi"><div class="l"><span class="ic">📅</span> Sessions actives</div><div class="v">14</div><div class="d">▲ 3 cette semaine</div></div>
+         <div class="card kpi"><div class="l"><span class="ic">🎓</span> Taux de réussite</div><div class="v">94%</div><div class="d">▲ +2 pts</div></div>
+         <div class="card kpi"><div class="l"><span class="ic">💶</span> CA financé CPF</div><div class="v">86 k€</div><div class="d">▲ +12%</div></div>
+       </div>
+       <div class="grid2 rise3" style="margin-top:16px">
+         <div class="card"><div class="sect">📈 Inscriptions par mois</div>
+           <div class="bars">
+             <div class="b" style="height:48%"><span>22</span><small>Jan</small></div>
+             <div class="b" style="height:60%"><span>28</span><small>Fév</small></div>
+             <div class="b" style="height:52%"><span>24</span><small>Mar</small></div>
+             <div class="b" style="height:78%"><span>36</span><small>Avr</small></div>
+             <div class="b" style="height:70%"><span>33</span><small>Mai</small></div>
+             <div class="b" style="height:96%"><span>45</span><small>Juin</small></div>
+           </div>
+         </div>
+         <div class="card" style="display:flex;flex-direction:column;align-items:center;justify-content:center">
+           <div class="sect" style="align-self:flex-start">🎯 Objectif annuel</div>
+           <div class="donut pop"><div class="in"><b>86%</b><span>atteint</span></div></div>
+           <div class="muted" style="font-size:12px;margin-top:12px">258 / 300 certifiés</div>
+         </div>
+       </div>
+     </div></div></div>` },
+
+ /* 4 — CRM / LEADS MULTICANAL */
+ { dur:15, step:"CRM & Acquisition", title:"Captez et suivez chaque prospect",
+   caption:`Un <span class="key">CRM multicanal</span> centralise vos leads (site web, téléphone, réseaux sociaux, salons) et un <span class="key">scoring automatique</span> priorise les plus chauds. Aucun prospect n'est oublié.`,
+   html:`<div class="app"><div class="kb">${appTop("CRM")}
+     <div class="body">
+       <div class="h1 rise">Pipeline commercial</div>
+       <div class="sub rise">42 leads en cours · scoring automatique · relances programmées</div>
+       <div class="grid2 rise2" style="margin-top:16px;grid-template-columns:1fr 1fr">
+         <div class="card"><div class="sect">📡 Origine des leads</div>
+           <div class="src"><span>🌐 Site web — Mon Compte Formation</span><b class="navy">38%</b></div>
+           <div class="src"><span>📞 Appels entrants</span><b class="navy">24%</b></div>
+           <div class="src"><span>📱 Réseaux sociaux</span><b class="navy">21%</b></div>
+           <div class="src"><span>🤝 Salons & partenaires</span><b class="navy">17%</b></div>
+         </div>
+         <div class="card"><div class="sect">🔥 Leads prioritaires (score IA)</div>
+           <div class="src"><span class="who">${avatar("ML","#1A5FD4")} Marie Lefèvre</span><span class="tag g">Score 92</span></div>
+           <div class="src"><span class="who">${avatar("KB","#7C3AED")} Karim Benali</span><span class="tag g">Score 88</span></div>
+           <div class="src"><span class="who">${avatar("AD","#059669")} Aline Dubois</span><span class="tag a">Score 71</span></div>
+           <div class="src"><span class="who">${avatar("TR","#EA580C")} Thomas Roy</span><span class="tag a">Score 64</span></div>
+         </div>
+       </div>
+     </div></div></div>` },
+
+ /* 5 — KANBAN PIPELINE */
+ { dur:14, step:"Suivi visuel", title:"Un pipeline clair, du lead au certifié",
+   caption:`Glissez-déposez chaque dossier d'une étape à l'autre : <span class="key">Nouveau → En traitement → Inscrit → Certifié</span>. Toute l'équipe voit l'avancement en temps réel.`,
+   html:`<div class="app"><div class="kb">${appTop("CRM")}
+     <div class="body">
+       <div class="h1 rise">Kanban des candidatures</div>
+       <div class="sub rise">Vue pipeline · 11 dossiers actifs</div>
+       <div class="kb-cols rise2" style="margin-top:16px">
+         <div class="kcol"><div class="ch"><span class="dot" style="background:#1d4ed8"></span>Nouveau<span class="ct">3</span></div>
+           <div class="kcard"><div class="t">Léa Marchand</div><div class="m">SEO & Référencement</div><div class="f">${avatar("LM","#1A5FD4")}<span class="tag b">CPF</span></div></div>
+           <div class="kcard"><div class="t">Yanis Faure</div><div class="m">Community Management</div><div class="f">${avatar("YF","#7C3AED")}<span class="tag b">CPF</span></div></div>
+         </div>
+         <div class="kcol"><div class="ch"><span class="dot" style="background:#F59E0B"></span>En traitement<span class="ct">2</span></div>
+           <div class="kcard"><div class="t">Sofia Lopez</div><div class="m">Intelligence Artificielle</div><div class="f">${avatar("SL","#059669")}<span class="tag a">Devis envoyé</span></div></div>
+         </div>
+         <div class="kcol"><div class="ch"><span class="dot" style="background:#1A5FD4"></span>Inscrit<span class="ct">4</span></div>
+           <div class="kcard"><div class="t">Hugo Petit</div><div class="m">Webmarketing</div><div class="f">${avatar("HP","#EA580C")}<span class="tag g">Convention ✔</span></div></div>
+           <div class="kcard"><div class="t">Nora Cohen</div><div class="m">SEO & Référencement</div><div class="f">${avatar("NC","#0D9488")}<span class="tag g">Convention ✔</span></div></div>
+         </div>
+         <div class="kcol"><div class="ch"><span class="dot" style="background:#10B981"></span>Certifié<span class="ct">2</span></div>
+           <div class="kcard"><div class="t">Inès Garnier</div><div class="m">Webmarketing — RS7076</div><div class="f">${avatar("IG","#10B981")}<span class="tag g">🎓 Réussi</span></div></div>
+         </div>
+       </div>
+     </div></div></div>` },
+
+ /* 6 — CANDIDATS / INSCRIPTIONS */
+ { dur:15, step:"Candidats & Inscriptions", title:"Gérez vos apprenants sans effort",
+   caption:`Chaque candidat dispose d'une <span class="key">fiche complète</span> : coordonnées, financement, statut, documents. L'inscription génère automatiquement convention, convocation et programme.`,
+   html:`<div class="app"><div class="kb">${appTop("Candidats")}
+     <div class="body">
+       <div class="row" style="align-items:center"><div><div class="h1 rise">Candidats</div><div class="sub rise">248 candidats enregistrés</div></div>
+         <span class="btn rise" style="margin-left:auto">＋ Nouveau candidat</span></div>
+       <div class="card np rise2" style="margin-top:16px">
+         <table>
+           <thead><tr><th>Nom</th><th>Formation souhaitée</th><th>Financement</th><th>État</th><th>Action</th></tr></thead>
+           <tbody>
+             <tr><td><div class="who">${avatar("ML","#1A5FD4")} Marie Lefèvre</div></td><td>SEO & Référencement naturel</td><td>CPF</td><td><span class="tag g">Inscrit</span></td><td><span class="tag b">Voir le dossier</span></td></tr>
+             <tr><td><div class="who">${avatar("KB","#7C3AED")} Karim Benali</div></td><td>Intelligence Artificielle</td><td>OPCO</td><td><span class="tag a">En traitement</span></td><td><span class="tag b">Inscrire</span></td></tr>
+             <tr><td><div class="who">${avatar("AD","#059669")} Aline Dubois</div></td><td>Community Management</td><td>CPF</td><td><span class="tag b">Nouveau</span></td><td><span class="tag b">Inscrire</span></td></tr>
+             <tr><td><div class="who">${avatar("HP","#EA580C")} Hugo Petit</div></td><td>Webmarketing — RS7076</td><td>Pôle emploi</td><td><span class="tag g">Inscrit</span></td><td><span class="tag b">Voir le dossier</span></td></tr>
+             <tr><td><div class="who">${avatar("IG","#10B981")} Inès Garnier</div></td><td>Webmarketing — RS7076</td><td>CPF</td><td><span class="tag g">Certifié</span></td><td><span class="tag b">Attestation</span></td></tr>
+           </tbody>
+         </table>
+       </div>
+     </div></div></div>` },
+
+ /* 7 — SESSIONS / PLANNING */
+ { dur:15, step:"Sessions & Planning", title:"Planifiez sessions, salles et formateurs",
+   caption:`Un <span class="key">planning visuel</span> orchestre vos sessions, formateurs et salles. Convocations et émargements sont générés automatiquement pour chaque séance.`,
+   html:`<div class="app"><div class="kb">${appTop("Planning")}
+     <div class="body">
+       <div class="h1 rise">Planning — semaine du 15 juin</div>
+       <div class="sub rise">5 sessions · 3 formateurs · 2 salles</div>
+       <div class="week rise2" style="margin-top:16px">
+         <div class="day"><div class="dh">Lun</div><div class="dn">15</div>
+           <div class="slot"><b>SEO — Module 1</b><span>9h · S. Bernard</span></div>
+           <div class="slot g"><b>Webmarketing</b><span>14h · Salle A</span></div></div>
+         <div class="day today"><div class="dh">Mar</div><div class="dn">16</div>
+           <div class="slot a"><b>IA générative</b><span>9h30 · Distanciel</span></div>
+           <div class="slot"><b>Community Mgmt</b><span>13h · Salle B</span></div></div>
+         <div class="day"><div class="dh">Mer</div><div class="dn">17</div>
+           <div class="slot g"><b>SEO — Module 2</b><span>9h · S. Bernard</span></div></div>
+         <div class="day"><div class="dh">Jeu</div><div class="dn">18</div>
+           <div class="slot"><b>Webmarketing</b><span>10h · Salle A</span></div>
+           <div class="slot a"><b>Examen blanc</b><span>15h · Salle B</span></div></div>
+         <div class="day"><div class="dh">Ven</div><div class="dn">19</div>
+           <div class="slot g"><b>Certification</b><span>9h · Jury</span></div></div>
+       </div>
+     </div></div></div>` },
+
+ /* 8 — ÉMARGEMENT + SIGNATURE */
+ { dur:14, essential:true, sdur:12, step:"Émargement & Signature", title:"Signature électronique, zéro papier",
+   caption:`Apprenants et formateurs émargent <span class="key">en ligne</span>, même à distance. Signature électronique légale, horodatée et archivée — une preuve béton pour vos audits.`,
+   html:`<div class="app"><div class="kb">${appTop("Sessions")}
+     <div class="body">
+       <div class="h1 rise">Feuille d'émargement — SEO, séance du 17/06</div>
+       <div class="sub rise">Matin · 8 présents · signatures horodatées</div>
+       <div class="grid2 rise2" style="margin-top:16px">
+         <div class="card np"><table>
+           <thead><tr><th>Apprenant</th><th>Présence</th><th>Signature</th></tr></thead>
+           <tbody>
+             <tr><td><div class="who">${avatar("ML","#1A5FD4")} Marie Lefèvre</div></td><td><span class="tag g">Présent</span></td><td class="succ">✔ signé 9:02</td></tr>
+             <tr><td><div class="who">${avatar("HP","#EA580C")} Hugo Petit</div></td><td><span class="tag g">Présent</span></td><td class="succ">✔ signé 9:03</td></tr>
+             <tr><td><div class="who">${avatar("NC","#0D9488")} Nora Cohen</div></td><td><span class="tag g">Présent</span></td><td class="succ">✔ signé 9:05</td></tr>
+             <tr><td><div class="who">${avatar("YF","#7C3AED")} Yanis Faure</div></td><td><span class="tag a">Distanciel</span></td><td class="succ">✔ signé 9:06</td></tr>
+           </tbody></table></div>
+         <div class="card"><div class="sect">🖊️ Signature de l'apprenant</div>
+           <div class="sigpad">
+             <svg viewBox="0 0 400 120"><path class="sig-path" d="M20,80 C60,20 90,110 130,60 S200,10 240,70 S300,110 360,40"/></svg>
+           </div>
+           <div class="muted" style="font-size:12px;margin-top:10px">Horodatée · valeur légale (eIDAS) · archivée automatiquement</div>
+         </div>
+       </div>
+     </div></div></div>` },
+
+ /* 9 — E-LEARNING */
+ { dur:13, step:"E-learning intégré", title:"Vos formations en ligne, incluses",
+   caption:`Diffusez vos <span class="key">parcours e-learning</span> directement dans la plateforme : modules, quiz, suivi de progression. Le présentiel et le distanciel, au même endroit.`,
+   html:`<div class="app"><div class="kb">${appTop("Sessions")}
+     <div class="body">
+       <div class="h1 rise">Parcours e-learning — SEO & Référencement</div>
+       <div class="sub rise">6 modules · 35 h · suivi de progression en direct</div>
+       <div class="grid3 rise2" style="margin-top:16px">
+         <div class="card"><div class="sect">📘 Module 1 — Fondamentaux</div><div class="muted" style="font-size:12px">Comprendre les moteurs</div><div class="progress"><i style="width:100%"></i></div><div class="succ" style="font-size:12px;margin-top:6px;font-weight:600">Terminé ✔</div></div>
+         <div class="card"><div class="sect">📗 Module 2 — Technique</div><div class="muted" style="font-size:12px">Indexation & balises</div><div class="progress"><i style="width:72%"></i></div><div style="font-size:12px;margin-top:6px;font-weight:600;color:var(--brand)">72%</div></div>
+         <div class="card"><div class="sect">📙 Module 3 — Contenu</div><div class="muted" style="font-size:12px">Stratégie éditoriale</div><div class="progress"><i style="width:18%"></i></div><div class="muted" style="font-size:12px;margin-top:6px;font-weight:600">18%</div></div>
+       </div>
+       <div class="card rise3" style="margin-top:16px;display:flex;align-items:center;gap:16px">
+         <div class="donut pop" style="width:96px;height:96px;background:conic-gradient(var(--brand) 0 63%, #e7ecf4 0)"><div class="in" style="width:68px;height:68px"><b style="font-size:20px">63%</b></div></div>
+         <div><div class="sect" style="margin-bottom:4px">Progression moyenne de la promo</div><div class="muted" style="font-size:13px">14 apprenants actifs · quiz validés à 88% · relance auto des inactifs</div></div>
+       </div>
+     </div></div></div>` },
+
+ /* 10 — DOCUMENTS + AUTOMATISATIONS */
+ { dur:15, step:"Documents & Automatisations", title:"Vos documents générés tout seuls",
+   caption:`Conventions, convocations, attestations, certificats de réalisation : <span class="key">générés automatiquement</span>, à votre charte, avec votre logo, cachet et signature. Les relances partent toutes seules.`,
+   html:`<div class="app"><div class="kb">${appTop("Sessions")}
+     <div class="body">
+       <div class="h1 rise">Documents & automatisations</div>
+       <div class="sub rise">Modèles personnalisés · envois programmés</div>
+       <div class="grid2 rise2" style="margin-top:16px">
+         <div class="card" style="position:relative">
+           <div class="sect">📄 Attestation de fin de formation</div>
+           <div class="doc" style="position:relative">
+             <div style="font:700 13px var(--display);color:var(--navy)">Votre organisme</div>
+             <div class="dl m"></div><div class="dl"></div><div class="dl s"></div>
+             <div class="dl m" style="margin-top:16px"></div><div class="dl"></div>
+             <img class="stamp" src="signature-cap-competences.png" onerror="this.style.display='none'">
+           </div>
+         </div>
+         <div class="card"><div class="sect">⚙️ Scénarios automatiques actifs</div>
+           <div class="crit"><span class="ck">✔</span><div class="tx"><b>Convocation J-7</b><p>Envoyée 7 jours avant chaque session</p></div><span class="tag g">Actif</span></div>
+           <div class="crit"><span class="ck">✔</span><div class="tx"><b>Questionnaire de satisfaction J+1</b><p>Envoyé au lendemain de la formation</p></div><span class="tag g">Actif</span></div>
+           <div class="crit"><span class="ck">✔</span><div class="tx"><b>Attestation + certificat à J+2</b><p>Générés et envoyés automatiquement</p></div><span class="tag g">Actif</span></div>
+         </div>
+       </div>
+     </div></div></div>` },
+
+ /* 11 — QUALIOPI */
+ { dur:18, essential:true, sdur:15, step:"Conformité Qualiopi", title:"Prêt pour l'audit, en permanence",
+   caption:`La plateforme structure vos preuves sur les <span class="key">7 critères et 32 indicateurs Qualiopi</span>. Indicateurs au vert, preuves rattachées : vous arrivez à l'audit serein.`,
+   html:`<div class="app"><div class="kb">${appTop("Qualiopi")}
+     <div class="body">
+       <div class="row" style="align-items:center"><div><div class="h1 rise">Conformité Qualiopi</div><div class="sub rise">Référentiel National Qualité · preuves centralisées</div></div>
+         <span class="rise" style="margin-left:auto"><span class="tag g" style="font-size:13px;padding:7px 14px">● 32/32 indicateurs conformes</span></span></div>
+       <div class="grid2 rise2" style="margin-top:16px;grid-template-columns:1.4fr 1fr">
+         <div class="card">
+           <div class="crit"><span class="ck">✔</span><div class="tx"><b>Critère 1 — Information du public</b><p>Indicateurs 1 à 3 · fiches formation publiées</p></div><span class="pct">100%</span></div>
+           <div class="crit"><span class="ck">✔</span><div class="tx"><b>Critère 2 — Objectifs & positionnement</b><p>Indicateurs 4 à 8 · tests d'entrée tracés</p></div><span class="pct">100%</span></div>
+           <div class="crit"><span class="ck">✔</span><div class="tx"><b>Critère 3 — Adaptation & accueil</b><p>Indicateurs 9 à 16 · émargements horodatés</p></div><span class="pct">100%</span></div>
+           <div class="crit"><span class="ck">✔</span><div class="tx"><b>Critère 5 — Compétences des formateurs</b><p>CV & qualifications archivés</p></div><span class="pct">100%</span></div>
+           <div class="crit"><span class="ck">✔</span><div class="tx"><b>Critère 7 — Recueil des appréciations</b><p>Satisfaction & réclamations suivies</p></div><span class="pct">100%</span></div>
+         </div>
+         <div class="card" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center">
+           <div class="donut pop"><div class="in"><b>100%</b><span>conforme</span></div></div>
+           <div class="sect" style="margin-top:16px">Dossier d'audit</div>
+           <div class="muted" style="font-size:12.5px">Toutes les preuves exportables en 1 clic, prêtes pour votre certificateur.</div>
+           <span class="btn o" style="margin-top:14px">⬇ Exporter le dossier</span>
+         </div>
+       </div>
+     </div></div></div>` },
+
+ /* 12 — BPF */
+ { dur:15, step:"BPF automatisé", title:"Votre Bilan Pédagogique et Financier, pré-rempli",
+   caption:`Fini la corvée annuelle : le <span class="key">BPF</span> se construit tout seul à partir de vos données réelles. Heures, stagiaires, produits, charges — exportés au format officiel.`,
+   html:`<div class="app"><div class="kb">${appTop("Qualiopi")}
+     <div class="body">
+       <div class="h1 rise">Bilan Pédagogique et Financier 2025</div>
+       <div class="sub rise">Pré-rempli automatiquement · prêt à télétransmettre</div>
+       <div class="grid3 rise2" style="margin-top:16px">
+         <div class="card kpi"><div class="l"><span class="ic">⏱️</span> Heures de formation</div><div class="v">4 820</div><div class="d muted" style="color:var(--muted)">Cadre F · auto-calculé</div></div>
+         <div class="card kpi"><div class="l"><span class="ic">👥</span> Stagiaires formés</div><div class="v">312</div><div class="d muted" style="color:var(--muted)">Cadre E · auto-calculé</div></div>
+         <div class="card kpi"><div class="l"><span class="ic">💶</span> Produits réalisés</div><div class="v">214 k€</div><div class="d muted" style="color:var(--muted)">Cadre C · CPF + OPCO</div></div>
+       </div>
+       <div class="card rise3" style="margin-top:16px">
+         <div class="sect">📑 Ventilation des produits (Cadre C)</div>
+         <div class="src"><span>Financement CPF</span><b class="navy">52%</b></div>
+         <div class="src"><span>OPCO / entreprises</span><b class="navy">31%</b></div>
+         <div class="src"><span>Pôle emploi / Région</span><b class="navy">11%</b></div>
+         <div class="src"><span>Particuliers</span><b class="navy">6%</b></div>
+         <div style="margin-top:14px"><span class="btn">⬇ Générer le BPF officiel (Cerfa)</span></div>
+       </div>
+     </div></div></div>` },
+
+ /* 13 — COMPTA / DEVIS / FACTURES */
+ { dur:12, step:"Devis, Factures & Compta", title:"Du devis à l'encaissement",
+   caption:`Éditez <span class="key">devis et factures</span> à votre charte, suivez les paiements et les financements. Votre suivi comptable est tenu à jour, prêt pour votre expert-comptable.`,
+   html:`<div class="app"><div class="kb">${appTop("CRM")}
+     <div class="body">
+       <div class="h1 rise">Suivi comptable</div>
+       <div class="sub rise">Devis · factures · encaissements</div>
+       <div class="grid4 rise2" style="margin-top:16px">
+         <div class="card kpi"><div class="l">Devis en cours</div><div class="v" style="font-size:26px">9</div></div>
+         <div class="card kpi"><div class="l">Factures émises</div><div class="v" style="font-size:26px">37</div></div>
+         <div class="card kpi"><div class="l">Encaissé</div><div class="v" style="font-size:26px;color:var(--success)">182 k€</div></div>
+         <div class="card kpi"><div class="l">En attente</div><div class="v" style="font-size:26px;color:var(--amber)">12 k€</div></div>
+       </div>
+       <div class="card np rise3" style="margin-top:16px"><table>
+         <thead><tr><th>Pièce</th><th>Client</th><th>Montant</th><th>Statut</th></tr></thead>
+         <tbody>
+           <tr><td>FAC-2025-118</td><td>Entreprise Novacom</td><td>3 600 €</td><td><span class="tag g">Payée</span></td></tr>
+           <tr><td>FAC-2025-119</td><td>CPF — Marie Lefèvre</td><td>1 490 €</td><td><span class="tag g">Payée</span></td></tr>
+           <tr><td>DEV-2025-044</td><td>OPCO Atlas</td><td>5 200 €</td><td><span class="tag a">Devis envoyé</span></td></tr>
+         </tbody></table></div>
+     </div></div></div>` },
+
+ /* 14 — ASSISTANT IA */
+ { dur:12, step:"Assistant IA", title:"Une IA qui vous fait gagner du temps",
+   caption:`L'<span class="key">assistant IA intégré</span> rédige vos e-mails, résume les dossiers, suggère les relances et score vos leads. Votre équipe se concentre sur l'essentiel : former.`,
+   html:`<div class="app"><div class="kb">${appTop("CRM")}
+     <div class="body">
+       <div class="h1 rise">Assistant IA</div>
+       <div class="sub rise">Suggestions intelligentes basées sur vos données</div>
+       <div class="grid2 rise2" style="margin-top:16px;grid-template-columns:1fr 1fr">
+         <div class="card"><div class="sect">✨ Suggestions du jour</div>
+           <div class="crit"><span class="ck" style="background:var(--brand)">→</span><div class="tx"><b>Relancer Karim Benali</b><p>Devis envoyé il y a 4 jours, sans réponse</p></div></div>
+           <div class="crit"><span class="ck" style="background:var(--brand)">→</span><div class="tx"><b>3 apprenants inactifs en e-learning</b><p>Proposer un e-mail d'encouragement</p></div></div>
+           <div class="crit"><span class="ck" style="background:var(--brand)">→</span><div class="tx"><b>Session IA bientôt complète</b><p>Ouvrir une 2ᵉ date conseillée</p></div></div>
+         </div>
+         <div class="card"><div class="sect">💬 Rédaction assistée</div>
+           <div class="doc"><div style="font:600 12px var(--font);color:var(--navy)">E-mail de relance — généré</div>
+             <div class="dl m"></div><div class="dl"></div><div class="dl s"></div><div class="dl m"></div>
+             <div style="margin-top:14px"><span class="tag b">Personnaliser</span> <span class="tag g">Envoyer ✔</span></div>
+           </div>
+         </div>
+       </div>
+     </div></div></div>` },
+
+ /* 15 — MARQUE BLANCHE / DESIGNS */
+ { dur:18, essential:true, sdur:15, step:"100% à votre marque", title:"OFManager devient VOTRE plateforme",
+   caption:`Logiciel <span class="key">en marque blanche</span> : votre logo, vos couleurs, votre nom de domaine. <span class="key">10 styles × 10 palettes</span>. Notre client <span class="key">CAP Compétences</span> a ainsi sa propre identité, propulsée par OFManager.`,
+   html:`<div class="center" style="background:radial-gradient(900px 520px at 50% 10%, #16245a, #0a1230 75%)">
+     <h1 class="rise" style="font-size:32px;margin-bottom:8px">Un seul moteur, <em>mille visages</em></h1>
+     <p class="tg rise" style="margin-top:6px;margin-bottom:24px">10 designs × 10 couleurs — vos clients ne voient que <em>leur</em> marque. Exemple&nbsp;: CAP Compétences, propulsé par OFManager.</p>
+     <div class="gal rise2" style="width:min(92%,980px)">
+       <div class="skin" style="background:#070a14"><div class="sl"><i style="background:#7c4dff"></i><i style="background:#00c2ff"></i></div><div class="sc" style="background:rgba(255,255,255,.08);color:#eaf0ff">Aa</div><span class="nm" style="color:#cdd8f0">Aurora</span></div>
+       <div class="skin" style="background:#eceef3"><div class="sl"><i style="background:#1e6fe6"></i><i style="background:#d8f24a"></i></div><div class="sc" style="background:#fff;color:#11131a">Aa</div><span class="nm" style="color:#5a6480">Bento</span></div>
+       <div class="skin" style="background:#f5f2ea"><div class="sl"><i style="background:#b3402f"></i><i style="background:#191712"></i></div><div class="sc" style="background:#faf8f2;color:#191712;font-family:Georgia,serif">Aa</div><span class="nm" style="color:#7a736a">Éditorial</span></div>
+       <div class="skin" style="background:#0c0d12"><div class="sl"><i style="background:#5b6cff"></i><i style="background:#23252f"></i></div><div class="sc" style="background:#16181f;color:#fff">Aa</div><span class="nm" style="color:#8b90a0">Linear</span></div>
+       <div class="skin" style="background:#e6e9ef"><div class="sl"><i style="background:#5b7cfa"></i><i style="background:#c4c8d0"></i></div><div class="sc" style="background:#e6e9ef;color:#2b3146;box-shadow:3px 3px 7px #c4c8d0,-3px -3px 7px #fff">Aa</div><span class="nm" style="color:#838aa0">Néumorphe</span></div>
+       <div class="skin" style="background:#fbf6ee"><div class="sl"><i style="background:#f08a5d"></i><i style="background:#f3ddca"></i></div><div class="sc" style="background:#fff;color:#2d2820;font-family:Georgia,serif">Aa</div><span class="nm" style="color:#7c7468">Humaniste</span></div>
+       <div class="skin" style="background:#eef1f5"><div class="sl"><i style="background:#2563eb"></i><i style="background:#d8dee7"></i></div><div class="sc" style="background:#fff;color:#1f2733">Aa</div><span class="nm" style="color:#7a8597">Enterprise</span></div>
+       <div class="skin" style="background:#eef1f6"><div class="sl"><i style="background:#0ea5a0"></i><i style="background:#0f1b2d"></i></div><div class="sc" style="background:#fff;color:#15202e">Aa</div><span class="nm" style="color:#5d6b7e">Agenda</span></div>
+       <div class="skin" style="background:linear-gradient(160deg,#e8ecff,#f6f4ff)"><div class="sl"><i style="background:#4f46e5"></i><i style="background:#1a1530"></i></div><div class="sc" style="background:#fff;color:#1f1b3a">Aa</div><span class="nm" style="color:#7a7f95">Mobile</span></div>
+       <div class="skin" style="background:#f4f6f9"><div class="sl"><i style="background:#1e6fe6"></i><i style="background:#eaeef3"></i></div><div class="sc" style="background:#fff;color:#1a2230">Aa</div><span class="nm" style="color:#5b6675">Kanban</span></div>
+     </div>
+     <div class="pals rise3">
+       <i style="background:#1A5FD4"></i><i style="background:#059669"></i><i style="background:#7C3AED"></i><i style="background:#4F46E5"></i><i style="background:#0D9488"></i><i style="background:#EA580C"></i><i style="background:#E11D48"></i><i style="background:#475569"></i><i style="background:#9F1239"></i><i style="background:#18181B"></i>
+     </div>
+   </div>` },
+
+ /* 16 — OUTRO / CTA */
+ { dur:11, essential:true, sdur:10, step:"Passez à l'action", title:"", caption:"",
+   html:`<div class="center intro kb">
+     <div class="logo-xl rise"><img src="${LOGO}" onerror="this.style.display='none'"></div>
+     <h1 class="rise2" style="font-size:40px">Prêt à <em>digitaliser</em> votre organisme&nbsp;?</h1>
+     <p class="tg rise2">OFManager : gérez, formez, certifiez — et restez conforme — sur une seule plateforme à votre image.</p>
+     <div class="badges rise3">
+       <span class="pill"><span class="ck">✔</span> Sans engagement</span>
+       <span class="pill"><span class="ck">✔</span> Démo personnalisée</span>
+       <span class="pill"><span class="ck">✔</span> Mise en route accompagnée</span>
+     </div>
+     <span class="cta rise3">Demander une démo →</span>
+     <div class="contact rise3"><span>✉️ contact@ofmanager.fr</span><span>📞 01 23 45 67 89</span><span>🌐 ofmanager.fr</span></div>
+   </div>` },
+];
+
+/* ---------- moteur ---------- */
+const stage = document.getElementById('stage');
+const capinner = document.getElementById('capinner');
+const fill = document.getElementById('fill');
+const timeEl = document.getElementById('time');
+const ticks = document.getElementById('ticks');
+const bigplay = document.getElementById('bigplay');
+const bPlay = document.getElementById('bPlay');
+
+// Version courte (~90 s) : ?court / ?short / ?90 → ne garde que les scènes
+// marquées essential, avec leur durée raccourcie (sdur). Source unique.
+const SHORT = /court|short|90/i.test(location.search);
+const ACTIVE = SHORT ? SCENES.filter(s=>s.essential) : SCENES;
+const durOf = (s)=> (SHORT && s.sdur ? s.sdur : s.dur);
+
+const TOTAL = ACTIVE.reduce((s,x)=>s+durOf(x),0);
+let starts=[], acc=0;
+ACTIVE.forEach(s=>{ starts.push(acc); acc+=durOf(s); });
+
+// build scene DOM + ticks
+ACTIVE.forEach((s,i)=>{
+  const d=document.createElement('div'); d.className='scene'; d.dataset.i=i; d.innerHTML=s.html;
+  stage.appendChild(d);
+  const t=document.createElement('span'); t.style.flex=durOf(s); ticks.appendChild(t);
+});
+const sceneEls=[...document.querySelectorAll('.scene')];
+
+let cur=-1, t0=performance.now(), elapsed=0, playing=true, raf=null;
+
+function fmt(sec){ sec=Math.max(0,Math.floor(sec)); return Math.floor(sec/60)+":"+String(sec%60).padStart(2,'0'); }
+
+function setCaption(i){
+  const s=ACTIVE[i];
+  if(!s.title && !s.caption){ capinner.innerHTML=''; document.getElementById('cap').style.opacity=0; return; }
+  document.getElementById('cap').style.opacity=1;
+  capinner.innerHTML=`<div class="capwrap">
+    <div class="step"><b>${String(i+1).padStart(2,'0')}/${ACTIVE.length}</b> ${s.step||''}</div>
+    ${s.title?`<h2>${s.title}</h2>`:''}
+    ${s.caption?`<p>${s.caption}</p>`:''}
+  </div>`;
+}
+
+function showScene(i){
+  if(i===cur) return;
+  cur=i;
+  sceneEls.forEach((el,j)=>el.classList.toggle('on', j===i));
+  // restart CSS animations
+  const el=sceneEls[i]; void el.offsetWidth;
+  setCaption(i);
+}
+
+function tick(now){
+  if(playing){ elapsed += (now - t0)/1000; }
+  t0=now;
+  if(elapsed>=TOTAL){ elapsed=TOTAL; playing=false; pauseUI(true); }
+  // find scene
+  let i=0; for(let k=0;k<ACTIVE.length;k++){ if(elapsed>=starts[k]) i=k; }
+  showScene(i);
+  fill.style.width=(elapsed/TOTAL*100)+'%';
+  timeEl.textContent=fmt(elapsed)+" / "+fmt(TOTAL);
+  raf=requestAnimationFrame(tick);
+}
+
+function pauseUI(showBig){
+  playing=false; bPlay.textContent='▶'; if(showBig) bigplay.classList.add('show');
+}
+function play(){ if(elapsed>=TOTAL) elapsed=0; playing=true; bPlay.textContent='⏸'; bigplay.classList.remove('show'); t0=performance.now(); applyMusic(); }
+function pause(){ playing=false; bPlay.textContent='▶'; applyMusic(); }
+function toggle(){ playing?pause():play(); }
+function gotoScene(i){ i=Math.max(0,Math.min(ACTIVE.length-1,i)); elapsed=starts[i]+0.001; t0=performance.now(); showScene(i); }
+
+bPlay.onclick=toggle;
+document.getElementById('bPrev').onclick=()=>gotoScene(cur-1);
+document.getElementById('bNext').onclick=()=>gotoScene(cur+1);
+bigplay.onclick=play;
+document.getElementById('bar').onclick=(e)=>{
+  const r=e.currentTarget.getBoundingClientRect(); elapsed=(e.clientX-r.left)/r.width*TOTAL; t0=performance.now(); play();
+};
+document.getElementById('bFull').onclick=()=>{
+  const p=document.getElementById('player');
+  if(!document.fullscreenElement) p.requestFullscreen?.(); else document.exitFullscreen?.();
+};
+addEventListener('keydown',e=>{
+  if(e.code==='Space'){e.preventDefault();toggle();}
+  if(e.key==='ArrowRight') gotoScene(cur+1);
+  if(e.key==='ArrowLeft') gotoScene(cur-1);
+});
+
+/* ---------- musique de fond ---------- */
+const MUSIC_VOL = 0.16;
+const bgm = document.getElementById('bgm');
+const bMusic = document.getElementById('bMusic');
+let musicOn = true, started = false, useFile = false;
+let actx = null, master = null, schedTimer = null;
+
+function startSynth(){
+  try{
+    actx = new (window.AudioContext||window.webkitAudioContext)();
+  }catch(e){ return; }
+  actx.resume && actx.resume();
+  master = actx.createGain(); master.gain.value = 0; master.connect(actx.destination);
+  const filter = actx.createBiquadFilter(); filter.type='lowpass'; filter.frequency.value=1300; filter.Q.value=0.5;
+  filter.connect(master);
+  // un peu d'espace (delay/feedback léger)
+  const delay = actx.createDelay(); delay.delayTime.value=0.34;
+  const fb = actx.createGain(); fb.gain.value=0.22;
+  filter.connect(delay); delay.connect(fb); fb.connect(delay); delay.connect(master);
+  // progression douce et valorisante : Fmaj7 · Cmaj7 · Dm7 · G7
+  const chords = [
+    [174.61,220.00,261.63,329.63],
+    [130.81,164.81,196.00,246.94],
+    [146.83,174.61,220.00,261.63],
+    [98.00,123.47,146.83,174.61],
+  ];
+  const chordDur = 6, atk = 1.7, rel = 2.0;
+  function playChord(t, freqs){
+    freqs.forEach((f,k)=>{
+      const o=actx.createOscillator(); o.type = k===0?'sine':'triangle'; o.frequency.value=f;
+      const g=actx.createGain(); g.gain.value=0;
+      o.connect(g); g.connect(filter);
+      const peak = (k===0?0.26:0.16)/freqs.length*4;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(peak, t+atk);
+      g.gain.setValueAtTime(peak, t+chordDur-rel);
+      g.gain.linearRampToValueAtTime(0.0001, t+chordDur);
+      o.start(t); o.stop(t+chordDur+0.05);
+    });
+  }
+  let idx=0, next=actx.currentTime+0.1;
+  for(let n=0;n<3;n++){ playChord(next, chords[idx%4]); idx++; next+=chordDur; }
+  schedTimer=setInterval(()=>{
+    while(next < actx.currentTime + 2){ playChord(next, chords[idx%4]); idx++; next+=chordDur; }
+  }, 1000);
+}
+
+function startMusic(){
+  if(started) return; started=true;
+  if(bgm && bgm.readyState>=2 && bgm.currentSrc){      // fichier MP3 fourni
+    useFile=true; bgm.volume=0; bgm.play().catch(()=>{ useFile=false; started=false; startSynth(); started=true; });
+  } else {                                             // sinon : nappe synthétisée
+    startSynth();
+  }
+}
+
+function applyMusic(){
+  const quiet = !(musicOn && playing);
+  if(musicOn && playing && !started) startMusic();
+  if(started){
+    if(useFile){ bgm.volume = quiet?0:MUSIC_VOL; if(quiet) bgm.pause(); else bgm.play().catch(()=>{}); }
+    else if(master){ master.gain.linearRampToValueAtTime(quiet?0.0001:MUSIC_VOL, actx.currentTime+0.4); }
+  }
+  bMusic.textContent = musicOn ? '🔊' : '🔇';
+}
+
+bMusic.onclick = ()=>{ musicOn = !musicOn; applyMusic(); };
+// l'audio ne peut démarrer qu'après une interaction : on l'amorce au 1er geste.
+['pointerdown','keydown','touchstart'].forEach(ev=>
+  document.addEventListener(ev, function once(){ applyMusic(); }, {once:true}));
+
+showScene(0);
+raf=requestAnimationFrame(tick);
+</script>
+</body>
+</html>

@@ -1,5 +1,5 @@
 import type { Candidat, Entreprise, Formation, Inscription, Session } from "@prisma/client";
-import { orgConfig } from "@/lib/org-config";
+import { DEFAULT_ORG_IDENTITY, type OrgIdentity } from "@/lib/org-identity";
 import { MODALITE_LABELS } from "@/lib/validators/formation";
 import { FINANCEMENT_LABELS } from "@/lib/validators/candidat";
 
@@ -8,8 +8,15 @@ export type InscriptionComplete = Inscription & {
   session: Session & { formation: Formation };
 };
 
-/** Construit la table des variables {{...}} à partir d'une inscription. */
-export function buildVariables(i: InscriptionComplete): Record<string, string> {
+/**
+ * Construit la table des variables {{...}} à partir d'une inscription.
+ * `org` = identité de l'organisme (cf. orgConfigFor(i.organismeId)) ; repli sur
+ * les valeurs par défaut si non fournie.
+ */
+export function buildVariables(
+  i: InscriptionComplete,
+  org: OrgIdentity = DEFAULT_ORG_IDENTITY,
+): Record<string, string> {
   const c = i.candidat;
   const s = i.session;
   const f = s.formation;
@@ -19,16 +26,17 @@ export function buildVariables(i: InscriptionComplete): Record<string, string> {
 
   return {
     // Organisme
-    organisme: orgConfig.name,
-    organisme_representant: orgConfig.representant,
-    organisme_siret: orgConfig.siret,
-    organisme_nda: orgConfig.nda,
-    organisme_adresse: orgConfig.adresse,
-    organisme_email: orgConfig.email,
-    organisme_telephone: orgConfig.telephone,
-    organisme_ville: orgConfig.ville,
-    certificateur: orgConfig.certificateur,
-    qualiopi: orgConfig.qualiopi,
+    organisme: org.name,
+    organisme_representant: org.representant,
+    organisme_qualite: org.representantQualite,
+    organisme_siret: org.siret,
+    organisme_nda: org.nda,
+    organisme_adresse: org.adresse,
+    organisme_email: org.email,
+    organisme_telephone: org.telephone,
+    organisme_ville: org.ville,
+    certificateur: org.certificateur,
+    qualiopi: org.qualiopi,
     // Stagiaire
     nom: c.nom,
     prenom: c.prenom,

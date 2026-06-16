@@ -2,16 +2,17 @@
 
 import { revalidatePath } from "next/cache";
 import { QualiopiStatut } from "@prisma/client";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { auth } from "@/auth";
 import { INDICATEURS } from "@/lib/qualiopi-indicateurs";
 
 export async function initialiserIndicateurs() {
+  const db = await getTenantDb();
   const session = await auth();
   if (!session?.user) return;
 
   for (const ind of INDICATEURS) {
-    await prisma.qualiopiIndicateur.upsert({
+    await db.qualiopiIndicateur.upsert({
       where: { numero: ind.numero },
       update: { libelle: ind.libelle },
       create: {
@@ -31,7 +32,8 @@ export async function updateIndicateur(
   const session = await auth();
   if (!session?.user) return { ok: false };
 
-  await prisma.qualiopiIndicateur.update({
+  const db = await getTenantDb();
+  await db.qualiopiIndicateur.update({
     where: { id },
     data: {
       ...(data.statut ? { statut: data.statut } : {}),

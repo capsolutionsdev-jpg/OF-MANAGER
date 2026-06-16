@@ -11,7 +11,7 @@ import {
 import { MODALITE_LABELS } from "@/lib/validators/formation";
 import { SATISFACTION_CRITERES, SATISFACTION_NOTES } from "@/lib/satisfaction";
 import { buildVariables } from "@/lib/documents/resolve";
-import { orgConfig } from "@/lib/org-config";
+import { orgConfigFor } from "@/lib/org-identity";
 import {
   signatureRef,
   signatureMentionHtml,
@@ -82,7 +82,8 @@ export async function buildInscriptionPdf(
   });
   if (!inscription) return null;
 
-  const vars = buildVariables(inscription);
+  const org = await orgConfigFor(inscription.organismeId);
+  const vars = buildVariables(inscription, org);
 
   const signed = inscription.signedAt
     ? {
@@ -115,8 +116,8 @@ export async function buildInscriptionPdf(
     fs.readFile(path.join(pub, "cap-competences-logo.png")),
     fs.readFile(path.join(pub, "signature-cap-competences.png")),
   ]);
-  const logo64 = `data:image/png;base64,${logoBuf.toString("base64")}`;
-  const stamp64 = `data:image/png;base64,${stampBuf.toString("base64")}`;
+  const logo64 = org.logoUrl ?? `data:image/png;base64,${logoBuf.toString("base64")}`;
+  const stamp64 = org.cachetUrl ?? `data:image/png;base64,${stampBuf.toString("base64")}`;
   const inlineImages = (html: string) =>
     html
       .split("/cap-competences-logo.png").join(logo64)
@@ -152,6 +153,7 @@ export async function buildInscriptionPdf(
       ip: signed.ip,
       ref: signed.ref,
       signatureDataUrl: inscription.signatureDataUrl,
+      org: { name: org.name, adresse: org.adresse, siret: org.siret, nda: org.nda },
     });
     const src = await PDFDocument.load(certif);
     const pages = await merged.copyPages(src, src.getPageIndices());
@@ -187,6 +189,7 @@ export async function buildSatisfactionPdf(
   });
   if (!i) return null;
 
+  const org = await orgConfigFor(i.organismeId);
   const rep = (i.satisfactionJson ?? {}) as {
     notes?: Record<string, number>;
     recommander?: number;
@@ -207,9 +210,9 @@ export async function buildSatisfactionPdf(
 
   const inner = `
     <div class="doc-header">
-      <img src="/cap-competences-logo.png" alt="${orgConfig.name}" class="doc-logo" />
-      <div class="doc-org"><strong>${orgConfig.name}</strong> — ${orgConfig.qualiopi}<br/>
-      ${orgConfig.adresse}<br/>SIRET ${orgConfig.siret} · NDA ${orgConfig.nda}</div>
+      ${org.logoUrl ? `<img src="${org.logoUrl}" alt="${org.name}" class="doc-logo" />` : `<strong style="font-size:16px">${org.name}</strong>`}
+      <div class="doc-org"><strong>${org.name}</strong> — ${org.qualiopi}<br/>
+      ${org.adresse}<br/>SIRET ${org.siret} · NDA ${org.nda}</div>
     </div>
     <h1 class="doc-title">Enquête de satisfaction — stagiaire</h1>
     <table class="doc-table">
@@ -232,8 +235,8 @@ export async function buildSatisfactionPdf(
     fs.readFile(path.join(pub, "cap-competences-logo.png")),
     fs.readFile(path.join(pub, "signature-cap-competences.png")),
   ]);
-  const logo64 = `data:image/png;base64,${logoBuf.toString("base64")}`;
-  const stamp64 = `data:image/png;base64,${stampBuf.toString("base64")}`;
+  const logo64 = org.logoUrl ?? `data:image/png;base64,${logoBuf.toString("base64")}`;
+  const stamp64 = org.cachetUrl ?? `data:image/png;base64,${stampBuf.toString("base64")}`;
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8" />${DOC_STYLE}</head><body>${inner}</body></html>`
     .split("/cap-competences-logo.png").join(logo64)
     .split("/signature-cap-competences.png").join(stamp64);
@@ -275,16 +278,18 @@ export async function buildContratFormateurPdf(
     .filter(Boolean)
     .join(" — ");
 
+  const org = await orgConfigFor(s.organismeId);
   const vars: Record<string, string> = {
-    organisme: orgConfig.name,
-    organisme_representant: orgConfig.representant,
-    organisme_siret: orgConfig.siret,
-    organisme_nda: orgConfig.nda,
-    organisme_adresse: orgConfig.adresse,
-    organisme_email: orgConfig.email,
-    organisme_telephone: orgConfig.telephone,
-    organisme_ville: orgConfig.ville,
-    qualiopi: orgConfig.qualiopi,
+    organisme: org.name,
+    organisme_representant: org.representant,
+    organisme_qualite: org.representantQualite,
+    organisme_siret: org.siret,
+    organisme_nda: org.nda,
+    organisme_adresse: org.adresse,
+    organisme_email: org.email,
+    organisme_telephone: org.telephone,
+    organisme_ville: org.ville,
+    qualiopi: org.qualiopi,
     formation: s.formation.titre,
     reference_formation: s.formation.reference,
     date_debut: fmtD(s.dateDebut),
@@ -308,8 +313,8 @@ export async function buildContratFormateurPdf(
     fs.readFile(path.join(pub, "cap-competences-logo.png")),
     fs.readFile(path.join(pub, "signature-cap-competences.png")),
   ]);
-  const logo64 = `data:image/png;base64,${logoBuf.toString("base64")}`;
-  const stamp64 = `data:image/png;base64,${stampBuf.toString("base64")}`;
+  const logo64 = org.logoUrl ?? `data:image/png;base64,${logoBuf.toString("base64")}`;
+  const stamp64 = org.cachetUrl ?? `data:image/png;base64,${stampBuf.toString("base64")}`;
   const inner = renderTemplate(contratFormateurHtml(), vars)
     .split("/cap-competences-logo.png").join(logo64)
     .split("/signature-cap-competences.png").join(stamp64);
@@ -336,16 +341,18 @@ export async function buildCompteRenduPdf(
   const rep = (s.crFormateurJson ?? {}) as Record<string, string>;
   const signature = rep.__signature ?? "";
 
+  const org = await orgConfigFor(s.organismeId);
   const vars: Record<string, string> = {
-    organisme: orgConfig.name,
-    organisme_representant: orgConfig.representant,
-    organisme_siret: orgConfig.siret,
-    organisme_nda: orgConfig.nda,
-    organisme_adresse: orgConfig.adresse,
-    organisme_email: orgConfig.email,
-    organisme_telephone: orgConfig.telephone,
-    organisme_ville: orgConfig.ville,
-    qualiopi: orgConfig.qualiopi,
+    organisme: org.name,
+    organisme_representant: org.representant,
+    organisme_qualite: org.representantQualite,
+    organisme_siret: org.siret,
+    organisme_nda: org.nda,
+    organisme_adresse: org.adresse,
+    organisme_email: org.email,
+    organisme_telephone: org.telephone,
+    organisme_ville: org.ville,
+    qualiopi: org.qualiopi,
     formation: s.formation.titre,
     formateur_nom: f ? `${f.prenom} ${f.nom}` : "—",
     dates: `${fmtD(s.dateDebut)} au ${fmtD(s.dateFin)}`,
@@ -366,8 +373,8 @@ export async function buildCompteRenduPdf(
     fs.readFile(path.join(pub, "cap-competences-logo.png")),
     fs.readFile(path.join(pub, "signature-cap-competences.png")),
   ]);
-  const logo64 = `data:image/png;base64,${logoBuf.toString("base64")}`;
-  const stamp64 = `data:image/png;base64,${stampBuf.toString("base64")}`;
+  const logo64 = org.logoUrl ?? `data:image/png;base64,${logoBuf.toString("base64")}`;
+  const stamp64 = org.cachetUrl ?? `data:image/png;base64,${stampBuf.toString("base64")}`;
   const inner = renderTemplate(compteRenduFormateurHtml(), vars)
     .split("/cap-competences-logo.png").join(logo64)
     .split("/signature-cap-competences.png").join(stamp64);

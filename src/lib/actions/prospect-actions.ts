@@ -4,9 +4,10 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { FinancementType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { auth } from "@/auth";
 import { sendEmail } from "@/lib/email";
-import { orgConfig } from "@/lib/org-config";
+import { orgConfigFor } from "@/lib/org-identity";
 import { generateToken, appBaseUrl } from "@/lib/token";
 import { logProspectEmail } from "@/lib/actions/crm-actions";
 
@@ -39,8 +40,9 @@ export async function sendProspectIntakeLink(
 ): Promise<{ ok: boolean; error?: string }> {
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Non autorisé." };
+  const db = await getTenantDb();
 
-  const c = await prisma.candidat.findUnique({
+  const c = await db.candidat.findUnique({
     where: { id: candidatId },
     select: { id: true, prenom: true, nom: true, email: true, prospectToken: true },
   });
@@ -49,14 +51,15 @@ export async function sendProspectIntakeLink(
 
   const token = c.prospectToken ?? generateToken();
   if (!c.prospectToken) {
-    await prisma.candidat.update({
+    await db.candidat.update({
       where: { id: candidatId },
       data: { prospectToken: token },
     });
   }
 
+  const org = await orgConfigFor(session.user.organismeId);
   const link = `${appBaseUrl()}/prospect/${token}`;
-  const subject = `Votre fiche d'inscription — ${orgConfig.name}`;
+  const subject = `Votre fiche d'inscription — ${org.name}`;
   const body = `Bonjour ${c.prenom} ${c.nom},
 
 Suite à votre demande, merci de compléter et signer votre fiche d'inscription en ligne :
@@ -65,18 +68,18 @@ ${link}
 Vous y renseignez vos informations, la formation souhaitée, puis vous signez directement avec votre doigt (mobile) ou votre souris (ordinateur).
 
 Cordialement,
-${orgConfig.representant} — ${orgConfig.name}`;
+${org.representant} — ${org.name}`;
 
   const res = await sendEmail({ to: c.email, subject, body });
 
-  await prisma.candidat.update({
+  await db.candidat.update({
     where: { id: candidatId },
     data: { prospectFormSentAt: new Date() },
   });
 
   await logProspectEmail(candidatId, "Envoi du lien de la fiche d'inscription");
 
-  await prisma.auditLog.create({
+  await db.auditLog.create({
     data: {
       userId: session.user.id,
       action: "PROSPECT_LINK_SENT",
@@ -103,7 +106,7 @@ export async function submitProspectForm(
 ): Promise<{ ok: boolean; error?: string }> {
   const c = await prisma.candidat.findUnique({
     where: { prospectToken: token },
-    select: { id: true, prospectFormCompletedAt: true },
+    select: { id: true, organismeId: true, prospectFormCompletedAt: true },
   });
   if (!c) return { ok: false, error: "Lien invalide." };
   if (c.prospectFormCompletedAt) return { ok: true }; // déjà rempli
@@ -158,6 +161,7 @@ export async function submitProspectForm(
   // Consentement RGPD horodaté
   await prisma.consentement.create({
     data: {
+      organismeId: c.organismeId,
       candidatId: c.id,
       type: "fiche_prospect",
       accepte: true,

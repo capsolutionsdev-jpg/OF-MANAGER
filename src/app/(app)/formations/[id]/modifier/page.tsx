@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { FormationForm } from "@/components/formations/formation-form";
 
 export default async function ModifierFormationPage({
@@ -9,8 +9,9 @@ export default async function ModifierFormationPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const db = await getTenantDb();
   const { id } = await params;
-  const f = await prisma.formation.findUnique({ where: { id } });
+  const f = await db.formation.findUnique({ where: { id } });
   if (!f) notFound();
 
   return (

@@ -1,17 +1,18 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { auth } from "@/auth";
 
 export async function updateAutomationSettings(formData: FormData) {
+  const db = await getTenantDb();
   const session = await auth();
   if (!session?.user) return;
 
   const bool = (k: string) => formData.get(k) === "on";
   const jmoins = parseInt(String(formData.get("convocationJMoins") ?? "7"), 10);
 
-  await prisma.automationSettings.upsert({
+  await db.automationSettings.upsert({
     where: { id: "singleton" },
     update: {
       convocationActive: bool("convocationActive"),

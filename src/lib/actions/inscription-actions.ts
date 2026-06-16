@@ -7,7 +7,7 @@ import {
   PaiementStatut,
   CertificationResultat,
 } from "@prisma/client";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { auth } from "@/auth";
 import {
   inscriptionFormSchema,
@@ -15,7 +15,7 @@ import {
 } from "@/lib/validators/inscription";
 import { startParcours } from "@/lib/actions/parcours-actions";
 import { sendEmail } from "@/lib/email";
-import { orgConfig } from "@/lib/org-config";
+import { orgConfigFor } from "@/lib/org-identity";
 import { generateToken, appBaseUrl } from "@/lib/token";
 
 export type ActionResult =
@@ -33,10 +33,11 @@ export async function setInscriptionStatut(
   inscriptionId: string,
   statut: InscriptionStatut,
 ): Promise<SimpleResult> {
+  const db = await getTenantDb();
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Non autorisé." };
 
-  const insc = await prisma.inscription.findUnique({
+  const insc = await db.inscription.findUnique({
     where: { id: inscriptionId },
     select: {
       id: true,
@@ -48,24 +49,24 @@ export async function setInscriptionStatut(
   });
   if (!insc) return { ok: false, error: "Inscription introuvable." };
 
-  await prisma.inscription.update({
+  await db.inscription.update({
     where: { id: inscriptionId },
     data: { statut },
   });
 
   if (statut === "VALIDEE") {
-    const apprenant = await prisma.apprenant.upsert({
+    const apprenant = await db.apprenant.upsert({
       where: { candidatId: insc.candidatId },
       update: {},
       create: { candidatId: insc.candidatId },
     });
     if (!insc.apprenantId) {
-      await prisma.inscription.update({
+      await db.inscription.update({
         where: { id: inscriptionId },
         data: { apprenantId: apprenant.id },
       });
     }
-    await prisma.candidat.update({
+    await db.candidat.update({
       where: { id: insc.candidatId },
       data: { statut: "INSCRIT" },
     });
@@ -73,7 +74,7 @@ export async function setInscriptionStatut(
     if (!insc.accessToken) await startParcours(inscriptionId);
   }
 
-  await prisma.auditLog.create({
+  await db.auditLog.create({
     data: {
       userId: session.user.id,
       action: `INSCRIPTION_${statut}`,
@@ -93,16 +94,17 @@ export async function setInscriptionPaiement(
   modePaiement: string | null,
   paiementStatut: PaiementStatut,
 ): Promise<SimpleResult> {
+  const db = await getTenantDb();
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Non autorisé." };
 
-  const insc = await prisma.inscription.findUnique({
+  const insc = await db.inscription.findUnique({
     where: { id: inscriptionId },
     select: { sessionId: true, candidatId: true },
   });
   if (!insc) return { ok: false, error: "Inscription introuvable." };
 
-  await prisma.inscription.update({
+  await db.inscription.update({
     where: { id: inscriptionId },
     data: {
       modePaiement: modePaiement && modePaiement.trim() !== "" ? modePaiement : null,
@@ -120,16 +122,17 @@ export async function setCertification(
   inscriptionId: string,
   resultat: CertificationResultat,
 ): Promise<SimpleResult> {
+  const db = await getTenantDb();
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Non autorisé." };
 
-  const insc = await prisma.inscription.findUnique({
+  const insc = await db.inscription.findUnique({
     where: { id: inscriptionId },
     select: { sessionId: true },
   });
   if (!insc) return { ok: false, error: "Inscription introuvable." };
 
-  await prisma.inscription.update({
+  await db.inscription.update({
     where: { id: inscriptionId },
     data: {
       resultatCertification: resultat,
@@ -137,7 +140,7 @@ export async function setCertification(
     },
   });
 
-  await prisma.auditLog.create({
+  await db.auditLog.create({
     data: {
       userId: session.user.id,
       action: `CERTIFICATION_${resultat}`,
@@ -158,18 +161,20 @@ export async function setCertification(
 export async function sendSatisfactionManual(
   inscriptionId: string,
 ): Promise<SimpleResult> {
+  const db = await getTenantDb();
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Non autorisé." };
 
-  const insc = await prisma.inscription.findUnique({
+  const insc = await db.inscription.findUnique({
     where: { id: inscriptionId },
     include: { candidat: true, session: { include: { formation: true } } },
   });
   if (!insc) return { ok: false, error: "Inscription introuvable." };
 
+  const org = await orgConfigFor(insc.organismeId);
   const token = insc.satisfactionToken ?? generateToken();
   if (!insc.satisfactionToken) {
-    await prisma.inscription.update({
+    await db.inscription.update({
       where: { id: inscriptionId },
       data: { satisfactionToken: token },
     });
@@ -186,16 +191,16 @@ ${link}
 Votre retour nous aide à améliorer la qualité de nos formations.
 
 Cordialement,
-${orgConfig.representant} — ${orgConfig.name}`;
+${org.representant} — ${org.name}`;
 
   const res = await sendEmail({ to: insc.candidat.email, subject, body });
 
-  await prisma.inscription.update({
+  await db.inscription.update({
     where: { id: inscriptionId },
     data: { satisfactionSentAt: new Date() },
   });
 
-  await prisma.auditLog.create({
+  await db.auditLog.create({
     data: {
       userId: session.user.id,
       action: "SATISFACTION_SENT",
@@ -214,6 +219,7 @@ ${orgConfig.representant} — ${orgConfig.name}`;
 export async function createInscription(
   values: InscriptionFormValues,
 ): Promise<ActionResult> {
+  const db = await getTenantDb();
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Non autorisé." };
 
@@ -227,7 +233,7 @@ export async function createInscription(
       : null;
 
   try {
-    const created = await prisma.inscription.create({
+    const created = await db.inscription.create({
       data: {
         candidatId: v.candidatId,
         sessionId: v.sessionId,
@@ -241,16 +247,16 @@ export async function createInscription(
     // Si l'inscription est validée : créer/garantir le dossier apprenant
     // et passer le candidat au statut INSCRIT.
     if (v.statut === "VALIDEE") {
-      const apprenant = await prisma.apprenant.upsert({
+      const apprenant = await db.apprenant.upsert({
         where: { candidatId: v.candidatId },
         update: {},
         create: { candidatId: v.candidatId },
       });
-      await prisma.inscription.update({
+      await db.inscription.update({
         where: { id: created.id },
         data: { apprenantId: apprenant.id },
       });
-      await prisma.candidat.update({
+      await db.candidat.update({
         where: { id: v.candidatId },
         data: { statut: "INSCRIT" },
       });
@@ -258,7 +264,7 @@ export async function createInscription(
       await startParcours(created.id);
     }
 
-    await prisma.auditLog.create({
+    await db.auditLog.create({
       data: {
         userId: session.user.id,
         action: "CREATE",
@@ -288,8 +294,9 @@ export async function togglePieceRecue(
 ): Promise<{ ok: boolean }> {
   const session = await auth();
   if (!session?.user) return { ok: false };
+  const db = await getTenantDb();
 
-  const insc = await prisma.inscription.findUnique({
+  const insc = await db.inscription.findUnique({
     where: { id: inscriptionId },
     select: { piecesRecues: true, candidatId: true },
   });
@@ -299,7 +306,7 @@ export async function togglePieceRecue(
   if (recue) set.add(piece);
   else set.delete(piece);
 
-  await prisma.inscription.update({
+  await db.inscription.update({
     where: { id: inscriptionId },
     data: { piecesRecues: [...set] },
   });
@@ -309,6 +316,7 @@ export async function togglePieceRecue(
 }
 
 export async function deleteInscriptionAction(formData: FormData) {
+  const db = await getTenantDb();
   const session = await auth();
   if (!session?.user) return;
 
@@ -316,8 +324,8 @@ export async function deleteInscriptionAction(formData: FormData) {
   const sessionId = String(formData.get("sessionId"));
   const candidatId = String(formData.get("candidatId"));
 
-  await prisma.inscription.delete({ where: { id } });
-  await prisma.auditLog.create({
+  await db.inscription.delete({ where: { id } });
+  await db.auditLog.create({
     data: {
       userId: session.user.id,
       action: "DELETE",

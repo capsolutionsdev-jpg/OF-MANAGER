@@ -7,7 +7,7 @@ import {
   VeilleType,
 } from "@prisma/client";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 
 async function requireUser() {
   const session = await auth();
@@ -18,13 +18,14 @@ async function requireUser() {
 // ───── Réclamations (indicateurs 31-32) ─────
 
 export async function creerReclamation(formData: FormData) {
+  const db = await getTenantDb();
   await requireUser();
   const origineRaw = String(formData.get("origine") ?? "STAGIAIRE");
   const origine = (Object.values(ReclamationOrigine) as string[]).includes(origineRaw)
     ? (origineRaw as ReclamationOrigine)
     : ReclamationOrigine.AUTRE;
 
-  await prisma.reclamation.create({
+  await db.reclamation.create({
     data: {
       origine,
       declarant: String(formData.get("declarant") ?? "").trim() || "—",
@@ -40,13 +41,14 @@ export async function creerReclamation(formData: FormData) {
 
 /** Fait avancer la réclamation d'une étape (AR → traitement → clôture). */
 export async function avancerReclamation(formData: FormData) {
+  const db = await getTenantDb();
   await requireUser();
   const id = String(formData.get("id") ?? "");
   const cible = String(formData.get("statut") ?? "") as ReclamationStatut;
   if (!id || !(Object.values(ReclamationStatut) as string[]).includes(cible)) return;
 
   const now = new Date();
-  await prisma.reclamation.update({
+  await db.reclamation.update({
     where: { id },
     data: {
       statut: cible,
@@ -59,10 +61,11 @@ export async function avancerReclamation(formData: FormData) {
 }
 
 export async function completerReclamation(formData: FormData) {
+  const db = await getTenantDb();
   await requireUser();
   const id = String(formData.get("id") ?? "");
   if (!id) return;
-  await prisma.reclamation.update({
+  await db.reclamation.update({
     where: { id },
     data: {
       analyse: String(formData.get("analyse") ?? "").trim() || null,
@@ -73,22 +76,24 @@ export async function completerReclamation(formData: FormData) {
 }
 
 export async function supprimerReclamation(formData: FormData) {
+  const db = await getTenantDb();
   await requireUser();
   const id = String(formData.get("id") ?? "");
-  if (id) await prisma.reclamation.delete({ where: { id } });
+  if (id) await db.reclamation.delete({ where: { id } });
   revalidatePath("/qualiopi/reclamations");
 }
 
 // ───── Veille (indicateurs 23-24-25) ─────
 
 export async function creerVeille(formData: FormData) {
+  const db = await getTenantDb();
   await requireUser();
   const typeRaw = String(formData.get("type") ?? "LEGALE");
   const type = (Object.values(VeilleType) as string[]).includes(typeRaw)
     ? (typeRaw as VeilleType)
     : VeilleType.LEGALE;
 
-  await prisma.veilleEntree.create({
+  await db.veilleEntree.create({
     data: {
       type,
       source: String(formData.get("source") ?? "").trim() || "—",
@@ -102,17 +107,19 @@ export async function creerVeille(formData: FormData) {
 }
 
 export async function supprimerVeille(formData: FormData) {
+  const db = await getTenantDb();
   await requireUser();
   const id = String(formData.get("id") ?? "");
-  if (id) await prisma.veilleEntree.delete({ where: { id } });
+  if (id) await db.veilleEntree.delete({ where: { id } });
   revalidatePath("/qualiopi/veille");
 }
 
 // ───── Partenaires (indicateurs 26-27) ─────
 
 export async function creerPartenaire(formData: FormData) {
+  const db = await getTenantDb();
   await requireUser();
-  await prisma.partenaire.create({
+  await db.partenaire.create({
     data: {
       nom: String(formData.get("nom") ?? "").trim() || "—",
       categorie: String(formData.get("categorie") ?? "").trim() || "Autre",
@@ -126,8 +133,9 @@ export async function creerPartenaire(formData: FormData) {
 }
 
 export async function supprimerPartenaire(formData: FormData) {
+  const db = await getTenantDb();
   await requireUser();
   const id = String(formData.get("id") ?? "");
-  if (id) await prisma.partenaire.delete({ where: { id } });
+  if (id) await db.partenaire.delete({ where: { id } });
   revalidatePath("/qualiopi/partenaires");
 }

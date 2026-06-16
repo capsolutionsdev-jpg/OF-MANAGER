@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import { Users, ShieldCheck, UserPlus } from "lucide-react";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
-import { orgConfig } from "@/lib/org-config";
+import { getTenantDb } from "@/lib/tenant";
+import { orgConfigFor } from "@/lib/org-identity";
 import { roleLabels } from "@/lib/navigation";
 import {
   Card,
@@ -18,12 +18,14 @@ import { CollaborateurRow } from "@/components/admin/collaborateur-row";
 export const dynamic = "force-dynamic";
 
 export default async function AdministrationPage() {
+  const db = await getTenantDb();
   const session = await auth();
+  const org = await orgConfigFor(session?.user?.organismeId ?? null);
   if (!session?.user) redirect("/login");
   if (session.user.role !== "ADMIN") redirect("/dashboard");
   const me = session.user;
 
-  const collaborateurs = await prisma.user.findMany({
+  const collaborateurs = await db.user.findMany({
     where: { role: { in: ["ASSISTANT", "RESPONSABLE_FORMATION"] } },
     orderBy: { name: "asc" },
     select: {
@@ -66,7 +68,7 @@ export default async function AdministrationPage() {
             <div className="font-medium">{roleLabels[me.role]}</div>
           </div>
           <div className="sm:col-span-3 text-xs text-muted-foreground">
-            Organisme : {orgConfig.name} — {orgConfig.email}
+            Organisme : {org.name} — {org.email}
           </div>
         </CardContent>
       </Card>

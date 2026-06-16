@@ -1,7 +1,7 @@
 import { EmailStatut, DemiJournee } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { sendEmail, toBase64, type EmailAttachment } from "@/lib/email";
-import { orgConfig } from "@/lib/org-config";
+import { orgConfigFor } from "@/lib/org-identity";
 import { generateToken, appBaseUrl } from "@/lib/token";
 import { getAutomationSettings } from "@/lib/automation-settings";
 import { buildSingleDocPdf } from "@/lib/documents/build-pdf";
@@ -17,32 +17,6 @@ type Counts = {
   compteRendus: number;
   emargements: number;
 };
-
-async function logAndSend(opts: {
-  to: string;
-  subject: string;
-  body: string;
-  sessionId: string;
-  attachments?: EmailAttachment[];
-}) {
-  const res = await sendEmail({
-    to: opts.to,
-    subject: opts.subject,
-    body: opts.body,
-    attachments: opts.attachments,
-  });
-  await prisma.emailLog.create({
-    data: {
-      destinataire: opts.to,
-      sujet: opts.subject,
-      corps: opts.body,
-      statut: res.sent ? EmailStatut.ENVOYE : EmailStatut.EN_ATTENTE,
-      sentAt: res.sent ? new Date() : null,
-      sessionId: opts.sessionId,
-    },
-  });
-  return res.sent;
-}
 
 /**
  * Exécute tous les automatismes du parcours (idempotent grâce aux jalons
@@ -63,6 +37,37 @@ export async function runAutomations(): Promise<Counts> {
 
   const settings = await getAutomationSettings();
 
+  // Organisme courant (positionné au début de chaque boucle) → expéditeur Brevo
+  // par tenant + organismeId sur le journal d'e-mails.
+  let currentOrgId: string | null = null;
+  const logAndSend = async (opts: {
+    to: string;
+    subject: string;
+    body: string;
+    sessionId: string;
+    attachments?: EmailAttachment[];
+  }) => {
+    const res = await sendEmail({
+      to: opts.to,
+      subject: opts.subject,
+      body: opts.body,
+      attachments: opts.attachments,
+      organismeId: currentOrgId,
+    });
+    await prisma.emailLog.create({
+      data: {
+        organismeId: currentOrgId,
+        destinataire: opts.to,
+        sujet: opts.subject,
+        corps: opts.body,
+        statut: res.sent ? EmailStatut.ENVOYE : EmailStatut.EN_ATTENTE,
+        sentAt: res.sent ? new Date() : null,
+        sessionId: opts.sessionId,
+      },
+    });
+    return res.sent;
+  };
+
   const inscriptions = await prisma.inscription.findMany({
     where: { statut: { not: "ANNULEE" } },
     include: { candidat: { include: { entreprise: true } }, session: { include: { formation: true } } },
@@ -73,6 +78,8 @@ export async function runAutomations(): Promise<Counts> {
   );
 
   for (const i of inscriptions) {
+    currentOrgId = i.organismeId;
+    const org = await orgConfigFor(i.organismeId);
     const s = i.session;
     const f = s.formation;
     const to = i.candidat.email;
@@ -98,7 +105,7 @@ Vous êtes convoqué(e) à la formation « ${f.titre} », du ${fmt(s.dateDebut)}
 Merci de vous présenter muni(e) d'une pièce d'identité.
 
 Cordialement,
-${orgConfig.representant} — ${orgConfig.name}`;
+${org.representant} — ${org.name}`;
       await logAndSend({ to, subject, body, sessionId: s.id });
       if (entEmail) {
         await logAndSend({
@@ -109,7 +116,7 @@ ${orgConfig.representant} — ${orgConfig.name}`;
 Votre salarié(e) ${stagiaire} est convoqué(e) à la formation « ${f.titre} », du ${fmt(s.dateDebut)} au ${fmt(s.dateFin)}${s.horaires ? ` (${s.horaires})` : ""}${s.lieu ? `, à ${s.lieu}` : ""}.
 
 Cordialement,
-${orgConfig.representant} — ${orgConfig.name}`,
+${org.representant} — ${org.name}`,
           sessionId: s.id,
         });
       }
@@ -136,7 +143,7 @@ Vous êtes convoqué(e) à l'épreuve de certification de la formation « ${f.ti
 Vous trouverez votre convocation à l'examen en pièce jointe (PDF). Merci de vous présenter muni(e) d'une pièce d'identité en cours de validité.
 
 Cordialement,
-${orgConfig.representant} — ${orgConfig.name}`;
+${org.representant} — ${org.name}`;
       const cvxPdf = await buildSingleDocPdf(i.id, "CONVOCATION_EXAMEN");
       await logAndSend({
         to,
@@ -170,7 +177,7 @@ Nous confirmons votre entrée en formation « ${f.titre} » le ${fmt(s.dateDebut
 Vous trouverez ci-joint votre attestation d'entrée signée, au format PDF.
 
 Bonne formation,
-${orgConfig.representant} — ${orgConfig.name}`;
+${org.representant} — ${org.name}`;
       const attPdf = await buildSingleDocPdf(i.id, "ATTESTATION_ENTREE");
       const attPj = attPdf
         ? [{ name: "Attestation-entree.pdf", content: toBase64(attPdf.data) }]
@@ -187,7 +194,7 @@ Nous confirmons l'entrée en formation de votre salarié(e) ${stagiaire} — « 
 Vous trouverez l'attestation d'entrée en pièce jointe (PDF).
 
 Cordialement,
-${orgConfig.representant} — ${orgConfig.name}`,
+${org.representant} — ${org.name}`,
           sessionId: s.id,
           attachments: attPj,
         });
@@ -223,7 +230,7 @@ ${base}/positionnement/${posToken}
 Vos réponses, signées, seront conservées dans votre dossier de formation.
 
 Bonne formation,
-${orgConfig.representant} — ${orgConfig.name}`;
+${org.representant} — ${org.name}`;
       await logAndSend({ to, subject: posSubject, body: posBody, sessionId: s.id });
       await prisma.inscription.update({
         where: { id: i.id },
@@ -254,7 +261,7 @@ réclamation via ce formulaire (traitée sous 15 jours ouvrés) :
 ${base}/reclamer/${satToken}
 
 Cordialement,
-${orgConfig.representant} — ${orgConfig.name}`;
+${org.representant} — ${org.name}`;
       await logAndSend({ to, subject, body, sessionId: s.id });
       await prisma.inscription.update({
         where: { id: i.id },
@@ -293,7 +300,7 @@ Une remarque ou une difficulté ? Vous pouvez aussi déposer une réclamation :
 ${base}/reclamer/${i.satisfactionToken ?? entToken}
 
 Cordialement,
-${orgConfig.representant} — ${orgConfig.name}`,
+${org.representant} — ${org.name}`,
         sessionId: s.id,
       });
       await prisma.inscription.update({
@@ -313,7 +320,7 @@ Vous trouverez ci-joint votre attestation de fin de formation (PDF). L'ensemble 
 ${base}/parcours/${i.accessToken}/documents
 
 Cordialement,
-${orgConfig.representant} — ${orgConfig.name}`;
+${org.representant} — ${org.name}`;
       const finPdf = await buildSingleDocPdf(i.id, "ATTESTATION_FIN");
       await logAndSend({
         to,
@@ -341,7 +348,7 @@ La formation « ${f.titre} » suivie par votre salarié(e) ${stagiaire} s'est ac
 Vous trouverez en pièces jointes l'attestation de fin de formation et le certificat de réalisation (PDF), pour votre dossier${entNom ? ` (${entNom})` : ""} et votre financeur le cas échéant.
 
 Cordialement,
-${orgConfig.representant} — ${orgConfig.name}`,
+${org.representant} — ${org.name}`,
           sessionId: s.id,
           attachments: pj.length ? pj : undefined,
         });
@@ -367,6 +374,8 @@ ${orgConfig.representant} — ${orgConfig.name}`,
     : [];
 
   for (const s of sessionsTerminees) {
+    currentOrgId = s.organismeId;
+    const org = await orgConfigFor(s.organismeId);
     const f = s.formateurs[0];
     if (!f?.email) continue;
     const token = s.crFormateurToken ?? generateToken();
@@ -387,7 +396,7 @@ ${base}/compte-rendu/${token}
 Ce document alimente nos indicateurs qualité (Qualiopi).
 
 Cordialement,
-${orgConfig.representant} — ${orgConfig.name}`;
+${org.representant} — ${org.name}`;
     await logAndSend({ to: f.email, subject, body, sessionId: s.id });
     await prisma.session.update({
       where: { id: s.id },
@@ -412,6 +421,8 @@ ${orgConfig.representant} — ${orgConfig.name}`;
     : [];
 
   for (const e of emargs) {
+    currentOrgId = e.organismeId;
+    const org = await orgConfigFor(e.organismeId);
     const link = `${base}/emarger/${e.token}`;
     const subject = `Émargement ${demiLabel} — ${e.session.formation.titre}`;
     const body = `Bonjour ${e.nom},
@@ -420,7 +431,7 @@ Merci de signer votre présence (${demiLabel}) à la formation « ${e.session.fo
 ${link}
 
 Cordialement,
-${orgConfig.representant} — ${orgConfig.name}`;
+${org.representant} — ${org.name}`;
     await logAndSend({ to: e.email, subject, body, sessionId: e.sessionId });
     await prisma.emargementSignature.update({
       where: { id: e.id },

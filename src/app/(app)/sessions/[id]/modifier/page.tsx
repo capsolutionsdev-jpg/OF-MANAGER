@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { SessionForm } from "@/components/sessions/session-form";
 
 export default async function ModifierSessionPage({
@@ -9,20 +9,26 @@ export default async function ModifierSessionPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const db = await getTenantDb();
   const { id } = await params;
-  const [s, formations, formateurs] = await Promise.all([
-    prisma.session.findUnique({
+  const [s, formations, formateurs, salles] = await Promise.all([
+    db.session.findUnique({
       where: { id },
       include: { formateurs: { select: { id: true } } },
     }),
-    prisma.formation.findMany({
+    db.formation.findMany({
       where: { isArchived: false },
       orderBy: { titre: "asc" },
       select: { id: true, titre: true, reference: true },
     }),
-    prisma.formateur.findMany({
+    db.formateur.findMany({
       orderBy: { nom: "asc" },
       select: { id: true, nom: true, prenom: true, academies: true },
+    }),
+    db.salle.findMany({
+      where: { actif: true },
+      orderBy: { nom: "asc" },
+      select: { id: true, nom: true },
     }),
   ]);
   if (!s) notFound();
@@ -43,6 +49,7 @@ export default async function ModifierSessionPage({
         <SessionForm
           formations={formations}
           formateurs={formateurs}
+          salles={salles}
           sessionId={s.id}
           defaultValues={{
             formateurIds: s.formateurs.map((f) => f.id),
@@ -52,6 +59,7 @@ export default async function ModifierSessionPage({
             dateFin: s.dateFin.toISOString().slice(0, 10),
             horaires: s.horaires ?? "",
             lieu: s.lieu ?? "",
+            salleId: s.salleId ?? "",
             modalite: s.modalite,
             nbPlaces: String(s.nbPlaces),
             statut: s.statut,

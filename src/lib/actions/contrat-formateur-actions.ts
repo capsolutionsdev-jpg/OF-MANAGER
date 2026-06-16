@@ -6,7 +6,7 @@ import { EmailStatut } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { sendEmail, emailConfigured, toBase64 } from "@/lib/email";
-import { orgConfig } from "@/lib/org-config";
+import { orgConfigFor } from "@/lib/org-identity";
 import { generateToken, appBaseUrl } from "@/lib/token";
 import { buildContratFormateurPdf } from "@/lib/documents/build-pdf";
 
@@ -35,6 +35,7 @@ export async function sendContratFormateur(
       error:
         "Renseignez d'abord le tarif journalier (sur la session ou le formateur).",
     };
+  const org = await orgConfigFor(s.organismeId);
 
   const token = s.contratFormateurToken ?? generateToken();
   if (!s.contratFormateurToken) {
@@ -54,7 +55,7 @@ Merci de le relire et de le signer en ligne via ce lien sécurisé :
 ${link}
 
 Cordialement,
-${orgConfig.representant} — ${orgConfig.name}`;
+${org.representant} — ${org.name}`;
 
   const pdf = await buildContratFormateurPdf(sessionId);
   const res = await sendEmail({
@@ -67,6 +68,7 @@ ${orgConfig.representant} — ${orgConfig.name}`;
   });
   await prisma.emailLog.create({
     data: {
+      organismeId: s.organismeId,
       destinataire: f.email,
       sujet: subject,
       corps: body,
@@ -104,10 +106,11 @@ export async function signContratFormateur(
 
   const s = await prisma.session.findUnique({
     where: { contratFormateurToken: token },
-    select: { id: true, contratFormateurSignedAt: true },
+    select: { id: true, organismeId: true, contratFormateurSignedAt: true },
   });
   if (!s) return { ok: false, error: "Lien invalide ou expiré." };
   if (s.contratFormateurSignedAt) return { ok: true };
+  const org = await orgConfigFor(s.organismeId);
 
   const hdrs = await headers();
   const ip =
@@ -126,7 +129,8 @@ export async function signContratFormateur(
   // Notif interne (journal) — l'organisme retrouve le contrat signé dans la session
   await prisma.emailLog.create({
     data: {
-      destinataire: orgConfig.email,
+      organismeId: s.organismeId,
+      destinataire: org.email,
       sujet: `Contrat formateur signé`,
       corps: `Le contrat de sous-traitance a été signé (IP ${ip ?? "—"}).`,
       statut: EmailStatut.ENVOYE,

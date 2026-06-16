@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
 import { Role } from "@prisma/client";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { SECTION_KEYS } from "@/lib/permissions";
 
 async function requireAdmin() {
@@ -26,6 +26,7 @@ export async function createCollaborateur(
   _prev: AdminState | undefined,
   formData: FormData,
 ): Promise<AdminState> {
+  const db = await getTenantDb();
   try {
     await requireAdmin();
   } catch {
@@ -42,10 +43,10 @@ export async function createCollaborateur(
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { error: "E-mail invalide." };
   if (password.length < 8) return { error: "Le mot de passe doit faire au moins 8 caractères." };
 
-  const exists = await prisma.user.findUnique({ where: { email } });
+  const exists = await db.user.findUnique({ where: { email } });
   if (exists) return { error: "Un compte existe déjà avec cet e-mail." };
 
-  await prisma.user.create({
+  await db.user.create({
     data: {
       name,
       email,
@@ -61,12 +62,13 @@ export async function createCollaborateur(
 
 /** Mise à jour du nom, du rôle et des sections autorisées d'un collaborateur. */
 export async function updateCollaborateur(formData: FormData) {
+  const db = await getTenantDb();
   await requireAdmin();
   const id = String(formData.get("id") ?? "");
   if (!id) return;
   const name = String(formData.get("name") ?? "").trim();
   const roleRaw = String(formData.get("role") ?? "ASSISTANT");
-  await prisma.user.update({
+  await db.user.update({
     where: { id },
     data: {
       ...(name ? { name } : {}),
@@ -79,11 +81,12 @@ export async function updateCollaborateur(formData: FormData) {
 
 /** Réinitialise le mot de passe d'un collaborateur. */
 export async function resetCollaborateurPassword(formData: FormData) {
+  const db = await getTenantDb();
   await requireAdmin();
   const id = String(formData.get("id") ?? "");
   const password = String(formData.get("password") ?? "");
   if (!id || password.length < 8) return;
-  await prisma.user.update({
+  await db.user.update({
     where: { id },
     data: { passwordHash: await bcrypt.hash(password, 10) },
   });
@@ -92,22 +95,24 @@ export async function resetCollaborateurPassword(formData: FormData) {
 
 /** Active / désactive un collaborateur (sans le supprimer). */
 export async function toggleCollaborateurActive(formData: FormData) {
+  const db = await getTenantDb();
   const me = await requireAdmin();
   const id = String(formData.get("id") ?? "");
   if (!id || id === me.id) return; // pas soi-même
-  const u = await prisma.user.findUnique({ where: { id }, select: { isActive: true } });
+  const u = await db.user.findUnique({ where: { id }, select: { isActive: true } });
   if (!u) return;
-  await prisma.user.update({ where: { id }, data: { isActive: !u.isActive } });
+  await db.user.update({ where: { id }, data: { isActive: !u.isActive } });
   revalidatePath("/administration");
 }
 
 /** Supprime un compte collaborateur (jamais un ADMIN ni soi-même). */
 export async function deleteCollaborateur(formData: FormData) {
+  const db = await getTenantDb();
   const me = await requireAdmin();
   const id = String(formData.get("id") ?? "");
   if (!id || id === me.id) return;
-  const u = await prisma.user.findUnique({ where: { id }, select: { role: true } });
+  const u = await db.user.findUnique({ where: { id }, select: { role: true } });
   if (!u || u.role === "ADMIN") return; // on ne supprime pas un admin via cette action
-  await prisma.user.delete({ where: { id } });
+  await db.user.delete({ where: { id } });
   revalidatePath("/administration");
 }

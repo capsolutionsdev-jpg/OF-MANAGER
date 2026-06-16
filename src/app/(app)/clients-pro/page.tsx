@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Building2, Plus } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +17,8 @@ import {
 export const dynamic = "force-dynamic";
 
 export default async function ClientsProPage() {
-  const clients = await prisma.entreprise.findMany({
+  const db = await getTenantDb();
+  const clients = await db.entreprise.findMany({
     orderBy: { raisonSociale: "asc" },
     include: {
       _count: { select: { candidats: true, inscriptions: true, conventions: true } },

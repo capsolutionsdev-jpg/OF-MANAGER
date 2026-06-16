@@ -22,16 +22,20 @@ export async function submitPublicInscription(
   // La session doit exister et être ouverte aux inscriptions.
   const session = await prisma.session.findUnique({
     where: { id: v.sessionId },
+    select: { id: true, organismeId: true },
   });
   if (!session) return { ok: false, error: "Session introuvable." };
+  // Tenant dérivé de la session ciblée (le formulaire public n'a pas de session utilisateur).
+  const orgId = session.organismeId;
 
-  // Candidat : réutiliser s'il existe déjà (par email), sinon créer.
+  // Candidat : réutiliser s'il existe déjà (par email, dans le même organisme), sinon créer.
   let candidat = await prisma.candidat.findFirst({
-    where: { email: v.email.trim() },
+    where: { email: v.email.trim(), organismeId: orgId },
   });
   if (!candidat) {
     candidat = await prisma.candidat.create({
       data: {
+        organismeId: orgId,
         nom: v.nom.trim(),
         prenom: v.prenom.trim(),
         email: v.email.trim(),
@@ -50,6 +54,7 @@ export async function submitPublicInscription(
   try {
     await prisma.inscription.create({
       data: {
+        organismeId: orgId,
         candidatId: candidat.id,
         sessionId: v.sessionId,
         financementType: v.financementType ? v.financementType : null,
@@ -72,6 +77,7 @@ export async function submitPublicInscription(
   // Trace du consentement RGPD.
   await prisma.consentement.create({
     data: {
+      organismeId: orgId,
       candidatId: candidat.id,
       type: "inscription_formulaire_public",
       accepte: true,
@@ -80,6 +86,7 @@ export async function submitPublicInscription(
 
   await prisma.auditLog.create({
     data: {
+      organismeId: orgId,
       action: "PUBLIC_INSCRIPTION",
       entityType: "Inscription",
       entityId: candidat.id,

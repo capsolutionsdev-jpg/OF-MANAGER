@@ -2,24 +2,26 @@
 
 import { revalidatePath } from "next/cache";
 import { SignatureProvider, SignatureStatut } from "@prisma/client";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { auth } from "@/auth";
 import { createYousignRequest } from "@/lib/yousign";
-import { orgConfig } from "@/lib/org-config";
+import { orgConfigFor } from "@/lib/org-identity";
 
 export async function requestDocumentSignature(formData: FormData) {
   const session = await auth();
   if (!session?.user) return;
 
+  const db = await getTenantDb();
   const inscriptionId = String(formData.get("inscriptionId"));
   const type = String(formData.get("type"));
   const label = String(formData.get("label"));
 
-  const insc = await prisma.inscription.findUnique({
+  const insc = await db.inscription.findUnique({
     where: { id: inscriptionId },
     include: { candidat: true },
   });
   if (!insc) return;
+  const org = await orgConfigFor(insc.organismeId);
 
   const fullName = `${insc.candidat.prenom} ${insc.candidat.nom}`;
   const { externalId, demo } = await createYousignRequest({
@@ -27,7 +29,7 @@ export async function requestDocumentSignature(formData: FormData) {
     signers: [{ nom: fullName, email: insc.candidat.email }],
   });
 
-  await prisma.signatureRequest.create({
+  await db.signatureRequest.create({
     data: {
       provider: SignatureProvider.YOUSIGN,
       inscriptionId,
@@ -40,13 +42,13 @@ export async function requestDocumentSignature(formData: FormData) {
         demo,
         signers: [
           { nom: fullName, email: insc.candidat.email, role: "Stagiaire" },
-          { nom: orgConfig.representant, role: "Organisme" },
+          { nom: org.representant, role: "Organisme" },
         ],
       },
     },
   });
 
-  await prisma.auditLog.create({
+  await db.auditLog.create({
     data: {
       userId: session.user.id,
       action: "SIGNATURE_REQUEST",
@@ -63,13 +65,14 @@ export async function requestEmargementSignature(formData: FormData) {
   const session = await auth();
   if (!session?.user) return;
 
+  const db = await getTenantDb();
   const seanceId = String(formData.get("seanceId"));
   const { externalId, demo } = await createYousignRequest({
     name: "Feuille d'émargement",
     signers: [],
   });
 
-  await prisma.signatureRequest.create({
+  await db.signatureRequest.create({
     data: {
       provider: SignatureProvider.YOUSIGN,
       statut: SignatureStatut.ENVOYEE,
@@ -84,7 +87,7 @@ export async function requestEmargementSignature(formData: FormData) {
     },
   });
 
-  await prisma.auditLog.create({
+  await db.auditLog.create({
     data: {
       userId: session.user.id,
       action: "SIGNATURE_REQUEST",
@@ -101,8 +104,9 @@ export async function markSignatureSigned(formData: FormData) {
   const session = await auth();
   if (!session?.user) return;
 
+  const db = await getTenantDb();
   const id = String(formData.get("id"));
-  await prisma.signatureRequest.update({
+  await db.signatureRequest.update({
     where: { id },
     data: { statut: SignatureStatut.SIGNEE, signedAt: new Date() },
   });

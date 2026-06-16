@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { auth } from "@/auth";
 import {
   sessionFormSchema,
@@ -29,6 +29,7 @@ function toData(v: SessionFormValues) {
     dateFin: new Date(v.dateFin),
     horaires: clean(v.horaires),
     lieu: clean(v.lieu),
+    salleId: clean(v.salleId),
     modalite: v.modalite,
     nbPlaces: Number.isNaN(places) ? 10 : places,
     statut: v.statut,
@@ -39,6 +40,7 @@ function toData(v: SessionFormValues) {
 export async function createSession(
   values: SessionFormValues,
 ): Promise<ActionResult> {
+  const db = await getTenantDb();
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Non autorisé." };
 
@@ -47,14 +49,14 @@ export async function createSession(
 
   try {
     const ids = parsed.data.formateurIds ?? [];
-    const created = await prisma.session.create({
+    const created = await db.session.create({
       data: {
         ...toData(parsed.data),
         createdById: session.user.id,
         formateurs: { connect: ids.map((fid) => ({ id: fid })) },
       },
     });
-    await prisma.auditLog.create({
+    await db.auditLog.create({
       data: {
         userId: session.user.id,
         action: "CREATE",
@@ -76,6 +78,7 @@ export async function updateSession(
   id: string,
   values: SessionFormValues,
 ): Promise<ActionResult> {
+  const db = await getTenantDb();
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Non autorisé." };
 
@@ -84,14 +87,14 @@ export async function updateSession(
 
   try {
     const ids = parsed.data.formateurIds ?? [];
-    await prisma.session.update({
+    await db.session.update({
       where: { id },
       data: {
         ...toData(parsed.data),
         formateurs: { set: ids.map((fid) => ({ id: fid })) },
       },
     });
-    await prisma.auditLog.create({
+    await db.auditLog.create({
       data: {
         userId: session.user.id,
         action: "UPDATE",

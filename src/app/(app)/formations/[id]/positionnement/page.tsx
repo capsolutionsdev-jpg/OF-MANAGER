@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ListChecks } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import {
   Card,
   CardContent,
@@ -19,8 +19,9 @@ export default async function PositionnementFormationPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const db = await getTenantDb();
   const { id } = await params;
-  const formation = await prisma.formation.findUnique({
+  const formation = await db.formation.findUnique({
     where: { id },
     select: { id: true, titre: true, positionnementQuestions: true },
   });

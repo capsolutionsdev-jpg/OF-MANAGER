@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { auth } from "@/auth";
 import {
   coursFormSchema,
@@ -16,12 +16,13 @@ type Res = { ok: boolean; error?: string };
 type CreateRes = { ok: true; id: string } | { ok: false; error: string };
 
 async function uniqueSlug(base: string, ignoreId?: string): Promise<string> {
+  const db = await getTenantDb();
   const root = slugify(base) || "cours";
   let slug = root;
   let n = 1;
   // eslint-disable-next-line no-constant-condition
   while (true) {
-    const existing = await prisma.cours.findUnique({ where: { slug } });
+    const existing = await db.cours.findUnique({ where: { slug } });
     if (!existing || existing.id === ignoreId) return slug;
     n += 1;
     slug = `${root}-${n}`;
@@ -29,13 +30,14 @@ async function uniqueSlug(base: string, ignoreId?: string): Promise<string> {
 }
 
 export async function createCours(values: CoursFormValues): Promise<CreateRes> {
+  const db = await getTenantDb();
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Non autorisé." };
   const parsed = coursFormSchema.safeParse(values);
   if (!parsed.success) return { ok: false, error: "Données invalides." };
   const v = parsed.data;
 
-  const cours = await prisma.cours.create({
+  const cours = await db.cours.create({
     data: {
       titre: v.titre.trim(),
       slug: await uniqueSlug(v.titre),
@@ -55,13 +57,14 @@ export async function updateCours(
   id: string,
   values: CoursFormValues,
 ): Promise<Res> {
+  const db = await getTenantDb();
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Non autorisé." };
   const parsed = coursFormSchema.safeParse(values);
   if (!parsed.success) return { ok: false, error: "Données invalides." };
   const v = parsed.data;
 
-  await prisma.cours.update({
+  await db.cours.update({
     where: { id },
     data: {
       titre: v.titre.trim(),
@@ -83,29 +86,32 @@ export async function togglePublishCours(
   id: string,
   isPublished: boolean,
 ): Promise<Res> {
+  const db = await getTenantDb();
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Non autorisé." };
-  await prisma.cours.update({ where: { id }, data: { isPublished } });
+  await db.cours.update({ where: { id }, data: { isPublished } });
   revalidatePath("/elearning");
   revalidatePath(`/elearning/${id}`);
   return { ok: true };
 }
 
 export async function deleteCours(id: string): Promise<Res> {
+  const db = await getTenantDb();
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Non autorisé." };
-  await prisma.cours.delete({ where: { id } });
+  await db.cours.delete({ where: { id } });
   revalidatePath("/elearning");
   return { ok: true };
 }
 
 // ── Modules ──
 export async function addModule(coursId: string, titre: string): Promise<Res> {
+  const db = await getTenantDb();
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Non autorisé." };
   if (!titre.trim()) return { ok: false, error: "Titre requis." };
-  const count = await prisma.coursModule.count({ where: { coursId } });
-  await prisma.coursModule.create({
+  const count = await db.coursModule.count({ where: { coursId } });
+  await db.coursModule.create({
     data: { coursId, titre: titre.trim(), ordre: count },
   });
   revalidatePath(`/elearning/${coursId}`);
@@ -116,9 +122,10 @@ export async function updateModule(
   moduleId: string,
   titre: string,
 ): Promise<Res> {
+  const db = await getTenantDb();
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Non autorisé." };
-  const m = await prisma.coursModule.update({
+  const m = await db.coursModule.update({
     where: { id: moduleId },
     data: { titre: titre.trim() },
     select: { coursId: true },
@@ -128,9 +135,10 @@ export async function updateModule(
 }
 
 export async function deleteModule(moduleId: string): Promise<Res> {
+  const db = await getTenantDb();
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Non autorisé." };
-  const m = await prisma.coursModule.delete({
+  const m = await db.coursModule.delete({
     where: { id: moduleId },
     select: { coursId: true },
   });
@@ -140,15 +148,16 @@ export async function deleteModule(moduleId: string): Promise<Res> {
 
 // ── Leçons ──
 export async function addLecon(moduleId: string, titre: string): Promise<Res> {
+  const db = await getTenantDb();
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Non autorisé." };
   if (!titre.trim()) return { ok: false, error: "Titre requis." };
-  const count = await prisma.lecon.count({ where: { moduleId } });
-  const m = await prisma.coursModule.findUnique({
+  const count = await db.lecon.count({ where: { moduleId } });
+  const m = await db.coursModule.findUnique({
     where: { id: moduleId },
     select: { coursId: true },
   });
-  await prisma.lecon.create({
+  await db.lecon.create({
     data: { moduleId, titre: titre.trim(), ordre: count },
   });
   if (m) revalidatePath(`/elearning/${m.coursId}`);
@@ -168,10 +177,11 @@ export async function updateLecon(
     isPublished?: boolean;
   },
 ): Promise<Res> {
+  const db = await getTenantDb();
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Non autorisé." };
 
-  const lecon = await prisma.lecon.update({
+  const lecon = await db.lecon.update({
     where: { id: leconId },
     data: {
       ...(data.titre !== undefined ? { titre: data.titre.trim() } : {}),
@@ -202,9 +212,10 @@ export async function updateLecon(
 }
 
 export async function deleteLecon(leconId: string): Promise<Res> {
+  const db = await getTenantDb();
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Non autorisé." };
-  const lecon = await prisma.lecon.delete({
+  const lecon = await db.lecon.delete({
     where: { id: leconId },
     select: { module: { select: { coursId: true } } },
   });
@@ -217,11 +228,12 @@ export async function moveModule(
   moduleId: string,
   dir: "up" | "down",
 ): Promise<Res> {
+  const db = await getTenantDb();
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Non autorisé." };
-  const m = await prisma.coursModule.findUnique({ where: { id: moduleId } });
+  const m = await db.coursModule.findUnique({ where: { id: moduleId } });
   if (!m) return { ok: false, error: "Introuvable." };
-  const voisin = await prisma.coursModule.findFirst({
+  const voisin = await db.coursModule.findFirst({
     where: {
       coursId: m.coursId,
       ordre: dir === "up" ? { lt: m.ordre } : { gt: m.ordre },
@@ -229,9 +241,9 @@ export async function moveModule(
     orderBy: { ordre: dir === "up" ? "desc" : "asc" },
   });
   if (!voisin) return { ok: true };
-  await prisma.$transaction([
-    prisma.coursModule.update({ where: { id: m.id }, data: { ordre: voisin.ordre } }),
-    prisma.coursModule.update({ where: { id: voisin.id }, data: { ordre: m.ordre } }),
+  await db.$transaction([
+    db.coursModule.update({ where: { id: m.id }, data: { ordre: voisin.ordre } }),
+    db.coursModule.update({ where: { id: voisin.id }, data: { ordre: m.ordre } }),
   ]);
   revalidatePath(`/elearning/${m.coursId}`);
   return { ok: true };
@@ -241,14 +253,15 @@ export async function moveLecon(
   leconId: string,
   dir: "up" | "down",
 ): Promise<Res> {
+  const db = await getTenantDb();
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Non autorisé." };
-  const l = await prisma.lecon.findUnique({
+  const l = await db.lecon.findUnique({
     where: { id: leconId },
     include: { module: { select: { coursId: true } } },
   });
   if (!l) return { ok: false, error: "Introuvable." };
-  const voisin = await prisma.lecon.findFirst({
+  const voisin = await db.lecon.findFirst({
     where: {
       moduleId: l.moduleId,
       ordre: dir === "up" ? { lt: l.ordre } : { gt: l.ordre },
@@ -256,9 +269,9 @@ export async function moveLecon(
     orderBy: { ordre: dir === "up" ? "desc" : "asc" },
   });
   if (!voisin) return { ok: true };
-  await prisma.$transaction([
-    prisma.lecon.update({ where: { id: l.id }, data: { ordre: voisin.ordre } }),
-    prisma.lecon.update({ where: { id: voisin.id }, data: { ordre: l.ordre } }),
+  await db.$transaction([
+    db.lecon.update({ where: { id: l.id }, data: { ordre: voisin.ordre } }),
+    db.lecon.update({ where: { id: voisin.id }, data: { ordre: l.ordre } }),
   ]);
   revalidatePath(`/elearning/${l.module.coursId}`);
   return { ok: true };

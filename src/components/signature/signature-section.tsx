@@ -1,5 +1,5 @@
 import { PenLine, CheckCircle2, Clock } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { yousignConfigured } from "@/lib/yousign";
@@ -17,7 +17,8 @@ export async function SignatureSection({
   type: string;
   label: string;
 }) {
-  const sig = await prisma.signatureRequest.findFirst({
+  const db = await getTenantDb();
+  const sig = await db.signatureRequest.findFirst({
     where: { inscriptionId, signataires: { path: ["type"], equals: type } },
     orderBy: { createdAt: "desc" },
   });

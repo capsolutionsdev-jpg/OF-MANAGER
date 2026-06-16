@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Plus, GraduationCap, BookOpen, Users } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +9,8 @@ import { ACADEMY_LABELS, ACADEMY_ORDER } from "@/lib/validators/formation";
 export const dynamic = "force-dynamic";
 
 export default async function ElearningPage() {
-  const cours = await prisma.cours.findMany({
+  const db = await getTenantDb();
+  const cours = await db.cours.findMany({
     include: {
       formation: { select: { titre: true } },
       _count: { select: { modules: true } },

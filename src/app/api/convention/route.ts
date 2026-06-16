@@ -2,10 +2,10 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { PDFDocument } from "pdf-lib";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { DOCUMENTS, renderTemplate } from "@/lib/documents/templates";
 import { htmlToPdf } from "@/lib/pdf";
-import { orgConfig } from "@/lib/org-config";
+import { orgConfigFor } from "@/lib/org-identity";
 import { FINANCEMENT_LABELS } from "@/lib/validators/candidat";
 import type { FinancementType } from "@prisma/client";
 
@@ -60,8 +60,9 @@ export async function POST(req: Request) {
     return new Response("Requête invalide.", { status: 400 });
   }
 
+  const db = await getTenantDb();
   const ent = body.entrepriseId
-    ? await prisma.entreprise.findUnique({ where: { id: body.entrepriseId } })
+    ? await db.entreprise.findUnique({ where: { id: body.entrepriseId } })
     : null;
 
   const candidates = (body.candidates ?? []).filter(
@@ -75,16 +76,18 @@ export async function POST(req: Request) {
     ? FINANCEMENT_LABELS[body.financement as FinancementType] ?? body.financement
     : "—";
 
+  const org = await orgConfigFor(session.user.organismeId);
   const baseVars: Record<string, string> = {
-    organisme: orgConfig.name,
-    organisme_representant: orgConfig.representant,
-    organisme_siret: orgConfig.siret,
-    organisme_nda: orgConfig.nda,
-    organisme_adresse: orgConfig.adresse,
-    organisme_email: orgConfig.email,
-    organisme_telephone: orgConfig.telephone,
-    organisme_ville: orgConfig.ville,
-    qualiopi: orgConfig.qualiopi,
+    organisme: org.name,
+    organisme_representant: org.representant,
+    organisme_qualite: org.representantQualite,
+    organisme_siret: org.siret,
+    organisme_nda: org.nda,
+    organisme_adresse: org.adresse,
+    organisme_email: org.email,
+    organisme_telephone: org.telephone,
+    organisme_ville: org.ville,
+    qualiopi: org.qualiopi,
     entreprise_raison_sociale: ent?.raisonSociale ?? "—",
     entreprise_siret: ent?.siret ?? "—",
     entreprise_tva: ent?.numeroTva ?? "—",

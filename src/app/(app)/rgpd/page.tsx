@@ -1,5 +1,5 @@
 import { Shield, FileDown, Trash2 } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -37,14 +37,15 @@ const selectClass =
   "h-9 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50";
 
 export default async function RgpdPage() {
+  const db = await getTenantDb();
   const [requests, consentements, nbConsent] = await Promise.all([
-    prisma.dataRequest.findMany({ orderBy: { requestedAt: "desc" } }),
-    prisma.consentement.findMany({
+    db.dataRequest.findMany({ orderBy: { requestedAt: "desc" } }),
+    db.consentement.findMany({
       orderBy: { accepteLe: "desc" },
       take: 15,
       include: { candidat: true },
     }),
-    prisma.consentement.count(),
+    db.consentement.count(),
   ]);
 
   return (

@@ -1,5 +1,5 @@
 import { Bell, Plus, Clock } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -52,9 +52,10 @@ const selectClass =
   "h-9 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50";
 
 export default async function AutomatisationsPage() {
+  const db = await getTenantDb();
   const [rules, emails, settings] = await Promise.all([
-    prisma.workflowRule.findMany({ orderBy: { createdAt: "desc" } }),
-    prisma.emailLog.findMany({ orderBy: { createdAt: "desc" }, take: 25 }),
+    db.workflowRule.findMany({ orderBy: { createdAt: "desc" } }),
+    db.emailLog.findMany({ orderBy: { createdAt: "desc" }, take: 25 }),
     getAutomationSettings(),
   ]);
   const demo = !emailConfigured();

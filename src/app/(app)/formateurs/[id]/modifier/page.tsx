@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { FormateurForm } from "@/components/formateurs/formateur-form";
 
 export default async function ModifierFormateurPage({
@@ -9,13 +9,14 @@ export default async function ModifierFormateurPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const db = await getTenantDb();
   const { id } = await params;
   const [f, formations] = await Promise.all([
-    prisma.formateur.findUnique({
+    db.formateur.findUnique({
       where: { id },
       include: { formations: { select: { id: true } } },
     }),
-    prisma.formation.findMany({
+    db.formation.findMany({
       where: { isArchived: false },
       orderBy: { titre: "asc" },
       select: { id: true, titre: true, academy: true },

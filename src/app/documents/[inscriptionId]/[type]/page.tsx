@@ -1,13 +1,15 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import {
   DOCUMENTS,
   isDocType,
   renderTemplate,
 } from "@/lib/documents/templates";
 import { buildVariables } from "@/lib/documents/resolve";
+import { orgConfigFor } from "@/lib/org-identity";
+import { getDocOverride } from "@/lib/documents/overrides";
 import { PrintButton } from "@/components/documents/print-button";
 import { SignatureSection } from "@/components/signature/signature-section";
 
@@ -18,15 +20,24 @@ export default async function DocumentPage({
 }) {
   const { inscriptionId, type } = await params;
   if (!isDocType(type)) notFound();
+  const db = await getTenantDb();
 
-  const inscription = await prisma.inscription.findUnique({
+  const inscription = await db.inscription.findUnique({
     where: { id: inscriptionId },
     include: { candidat: { include: { entreprise: true } }, session: { include: { formation: true } } },
   });
   if (!inscription) notFound();
 
-  const vars = buildVariables(inscription);
-  const html = renderTemplate(DOCUMENTS[type].html, vars);
+  const org = await orgConfigFor(inscription.organismeId);
+  const vars = buildVariables(inscription, org);
+  const html = renderTemplate(DOCUMENTS[type].html, vars)
+    .split("/cap-competences-logo.png")
+    .join(org.logoUrl ?? "/cap-competences-logo.png")
+    .split("/signature-cap-competences.png")
+    .join(org.cachetUrl ?? "/signature-cap-competences.png");
+
+  // Document fourni par l'OF (remplace notre modèle pour les docs réglementaires)
+  const override = getDocOverride(org.documentsConfig, type);
 
   return (
     <div className="min-h-screen bg-muted/40 py-8">
@@ -49,10 +60,27 @@ export default async function DocumentPage({
             />
           </div>
         </div>
-        <article
-          className="doc-page mx-auto bg-white p-12 text-black shadow-sm"
-          dangerouslySetInnerHTML={{ __html: html }}
-        />
+        {override.mode === "client" && override.fileUrl ? (
+          override.fileUrl.startsWith("data:application/pdf") ? (
+            <iframe
+              src={override.fileUrl}
+              title={DOCUMENTS[type].label}
+              className="doc-page mx-auto h-[1100px] w-full bg-white shadow-sm"
+            />
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={override.fileUrl}
+              alt={DOCUMENTS[type].label}
+              className="doc-page mx-auto block bg-white shadow-sm"
+            />
+          )
+        ) : (
+          <article
+            className="doc-page mx-auto bg-white p-12 text-black shadow-sm"
+            dangerouslySetInnerHTML={{ __html: html }}
+          />
+        )}
       </div>
 
       <style>{`

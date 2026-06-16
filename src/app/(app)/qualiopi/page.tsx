@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ShieldCheck, MessageSquareWarning, Newspaper, Handshake } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -13,7 +13,8 @@ import { initialiserIndicateurs } from "@/lib/actions/qualiopi-actions";
 import { QualiopiRow } from "@/components/qualiopi/qualiopi-row";
 
 export default async function QualiopiPage() {
-  const indicateurs = await prisma.qualiopiIndicateur.findMany({
+  const db = await getTenantDb();
+  const indicateurs = await db.qualiopiIndicateur.findMany({
     orderBy: { numero: "asc" },
   });
 

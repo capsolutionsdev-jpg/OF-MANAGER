@@ -12,7 +12,7 @@ import {
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { sendEmail, emailConfigured, toBase64 } from "@/lib/email";
-import { orgConfig } from "@/lib/org-config";
+import { orgConfigFor } from "@/lib/org-identity";
 import { generateToken, appBaseUrl } from "@/lib/token";
 import {
   buildInscriptionPdf,
@@ -33,6 +33,7 @@ export async function startParcours(
     include: { candidat: true, session: { include: { formation: true } } },
   });
   if (!insc) return { ok: false, error: "Inscription introuvable." };
+  const org = await orgConfigFor(insc.organismeId);
 
   const token = insc.accessToken ?? generateToken();
   if (!insc.accessToken) {
@@ -55,11 +56,12 @@ ${link}
 Ce lien vous est personnel. À l'issue, vous recevrez une copie de vos documents signés.
 
 Cordialement,
-${orgConfig.representant} — ${orgConfig.name}`;
+${org.representant} — ${org.name}`;
 
   const res = await sendEmail({ to: insc.candidat.email, subject, body });
   await prisma.emailLog.create({
     data: {
+      organismeId: insc.organismeId,
       destinataire: insc.candidat.email,
       sujet: subject,
       corps: body,
@@ -158,6 +160,7 @@ export async function submitParcoursForm(
 
   await prisma.consentement.create({
     data: {
+      organismeId: insc.organismeId,
       candidatId: insc.candidatId,
       type: "parcours_formulaire",
       accepte: true,
@@ -279,6 +282,7 @@ export async function submitReclamationPublique(
 
   await prisma.reclamation.create({
     data: {
+      organismeId: insc.organismeId,
       origine: "STAGIAIRE",
       declarant: `${insc.candidat.prenom} ${insc.candidat.nom}`,
       contact: insc.candidat.email,
@@ -313,6 +317,7 @@ export async function signDocuments(
   if (!insc.formCompletedAt)
     return { ok: false, error: "Complétez d'abord vos informations." };
   if (insc.signedAt) return { ok: true }; // déjà signé
+  const org = await orgConfigFor(insc.organismeId);
 
   // IP du signataire (traçabilité)
   const hdrs = await headers();
@@ -335,6 +340,7 @@ export async function signDocuments(
 
   await prisma.signatureRequest.create({
     data: {
+      organismeId: insc.organismeId,
       provider: SignatureProvider.INTERNE,
       inscriptionId: insc.id,
       statut: SignatureStatut.SIGNEE,
@@ -357,7 +363,7 @@ Vous trouverez ci-joint, au format PDF, l'ensemble de vos documents signés (fic
 Vous recevez par ailleurs votre convocation à la formation.
 
 Cordialement,
-${orgConfig.representant} — ${orgConfig.name}`;
+${org.representant} — ${org.name}`;
 
   const res = await sendEmail({
     to: insc.candidat.email,
@@ -369,6 +375,7 @@ ${orgConfig.representant} — ${orgConfig.name}`;
   });
   await prisma.emailLog.create({
     data: {
+      organismeId: insc.organismeId,
       destinataire: insc.candidat.email,
       sujet: subject,
       corps: body,
@@ -390,14 +397,14 @@ ${orgConfig.representant} — ${orgConfig.name}`;
     const subjectConv = `Bienvenue & confirmation de votre inscription — ${s.formation.titre}`;
     const bodyConv = `Bonjour ${insc.candidat.prenom},
 
-Bienvenue chez ${orgConfig.name} ! Nous avons le plaisir de vous confirmer votre inscription à la formation « ${s.formation.titre} », du ${f(s.dateDebut)} au ${f(s.dateFin)}${s.horaires ? ` (${s.horaires})` : ""}${s.lieu ? `, à ${s.lieu}` : ""}.
+Bienvenue chez ${org.name} ! Nous avons le plaisir de vous confirmer votre inscription à la formation « ${s.formation.titre} », du ${f(s.dateDebut)} au ${f(s.dateFin)}${s.horaires ? ` (${s.horaires})` : ""}${s.lieu ? `, à ${s.lieu}` : ""}.
 
 Vous trouverez ci-joint votre convocation (PDF). Merci de vous présenter muni(e) d'une pièce d'identité.
 
 Toute l'équipe vous souhaite une excellente formation.
 
 Cordialement,
-${orgConfig.representant} — ${orgConfig.name}`;
+${org.representant} — ${org.name}`;
     const convPdf = await buildSingleDocPdf(insc.id, "CONVOCATION");
     const resConv = await sendEmail({
       to: insc.candidat.email,
@@ -445,6 +452,7 @@ async function provisionElearning(inscriptionId: string) {
     include: { candidat: true, session: { include: { formation: true } } },
   });
   if (!insc?.candidat?.email) return;
+  const org = await orgConfigFor(insc.organismeId);
   const email = insc.candidat.email.toLowerCase();
   const name = `${insc.candidat.prenom} ${insc.candidat.nom}`.trim();
 
@@ -452,7 +460,7 @@ async function provisionElearning(inscriptionId: string) {
   const apprenant = await prisma.apprenant.upsert({
     where: { candidatId: insc.candidatId },
     update: {},
-    create: { candidatId: insc.candidatId },
+    create: { candidatId: insc.candidatId, organismeId: insc.organismeId },
     select: { id: true, userId: true },
   });
 
@@ -467,7 +475,7 @@ async function provisionElearning(inscriptionId: string) {
     await prisma.coursApprenant.upsert({
       where: { coursId_apprenantId: { coursId: c.id, apprenantId: apprenant.id } },
       update: {},
-      create: { coursId: c.id, apprenantId: apprenant.id },
+      create: { coursId: c.id, apprenantId: apprenant.id, organismeId: insc.organismeId },
     });
   }
 
@@ -478,7 +486,7 @@ async function provisionElearning(inscriptionId: string) {
     if (existing) {
       await prisma.user.update({
         where: { id: existing.id },
-        data: { role: "APPRENANT", isActive: true },
+        data: { role: "APPRENANT", isActive: true, organismeId: existing.organismeId ?? insc.organismeId },
       });
       await prisma.apprenant.update({
         where: { id: apprenant.id },
@@ -491,6 +499,7 @@ async function provisionElearning(inscriptionId: string) {
           email,
           name,
           role: "APPRENANT",
+          organismeId: insc.organismeId,
           passwordHash: await bcrypt.hash(motDePasse, 10),
         },
       });
@@ -509,7 +518,7 @@ async function provisionElearning(inscriptionId: string) {
   const ident = motDePasse
     ? `Identifiant : ${email}\nMot de passe provisoire : ${motDePasse}\n(Vous pourrez le modifier après connexion.)`
     : `Connectez-vous avec votre adresse e-mail (${email}) et votre mot de passe habituel.`;
-  const subject = `Votre accès à l'espace e-learning — ${orgConfig.name}`;
+  const subject = `Votre accès à l'espace e-learning — ${org.name}`;
   const body = `Bonjour ${insc.candidat.prenom},
 
 Votre espace e-learning est prêt ! Vous pouvez dès maintenant accéder à vos cours en ligne :
@@ -523,11 +532,12 @@ ${listeCours}
 Une fois connecté(e), cliquez sur « Mes cours ».
 
 Bonne formation,
-${orgConfig.representant} — ${orgConfig.name}`;
+${org.representant} — ${org.name}`;
 
   const res = await sendEmail({ to: email, subject, body });
   await prisma.emailLog.create({
     data: {
+      organismeId: insc.organismeId,
       destinataire: email,
       sujet: subject,
       corps: body,

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Pencil, CalendarDays } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -28,8 +28,9 @@ export default async function FormateurDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const db = await getTenantDb();
   const { id } = await params;
-  const f = await prisma.formateur.findUnique({
+  const f = await db.formateur.findUnique({
     where: { id },
     include: {
       sessions: { include: { formation: true }, orderBy: { dateDebut: "asc" } },

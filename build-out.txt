@@ -1,0 +1,139 @@
+
+> cap-competence-manager@0.1.0 build
+> next build
+
+⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of C:\Users\GPSP\package-lock.json as the root directory.
+ To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
+ Detected additional lockfiles: 
+   * C:\Users\GPSP\Desktop\cap-competence-manager\package-lock.json
+
+▲ Next.js 16.2.6 (Turbopack)
+- Environments: .env
+- Experiments (use with caution):
+  · serverActions
+
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+  Creating an optimized production build ...
+✓ Compiled successfully in 28.6s
+  Running TypeScript ...
+  Finished TypeScript in 15.2s ...
+  Collecting page data using 7 workers ...
+  Generating static pages using 7 workers (0/8) ...
+  Generating static pages using 7 workers (2/8) 
+  Generating static pages using 7 workers (4/8) 
+  Generating static pages using 7 workers (6/8) 
+✓ Generating static pages using 7 workers (8/8) in 322ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ƒ /
+├ ○ /_not-found
+├ ƒ /administration
+├ ƒ /api/auth/[...nextauth]
+├ ƒ /api/convention
+├ ƒ /api/cron/parcours
+├ ƒ /api/lead
+├ ƒ /api/pdf-test
+├ ƒ /api/public/sessions
+├ ƒ /automatisations
+├ ƒ /bpf
+├ ƒ /candidats
+├ ƒ /candidats/[id]
+├ ƒ /candidats/[id]/export
+├ ƒ /candidats/[id]/modifier
+├ ƒ /candidats/nouveau
+├ ƒ /clients-pro
+├ ƒ /clients-pro/[id]
+├ ƒ /clients-pro/[id]/convention
+├ ƒ /clients-pro/nouveau
+├ ƒ /comptabilite
+├ ƒ /compte-rendu/[token]
+├ ƒ /compte-rendu/[token]/document
+├ ƒ /console
+├ ƒ /console/[id]
+├ ƒ /console/compte
+├ ƒ /console/designs
+├ ƒ /console/nouveau
+├ ƒ /console/organismes
+├ ƒ /console/support
+├ ƒ /contrat-formateur/[token]
+├ ƒ /contrat-formateur/[token]/document
+├ ƒ /crm
+├ ƒ /crm/pipeline
+├ ƒ /dashboard
+├ ƒ /deconnexion
+├ ƒ /devis
+├ ƒ /devis-accept/[token]
+├ ƒ /devis/[id]
+├ ƒ /devis/nouveau
+├ ƒ /documents/[inscriptionId]/[type]
+├ ƒ /documents/[inscriptionId]/pdf
+├ ƒ /documents/[inscriptionId]/satisfaction
+├ ƒ /documents/[inscriptionId]/zip
+├ ƒ /documents/contrat-formateur/[sessionId]
+├ ƒ /elearning
+├ ƒ /elearning/[id]
+├ ƒ /elearning/apprenants
+├ ƒ /elearning/nouveau
+├ ƒ /emargement/[seanceId]
+├ ƒ /emarger/[token]
+├ ƒ /formateurs
+├ ƒ /formateurs/[id]
+├ ƒ /formateurs/[id]/modifier
+├ ƒ /formateurs/nouveau
+├ ƒ /formations
+├ ƒ /formations/[id]
+├ ƒ /formations/[id]/modifier
+├ ƒ /formations/[id]/positionnement
+├ ƒ /formations/nouvelle
+├ ƒ /ia
+├ ƒ /inscription
+├ ƒ /kanban
+├ ƒ /leads-multicanal
+├ ƒ /login
+├ ƒ /mes-cours
+├ ƒ /mes-cours/[coursId]
+├ ƒ /mes-cours/[coursId]/attestation
+├ ƒ /mon-compte
+├ ƒ /notifications
+├ ƒ /parcours/[token]
+├ ƒ /parcours/[token]/documents
+├ ƒ /planning
+├ ƒ /portail-client
+├ ƒ /portail/[token]
+├ ƒ /positionnement/[token]
+├ ƒ /prospect/[token]
+├ ƒ /qualiopi
+├ ƒ /qualiopi/partenaires
+├ ƒ /qualiopi/reclamations
+├ ƒ /qualiopi/veille
+├ ƒ /rapports
+├ ƒ /reclamer/[token]
+├ ƒ /rgpd
+├ ƒ /salles
+├ ƒ /satisfaction-entreprise/[token]
+├ ƒ /satisfaction/[token]
+├ ƒ /satisfaction/[token]/document
+├ ƒ /scoring
+├ ƒ /sessions
+├ ƒ /sessions/[id]
+├ ƒ /sessions/[id]/emargement
+├ ƒ /sessions/[id]/emargement/feuille
+├ ƒ /sessions/[id]/modifier
+├ ƒ /sessions/nouvelle
+├ ƒ /signatures
+├ ƒ /signer/[token]
+├ ƒ /sms
+├ ƒ /support
+├ ƒ /taches
+└ ○ /tarifs
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+EXIT=0

@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { Card, CardContent } from "@/components/ui/card";
 import { CoursForm } from "@/components/elearning/cours-form";
 
 export const dynamic = "force-dynamic";
 
 export default async function NouveauCoursPage() {
-  const formations = await prisma.formation.findMany({
+  const db = await getTenantDb();
+  const formations = await db.formation.findMany({
     where: { isArchived: false },
     select: { id: true, titre: true, academy: true },
     orderBy: { titre: "asc" },

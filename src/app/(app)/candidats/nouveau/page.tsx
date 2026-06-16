@@ -1,18 +1,19 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { CandidatForm } from "@/components/candidats/candidat-form";
 
 export const dynamic = "force-dynamic";
 
 export default async function NouveauCandidatPage() {
+  const db = await getTenantDb();
   const [formations, collaborateurs] = await Promise.all([
-    prisma.formation.findMany({
+    db.formation.findMany({
       where: { isArchived: false },
       select: { id: true, titre: true },
       orderBy: { titre: "asc" },
     }),
-    prisma.user.findMany({
+    db.user.findMany({
       where: {
         isActive: true,
         role: { in: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"] },

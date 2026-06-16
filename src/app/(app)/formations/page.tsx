@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Plus, BookOpen } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +25,8 @@ import {
 } from "@/lib/validators/formation";
 
 export default async function FormationsPage() {
-  const formations = await prisma.formation.findMany({
+  const db = await getTenantDb();
+  const formations = await db.formation.findMany({
     where: { isArchived: false },
     orderBy: { titre: "asc" },
     include: { _count: { select: { sessions: true } } },

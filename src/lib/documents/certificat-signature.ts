@@ -11,6 +11,8 @@ export type CertificatData = {
   ip: string | null;
   ref: string;
   signatureDataUrl?: string | null;
+  // Identité de l'organisme émetteur (repli sur les valeurs par défaut).
+  org?: { name: string; adresse: string; siret: string; nda: string };
 };
 
 /**
@@ -42,12 +44,14 @@ export async function buildCertificatPdf(data: CertificatData): Promise<Uint8Arr
     });
   };
 
+  const o = data.org ?? orgConfig;
+
   // En-tête organisme
-  text(orgConfig.name, { size: 14, bold: true, color: navy });
+  text(o.name, { size: 14, bold: true, color: navy });
   y -= 16;
-  text(`${orgConfig.adresse}`, { size: 8 });
+  text(`${o.adresse}`, { size: 8 });
   y -= 11;
-  text(`SIRET ${orgConfig.siret} · NDA ${orgConfig.nda}`, { size: 8 });
+  text(`SIRET ${o.siret} · NDA ${o.nda}`, { size: 8 });
   y -= 30;
 
   // Titre
@@ -130,7 +134,7 @@ export async function buildCertificatPdf(data: CertificatData): Promise<Uint8Arr
   );
   y -= 22;
   text(
-    `Émis par ${orgConfig.name} — ${new Date().toLocaleString("fr-FR")}`,
+    `Émis par ${o.name} — ${new Date().toLocaleString("fr-FR")}`,
     { size: 8 },
   );
 

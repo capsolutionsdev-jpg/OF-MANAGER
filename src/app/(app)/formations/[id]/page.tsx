@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Pencil, Copy, Archive } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -33,8 +33,9 @@ export default async function FormationDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const db = await getTenantDb();
   const { id } = await params;
-  const f = await prisma.formation.findUnique({
+  const f = await db.formation.findUnique({
     where: { id },
     include: { sessions: { orderBy: { dateDebut: "desc" } } },
   });

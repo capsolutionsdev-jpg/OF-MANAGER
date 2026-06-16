@@ -5,7 +5,7 @@ import { EmailStatut } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { sendEmail, emailConfigured } from "@/lib/email";
-import { orgConfig } from "@/lib/org-config";
+import { orgConfigFor } from "@/lib/org-identity";
 import { generateToken, appBaseUrl } from "@/lib/token";
 
 const fmt = (d: Date) => d.toLocaleDateString("fr-FR");
@@ -22,6 +22,7 @@ export async function sendCompteRendu(
     include: { formation: true, formateurs: true },
   });
   if (!s) return { ok: false, demo: true, error: "Session introuvable." };
+  const org = await orgConfigFor(s.organismeId);
 
   const formateur = s.formateurs[0];
   if (!formateur?.email)
@@ -51,11 +52,12 @@ ${link}
 Ce document alimente nos indicateurs qualité (Qualiopi).
 
 Cordialement,
-${orgConfig.representant} — ${orgConfig.name}`;
+${org.representant} — ${org.name}`;
 
   const res = await sendEmail({ to: formateur.email, subject, body });
   await prisma.emailLog.create({
     data: {
+      organismeId: s.organismeId,
       destinataire: formateur.email,
       sujet: subject,
       corps: body,

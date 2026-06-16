@@ -15,7 +15,7 @@ import {
   MessageSquareWarning,
 } from "lucide-react";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import {
   Card,
   CardContent,
@@ -74,6 +74,7 @@ const ENTITY_LABELS: Record<string, string> = {
 const JOURS = ["lun.", "mar.", "mer.", "jeu.", "ven.", "sam.", "dim."];
 
 export default async function DashboardPage() {
+  const db = await getTenantDb();
   const now = new Date();
   const session = await auth();
   const prenom = (session?.user?.name ?? "").split(" ")[0] || "à vous";
@@ -93,19 +94,19 @@ export default async function DashboardPage() {
     sessionsActives, enAttente, prochaines, logs,
     reclamationsOuvertes, inscriptionsDossier, weekSessions,
   ] = await Promise.all([
-    prisma.candidat.count(),
-    prisma.apprenant.count(),
-    prisma.formation.count({ where: { isArchived: false } }),
-    prisma.session.count({ where: { dateDebut: { gte: now } } }),
-    prisma.inscription.groupBy({ by: ["statut"], _count: { _all: true } }),
-    prisma.inscription.groupBy({ by: ["financementType"], _count: { _all: true } }),
-    prisma.candidat.groupBy({ by: ["sourceConnaissance"], _count: { _all: true } }),
-    prisma.session.findMany({
+    db.candidat.count(),
+    db.apprenant.count(),
+    db.formation.count({ where: { isArchived: false } }),
+    db.session.count({ where: { dateDebut: { gte: now } } }),
+    db.inscription.groupBy({ by: ["statut"], _count: { _all: true } }),
+    db.inscription.groupBy({ by: ["financementType"], _count: { _all: true } }),
+    db.candidat.groupBy({ by: ["sourceConnaissance"], _count: { _all: true } }),
+    db.session.findMany({
       where: { statut: { not: "ANNULEE" }, dateFin: { gte: now } },
       orderBy: { dateDebut: "asc" },
       include: { formation: { select: { titre: true } }, _count: { select: { inscriptions: true } } },
     }),
-    prisma.inscription.findMany({
+    db.inscription.findMany({
       where: { statut: "EN_ATTENTE" },
       orderBy: { createdAt: "desc" }, take: 15,
       include: {
@@ -113,18 +114,18 @@ export default async function DashboardPage() {
         session: { include: { formation: { select: { titre: true } } } },
       },
     }),
-    prisma.session.findMany({
+    db.session.findMany({
       where: { dateDebut: { gte: now } }, orderBy: { dateDebut: "asc" }, take: 6,
       include: { formation: true, _count: { select: { inscriptions: true } } },
     }),
-    prisma.auditLog.findMany({ orderBy: { createdAt: "desc" }, take: 10, include: { user: { select: { name: true } } } }),
-    prisma.reclamation.count({ where: { statut: { not: "CLOTUREE" } } }),
-    prisma.inscription.findMany({
+    db.auditLog.findMany({ orderBy: { createdAt: "desc" }, take: 10, include: { user: { select: { name: true } } } }),
+    db.reclamation.count({ where: { statut: { not: "CLOTUREE" } } }),
+    db.inscription.findMany({
       where: { statut: { not: "ANNULEE" }, session: { dateFin: { gte: now } } },
       select: { piecesRecues: true, session: { select: { formation: { select: { piecesAttendues: true } } } } },
       take: 600,
     }),
-    prisma.session.findMany({
+    db.session.findMany({
       where: { statut: { not: "ANNULEE" }, dateDebut: { lte: weekEnd }, dateFin: { gte: weekStart } },
       include: { formation: { select: { titre: true } }, _count: { select: { inscriptions: true } } },
       orderBy: { dateDebut: "asc" },
@@ -173,19 +174,19 @@ export default async function DashboardPage() {
   async function resolve(type: string, ids: string[]) {
     if (ids.length === 0) return;
     if (type === "Candidat") {
-      const r = await prisma.candidat.findMany({ where: { id: { in: ids } }, select: { id: true, prenom: true, nom: true } });
+      const r = await db.candidat.findMany({ where: { id: { in: ids } }, select: { id: true, prenom: true, nom: true } });
       r.forEach((x) => names.set(`Candidat:${x.id}`, `${x.prenom} ${x.nom}`));
     } else if (type === "Session") {
-      const r = await prisma.session.findMany({ where: { id: { in: ids } }, select: { id: true, formation: { select: { titre: true } }, dateDebut: true } });
+      const r = await db.session.findMany({ where: { id: { in: ids } }, select: { id: true, formation: { select: { titre: true } }, dateDebut: true } });
       r.forEach((x) => names.set(`Session:${x.id}`, `${x.formation.titre} (${fmt(x.dateDebut)})`));
     } else if (type === "Formation") {
-      const r = await prisma.formation.findMany({ where: { id: { in: ids } }, select: { id: true, titre: true } });
+      const r = await db.formation.findMany({ where: { id: { in: ids } }, select: { id: true, titre: true } });
       r.forEach((x) => names.set(`Formation:${x.id}`, x.titre));
     } else if (type === "Inscription") {
-      const r = await prisma.inscription.findMany({ where: { id: { in: ids } }, select: { id: true, candidat: { select: { prenom: true, nom: true } } } });
+      const r = await db.inscription.findMany({ where: { id: { in: ids } }, select: { id: true, candidat: { select: { prenom: true, nom: true } } } });
       r.forEach((x) => names.set(`Inscription:${x.id}`, `${x.candidat.prenom} ${x.candidat.nom}`));
     } else if (type === "Formateur") {
-      const r = await prisma.formateur.findMany({ where: { id: { in: ids } }, select: { id: true, prenom: true, nom: true } });
+      const r = await db.formateur.findMany({ where: { id: { in: ids } }, select: { id: true, prenom: true, nom: true } });
       r.forEach((x) => names.set(`Formateur:${x.id}`, `${x.prenom} ${x.nom}`));
     }
   }

@@ -8,7 +8,7 @@ import { auth } from "@/auth";
 import { generateToken, appBaseUrl } from "@/lib/token";
 import { joursSession, dayKey } from "@/lib/emargement";
 import { sendEmail } from "@/lib/email";
-import { orgConfig } from "@/lib/org-config";
+import { orgConfigFor } from "@/lib/org-identity";
 
 /**
  * Prépare les lignes de signature d'émargement (jour × demi-journée × personne)
@@ -65,6 +65,7 @@ export async function prepareEmargementSignatures(
   );
 
   const toCreate: {
+    organismeId: string | null;
     sessionId: string;
     date: Date;
     demi: DemiJournee;
@@ -80,6 +81,7 @@ export async function prepareEmargementSignatures(
       for (const p of personnes) {
         if (seen.has(key(p.role, p.email, jour, demi))) continue;
         toCreate.push({
+          organismeId: s.organismeId,
           sessionId,
           date: jour,
           demi,
@@ -118,6 +120,7 @@ export async function sendEmargementLink(
   });
   if (!e) return { ok: false, error: "Ligne d'émargement introuvable." };
   if (e.signedAt) return { ok: false, error: "Déjà signé." };
+  const org = await orgConfigFor(e.organismeId);
 
   const demiLabel = e.demi === DemiJournee.MATIN ? "matin" : "après-midi";
   const jour = e.date.toLocaleDateString("fr-FR", {
@@ -135,7 +138,7 @@ ${link}
 Vous signerez directement avec votre doigt (sur mobile) ou votre souris (sur ordinateur).
 
 Cordialement,
-${orgConfig.representant} — ${orgConfig.name}`;
+${org.representant} — ${org.name}`;
 
   const res = await sendEmail({ to: e.email, subject, body });
 

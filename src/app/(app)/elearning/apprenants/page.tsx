@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft, Users } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ACADEMY_LABELS } from "@/lib/validators/formation";
@@ -12,8 +12,9 @@ import {
 export const dynamic = "force-dynamic";
 
 export default async function ApprenantsElearningPage() {
+  const db = await getTenantDb();
   const [candidats, coursList] = await Promise.all([
-    prisma.candidat.findMany({
+    db.candidat.findMany({
       where: { inscriptions: { some: {} } },
       include: {
         apprenant: {
@@ -33,7 +34,7 @@ export default async function ApprenantsElearningPage() {
       },
       orderBy: [{ nom: "asc" }, { prenom: "asc" }],
     }),
-    prisma.cours.findMany({
+    db.cours.findMany({
       where: { isPublished: true },
       select: { id: true, titre: true, academy: true },
       orderBy: [{ academy: "asc" }, { titre: "asc" }],

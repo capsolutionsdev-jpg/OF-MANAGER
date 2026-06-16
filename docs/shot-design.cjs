@@ -1,0 +1,22 @@
+const puppeteer = require("puppeteer");
+const path = require("node:path");
+const BASE = "http://localhost:3100";
+const EMAIL = process.env.E2E_EMAIL;
+const PASS = process.env.E2E_PASS;
+const out = process.argv[2] || "design";
+const outDir = path.join(__dirname, "presentation-shots");
+(async () => {
+  const browser = await puppeteer.launch({ headless: true, args: ["--no-sandbox"], defaultViewport: { width: 1440, height: 900 } });
+  const page = await browser.newPage();
+  const errs = [];
+  page.on("console", (m) => { if (m.type() === "error") errs.push(m.text().slice(0, 80)); });
+  await page.goto(BASE + "/login", { waitUntil: "networkidle0" });
+  await page.type("#email", EMAIL); await page.type("#password", PASS);
+  await Promise.all([page.waitForNavigation({ waitUntil: "networkidle0" }).catch(()=>{}), page.click('button[type="submit"]')]);
+  await page.goto(BASE + "/dashboard", { waitUntil: "networkidle0" });
+  await page.addStyleTag({ content: "nextjs-portal,[data-nextjs-toast],[data-nextjs-dev-tools-button]{display:none !important}" }).catch(()=>{});
+  await new Promise(r=>setTimeout(r,900));
+  await page.screenshot({ path: path.join(outDir, out + ".png") });
+  console.log("shot", out, "| erreurs:", errs.length ? errs.slice(0,3) : "aucune");
+  await browser.close();
+})();

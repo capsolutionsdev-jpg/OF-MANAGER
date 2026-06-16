@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { CheckCircle2 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { orgConfig } from "@/lib/org-config";
+import { orgConfigFor } from "@/lib/org-identity";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmargerSignButton } from "@/components/emargement/emarger-sign-button";
 
@@ -18,6 +18,7 @@ export default async function EmargerPage({
     include: { session: { include: { formation: true } } },
   });
   if (!row) notFound();
+  const org = await orgConfigFor(row.organismeId);
 
   const demiLabel = row.demi === "MATIN" ? "Matin" : "Après-midi";
   const jour = row.date.toLocaleDateString("fr-FR", {
@@ -34,7 +35,7 @@ export default async function EmargerPage({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/cap-competences-logo.png"
-            alt={orgConfig.name}
+            alt={org.name}
             className="mb-3 h-12 w-auto object-contain"
           />
           <h1 className="text-xl font-bold">Émargement</h1>
@@ -85,7 +86,7 @@ export default async function EmargerPage({
         </Card>
 
         <p className="text-center text-xs text-muted-foreground">
-          {orgConfig.name} — {orgConfig.email}
+          {org.name} — {org.email}
         </p>
       </div>
     </main>

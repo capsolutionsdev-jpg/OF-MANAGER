@@ -5,6 +5,7 @@ import HTMLtoDOCX from "@turbodocx/html-to-docx";
 import { prisma } from "@/lib/prisma";
 import { DOCUMENTS, renderTemplate } from "@/lib/documents/templates";
 import { buildVariables } from "@/lib/documents/resolve";
+import { orgConfigFor } from "@/lib/org-identity";
 import {
   signatureRef,
   signatureMentionHtml,
@@ -47,7 +48,8 @@ export async function buildInscriptionDocsZip(
   });
   if (!inscription) return null;
 
-  const vars = buildVariables(inscription);
+  const org = await orgConfigFor(inscription.organismeId);
+  const vars = buildVariables(inscription, org);
 
   // Preuve de signature (si l'inscription est signée)
   const signed = inscription.signedAt
@@ -81,8 +83,8 @@ export async function buildInscriptionDocsZip(
     fs.readFile(path.join(pub, "cap-competences-logo.png")),
     fs.readFile(path.join(pub, "signature-cap-competences.png")),
   ]);
-  const logo64 = `data:image/png;base64,${logoBuf.toString("base64")}`;
-  const stamp64 = `data:image/png;base64,${stampBuf.toString("base64")}`;
+  const logo64 = org.logoUrl ?? `data:image/png;base64,${logoBuf.toString("base64")}`;
+  const stamp64 = org.cachetUrl ?? `data:image/png;base64,${stampBuf.toString("base64")}`;
   const inlineImages = (html: string) =>
     html
       .split("/cap-competences-logo.png").join(logo64)
@@ -128,6 +130,7 @@ export async function buildInscriptionDocsZip(
       ip: signed.ip,
       ref: signed.ref,
       signatureDataUrl: inscription.signatureDataUrl,
+      org: { name: org.name, adresse: org.adresse, siret: org.siret, nda: org.nda },
     });
     folder.file("Certificat-de-signature-electronique.pdf", certif);
   }

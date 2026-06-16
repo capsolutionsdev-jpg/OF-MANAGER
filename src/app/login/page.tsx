@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
+import type { CSSProperties } from "react";
 import Image from "next/image";
 import { ShieldCheck, FileSignature, GraduationCap } from "lucide-react";
 import { LoginForm } from "./login-form";
+import { getPublicBranding } from "@/lib/tenant-host";
+import { designVars, getDesign } from "@/lib/themes";
+import { cn } from "@/lib/utils";
 import {
   Card,
   CardContent,
@@ -32,9 +36,21 @@ const points = [
   },
 ];
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  const brand = await getPublicBranding();
+  const design = getDesign(brand.design);
+  const isDark = design?.mode === "dark";
+  const dataDesign = design && design.key !== "defaut" ? design.key : undefined;
+  const brandStyle = {
+    ...designVars(brand.design, brand.couleurPrimaire),
+    ...(dataDesign ? { fontFamily: design!.fontSans } : {}),
+  } as CSSProperties;
   return (
-    <main className="grid min-h-screen lg:grid-cols-2">
+    <main
+      className={cn("grid min-h-screen lg:grid-cols-2", isDark && "dark")}
+      data-design={dataDesign}
+      style={brandStyle}
+    >
       {/* Panneau de marque (navy) — visible en grand écran */}
       <div className="relative hidden flex-col justify-between overflow-hidden bg-[#0e1c3f] p-10 text-white lg:flex">
         {/* halos décoratifs */}
@@ -42,15 +58,20 @@ export default function LoginPage() {
         <div className="pointer-events-none absolute -bottom-32 -left-20 h-96 w-96 rounded-full bg-[#4D9FFF]/20 blur-3xl" />
 
         <div className="relative z-10">
-          <span className="inline-flex items-center rounded-lg bg-white px-3 py-2 shadow-sm">
-            <Image
-              src="/cap-competences-logo.png"
-              alt="CAP Compétences"
-              width={180}
-              height={56}
-              priority
-              className="h-9 w-auto"
-            />
+          <span className="inline-flex items-center rounded-xl bg-white px-4 py-3 shadow-sm">
+            {brand.logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={brand.logoUrl} alt={brand.nom} className="h-14 w-auto" />
+            ) : (
+              <Image
+                src="/ofmanager-logo.png"
+                alt={brand.nom}
+                width={200}
+                height={158}
+                priority
+                className="h-14 w-auto"
+              />
+            )}
           </span>
         </div>
 
@@ -59,7 +80,7 @@ export default function LoginPage() {
             Pilotez votre organisme de formation, simplement.
           </h2>
           <p className="mt-3 text-sm leading-relaxed text-white/70">
-            Le back-office tout-en-un de CAP Compétences : prospection,
+            Le back-office tout-en-un de {brand.nom} : prospection,
             inscriptions, sessions, e-learning et conformité.
           </p>
 
@@ -67,7 +88,7 @@ export default function LoginPage() {
             {points.map((p) => (
               <li key={p.title} className="flex items-start gap-3">
                 <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10">
-                  <p.icon className="h-5 w-5 text-[#4D9FFF]" />
+                  <p.icon className="h-5 w-5" style={{ color: "var(--primary)" }} />
                 </span>
                 <div>
                   <div className="text-sm font-semibold">{p.title}</div>
@@ -79,7 +100,7 @@ export default function LoginPage() {
         </div>
 
         <p className="relative z-10 text-xs text-white/40">
-          © {new Date().getFullYear()} CAP Compétences — Tous droits réservés.
+          © {new Date().getFullYear()} {brand.nom} — Tous droits réservés.
         </p>
       </div>
 
@@ -88,16 +109,21 @@ export default function LoginPage() {
         <div className="w-full max-w-sm">
           {/* Logo (mobile uniquement) */}
           <div className="mb-6 flex flex-col items-center text-center lg:hidden">
-            <div className="relative mb-3 h-14 w-56">
-              <Image
-                src="/cap-competences-logo.png"
-                alt="CAP Compétences"
-                fill
-                className="object-contain"
-                priority
-              />
+            <div className="relative mb-2 flex h-20 w-56 items-center justify-center">
+              {brand.logoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={brand.logoUrl} alt={brand.nom} className="max-h-20 max-w-full object-contain" />
+              ) : (
+                <Image
+                  src="/ofmanager-logo.png"
+                  alt={brand.nom}
+                  fill
+                  className="object-contain"
+                  priority
+                />
+              )}
             </div>
-            <h1 className="text-lg font-bold">Compétence Manager</h1>
+            {brand.logoUrl && <h1 className="text-lg font-bold">{brand.nom}</h1>}
           </div>
 
           <Card>

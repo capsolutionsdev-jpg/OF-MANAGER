@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft, AlertTriangle, CheckCircle2 } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -50,7 +50,8 @@ function joursOuvresDepuis(d: Date): number {
 }
 
 export default async function ReclamationsPage() {
-  const reclamations = await prisma.reclamation.findMany({
+  const db = await getTenantDb();
+  const reclamations = await db.reclamation.findMany({
     orderBy: { date: "desc" },
   });
   const ouvertes = reclamations.filter((r) => r.statut !== "CLOTUREE");

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { CandidatStatut } from "@prisma/client";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { auth } from "@/auth";
 import {
   candidatFormSchema,
@@ -43,17 +43,18 @@ function toData(v: CandidatFormValues) {
 export async function createCandidat(
   values: CandidatFormValues,
 ): Promise<ActionResult> {
+  const db = await getTenantDb();
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Non autorisé." };
 
   const parsed = candidatFormSchema.safeParse(values);
   if (!parsed.success) return { ok: false, error: "Données invalides." };
 
-  const candidat = await prisma.candidat.create({
+  const candidat = await db.candidat.create({
     data: { ...toData(parsed.data), createdById: session.user.id },
   });
 
-  await prisma.auditLog.create({
+  await db.auditLog.create({
     data: {
       userId: session.user.id,
       action: "CREATE",
@@ -70,18 +71,19 @@ export async function updateCandidat(
   id: string,
   values: CandidatFormValues,
 ): Promise<ActionResult> {
+  const db = await getTenantDb();
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Non autorisé." };
 
   const parsed = candidatFormSchema.safeParse(values);
   if (!parsed.success) return { ok: false, error: "Données invalides." };
 
-  await prisma.candidat.update({
+  await db.candidat.update({
     where: { id },
     data: toData(parsed.data),
   });
 
-  await prisma.auditLog.create({
+  await db.auditLog.create({
     data: {
       userId: session.user.id,
       action: "UPDATE",
@@ -96,15 +98,16 @@ export async function updateCandidat(
 }
 
 export async function archiveCandidat(id: string): Promise<ActionResult> {
+  const db = await getTenantDb();
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Non autorisé." };
 
-  await prisma.candidat.update({
+  await db.candidat.update({
     where: { id },
     data: { statut: "ARCHIVE" },
   });
 
-  await prisma.auditLog.create({
+  await db.auditLog.create({
     data: {
       userId: session.user.id,
       action: "ARCHIVE",
@@ -124,8 +127,9 @@ export async function setCandidatStatut(
   const session = await auth();
   if (!session?.user) return { ok: false };
 
-  await prisma.candidat.update({ where: { id }, data: { statut } });
-  await prisma.auditLog.create({
+  const db = await getTenantDb();
+  await db.candidat.update({ where: { id }, data: { statut } });
+  await db.auditLog.create({
     data: {
       userId: session.user.id,
       action: "STATUT",

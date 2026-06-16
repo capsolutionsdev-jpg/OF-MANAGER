@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { CheckCircle2 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { orgConfig } from "@/lib/org-config";
+import { orgConfigFor } from "@/lib/org-identity";
 import {
   Card,
   CardContent,
@@ -24,6 +24,7 @@ export default async function PositionnementPage({
     include: { candidat: true, session: { include: { formation: true } } },
   });
   if (!insc) notFound();
+  const org = await orgConfigFor(insc.organismeId);
 
   const f = insc.session.formation;
   const questions = questionsPourFormation(f.titre, f.positionnementQuestions);
@@ -37,7 +38,7 @@ export default async function PositionnementPage({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/cap-competences-logo.png"
-            alt={orgConfig.name}
+            alt={org.name}
             className="mb-3 h-12 w-auto object-contain"
           />
           <h1 className="text-xl font-bold">Test de positionnement</h1>
@@ -96,7 +97,7 @@ export default async function PositionnementPage({
         )}
 
         <p className="text-center text-xs text-muted-foreground">
-          {orgConfig.name} — {orgConfig.email}
+          {org.name} — {org.email}
         </p>
       </div>
     </main>

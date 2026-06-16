@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Plus, Users } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -33,8 +33,9 @@ const STATUT_BADGE: Record<string, string> = {
 };
 
 export default async function CrmPage() {
+  const db = await getTenantDb();
   // Candidats non archivés avec leur formation souhaitée
-  const candidats = await prisma.candidat.findMany({
+  const candidats = await db.candidat.findMany({
     where: { statut: { not: "ARCHIVE" } },
     orderBy: [{ nom: "asc" }, { prenom: "asc" }],
     include: {
@@ -44,7 +45,7 @@ export default async function CrmPage() {
   });
 
   // Sessions ouvertes pour inscription
-  const sessions = await prisma.session.findMany({
+  const sessions = await db.session.findMany({
     where: { statut: { in: ["PLANIFIEE", "OUVERTE", "EN_COURS"] } },
     include: { formation: { select: { id: true, titre: true } } },
     orderBy: { dateDebut: "asc" },

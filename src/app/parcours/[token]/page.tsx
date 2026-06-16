@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { CheckCircle2, Circle, FileSignature } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { orgConfig } from "@/lib/org-config";
+import { orgConfigFor } from "@/lib/org-identity";
 import {
   Card,
   CardContent,
@@ -55,6 +55,7 @@ export default async function ParcoursPage({
     },
   });
   if (!insc) notFound();
+  const org = await orgConfigFor(insc.organismeId);
 
   const c = insc.candidat;
   const formDone = !!insc.formCompletedAt;
@@ -69,7 +70,7 @@ export default async function ParcoursPage({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/cap-competences-logo.png"
-            alt={orgConfig.name}
+            alt={org.name}
             className="mb-3 h-12 w-auto object-contain"
           />
           <h1 className="text-xl font-bold">
@@ -157,7 +158,7 @@ export default async function ParcoursPage({
         )}
 
         <p className="text-center text-xs text-muted-foreground">
-          {orgConfig.name} — {orgConfig.email} · {orgConfig.telephone}
+          {org.name} — {org.email} · {org.telephone}
         </p>
       </div>
     </main>

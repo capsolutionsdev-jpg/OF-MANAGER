@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -25,7 +25,8 @@ import { creerPartenaire, supprimerPartenaire } from "@/lib/actions/registre-act
 export const dynamic = "force-dynamic";
 
 export default async function PartenairesPage() {
-  const partenaires = await prisma.partenaire.findMany({
+  const db = await getTenantDb();
+  const partenaires = await db.partenaire.findMany({
     orderBy: [{ categorie: "asc" }, { nom: "asc" }],
   });
 
