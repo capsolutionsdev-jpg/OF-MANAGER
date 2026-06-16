@@ -315,6 +315,50 @@ export async function togglePieceRecue(
   return { ok: true };
 }
 
+/** Relance le candidat par e-mail avec la liste des pièces encore manquantes. */
+export async function relancerDossier(
+  inscriptionId: string,
+): Promise<{ ok: boolean; error?: string; sent?: boolean; manquantes?: number }> {
+  const session = await auth();
+  if (!session?.user) return { ok: false, error: "Non autorisé." };
+  const db = await getTenantDb();
+
+  const insc = await db.inscription.findUnique({
+    where: { id: inscriptionId },
+    select: {
+      piecesRecues: true,
+      organismeId: true,
+      candidat: { select: { email: true, prenom: true } },
+      session: { select: { formation: { select: { titre: true, piecesAttendues: true } } } },
+    },
+  });
+  if (!insc) return { ok: false, error: "Inscription introuvable." };
+
+  const manquantes = (insc.session.formation.piecesAttendues ?? []).filter(
+    (p) => !insc.piecesRecues.includes(p),
+  );
+  if (manquantes.length === 0) return { ok: true, manquantes: 0 };
+
+  const email = insc.candidat.email;
+  if (!email) return { ok: false, error: "Le candidat n'a pas d'e-mail." };
+
+  const cfg = await orgConfigFor(insc.organismeId);
+  const liste = manquantes.map((p) => `• ${p}`).join("\n");
+  const { sent } = await sendEmail({
+    to: email,
+    organismeId: insc.organismeId,
+    subject: `Pièces manquantes — ${insc.session.formation.titre}`,
+    body:
+      `Bonjour ${insc.candidat.prenom ?? ""},\n\n` +
+      `Pour finaliser votre dossier d'inscription à « ${insc.session.formation.titre} », ` +
+      `il nous manque encore les pièces suivantes :\n\n${liste}\n\n` +
+      `Merci de nous les transmettre dès que possible.\n\n` +
+      `Cordialement,\n${cfg.name}`,
+  });
+
+  return { ok: true, sent, manquantes: manquantes.length };
+}
+
 export async function deleteInscriptionAction(formData: FormData) {
   const db = await getTenantDb();
   const session = await auth();
