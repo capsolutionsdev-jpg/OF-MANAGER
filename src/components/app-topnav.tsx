@@ -65,6 +65,11 @@ export function AppTopNav({
 
   return (
     <header className="sticky top-0 z-30 border-b bg-card/85 backdrop-blur-md">
+      {/* Accent de marque : dégradé couleur principale → secondaire (var --brand-2) */}
+      <div
+        className="h-[3px] w-full"
+        style={{ background: "linear-gradient(90deg, var(--primary), var(--brand-2, var(--primary)))" }}
+      />
       <div className="mx-auto flex h-14 max-w-[1500px] items-center gap-3 px-3 md:px-5">
         {/* Burger mobile */}
         <Sheet>

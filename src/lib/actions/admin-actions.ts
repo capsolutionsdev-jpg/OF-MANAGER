@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import { Role } from "@prisma/client";
 import { auth } from "@/auth";
 import { getTenantDb } from "@/lib/tenant";
+import { getCurrentOrganisme } from "@/lib/org";
 import { SECTION_KEYS } from "@/lib/permissions";
 
 async function requireAdmin() {
@@ -45,6 +46,15 @@ export async function createCollaborateur(
 
   const exists = await db.user.findUnique({ where: { email } });
   if (exists) return { error: "Un compte existe déjà avec cet e-mail." };
+
+  // Limite d'utilisateurs de la formule (si définie par l'éditeur).
+  const org = await getCurrentOrganisme();
+  if (org?.maxUtilisateurs != null) {
+    const count = await db.user.count();
+    if (count >= org.maxUtilisateurs) {
+      return { error: `Limite d'utilisateurs atteinte (${org.maxUtilisateurs}). Contactez OFManager pour augmenter votre forfait.` };
+    }
+  }
 
   await db.user.create({
     data: {

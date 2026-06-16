@@ -23,7 +23,9 @@ export async function getBranding() {
   return {
     nom: org?.nom ?? defaultOrg.name,
     logoUrl: org?.logoUrl ?? null, // null → logo statique par défaut
+    faviconUrl: org?.faviconUrl ?? null,
     couleurPrimaire: org?.couleurPrimaire ?? "#1A5FD4",
+    couleurSecondaire: org?.couleurSecondaire ?? null,
     theme: org?.theme ?? null,
     design: org?.design ?? null,
   };
