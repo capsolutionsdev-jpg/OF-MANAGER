@@ -11,6 +11,9 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Sortie autonome (server.js + deps minimales) pour le déploiement self-host
+  // via Docker. Sans effet sur Vercel, qui utilise sa propre cible de build.
+  output: "standalone",
   // Les server actions reçoivent des images en data-URL (logo/cachet/signature
   // de la console, photos candidat) → relever la limite du corps de requête.
   experimental: { serverActions: { bodySizeLimit: "5mb" } },

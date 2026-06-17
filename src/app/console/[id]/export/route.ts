@@ -1,13 +1,23 @@
 import type { Role } from "@prisma/client";
+import JSZip from "jszip";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import {
+  dockerfile,
+  dockerCompose,
+  envExample,
+  importScript,
+  readme,
+  type SelfHostMeta,
+} from "@/lib/selfhost/templates";
 
 export const dynamic = "force-dynamic";
 
 /**
- * Export de la configuration d'un organisme (pour déploiement auto-hébergé chez
- * le client). SUPERADMIN uniquement. Les secrets (clés API) sont EXCLUS — le
- * client renseignera les siens sur son instance.
+ * Export du PACKAGE auto-hébergé d'un organisme (archive ZIP prête à déployer) :
+ * config.json + Dockerfile + docker-compose.yml + .env.example + README + script
+ * d'initialisation. SUPERADMIN uniquement. Les secrets (clés API) sont EXCLUS —
+ * le client renseignera les siens sur son instance.
  */
 export async function GET(
   _req: Request,
@@ -45,11 +55,23 @@ export async function GET(
     automationsConfig: o.automationsConfig,
   };
 
+  const meta: SelfHostMeta = { nom: o.nom, sousDomaine: o.sousDomaine, appUrl: o.appUrl };
+
+  // Assemble le paquet déployable.
+  const zip = new JSZip();
+  zip.file("config.json", JSON.stringify(bundle, null, 2));
+  zip.file("Dockerfile", dockerfile());
+  zip.file("docker-compose.yml", dockerCompose(meta));
+  zip.file(".env.example", envExample(meta));
+  zip.file("README.md", readme(meta));
+  zip.file("prisma/import-config.mjs", importScript());
+  const content = await zip.generateAsync({ type: "arraybuffer" });
+
   const safe = (o.nom || o.id).replace(/[^a-zA-Z0-9_-]/g, "_");
-  return new Response(JSON.stringify(bundle, null, 2), {
+  return new Response(content, {
     headers: {
-      "Content-Type": "application/json; charset=utf-8",
-      "Content-Disposition": `attachment; filename="ofmanager-config-${safe}.json"`,
+      "Content-Type": "application/zip",
+      "Content-Disposition": `attachment; filename="ofmanager-selfhost-${safe}.zip"`,
     },
   });
 }

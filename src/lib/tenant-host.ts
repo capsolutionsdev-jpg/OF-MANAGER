@@ -3,7 +3,10 @@ import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 
 // Labels de sous-domaine réservés (pas un tenant).
-const RESERVED = new Set(["www", "app", "localhost"]);
+export const RESERVED = new Set([
+  "www", "app", "localhost", "api", "console", "admin",
+  "static", "assets", "mail", "smtp", "ftp", "ns", "cdn", "vercel",
+]);
 
 /**
  * Organisme déduit du sous-domaine de la requête publique

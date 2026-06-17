@@ -7,8 +7,13 @@ import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/superadmin-guard";
 import { FEATURE_KEYS, CORE_FEATURE_KEYS } from "@/lib/features";
 import { FORMULE_KEYS, featuresForFormule, type FormuleKey } from "@/lib/plans";
+import { uniqueSubdomain, toSubdomain, isValidSubdomain } from "@/lib/subdomain";
 
-export type ConsoleState = { ok?: boolean; error?: string; id?: string };
+export type ConsoleState = { ok?: boolean; error?: string; id?: string; sousDomaine?: string };
+
+// Valeurs d'amorçage d'un nouvel organisme (modifiables ensuite dans la console).
+const DEFAULT_DESIGN = "defaut";
+const DEFAULT_COULEUR = "#1A5FD4";
 
 const clean = (v: FormDataEntryValue | null) => {
   const s = typeof v === "string" ? v.trim() : "";
@@ -52,6 +57,22 @@ export async function createOrganisme(
   const exists = await prisma.user.findUnique({ where: { email: gerantEmail } });
   if (exists) return { error: "Un compte existe déjà avec cet e-mail." };
 
+  // Sous-domaine : choisi par l'éditeur (validé) sinon généré à partir du nom.
+  const sousDomaineRaw = toSubdomain(String(formData.get("sousDomaine") ?? ""));
+  let sousDomaine: string;
+  if (sousDomaineRaw) {
+    if (!isValidSubdomain(sousDomaineRaw))
+      return { error: "Sous-domaine invalide ou réservé (lettres, chiffres et tirets uniquement)." };
+    const taken = await prisma.organisme.findUnique({
+      where: { sousDomaine: sousDomaineRaw },
+      select: { id: true },
+    });
+    if (taken) return { error: `Le sous-domaine « ${sousDomaineRaw} » est déjà utilisé.` };
+    sousDomaine = sousDomaineRaw;
+  } else {
+    sousDomaine = await uniqueSubdomain(nom);
+  }
+
   const formule = readFormule(formData);
   let fonctionnalites = FEATURE_KEYS.filter((k) => formData.get(`feat_${k}`) === "on");
   if (fonctionnalites.length === 0) {
@@ -66,6 +87,10 @@ export async function createOrganisme(
       statut: OrganismeStatut.ESSAI,
       formule,
       fonctionnalites,
+      // Provisioning : sous-domaine + apparence par défaut (personnalisables ensuite).
+      sousDomaine,
+      design: DEFAULT_DESIGN,
+      couleurPrimaire: DEFAULT_COULEUR,
     },
   });
 
@@ -82,7 +107,7 @@ export async function createOrganisme(
 
   revalidatePath("/console");
   revalidatePath("/console/organismes");
-  return { ok: true, id: org.id };
+  return { ok: true, id: org.id, sousDomaine };
 }
 
 /** Met à jour l'identité, les fonctionnalités activées et le statut d'un organisme. */

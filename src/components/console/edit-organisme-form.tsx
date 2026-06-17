@@ -111,9 +111,37 @@ function Field({
   );
 }
 
+/** Convertit un data-URL en Blob (pour l'envoi multipart). */
+async function dataUrlToBlob(dataUrl: string): Promise<Blob> {
+  return (await fetch(dataUrl)).blob();
+}
+
+/**
+ * Redimensionne l'image côté client puis l'envoie à /api/upload.
+ * En prod → URL Vercel Blob ; en local (sans token) → data-URL renvoyé par la route.
+ * Si l'upload échoue, on retombe sur le data-URL local pour ne pas bloquer.
+ */
+async function uploadImage(file: File, maxW: number, folder: string): Promise<string> {
+  const dataUrl = await fileToPngDataUrl(file, maxW);
+  try {
+    const blob = await dataUrlToBlob(dataUrl);
+    const fd = new FormData();
+    fd.append("file", blob, `${folder}.png`);
+    fd.append("folder", folder);
+    const res = await fetch("/api/upload", { method: "POST", body: fd });
+    if (!res.ok) throw new Error("upload");
+    const json = (await res.json()) as { url?: string };
+    if (!json.url) throw new Error("upload");
+    return json.url;
+  } catch {
+    return dataUrl; // repli : embarque l'image en data-URL
+  }
+}
+
 function ImageField({
-  name, label, value, onChange, hint, maxW = 600,
-}: { name: string; label: string; value: string; onChange: (v: string) => void; hint?: string; maxW?: number }) {
+  name, label, value, onChange, hint, maxW = 600, folder = "branding",
+}: { name: string; label: string; value: string; onChange: (v: string) => void; hint?: string; maxW?: number; folder?: string }) {
+  const [busy, setBusy] = useState(false);
   return (
     <div className="space-y-1.5">
       <Label>{label}</Label>
@@ -128,16 +156,20 @@ function ImageField({
           )}
         </div>
         <div className="flex flex-col items-start gap-1.5">
-          <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs hover:bg-muted">
-            <Upload className="h-3.5 w-3.5" /> Choisir un fichier
+          <label className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs hover:bg-muted ${busy ? "pointer-events-none opacity-60" : ""}`}>
+            <Upload className="h-3.5 w-3.5" /> {busy ? "Envoi…" : "Choisir un fichier"}
             <input
               type="file"
               accept="image/*"
               className="hidden"
+              disabled={busy}
               onChange={async (e) => {
                 const f = e.target.files?.[0];
                 if (!f) return;
-                try { onChange(await fileToPngDataUrl(f, maxW)); } catch { /* image illisible */ }
+                setBusy(true);
+                try { onChange(await uploadImage(f, maxW, folder)); }
+                catch { /* image illisible */ }
+                finally { setBusy(false); }
               }}
             />
           </label>
@@ -349,10 +381,10 @@ export function EditOrganismeForm({ org }: { org: OrgFormData }) {
           <Card>
             <CardHeader className="py-3"><CardTitle className="text-sm text-muted-foreground">Logos & visuels</CardTitle></CardHeader>
             <CardContent className="grid gap-4 sm:grid-cols-2">
-              <ImageField name="logoUrl" label="Logo" value={logoUrl} onChange={setLogoUrl} hint="PNG transparent conseillé. App + documents." />
-              <ImageField name="faviconUrl" label="Favicon (onglet navigateur)" value={faviconUrl} onChange={setFaviconUrl} hint="Petite icône carrée." maxW={128} />
-              <ImageField name="cachetUrl" label="Cachet / tampon" value={cachetUrl} onChange={setCachetUrl} hint="Conventions & émargements." />
-              <ImageField name="signatureUrl" label="Signature du gérant" value={signatureUrl} onChange={setSignatureUrl} hint="Signature scannée." />
+              <ImageField name="logoUrl" label="Logo" value={logoUrl} onChange={setLogoUrl} hint="PNG transparent conseillé. App + documents." folder={`org/${org.id}/logo`} />
+              <ImageField name="faviconUrl" label="Favicon (onglet navigateur)" value={faviconUrl} onChange={setFaviconUrl} hint="Petite icône carrée." maxW={128} folder={`org/${org.id}/favicon`} />
+              <ImageField name="cachetUrl" label="Cachet / tampon" value={cachetUrl} onChange={setCachetUrl} hint="Conventions & émargements." folder={`org/${org.id}/cachet`} />
+              <ImageField name="signatureUrl" label="Signature du gérant" value={signatureUrl} onChange={setSignatureUrl} hint="Signature scannée." folder={`org/${org.id}/signature`} />
             </CardContent>
           </Card>
         </div>
@@ -464,12 +496,12 @@ export function EditOrganismeForm({ org }: { org: OrgFormData }) {
                 </div>
                 <div className="rounded-lg border p-3">
                   <div className="flex items-center gap-2 text-sm font-medium"><Download className="h-4 w-4 text-primary" /> Auto-hébergé (chez le client)</div>
-                  <p className="mt-1 text-xs text-muted-foreground">Exportez la configuration pour déployer une instance dédiée chez le client (base & domaine propres).</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Téléchargez le package prêt à déployer (config + Dockerfile + docker-compose + .env.example + README + script d'init) pour une instance dédiée (base & domaine propres). Secrets non inclus.</p>
                   <a
                     href={`/console/${org.id}/export`}
                     className="mt-2 inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium hover:bg-muted"
                   >
-                    <Download className="h-3.5 w-3.5" /> Exporter la configuration (JSON)
+                    <Download className="h-3.5 w-3.5" /> Télécharger le package self-host (.zip)
                   </a>
                 </div>
               </div>
