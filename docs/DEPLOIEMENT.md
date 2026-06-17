@@ -41,8 +41,10 @@ Optionnelles (sinon mode démo) :
 `BREVO_API_KEY`, `BREVO_SENDER`, `BREVO_SMS_SENDER`, `ANTHROPIC_API_KEY`,
 `YOUSIGN_API_KEY`, `LEAD_API_SECRET`, `LEAD_NOTIF_EMAIL`, `CRON_SECRET`.
 
-> Les clés Brevo/IA peuvent aussi être définies **par organisme** dans la console
-> (`Organisme.brevoApiKey`) ; la variable globale sert de repli.
+> Les clés d'intégration peuvent aussi être définies **par organisme** dans la console
+> (`brevoApiKey`, `anthropicApiKey`, `yousignApiKey`) ; la variable d'environnement globale
+> sert alors de **repli**. Idem quota `maxSmsMois` et matrice d'automatisations
+> (`automationsConfig`) : pilotés par OF, en direct, sans redéploiement.
 
 ## 4. Domaine principal + wildcard (le cœur du multi-tenant)
 Dans **Project → Settings → Domains**, ajouter :
