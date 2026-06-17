@@ -116,6 +116,17 @@ export async function updateOrganisme(
     }
   }
 
+  // Matrice d'automatisations (quoi / quand / canal + modèles)
+  let automationsConfig: Record<string, unknown> = {};
+  const acRaw = formData.get("automationsConfig");
+  if (typeof acRaw === "string" && acRaw.trim() !== "") {
+    try {
+      automationsConfig = JSON.parse(acRaw);
+    } catch {
+      automationsConfig = {};
+    }
+  }
+
   await prisma.organisme.update({
     where: { id },
     data: {
@@ -145,6 +156,10 @@ export async function updateOrganisme(
       emailExpediteurNom: clean(formData.get("emailExpediteurNom")),
       emailExpediteur: clean(formData.get("emailExpediteur")),
       brevoApiKey: clean(formData.get("brevoApiKey")),
+      anthropicApiKey: clean(formData.get("anthropicApiKey")),
+      yousignApiKey: clean(formData.get("yousignApiKey")),
+      automationsConfig: automationsConfig as Prisma.InputJsonValue,
+      maxSmsMois: readPositiveInt(formData.get("maxSmsMois")),
       logoUrl: clean(formData.get("logoUrl")),
       cachetUrl: clean(formData.get("cachetUrl")),
       signatureUrl: clean(formData.get("signatureUrl")),

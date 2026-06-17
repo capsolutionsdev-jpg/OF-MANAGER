@@ -1,0 +1,240 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OFManager — Maquette console éditeur (Nouveau client)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Plus+Jakarta+Sans:wght@500;700;800&family=Inter:wght@400;500;600;700&family=Manrope:wght@500;700;800&family=DM+Sans:wght@400;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Bricolage+Grotesque:wght@700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,system-ui,sans-serif;background:#0e1424;color:#e8edf6;padding:26px 30px 60px}
+h1{font-family:'Plus Jakarta Sans';font-size:24px;font-weight:800}
+h1 b{color:#5aa0f8}
+.sub{color:#93a3c2;font-size:14px;margin:4px 0 22px}
+.sec{margin-top:30px}
+.sec>.t{font-family:'Plus Jakarta Sans';font-weight:800;font-size:17px;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.sec>.t .n{width:24px;height:24px;border-radius:7px;background:#2563eb;display:grid;place-items:center;font-size:13px;color:#fff}
+.sec>.d{color:#8294b4;font-size:13px;margin:0 0 14px 32px}
+.card{background:#151c30;border:1px solid #243049;border-radius:16px;padding:18px}
+.grid{display:grid;gap:14px}
+.cols2{grid-template-columns:1fr 1fr}.cols3{grid-template-columns:repeat(3,1fr)}.cols4{grid-template-columns:repeat(4,1fr)}
+.wizard{display:flex;gap:18px}
+.steps{width:230px;flex:0 0 230px}
+.step{display:flex;gap:10px;align-items:center;padding:10px 12px;border-radius:10px;font-size:13.5px;color:#aebbd6;margin-bottom:4px}
+.step .ic{width:26px;height:26px;border-radius:8px;background:#22304c;display:grid;place-items:center;font-size:13px}
+.step.on{background:#1d2droit;background:#1c2droit}
+.step.on{background:linear-gradient(90deg,#1c2742,#172033);color:#fff;border:1px solid #2f3e5e}
+.step.on .ic{background:#2563eb;color:#fff}
+.field{margin-bottom:12px}.field label{display:block;font-size:12px;color:#9fb0d0;margin-bottom:5px}
+.input{background:#0e1424;border:1px solid #2a3consequence;border:1px solid #2a3650;border-radius:9px;padding:9px 11px;font-size:13px;color:#dde6f5;width:100%}
+.row{display:flex;gap:10px}.row>*{flex:1}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:5px 10px;border-radius:20px;background:#1c2742;color:#bcd0f0;border:1px solid #2f3e5e}
+.toggle{display:flex;align-items:center;justify-content:space-between;padding:9px 11px;border:1px solid #2a3650;border-radius:10px;font-size:13px;margin-bottom:7px;background:#0e1424}
+.sw{width:34px;height:19px;border-radius:20px;background:#2a3650;position:relative}
+.sw.on{background:#2563eb}.sw i{position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;background:#fff;transition:.15s}.sw.on i{left:17px}
+.muted{color:#8294b4}.small{font-size:12px}
+.badge{font-size:11px;padding:2px 8px;border-radius:6px;font-weight:600}
+.b-core{background:#10341f;color:#5fe39b}.b-opt{background:#3a2a10;color:#ffc46b}
+/* ===== mini-dashboards par design ===== */
+.gal{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.dz{border-radius:14px;overflow:hidden;border:1px solid #243049;background:#0a0e1a}
+.dz .cap{padding:8px 11px;font-size:12px;font-weight:700;color:#cdd8ee;background:#11182a;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #243049}
+.dz .cap .tag{font-size:10px;font-weight:600;color:#7f8db0}
+.mini{height:215px;padding:11px}
+.mini .top{display:flex;align-items:center;gap:6px;margin-bottom:9px}
+.mini .lg{font-weight:800;font-size:11px}
+.mini .nav{display:flex;gap:4px;margin-left:4px}
+.mini .nav span{font-size:8px;padding:2px 6px;border-radius:20px}
+.mini .btn{margin-left:auto;font-size:8px;padding:3px 7px;border-radius:6px;font-weight:700}
+.mini .k{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:9px}
+.mini .kp{padding:7px 8px}
+.mini .kp .l{font-size:7px;opacity:.7}.mini .kp .v{font-size:16px;font-weight:800;line-height:1.1;margin-top:2px}
+.mini .panel{padding:9px;border-radius:8px}
+.mini .panel .h{font-size:8.5px;font-weight:700;margin-bottom:7px;opacity:.85}
+.mini .bars{display:flex;align-items:flex-end;gap:5px;height:54px}
+.mini .bars i{flex:1;border-radius:3px 3px 0 0}
+/* défaut */
+.d-defaut{font-family:Inter;background:#f5f7fb;color:#0f1830}
+.d-defaut .lg span,.d-defaut .v.acc{color:#1a5fd4}.d-defaut .nav span{background:#e7edf8;color:#43506b}.d-defaut .nav .a{background:#1a5fd4;color:#fff}
+.d-defaut .btn{background:#1a5fd4;color:#fff}.d-defaut .kp,.d-defaut .panel{background:#fff;border:1px solid #e6e9f0;border-radius:11px}.d-defaut .bars i{background:#1a5fd4}
+/* aurora */
+.d-aurora{font-family:Sora;color:#eaf0ff;background:#070a14;background-image:radial-gradient(40% 50% at 15% 10%,rgba(124,77,255,.45),transparent 60%),radial-gradient(45% 45% at 88% 12%,rgba(0,194,255,.4),transparent 60%)}
+.d-aurora .lg span{color:#7fd4ff}.d-aurora .nav span{background:rgba(255,255,255,.08);color:#b9c4dd}.d-aurora .nav .a{background:rgba(255,255,255,.18);color:#fff}
+.d-aurora .btn{background:linear-gradient(90deg,#7c4dff,#00c2ff);color:#fff}
+.d-aurora .kp,.d-aurora .panel{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(8px);border-radius:14px}
+.d-aurora .v.acc{color:#9fd8ff}.d-aurora .bars i{background:linear-gradient(180deg,#7c4dff,#00c2ff)}
+/* bento */
+.d-bento{font-family:'Plus Jakarta Sans';background:#eceef3;color:#11131a}
+.d-bento .lg span,.d-bento .v.acc{color:#1e6fe6}.d-bento .nav span{background:#e3e7f0;color:#5a6480}.d-bento .nav .a{background:#11131a;color:#fff}
+.d-bento .btn{background:#1e6fe6;color:#fff}.d-bento .kp,.d-bento .panel{background:#fff;border-radius:18px;box-shadow:0 8px 22px -16px rgba(20,20,40,.4)}
+.d-bento .v{font-family:'Bricolage Grotesque'}.d-bento .bars i{background:#1e6fe6}
+/* éditorial */
+.d-edito{font-family:Inter;background:#f5f2ea;color:#191712}
+.d-edito .lg{font-family:Fraunces}.d-edito .lg span,.d-edito .v.acc{color:#b3402f}
+.d-edito .nav span{background:transparent;color:#7a736a;border-bottom:1px solid transparent}.d-edito .nav .a{border-bottom:1px solid #b3402f;color:#191712}
+.d-edito .btn{background:#b3402f;color:#fff}.d-edito .kp,.d-edito .panel{background:#faf8f2;border:1px solid #d6cfc1;border-radius:3px}
+.d-edito .v{font-family:Fraunces;font-weight:600}.d-edito .h{font-family:Fraunces}.d-edito .bars i{background:#b3402f}
+/* linear */
+.d-linear{font-family:Inter;background:#0c0d12;color:#c9ccd6}
+.d-linear .lg span,.d-linear .v.acc{color:#7c8cff}.d-linear .nav span{background:#16181f;color:#8b90a0}.d-linear .nav .a{background:#1d2030;color:#fff}
+.d-linear .btn{background:#5b6cff;color:#fff}.d-linear .kp,.d-linear .panel{background:#101218;border:1px solid #1c1e27;border-radius:8px}
+.d-linear .v{color:#fff}.d-linear .bars i{background:#5b6cff}
+/* néumorphisme */
+.d-neu{font-family:Manrope;background:#e6e9ef;color:#2b3146}
+.d-neu .lg span,.d-neu .v.acc{color:#5b7cfa}.d-neu .nav span{background:#e6e9ef;color:#737a90;box-shadow:3px 3px 6px #c4c8d0,-3px -3px 6px #fff;border-radius:20px}.d-neu .nav .a{color:#2b3146}
+.d-neu .btn{background:#5b7cfa;color:#fff;box-shadow:3px 3px 6px #c4c8d0}
+.d-neu .kp,.d-neu .panel{background:#e6e9ef;border-radius:14px;box-shadow:7px 7px 14px #c4c8d0,-7px -7px 14px #fff}
+.d-neu .bars i{background:#5b7cfa}
+/* humaniste */
+.d-huma{font-family:'DM Sans';background:#fbf6ee;color:#2d2820}
+.d-huma .lg{font-family:Fraunces}.d-huma .lg span,.d-huma .v.acc{color:#ea580c}
+.d-huma .nav span{background:transparent;color:#7c7468}.d-huma .nav .a{background:#f08a5d;color:#fff;border-radius:20px}
+.d-huma .btn{background:#ea580c;color:#fff;border-radius:20px}.d-huma .kp,.d-huma .panel{background:#fff;border:1px solid #efe6d8;border-radius:18px}
+.d-huma .v{font-family:Fraunces;font-weight:600}.d-huma .h{font-family:Fraunces}.d-huma .bars i{background:#ea580c}
+/* enterprise */
+.d-ent{font-family:Inter;background:#eef1f5;color:#1f2733}
+.d-ent .lg span,.d-ent .v.acc{color:#2563eb}.d-ent .nav span{background:#fff;color:#5b6675;border:1px solid #d8dee7}.d-ent .nav .a{background:#2563eb;color:#fff;border-color:#2563eb}
+.d-ent .btn{background:#2563eb;color:#fff}.d-ent .kp,.d-ent .panel{background:#fff;border:1px solid #d8dee7;border-radius:6px}
+.d-ent .bars i{background:#2563eb}
+</style></head>
+<body>
+<h1><b>OFManager</b> · Console éditeur — <b>Nouveau client</b> <span style="font-size:12px;color:#7f8db0;font-weight:500">(maquette)</span></h1>
+<div class="sub">Une seule configuration → on génère toute la plateforme du client. Hébergée chez nous ou chez lui.</div>
+
+<!-- WIZARD -->
+<div class="sec">
+  <div class="t"><span class="n">▣</span>Assistant de création (8 étapes)</div>
+  <div class="d">Tout est réuni dans un parcours guidé, avec aperçu en direct.</div>
+  <div class="card">
+    <div class="wizard">
+      <div class="steps">
+        <div class="step on"><span class="ic">1</span>Identité &amp; légal</div>
+        <div class="step"><span class="ic">2</span>Marque &amp; visuels</div>
+        <div class="step"><span class="ic">3</span>Design</div>
+        <div class="step"><span class="ic">4</span>Fonctionnalités</div>
+        <div class="step"><span class="ic">5</span>Documents</div>
+        <div class="step"><span class="ic">6</span>Automatisations</div>
+        <div class="step"><span class="ic">7</span>Comptes &amp; accès</div>
+        <div class="step"><span class="ic">8</span>Hébergement + Générer</div>
+      </div>
+      <div style="flex:1">
+        <div class="grid cols2">
+          <div class="field"><label>Raison sociale</label><div class="input">ASPR Formation</div></div>
+          <div class="field"><label>Nom commercial</label><div class="input">ASPR Manager</div></div>
+          <div class="field"><label>SIRET</label><div class="input">812 345 678 00021</div></div>
+          <div class="field"><label>N° déclaration d'activité (NDA)</label><div class="input">11 75 01234 75</div></div>
+          <div class="field"><label>Certificateur / n° RS</label><div class="input">INRS · SST</div></div>
+          <div class="field"><label>N° / mention Qualiopi</label><div class="input">Certifié Qualiopi — Actions de formation</div></div>
+          <div class="field"><label>Représentant légal</label><div class="input">Nom Prénom — Gérant</div></div>
+          <div class="field"><label>Adresse · CP · Ville</label><div class="input">… , 95220 Herblay</div></div>
+          <div class="field"><label>E-mail · Téléphone</label><div class="input">contact@aspr.fr · 01 …</div></div>
+          <div class="field"><label>N° TVA intracom.</label><div class="input">FR…</div></div>
+        </div>
+        <div class="small muted">→ Ces informations alimentent automatiquement tous les documents (conventions, attestations, BPF, pied de page légal…).</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DESIGNS : aperçu tableau de bord -->
+<div class="sec">
+  <div class="t"><span class="n">3</span>Design — aperçu réel du tableau de bord</div>
+  <div class="d">Le client choisit un style en voyant SON tableau de bord rendu (pas un code couleur) — chaque style se décline ensuite en plusieurs palettes.</div>
+  <div class="gal" id="gal"></div>
+</div>
+
+<!-- FONCTIONNALITÉS -->
+<div class="sec">
+  <div class="t"><span class="n">4</span>Fonctionnalités à activer</div>
+  <div class="d">Cœur inclus, modules avancés à la carte (vendables en option).</div>
+  <div class="grid cols2">
+    <div class="card"><div style="margin-bottom:9px"><span class="badge b-core">CŒUR — inclus</span></div>
+      <div class="toggle">CRM &amp; prospects <span class="sw on"><i></i></span></div>
+      <div class="toggle">Candidats &amp; inscriptions <span class="sw on"><i></i></span></div>
+      <div class="toggle">Sessions &amp; émargement <span class="sw on"><i></i></span></div>
+      <div class="toggle">Documents &amp; signatures <span class="sw on"><i></i></span></div>
+      <div class="toggle">Qualiopi · BPF · RGPD <span class="sw on"><i></i></span></div>
+    </div>
+    <div class="card"><div style="margin-bottom:9px"><span class="badge b-opt">MODULES AVANCÉS — options</span></div>
+      <div class="toggle">Pipeline Kanban <span class="sw on"><i></i></span></div>
+      <div class="toggle">Assistant IA (Claude) <span class="sw"><i></i></span></div>
+      <div class="toggle">SMS &amp; séquences <span class="sw"><i></i></span></div>
+      <div class="toggle">Rapports analytiques <span class="sw on"><i></i></span></div>
+      <div class="toggle">Espace client entreprise <span class="sw"><i></i></span></div>
+    </div>
+  </div>
+</div>
+
+<!-- MARQUE + DOCS -->
+<div class="sec">
+  <div class="t"><span class="n">2·5</span>Marque, visuels &amp; documents</div>
+  <div class="d">Logo, favicon, cachet, signature ; chaque document : notre modèle ou celui du client.</div>
+  <div class="grid cols4">
+    <div class="card" style="text-align:center"><div class="small muted">Logo</div><div style="height:54px;display:grid;place-items:center;font-weight:800;color:#5aa0f8">OFManager</div><span class="chip">Importer PNG</span></div>
+    <div class="card" style="text-align:center"><div class="small muted">Favicon</div><div style="height:54px;display:grid;place-items:center"><div style="width:30px;height:30px;border-radius:7px;background:#1a5fd4"></div></div><span class="chip">Importer</span></div>
+    <div class="card" style="text-align:center"><div class="small muted">Cachet</div><div style="height:54px;display:grid;place-items:center"><div style="width:46px;height:46px;border-radius:50%;border:2px dashed #3a4a6a"></div></div><span class="chip">Importer</span></div>
+    <div class="card" style="text-align:center"><div class="small muted">Signature gérant</div><div style="height:54px;display:grid;place-items:center;font-family:cursive;color:#aebbd6">✒︎ signé</div><span class="chip">Importer</span></div>
+  </div>
+  <div class="card" style="margin-top:14px">
+    <div class="small" style="font-weight:700;margin-bottom:8px">Documents personnalisés</div>
+    <div class="grid cols3">
+      <div class="toggle">Règlement intérieur <span class="chip">Notre modèle ▾</span></div>
+      <div class="toggle">CGV <span class="chip">Doc du client ▾</span></div>
+      <div class="toggle">Convention <span class="chip">Notre modèle ▾</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- AUTOMATISATIONS BREVO -->
+<div class="sec">
+  <div class="t"><span class="n">6</span>Automatisations Brevo — quoi envoyer &amp; quand</div>
+  <div class="d">Matrice configurable par client : chaque envoi activable, son canal (e-mail/SMS) et son déclencheur.</div>
+  <div class="card">
+    <div class="grid" style="grid-template-columns:1.6fr .8fr 1.4fr .5fr;gap:0;font-size:12.5px">
+      <div class="muted small" style="padding:6px 4px;border-bottom:1px solid #243049">Envoi</div>
+      <div class="muted small" style="padding:6px 4px;border-bottom:1px solid #243049">Canal</div>
+      <div class="muted small" style="padding:6px 4px;border-bottom:1px solid #243049">Déclencheur (quand)</div>
+      <div class="muted small" style="padding:6px 4px;border-bottom:1px solid #243049">On</div>
+      <!-- rows -->
+      <div style="padding:8px 4px;border-bottom:1px solid #1a2233">Convocation</div><div style="padding:8px 4px;border-bottom:1px solid #1a2233"><span class="chip">E-mail+SMS</span></div><div style="padding:8px 4px;border-bottom:1px solid #1a2233">J-7 avant le début</div><div style="padding:8px 4px;border-bottom:1px solid #1a2233"><span class="sw on"><i></i></span></div>
+      <div style="padding:8px 4px;border-bottom:1px solid #1a2233">Attestation d'entrée</div><div style="padding:8px 4px;border-bottom:1px solid #1a2233"><span class="chip">E-mail</span></div><div style="padding:8px 4px;border-bottom:1px solid #1a2233">J1 · 9h00</div><div style="padding:8px 4px;border-bottom:1px solid #1a2233"><span class="sw on"><i></i></span></div>
+      <div style="padding:8px 4px;border-bottom:1px solid #1a2233">Émargement (lien)</div><div style="padding:8px 4px;border-bottom:1px solid #1a2233"><span class="chip">SMS</span></div><div style="padding:8px 4px;border-bottom:1px solid #1a2233">Chaque demi-journée</div><div style="padding:8px 4px;border-bottom:1px solid #1a2233"><span class="sw on"><i></i></span></div>
+      <div style="padding:8px 4px;border-bottom:1px solid #1a2233">Enquête satisfaction</div><div style="padding:8px 4px;border-bottom:1px solid #1a2233"><span class="chip">E-mail</span></div><div style="padding:8px 4px;border-bottom:1px solid #1a2233">Dernier jour · 17h</div><div style="padding:8px 4px;border-bottom:1px solid #1a2233"><span class="sw on"><i></i></span></div>
+      <div style="padding:8px 4px;border-bottom:1px solid #1a2233">Attestation fin + certificat</div><div style="padding:8px 4px;border-bottom:1px solid #1a2233"><span class="chip">E-mail</span></div><div style="padding:8px 4px;border-bottom:1px solid #1a2233">J+1 après la fin</div><div style="padding:8px 4px;border-bottom:1px solid #1a2233"><span class="sw on"><i></i></span></div>
+      <div style="padding:8px 4px">Relance dossier incomplet</div><div style="padding:8px 4px"><span class="chip">E-mail+SMS</span></div><div style="padding:8px 4px">Tous les 3 j si pièces manquantes</div><div style="padding:8px 4px"><span class="sw"><i></i></span></div>
+    </div>
+    <div class="small muted" style="margin-top:10px">+ Clé Brevo &amp; expéditeur <b>par client</b> · modèles de message éditables · journal des envois.</div>
+  </div>
+</div>
+
+<!-- HÉBERGEMENT -->
+<div class="sec">
+  <div class="t"><span class="n">8</span>Hébergement &amp; génération</div>
+  <div class="d">À partir de cette configuration, on génère la plateforme finie.</div>
+  <div class="grid cols2">
+    <div class="card" style="border:1.5px solid #2563eb"><div style="font-weight:800;margin-bottom:5px">☁︎ Hébergé chez nous (clé en main)</div><div class="small muted">Sous-domaine <b>client.ofmanager.fr</b>, base &amp; mises à jour gérées, zéro technique côté client. Abonnement mensuel.</div></div>
+    <div class="card"><div style="font-weight:800;margin-bottom:5px">🖥 Hébergé chez le client</div><div class="small muted">Export du projet + base dédiée, déployé sur SON compte (Vercel/serveur). Licence + maintenance.</div></div>
+  </div>
+  <div style="margin-top:14px;text-align:center"><span style="display:inline-block;background:#2563eb;color:#fff;font-weight:800;padding:12px 26px;border-radius:12px">⚙︎ Générer la plateforme du client</span></div>
+</div>
+
+<script>
+const DESIGNS=[
+ ["d-defaut","Défaut","clair · bleu"],["d-aurora","Aurora","verre · sombre"],
+ ["d-bento","Bento","tuiles · ludique"],["d-edito","Éditorial","papier · serif"],
+ ["d-linear","Linear","sombre · dense"],["d-neu","Néumorphisme","relief doux"],
+ ["d-huma","Humaniste","crème chaud"],["d-ent","Enterprise","dense · pro"]];
+const mini=(cls)=>`<div class="mini ${cls}">
+  <div class="top"><span class="lg">OF<span>Manager</span></span>
+    <span class="nav"><span class="a">Bord</span><span>CRM</span><span>Sessions</span></span>
+    <span class="btn">+ Nouveau</span></div>
+  <div class="k">
+    <div class="kp"><div class="l">Candidats</div><div class="v">128</div></div>
+    <div class="kp"><div class="l">Sessions</div><div class="v acc">12</div></div>
+    <div class="kp"><div class="l">Apprenants</div><div class="v">64</div></div>
+    <div class="kp"><div class="l">Taux</div><div class="v">18%</div></div></div>
+  <div class="panel"><div class="h">Inscriptions par mois</div>
+    <div class="bars"><i style="height:40%"></i><i style="height:65%"></i><i style="height:50%"></i><i style="height:85%"></i><i style="height:70%"></i><i style="height:95%"></i></div></div>
+</div>`;
+document.getElementById('gal').innerHTML=DESIGNS.map(([c,n,t])=>
+ `<div class="dz"><div class="cap"><span>${n}</span><span class="tag">${t}</span></div>${mini(c)}</div>`).join('');
+</script>
+</body></html>

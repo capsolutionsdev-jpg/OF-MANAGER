@@ -3,11 +3,24 @@
 // aucune requête n'est émise et un message d'invitation à configurer est renvoyé.
 
 import Anthropic from "@anthropic-ai/sdk";
+import { prisma } from "@/lib/prisma";
 
 const MODEL = "claude-opus-4-8";
 
 export function aiConfigured(): boolean {
   return Boolean(process.env.ANTHROPIC_API_KEY);
+}
+
+/** Résout la clé Claude : clé propre à l'OF si renseignée, sinon clé globale. */
+async function resolveAiKey(organismeId?: string | null): Promise<string | undefined> {
+  if (organismeId) {
+    const o = await prisma.organisme.findUnique({
+      where: { id: organismeId },
+      select: { anthropicApiKey: true },
+    });
+    if (o?.anthropicApiKey) return o.anthropicApiKey;
+  }
+  return process.env.ANTHROPIC_API_KEY;
 }
 
 export type AiResult = { ok: true; text: string } | { ok: false; error: string };
@@ -16,8 +29,9 @@ export async function aiComplete(params: {
   system?: string;
   prompt: string;
   maxTokens?: number;
+  organismeId?: string | null;
 }): Promise<AiResult> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = await resolveAiKey(params.organismeId);
   if (!apiKey) {
     return {
       ok: false,

@@ -96,6 +96,13 @@ model Organisme {
   brevoApiKey        String?
   sousDomaine        String? @unique
 
+  // Clés d'intégration PAR organisme (sinon repli sur la config globale)
+  anthropicApiKey String? // Assistant IA (Claude)
+  yousignApiKey   String? // signature électronique prestataire
+  // Matrice d'automatisations Brevo configurable : { "<event>": { on, channel, trigger } }
+  automationsConfig Json?
+  maxSmsMois        Int? // quota SMS / mois (selon formule)
+
   // Fonctionnalités activées (clés de features cochées dans la console)
   fonctionnalites String[] @default([])
 

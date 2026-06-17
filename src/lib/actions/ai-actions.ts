@@ -85,5 +85,5 @@ export async function runAssistant(formData: FormData): Promise<AiResult> {
 
   if (!prompt.trim()) return { ok: false, error: "Indiquez une consigne ou choisissez un prospect." };
 
-  return aiComplete({ system, prompt, maxTokens: 1200 });
+  return aiComplete({ system, prompt, maxTokens: 1200, organismeId: org?.id });
 }
