@@ -71,6 +71,7 @@ export function FormationForm({
       delaiAcces: "",
       piecesAttendues: "",
       examen: false,
+      grilleInrs: "",
       ...defaultValues,
     },
   });
@@ -230,6 +231,23 @@ export function FormationForm({
                 (génère une convocation d&apos;examen ; à décocher pour SST / MAC SST / MAC APS)
               </span>
             </label>
+          </div>
+          <div className="sm:col-span-2">
+            <label className="mb-1 block text-sm font-medium">
+              Grille de certification INRS (pré-remplie)
+            </label>
+            <select
+              className="h-9 w-full max-w-sm rounded-md border bg-transparent px-3 text-sm"
+              {...register("grilleInrs")}
+            >
+              <option value="">Aucune (pas de grille INRS)</option>
+              <option value="SST">Grille SST (INRS)</option>
+              <option value="MAC_SST">Grille MAC SST (INRS)</option>
+            </select>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Document officiel INRS pré-rempli (identité du stagiaire, dates, formateur) ;
+              l&apos;évaluation des compétences reste à compléter par le formateur.
+            </p>
           </div>
         </CardContent>
       </Card>

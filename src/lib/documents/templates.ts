@@ -352,6 +352,22 @@ export const DOCUMENTS: Record<string, { label: string; html: string }> = {
     ),
   },
 
+  ATTESTATION_REUSSITE: {
+    label: "Attestation de réussite (certification)",
+    html: wrap(
+      "Attestation de réussite",
+      `<p>Je soussigné(e) {{organisme_representant}}, représentant l'organisme <strong>{{organisme}}</strong> (NDA {{organisme_nda}}), atteste que <strong>{{nom_complet}}</strong> a satisfait aux épreuves d'évaluation et <strong>obtenu</strong> la certification suivante :</p>
+      <table class="doc-table">
+        <tr><td>Formation / titre</td><td><strong>{{formation}}</strong> (réf. {{reference_formation}})</td></tr>
+        <tr><td>Certification</td><td>{{certification}}</td></tr>
+        <tr><td>Période de formation</td><td>du {{date_debut}} au {{date_fin}}</td></tr>
+        <tr><td>Résultat</td><td><strong>Admis(e)</strong></td></tr>
+      </table>
+      <p>Attestation de réussite délivrée le {{date_jour}} pour servir et valoir ce que de droit.</p>
+      ${signatures}`,
+    ),
+  },
+
   CERTIFICAT_REALISATION: {
     label: "Certificat de réalisation",
     html: wrap(
@@ -781,6 +797,7 @@ export const DOCUMENT_MENU = [
   "EVALUATION_ACQUIS",
   "REMISE_SUPPORTS",
   "ATTESTATION_FIN",
+  "ATTESTATION_REUSSITE",
   "CERTIFICAT_REALISATION",
   "SATISFACTION_STAGIAIRE",
   "SATISFACTION_ENTREPRISE",

@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Pencil, Users, ClipboardCheck, FileText, UserCog, CreditCard } from "lucide-react";
+import { ArrowLeft, Pencil, Users, ClipboardCheck, FileText, UserCog, CreditCard, Award, Download, CheckCircle2 } from "lucide-react";
 import { getTenantDb } from "@/lib/tenant";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +21,7 @@ import {
 import { MODALITE_LABELS } from "@/lib/validators/formation";
 import { SESSION_STATUT_LABELS } from "@/lib/validators/session";
 import { INSCRIPTION_STATUT_LABELS } from "@/lib/validators/inscription";
+import { setResultatsDeclares } from "@/lib/actions/session-actions";
 import { FINANCEMENT_LABELS } from "@/lib/validators/candidat";
 import { EnrollForm } from "@/components/inscriptions/enroll-form";
 import { DocumentsMenu } from "@/components/documents/documents-menu";
@@ -483,6 +484,17 @@ export default async function SessionDetailPage({
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
+                        {s.formation.grilleInrs && (
+                          <a
+                            href={`/documents/grille-certification/${i.id}`}
+                            target="_blank"
+                            rel="noopener"
+                            title="Grille de certification INRS (pré-remplie)"
+                            className="inline-flex h-7 items-center gap-1 rounded-md border px-2 text-xs font-medium hover:bg-muted"
+                          >
+                            <Award className="h-3.5 w-3.5" /> Grille
+                          </a>
+                        )}
                         <DocumentsMenu inscriptionId={i.id} />
                         <InscriptionActionsMenu
                           inscriptionId={i.id}
@@ -505,6 +517,63 @@ export default async function SessionDetailPage({
           </div>
         </CardContent>
       </Card>
+
+      {/* Examen & certification (formations soumises à examen) */}
+      {s.formation.examen && (
+        <Card>
+          <CardHeader className="py-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Award className="h-4 w-4" /> Examen &amp; certification
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Examen : {s.dateExamen ? fmt(s.dateExamen) : "date à définir"}
+              {s.lieuExamen ? ` · ${s.lieuExamen}` : ""}
+            </p>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {[
+                { label: "Certifiés", n: s.inscriptions.filter((i) => i.resultatCertification === "CERTIFIE").length, cls: "text-emerald-700" },
+                { label: "Ajournés", n: s.inscriptions.filter((i) => i.resultatCertification === "AJOURNE").length, cls: "text-amber-700" },
+                { label: "Absents", n: s.inscriptions.filter((i) => i.resultatCertification === "ABANDON").length, cls: "text-destructive" },
+                { label: "En attente", n: s.inscriptions.filter((i) => i.resultatCertification === "NON_EVALUE").length, cls: "text-muted-foreground" },
+              ].map((k) => (
+                <div key={k.label} className="rounded-lg border bg-muted/30 p-3 text-center">
+                  <div className={`text-2xl font-bold ${k.cls}`}>{k.n}</div>
+                  <div className="text-xs text-muted-foreground">{k.label}</div>
+                </div>
+              ))}
+            </div>
+            <div className="flex flex-wrap items-center gap-2 border-t pt-3">
+              <Button variant="outline" size="sm" render={<a href={`/sessions/${s.id}/resultats`} />}>
+                <Download className="mr-1.5 h-4 w-4" /> Exporter les résultats (CSV)
+              </Button>
+              {s.resultatsDeclaresAt ? (
+                <>
+                  <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-700">
+                    <CheckCircle2 className="h-3.5 w-3.5" /> Résultats déclarés au certificateur le {fmt(s.resultatsDeclaresAt)}
+                  </span>
+                  <form action={setResultatsDeclares}>
+                    <input type="hidden" name="id" value={s.id} />
+                    <input type="hidden" name="declared" value="false" />
+                    <Button type="submit" variant="ghost" size="sm" className="text-muted-foreground">Annuler</Button>
+                  </form>
+                </>
+              ) : (
+                <form action={setResultatsDeclares}>
+                  <input type="hidden" name="id" value={s.id} />
+                  <input type="hidden" name="declared" value="true" />
+                  <Button type="submit" size="sm">Marquer les résultats déclarés au certificateur</Button>
+                </form>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Saisissez le résultat de chaque participant dans le tableau ci-dessus (colonne « Certification »).
+              L&apos;« Attestation de réussite » se génère via le menu documents de chaque candidat admis.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Dossiers administratifs (pièces à fournir) */}
       {s.formation.piecesAttendues.length > 0 && s.inscriptions.length > 0 && (

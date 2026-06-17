@@ -502,6 +502,9 @@ model Formation {
   // La formation est sanctionnée par un examen → convocation d'examen pertinente
   // (sinon : pas de convocation d'examen, ex. SST / MAC SST / MAC APS).
   examen Boolean @default(false)
+  // Grille de certification officielle INRS à pré-remplir (doc réglementaire) :
+  // "SST" ou "MAC_SST" (cf. public/inrs/). Vide = pas de grille INRS.
+  grilleInrs String?
 
   // Versionnage / archivage
   version    Int     @default(1)
@@ -540,6 +543,9 @@ model Session {
   // Examen (formations soumises à examen, ex. TFP APS) : date + lieu dédiés.
   dateExamen  DateTime?
   lieuExamen  String? // adresse de l'examen (OF ou autre centre d'examen)
+  // Phase 3 — certification : date à laquelle les résultats ont été déclarés
+  // au certificateur (suivi de la transmission des résultats d'examen).
+  resultatsDeclaresAt DateTime?
   modalite    Modalite      @default(MIXTE)
   nbPlaces    Int           @default(10)
   statut      SessionStatut @default(PLANIFIEE)

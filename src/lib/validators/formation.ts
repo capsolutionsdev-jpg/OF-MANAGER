@@ -24,6 +24,8 @@ export const formationFormSchema = z.object({
   piecesAttendues: optionalText,
   // Formation soumise à un examen (→ convocation d'examen).
   examen: z.boolean().optional(),
+  // Grille de certification officielle INRS à pré-remplir ("SST" / "MAC_SST").
+  grilleInrs: z.string().optional(),
 });
 
 export type FormationFormValues = z.infer<typeof formationFormSchema>;

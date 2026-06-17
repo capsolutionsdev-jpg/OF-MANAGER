@@ -114,3 +114,18 @@ export async function updateSession(
     throw e;
   }
 }
+
+/**
+ * Phase 3 — certification : marque (ou annule) la déclaration des résultats
+ * d'examen au certificateur pour une session. Déclenché par un bouton.
+ */
+export async function setResultatsDeclares(formData: FormData) {
+  const db = await getTenantDb();
+  const id = String(formData.get("id"));
+  const declared = String(formData.get("declared")) === "true";
+  await db.session.update({
+    where: { id },
+    data: { resultatsDeclaresAt: declared ? new Date() : null },
+  });
+  revalidatePath(`/sessions/${id}`);
+}
