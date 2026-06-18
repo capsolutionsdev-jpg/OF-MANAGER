@@ -130,6 +130,46 @@ export async function signMyEmargement(
   return { ok: true };
 }
 
+export type AccountState = { ok?: boolean; error?: string; id?: string };
+const STAFF_ADMIN = ["ADMIN", "RESPONSABLE_FORMATION"];
+const cleanStr = (v: FormDataEntryValue | null) => {
+  const s = typeof v === "string" ? v.trim() : "";
+  return s === "" ? null : s;
+};
+
+/**
+ * Crée un CANDIDAT + son compte « espace apprenant » en une fois
+ * (depuis Administration → Créer un compte → Candidat).
+ */
+export async function createCandidatWithAccount(
+  _prev: AccountState | undefined,
+  formData: FormData,
+): Promise<AccountState> {
+  const session = await auth();
+  if (!session?.user || !STAFF_ADMIN.includes(session.user.role as string))
+    return { error: "Non autorisé." };
+
+  const prenom = String(formData.get("prenom") ?? "").trim();
+  const nom = String(formData.get("nom") ?? "").trim();
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const password = String(formData.get("password") ?? "");
+  if (!prenom || !nom) return { error: "Nom et prénom requis." };
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { error: "E-mail invalide." };
+  if (password.length < 6) return { error: "Mot de passe : 6 caractères minimum." };
+
+  const db = await getTenantDb();
+  const candidat = await db.candidat.create({
+    data: { prenom, nom, email, telephone: cleanStr(formData.get("telephone")) },
+    select: { id: true },
+  });
+
+  const r = await createApprenantAccount(candidat.id, password);
+  if (!r.ok) return { error: r.error };
+
+  revalidatePath("/candidats");
+  return { ok: true, id: candidat.id };
+}
+
 /** Attribue un cours à un apprenant. */
 export async function assignCours(
   apprenantId: string,

@@ -1,7 +1,7 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Users, ShieldCheck, UserPlus } from "lucide-react";
+import { ShieldCheck, UserPlus, Users, Building2, UserCog, GraduationCap, ChevronRight } from "lucide-react";
 import { auth } from "@/auth";
-import { getTenantDb } from "@/lib/tenant";
 import { orgConfigFor } from "@/lib/org-identity";
 import { roleLabels } from "@/lib/navigation";
 import {
@@ -12,31 +12,22 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ChangePasswordForm } from "@/app/(app)/mon-compte/change-password-form";
-import { CollaborateurForm } from "@/components/admin/collaborateur-form";
-import { CollaborateurRow } from "@/components/admin/collaborateur-row";
 
 export const dynamic = "force-dynamic";
 
+const COMPTES = [
+  { href: "/administration/comptes/collaborateur", icon: Users, title: "Collaborateur", desc: "Responsable formation, assistant — avec accès par section." },
+  { href: "/administration/comptes/client-pro", icon: Building2, title: "Client pro", desc: "Entreprise cliente (B2B) + son espace / portail." },
+  { href: "/administration/comptes/formateur", icon: UserCog, title: "Formateur", desc: "Formateur + accès à son espace (sessions, contrats, factures)." },
+  { href: "/administration/comptes/candidat", icon: GraduationCap, title: "Candidat", desc: "Candidat + accès apprenant (cours, documents, émargements)." },
+];
+
 export default async function AdministrationPage() {
-  const db = await getTenantDb();
   const session = await auth();
-  const org = await orgConfigFor(session?.user?.organismeId ?? null);
   if (!session?.user) redirect("/login");
   if (session.user.role !== "ADMIN") redirect("/dashboard");
   const me = session.user;
-
-  const collaborateurs = await db.user.findMany({
-    where: { role: { in: ["ASSISTANT", "RESPONSABLE_FORMATION"] } },
-    orderBy: { name: "asc" },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      role: true,
-      isActive: true,
-      permissions: true,
-    },
-  });
+  const org = await orgConfigFor(me.organismeId ?? null);
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -45,9 +36,41 @@ export default async function AdministrationPage() {
           <ShieldCheck className="h-6 w-6 text-primary" /> Administration
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Vos informations, votre mot de passe, et la gestion des comptes collaborateurs.
+          Votre profil, votre mot de passe, et la création des comptes.
         </p>
       </div>
+
+      {/* Créer un compte — chaque type sur sa page */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <UserPlus className="h-4 w-4 text-primary" /> Créer un compte
+          </CardTitle>
+          <CardDescription>Choisissez le type de compte à créer.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {COMPTES.map((c) => (
+              <Link
+                key={c.href}
+                href={c.href}
+                className="group flex items-start gap-3 rounded-lg border p-4 transition hover:border-primary hover:bg-muted/40"
+              >
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <c.icon className="h-5 w-5" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center gap-1 font-medium">
+                    {c.title}
+                    <ChevronRight className="h-4 w-4 text-muted-foreground transition group-hover:translate-x-0.5" />
+                  </span>
+                  <span className="block text-xs text-muted-foreground">{c.desc}</span>
+                </span>
+              </Link>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Profil du gérant */}
       <Card>
@@ -77,52 +100,10 @@ export default async function AdministrationPage() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Changer mon mot de passe</CardTitle>
-          <CardDescription>
-            8 caractères minimum, avec lettres et chiffres.
-          </CardDescription>
+          <CardDescription>8 caractères minimum, avec lettres et chiffres.</CardDescription>
         </CardHeader>
         <CardContent>
           <ChangePasswordForm />
-        </CardContent>
-      </Card>
-
-      {/* Créer un collaborateur */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <UserPlus className="h-4 w-4 text-primary" /> Créer un compte collaborateur
-          </CardTitle>
-          <CardDescription>
-            Définissez son e-mail, son mot de passe et les sections auxquelles il a accès.
-            Il pourra se connecter immédiatement sur la plateforme.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <CollaborateurForm />
-        </CardContent>
-      </Card>
-
-      {/* Liste des collaborateurs */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Users className="h-4 w-4" /> Collaborateurs ({collaborateurs.length})
-          </CardTitle>
-          <CardDescription>
-            Modifiez les droits, réinitialisez un mot de passe, désactivez ou supprimez un compte.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {collaborateurs.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Aucun collaborateur pour le moment. Créez-en un avec le formulaire ci-dessus.
-            </p>
-          ) : (
-            collaborateurs.map((c) => <CollaborateurRow key={c.id} c={c} />)
-          )}
-          <p className="text-xs text-muted-foreground">
-            ℹ️ Un changement de droits prend effet à la prochaine connexion du collaborateur.
-          </p>
         </CardContent>
       </Card>
     </div>

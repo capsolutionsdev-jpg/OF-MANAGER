@@ -181,6 +181,45 @@ export async function setFactureFormateurStatut(
   return { ok: true };
 }
 
+export type AccountState = { ok?: boolean; error?: string; id?: string };
+
+/**
+ * Crée un FORMATEUR + son compte « espace formateur » en une fois
+ * (depuis Administration → Créer un compte → Formateur).
+ */
+export async function createFormateurWithAccount(
+  _prev: AccountState | undefined,
+  formData: FormData,
+): Promise<AccountState> {
+  const session = await auth();
+  if (!session?.user || !STAFF.includes(session.user.role as string))
+    return { error: "Non autorisé." };
+
+  const prenom = String(formData.get("prenom") ?? "").trim();
+  const nom = String(formData.get("nom") ?? "").trim();
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const password = String(formData.get("password") ?? "");
+  if (!prenom || !nom) return { error: "Nom et prénom requis." };
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { error: "E-mail invalide." };
+  if (password.length < 6) return { error: "Mot de passe : 6 caractères minimum." };
+
+  const db = await getTenantDb();
+  const tarifRaw = String(formData.get("tarifJournalier") ?? "").replace(",", ".").trim();
+  const tarif = tarifRaw !== "" && Number.isFinite(Number(tarifRaw)) ? new Prisma.Decimal(Number(tarifRaw)) : null;
+  const telephone = String(formData.get("telephone") ?? "").trim() || null;
+
+  const formateur = await db.formateur.create({
+    data: { prenom, nom, email, telephone, tarifJournalier: tarif, specialites: String(formData.get("specialites") ?? "").trim() || null },
+    select: { id: true },
+  });
+
+  const r = await createFormateurAccess(formateur.id, password);
+  if (!r.ok) return { error: r.error };
+
+  revalidatePath("/formateurs");
+  return { ok: true, id: formateur.id };
+}
+
 /**
  * Crée (ou réinitialise) l'accès « espace formateur » : crée un utilisateur
  * FORMATEUR et le lie au formateur. Réservé au gérant / responsable formation.
