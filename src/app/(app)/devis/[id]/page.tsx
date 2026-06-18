@@ -151,7 +151,8 @@ export default async function DevisDetailPage({
           )}
         </div>
 
-        <table className="mt-6 w-full border-collapse text-sm">
+        <div className="mt-6 overflow-x-auto">
+        <table className="w-full border-collapse text-sm">
           <thead>
             <tr className="border-b border-[#ccc] text-left text-xs uppercase text-[#777]">
               <th className="py-2">Désignation</th>
@@ -171,6 +172,7 @@ export default async function DevisDetailPage({
             ))}
           </tbody>
         </table>
+        </div>
 
         <div className="mt-4 flex justify-end">
           <div className="w-64 space-y-1 text-sm">

@@ -136,8 +136,8 @@ export function PricingEditor({
             de la vitrine et pré-coché à la création d&apos;un compte client. Le support est toujours inclus.
           </p>
         </div>
-        <div className="overflow-hidden rounded-lg border">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto rounded-lg border">
+          <table className="w-full min-w-[640px] text-sm">
             <thead>
               <tr className="border-b bg-muted/40">
                 <th className="px-3 py-2 text-left font-medium text-muted-foreground">Fonctionnalité</th>
