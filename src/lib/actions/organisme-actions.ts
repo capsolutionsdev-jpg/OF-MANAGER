@@ -6,7 +6,8 @@ import { Role, OrganismeStatut, FormuleAbonnement, Prisma } from "@prisma/client
 import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/superadmin-guard";
 import { FEATURE_KEYS, CORE_FEATURE_KEYS } from "@/lib/features";
-import { FORMULE_KEYS, featuresForFormule, type FormuleKey } from "@/lib/plans";
+import { FORMULE_KEYS, type FormuleKey } from "@/lib/plans";
+import { resolveFeaturesForFormule } from "@/lib/pricing";
 import { uniqueSubdomain, toSubdomain, isValidSubdomain } from "@/lib/subdomain";
 
 export type ConsoleState = { ok?: boolean; error?: string; id?: string; sousDomaine?: string };
@@ -76,8 +77,8 @@ export async function createOrganisme(
   const formule = readFormule(formData);
   let fonctionnalites = FEATURE_KEYS.filter((k) => formData.get(`feat_${k}`) === "on");
   if (fonctionnalites.length === 0) {
-    // repli : bundle de la formule choisie, sinon le « Cœur ».
-    fonctionnalites = formule ? featuresForFormule(formule as FormuleKey) : CORE_FEATURE_KEYS;
+    // repli : composition (résolue) de la formule choisie, sinon le « Cœur ».
+    fonctionnalites = formule ? await resolveFeaturesForFormule(formule as FormuleKey) : CORE_FEATURE_KEYS;
   }
 
   const org = await prisma.organisme.create({

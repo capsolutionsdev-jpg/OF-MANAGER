@@ -22,7 +22,11 @@ export async function getResolvedPlans(): Promise<{
   plans: Record<FormuleKey, ResolvedPlan>;
   popular: FormuleKey;
 }> {
-  let overrides: { formule: string; prix: number; tagline: string; supportLevel: string; populaire: boolean }[] = [];
+  type Row = {
+    formule: string; nom: string | null; prix: number; tagline: string;
+    supportLevel: string; fonctionnalites: string[]; populaire: boolean;
+  };
+  let overrides: Row[] = [];
   try {
     overrides = await prisma.planTarif.findMany();
   } catch {
@@ -38,14 +42,23 @@ export async function getResolvedPlans(): Promise<{
     if (populaire && !popular) popular = key;
     plans[key] = {
       ...PLANS[key],
+      name: o?.nom?.trim() || PLANS[key].name,
       price: o?.prix ?? PLANS[key].price,
       tagline: o?.tagline ?? PLANS[key].tagline,
       supportLevel: o?.supportLevel ?? PLANS[key].supportLevel,
+      // composition éditée si présente, sinon bundle par défaut du code
+      features: o?.fonctionnalites?.length ? o.fonctionnalites : PLANS[key].features,
       populaire,
     };
   }
 
   return { plans, popular: popular ?? DEFAULT_POPULAR };
+}
+
+/** Composition (clés de fonctionnalités) résolue d'une formule — pour les server actions. */
+export async function resolveFeaturesForFormule(key: FormuleKey): Promise<string[]> {
+  const { plans } = await getResolvedPlans();
+  return plans[key].features;
 }
 
 /** Carte des prix résolus par formule (€ / mois). Pour le calcul du MRR. */

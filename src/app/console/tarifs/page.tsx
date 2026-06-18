@@ -14,8 +14,8 @@ export default async function ConsoleTarifsPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       <PageHeader
-        title="Tarifs des formules"
-        subtitle="Le prix, l'accroche et le support de chaque formule — répercutés en direct sur la vitrine publique et le calcul du MRR"
+        title="Formules & tarifs"
+        subtitle="Nom, prix, accroche, support et composition de chaque formule — répercutés en direct sur la vitrine publique, les comptes créés et le calcul du MRR"
       >
         <Link
           href="/tarifs"
@@ -28,11 +28,6 @@ export default async function ConsoleTarifsPage() {
       </PageHeader>
 
       <PricingEditor plans={ordered} popular={popular} />
-
-      <p className="text-xs text-muted-foreground">
-        Les fonctionnalités incluses dans chaque formule restent définies dans le code
-        (<code>lib/plans.ts</code>) — ici vous pilotez uniquement le prix et l&apos;argumentaire commercial.
-      </p>
     </div>
   );
 }

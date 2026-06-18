@@ -13,7 +13,7 @@ import { THEMES, DESIGNS, designVars } from "@/lib/themes";
 import { FormuleSelector } from "@/components/console/formule-selector";
 import { AutomationMatrix } from "@/components/console/automation-matrix";
 import { parseAutomationsConfig } from "@/lib/automations";
-import type { FormuleKey } from "@/lib/plans";
+import type { FormuleKey, Plan } from "@/lib/plans";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -223,7 +223,7 @@ const SECTIONS = [
   { id: "avance", label: "Avancé & limites", icon: Settings2 },
 ] as const;
 
-export function EditOrganismeForm({ org, prices }: { org: OrgFormData; prices?: Partial<Record<FormuleKey, number>> }) {
+export function EditOrganismeForm({ org, plans }: { org: OrgFormData; plans?: Plan[] }) {
   const action = updateOrganisme.bind(null, org.id);
   const [state, formAction, isPending] = useActionState<ConsoleState | undefined, FormData>(action, undefined);
 
@@ -394,7 +394,7 @@ export function EditOrganismeForm({ org, prices }: { org: OrgFormData; prices?: 
           <Card>
             <CardHeader className="py-3"><CardTitle className="text-sm text-muted-foreground">Abonnement & fonctionnalités</CardTitle></CardHeader>
             <CardContent>
-              <FormuleSelector defaultFormule={(org.formule as FormuleKey | null) ?? null} defaultFeatures={org.fonctionnalites} prices={prices} />
+              <FormuleSelector defaultFormule={(org.formule as FormuleKey | null) ?? null} defaultFeatures={org.fonctionnalites} plans={plans} />
             </CardContent>
           </Card>
 

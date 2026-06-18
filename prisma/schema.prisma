@@ -1577,11 +1577,13 @@ model Lead {
 // défaut de lib/plans.ts. La vitrine (/tarifs) et le tableau de bord (MRR)
 // lisent ces valeurs. Modèle GLOBAL (hors cloisonnement multi-tenant).
 model PlanTarif {
-  id           String            @id @default(cuid())
-  formule      FormuleAbonnement @unique
-  prix         Int // € / mois (HT)
-  tagline      String
-  supportLevel String
-  populaire    Boolean           @default(false) // badge « le plus choisi »
-  updatedAt    DateTime          @updatedAt
+  id              String            @id @default(cuid())
+  formule         FormuleAbonnement @unique
+  nom             String? // nom commercial personnalisé (repli sur le défaut de plans.ts)
+  prix            Int // € / mois (HT)
+  tagline         String
+  supportLevel    String
+  fonctionnalites String[]          @default([]) // composition (clés) ; vide = bundle par défaut
+  populaire       Boolean           @default(false) // badge « le plus choisi »
+  updatedAt       DateTime          @updatedAt
 }

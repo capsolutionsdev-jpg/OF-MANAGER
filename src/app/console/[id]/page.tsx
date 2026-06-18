@@ -6,7 +6,8 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EditOrganismeForm } from "@/components/console/edit-organisme-form";
-import { getPlanPrices } from "@/lib/pricing";
+import { getResolvedPlans } from "@/lib/pricing";
+import { PLAN_ORDER } from "@/lib/plans";
 import { roleLabels } from "@/lib/navigation";
 
 export const dynamic = "force-dynamic";
@@ -28,7 +29,8 @@ export default async function ConsoleOrganismePage({
   });
   if (!org) notFound();
 
-  const prices = await getPlanPrices();
+  const { plans } = await getResolvedPlans();
+  const ordered = PLAN_ORDER.map((k) => plans[k]);
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -74,7 +76,7 @@ export default async function ConsoleOrganismePage({
         </CardContent>
       </Card>
 
-      <EditOrganismeForm org={org} prices={prices} />
+      <EditOrganismeForm org={org} plans={ordered} />
     </div>
   );
 }

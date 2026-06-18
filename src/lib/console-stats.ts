@@ -4,8 +4,8 @@
 
 import { prisma } from "@/lib/prisma";
 import { ADVANCED_FEATURE_KEYS, featureLabel } from "@/lib/features";
-import { planKeyForOrg, PLAN_ORDER, PLANS, type FormuleKey } from "@/lib/plans";
-import { getPlanPrices } from "@/lib/pricing";
+import { planKeyForOrg, PLAN_ORDER, type FormuleKey } from "@/lib/plans";
+import { getResolvedPlans } from "@/lib/pricing";
 
 export type OrgRow = {
   id: string;
@@ -53,7 +53,7 @@ export type ConsoleOverview = {
 const MONTHS = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
 
 export async function getConsoleOverview(): Promise<ConsoleOverview> {
-  const [organismes, candByOrg, sessByOrg, prices] = await Promise.all([
+  const [organismes, candByOrg, sessByOrg, { plans: planMap }] = await Promise.all([
     prisma.organisme.findMany({
       orderBy: { createdAt: "desc" },
       select: {
@@ -72,7 +72,7 @@ export async function getConsoleOverview(): Promise<ConsoleOverview> {
     }),
     prisma.candidat.groupBy({ by: ["organismeId"], _count: { _all: true } }),
     prisma.session.groupBy({ by: ["organismeId"], _count: { _all: true } }),
-    getPlanPrices(),
+    getResolvedPlans(),
   ]);
 
   const candMap = new Map<string, number>();
@@ -97,9 +97,9 @@ export async function getConsoleOverview(): Promise<ConsoleOverview> {
       candidatCount: candMap.get(o.id) ?? 0,
       sessionCount: sessMap.get(o.id) ?? 0,
       planKey,
-      planName: PLANS[planKey].name,
+      planName: planMap[planKey].name,
       // Prix réel (édité dans la console) si l'organisme est actif, sinon 0.
-      mrr: o.statut === "ACTIF" ? prices[planKey] : 0,
+      mrr: o.statut === "ACTIF" ? planMap[planKey].price : 0,
     };
   });
 
@@ -113,8 +113,8 @@ export async function getConsoleOverview(): Promise<ConsoleOverview> {
     const grp = actifs.filter((r) => r.planKey === key);
     return {
       key,
-      name: PLANS[key].name,
-      color: PLANS[key].color,
+      name: planMap[key].name,
+      color: planMap[key].color,
       count: grp.length,
       mrr: grp.reduce((s, r) => s + r.mrr, 0),
     };

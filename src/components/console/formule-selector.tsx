@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Check, Headset } from "lucide-react";
 import { FEATURES, FEATURE_GROUPS } from "@/lib/features";
-import { PLANS, PLAN_ORDER, featuresForFormule, euros, type FormuleKey } from "@/lib/plans";
+import { PLANS, PLAN_ORDER, euros, type FormuleKey, type Plan } from "@/lib/plans";
 import { cn } from "@/lib/utils";
 
 const GROUP_LABEL: Record<string, string> = {
@@ -20,21 +20,26 @@ const GROUP_LABEL: Record<string, string> = {
 export function FormuleSelector({
   defaultFormule = "MEDIUM",
   defaultFeatures,
-  prices,
+  plans,
 }: {
   defaultFormule?: FormuleKey | null;
   defaultFeatures?: string[];
-  /** Prix édités (console /tarifs). Repli sur les prix par défaut si absent. */
-  prices?: Partial<Record<FormuleKey, number>>;
+  /** Formules résolues (console /tarifs) : nom, prix, accroche, composition. Repli sur les défauts. */
+  plans?: Plan[];
 }) {
+  // Carte des formules résolues (overrides DB) avec repli sur les défauts du code.
+  const planByKey = { ...PLANS } as Record<FormuleKey, Plan>;
+  if (plans) for (const p of plans) planByKey[p.key as FormuleKey] = p;
+  const featuresOf = (key: FormuleKey) => planByKey[key].features;
+
   const [formule, setFormule] = useState<FormuleKey | null>(defaultFormule ?? null);
   const [feats, setFeats] = useState<Set<string>>(
-    () => new Set(defaultFeatures ?? (defaultFormule ? featuresForFormule(defaultFormule) : [])),
+    () => new Set(defaultFeatures ?? (defaultFormule ? featuresOf(defaultFormule) : [])),
   );
 
   const pickFormule = (key: FormuleKey) => {
     setFormule(key);
-    setFeats(new Set(featuresForFormule(key))); // réinitialise au bundle de la formule
+    setFeats(new Set(featuresOf(key))); // réinitialise au bundle (résolu) de la formule
   };
   const toggle = (key: string) =>
     setFeats((prev) => {
@@ -56,7 +61,7 @@ export function FormuleSelector({
         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">1. Formule d&apos;abonnement</p>
         <div className="grid gap-3 sm:grid-cols-3">
           {PLAN_ORDER.map((key) => {
-            const p = PLANS[key];
+            const p = planByKey[key];
             const active = formule === key;
             return (
               <button
@@ -72,7 +77,7 @@ export function FormuleSelector({
                   <span className="font-semibold" style={{ color: p.color }}>{p.name}</span>
                   {active && <Check className="h-4 w-4 text-primary" />}
                 </div>
-                <div className="mt-1 text-lg font-bold">{euros(prices?.[key] ?? p.price)}<span className="text-xs font-normal text-muted-foreground"> /mois</span></div>
+                <div className="mt-1 text-lg font-bold">{euros(p.price)}<span className="text-xs font-normal text-muted-foreground"> /mois</span></div>
                 <p className="mt-1 text-[11px] leading-snug text-muted-foreground">{p.tagline}</p>
                 <p className="mt-2 flex items-center gap-1 text-[11px] text-muted-foreground">
                   <Headset className="h-3 w-3" /> {p.supportLevel}

@@ -5,6 +5,9 @@ import { FormuleAbonnement } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/superadmin-guard";
 import { PLAN_ORDER, type FormuleKey } from "@/lib/plans";
+import { FEATURE_KEYS } from "@/lib/features";
+
+const SUPPORT_KEY = "support"; // toujours inclus dans chaque formule
 
 export type PricingState = { ok?: boolean; error?: string };
 
@@ -31,25 +34,31 @@ export async function updatePlanTarifs(
 
   const populaire = str(formData.get("populaire")); // clé de la formule mise en avant
 
-  // Valide tous les prix avant d'écrire quoi que ce soit.
+  // Valide tout avant d'écrire quoi que ce soit.
   const parsed = PLAN_ORDER.map((key) => {
     const prix = readPrix(formData, key);
+    const nom = str(formData.get(`nom_${key}`));
     const tagline = str(formData.get(`tagline_${key}`));
     const supportLevel = str(formData.get(`support_${key}`));
-    return { key, prix, tagline, supportLevel };
+    // Composition : cases cochées de la matrice + support toujours inclus.
+    const feats = FEATURE_KEYS.filter((fk) => formData.get(`feat_${key}_${fk}`) === "on");
+    const fonctionnalites = Array.from(new Set([...feats, SUPPORT_KEY]));
+    return { key, nom, prix, tagline, supportLevel, fonctionnalites };
   });
 
-  const invalid = parsed.find((p) => p.prix === null || !p.tagline || !p.supportLevel);
+  const invalid = parsed.find((p) => p.prix === null || !p.nom || !p.tagline || !p.supportLevel);
   if (invalid) {
-    return { error: `Formule ${invalid.key} : prix, accroche et niveau de support sont requis.` };
+    return { error: `Formule ${invalid.key} : nom, prix, accroche et niveau de support sont requis.` };
   }
 
   await prisma.$transaction(
     parsed.map((p) => {
       const data = {
+        nom: p.nom,
         prix: p.prix as number,
         tagline: p.tagline,
         supportLevel: p.supportLevel,
+        fonctionnalites: p.fonctionnalites,
         populaire: p.key === populaire,
       };
       return prisma.planTarif.upsert({
@@ -63,5 +72,6 @@ export async function updatePlanTarifs(
   revalidatePath("/tarifs");
   revalidatePath("/console/tarifs");
   revalidatePath("/console");
+  revalidatePath("/console/organismes");
   return { ok: true };
 }
