@@ -1,0 +1,678 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OFManager — Le logiciel des OF en sécurité, incendie & secourisme</title>
+<meta name="description" content="OFManager : le logiciel des organismes de formation en sécurité privée, incendie, secourisme et prévention. SST, TFP APS, SSIAP, habilitation électrique : prérequis CNAPS, recyclages/MAC, grilles de certification, conformité Qualiopi. Cloud ou sur vos serveurs. Édité par CAP Compétences.">
+<link rel="icon" href="ofmanager-logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#0D1B3E; --navy2:#13245e; --brand:#1A5FD4; --brand-light:#4D9FFF;
+    --surface:#F4F7FC; --success:#10B981; --amber:#F59E0B; --ink:#11131a;
+    --muted:#5a6480; --line:#e6ebf4; --card:#fff;
+    --font:'Inter',system-ui,sans-serif; --display:'Poppins',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:var(--font);color:var(--ink);background:#fff;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  img{display:block;max-width:100%}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1160px;margin:0 auto;padding:0 24px}
+  h1,h2,h3{font-family:var(--display);letter-spacing:-.02em;line-height:1.1}
+  .btn{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:15px;border-radius:11px;padding:13px 22px;transition:transform .15s,background .15s,box-shadow .15s;cursor:pointer;border:0}
+  .btn:hover{transform:translateY(-2px)}
+  .btn-primary{background:var(--brand);color:#fff;box-shadow:0 10px 24px -10px rgba(26,95,212,.6)}
+  .btn-primary:hover{background:#1550b8}
+  .btn-ghost{background:transparent;border:1px solid rgba(255,255,255,.22);color:#fff}
+  .btn-ghost:hover{background:rgba(255,255,255,.1)}
+  .btn-light{background:#fff;color:var(--navy);border:1px solid var(--line)}
+  .eyebrow{font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--brand)}
+  .sec{padding:84px 0}
+  .sec h2{font-size:34px;font-weight:800;color:var(--navy)}
+  .sec .lead{color:var(--muted);font-size:17px;max-width:640px;margin-top:14px}
+  .center{text-align:center}.center .lead{margin-left:auto;margin-right:auto}
+
+  /* reveal on scroll */
+  .reveal{opacity:0;transform:translateY(28px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1)}
+  .reveal.in{opacity:1;transform:none}
+
+  /* Header */
+  header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.88);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  header .bar{display:flex;align-items:center;gap:28px;height:70px}
+  .logo{display:flex;align-items:center;gap:10px}
+  .logo img{height:38px;width:auto}
+  .logo .wm{font-family:var(--display);font-weight:800;font-size:19px;color:var(--navy)}
+  .logo .wm b{color:var(--brand)}
+  nav.main{display:flex;gap:24px;margin-left:8px}
+  nav.main a{font-size:14.5px;font-weight:500;color:#3a4256;transition:.15s}
+  nav.main a:hover{color:var(--brand)}
+  header .right{margin-left:auto;display:flex;align-items:center;gap:14px}
+  header .right .login{font-size:14.5px;font-weight:600;color:var(--navy)}
+  @media(max-width:900px){nav.main,header .right .login{display:none}}
+
+  /* Hero */
+  .hero{background:radial-gradient(1100px 600px at 78% -10%,#1c2f6e,transparent 60%),linear-gradient(180deg,var(--navy),#0a1430);color:#fff;padding:80px 0 100px;position:relative;overflow:hidden}
+  .hero::after{content:"";position:absolute;width:480px;height:480px;border-radius:50%;background:radial-gradient(circle,rgba(77,159,255,.18),transparent 70%);top:-120px;left:-120px}
+  .hero .grid{display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:center;position:relative;z-index:2}
+  .hero .pill{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);border-radius:30px;padding:7px 15px;font-size:13px;font-weight:600;color:#cfe0ff}
+  .hero h1{font-size:51px;font-weight:800;margin:20px 0 18px}
+  .hero h1 em{font-style:normal;background:linear-gradient(90deg,var(--brand-light),#a9cbff);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero p.sub{font-size:18px;color:#bccbe9;max-width:520px}
+  .hero .cta{display:flex;gap:14px;margin-top:30px;flex-wrap:wrap}
+  .hero .badges{display:flex;gap:22px;margin-top:34px;flex-wrap:wrap}
+  .hero .badge{display:flex;align-items:center;gap:9px;font-size:13.5px;color:#cdd8f0}
+  .hero .badge .ck{width:22px;height:22px;border-radius:50%;background:rgba(16,185,129,.18);color:#34d399;display:grid;place-items:center;font-size:12px}
+  .hero .edited{margin-top:30px;font-size:12.5px;color:#8ba0c8;display:flex;align-items:center;gap:8px}
+  .floatcard{animation:float 5s ease-in-out infinite}
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+  .shot{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:18px;padding:14px;box-shadow:0 40px 90px -30px rgba(0,0,0,.6)}
+  .shot .topbar{display:flex;align-items:center;gap:6px;padding:4px 6px 12px}
+  .shot .topbar i{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.25)}
+  .shot .panel{background:#fff;border-radius:12px;padding:16px;color:var(--ink)}
+  .shot .k{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+  .shot .kpi{background:var(--surface);border-radius:10px;padding:11px}
+  .shot .kpi .l{font-size:10px;color:var(--muted)}.shot .kpi .v{font-family:var(--display);font-weight:800;font-size:22px;color:var(--navy)}
+  .shot .row{display:flex;align-items:center;gap:9px;padding:9px 0;border-top:1px solid var(--line);font-size:12px}
+  .shot .row .av{width:24px;height:24px;border-radius:7px;background:var(--brand);color:#fff;display:grid;place-items:center;font-size:10px;font-weight:700}
+  .shot .row .tag{margin-left:auto;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:#dcfce7;color:#15803d}
+  @media(max-width:900px){.hero .grid{grid-template-columns:1fr}.hero h1{font-size:36px}.shot{display:none}}
+
+  /* trust strip */
+  .trust{background:var(--surface);border-bottom:1px solid var(--line);padding:26px 0}
+  .trust .row{display:flex;align-items:center;justify-content:center;gap:38px;flex-wrap:wrap;color:#8a93a8;font-weight:700;font-size:15px}
+  .trust .lab{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;width:100%;text-align:center;margin-bottom:14px}
+
+  /* browser frame (screenshots) */
+  .browser{border-radius:16px;overflow:hidden;border:1px solid var(--line);box-shadow:0 30px 60px -30px rgba(20,30,80,.32);background:#fff}
+  .browser .topbar{height:36px;background:#0f1830;display:flex;align-items:center;gap:6px;padding:0 13px}
+  .browser .topbar i{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.28)}
+  .browser .topbar .url{margin-left:12px;height:18px;flex:1;max-width:280px;background:rgba(255,255,255,.1);border-radius:6px}
+  .browser img{width:100%;display:block}
+
+  /* showcase tabs */
+  .tabs{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:30px}
+  .tabs button{font-family:var(--font);font-size:14px;font-weight:600;border:1px solid var(--line);background:#fff;color:#41506e;border-radius:30px;padding:9px 17px;cursor:pointer;transition:.15s}
+  .tabs button:hover{border-color:var(--brand-light)}
+  .tabs button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+  .shotframe{max-width:880px;margin:28px auto 0}
+  .shotframe figcaption{text-align:center;color:var(--muted);font-size:14px;margin-top:14px}
+
+  /* feature grid */
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:46px}
+  @media(max-width:900px){.grid3{grid-template-columns:1fr}}
+  .feat{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:26px;transition:transform .2s,box-shadow .2s,border-color .2s}
+  .feat:hover{transform:translateY(-6px);box-shadow:0 24px 48px -28px rgba(20,30,80,.4);border-color:#cfe0fb}
+  .feat .ic{width:46px;height:46px;border-radius:13px;background:#eef3fd;color:var(--brand);display:grid;place-items:center;font-size:22px;margin-bottom:16px}
+  .feat h3{font-size:18px;color:var(--navy);margin-bottom:8px}
+  .feat p{font-size:14.5px;color:var(--muted)}
+
+  /* conformité (dark) */
+  .conf{background:linear-gradient(180deg,#0a1430,var(--navy));color:#fff}
+  .conf .grid{display:grid;grid-template-columns:1fr 1fr;gap:46px;align-items:center}
+  .conf .list{margin-top:24px;display:grid;gap:14px}
+  .conf .li{display:flex;gap:13px;align-items:flex-start}
+  .conf .li .ck{flex:none;width:26px;height:26px;border-radius:8px;background:rgba(16,185,129,.16);color:#34d399;display:grid;place-items:center}
+  .conf .li b{display:block;font-size:15.5px}.conf .li span{font-size:13.5px;color:#aebbd6}
+  .conf .donut{width:200px;height:200px;border-radius:50%;background:conic-gradient(var(--success) 0 100%,#1c2c52 0);display:grid;place-items:center;margin:0 auto}
+  .conf .donut .in{width:150px;height:150px;border-radius:50%;background:var(--navy);display:grid;place-items:center;text-align:center}
+  .conf .donut b{font-family:var(--display);font-size:40px;font-weight:800}.conf .donut span{color:#aebbd6;font-size:13px}
+  @media(max-width:900px){.conf .grid{grid-template-columns:1fr}}
+
+  /* sur mesure / marque blanche */
+  .wl{background:var(--surface)}
+  .wl-grid{display:grid;grid-template-columns:1fr 1fr;gap:46px;align-items:center}
+  @media(max-width:900px){.wl-grid{grid-template-columns:1fr}}
+  .checklist{margin-top:20px;display:grid;gap:12px}
+  .checklist .li{display:flex;gap:11px;font-size:15px;color:#33405c}
+  .checklist .li .ck{color:var(--success);font-weight:800}
+  .swatches{display:flex;gap:9px;margin-top:18px;flex-wrap:wrap}
+  .swatches i{width:32px;height:32px;border-radius:50%;display:block;box-shadow:0 0 0 3px #fff,0 2px 8px rgba(0,0,0,.08)}
+  .designgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .designgrid .browser .topbar{height:26px}
+  .designgrid figcaption{font-size:12px;color:var(--muted);text-align:center;margin-top:8px;font-weight:600}
+
+  /* secteurs */
+  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:42px}
+  @media(max-width:900px){.grid4{grid-template-columns:1fr 1fr}}
+  .sect{border:1px solid var(--line);border-radius:16px;padding:22px;background:#fff;transition:transform .2s,box-shadow .2s}
+  .sect:hover{transform:translateY(-5px);box-shadow:0 20px 40px -26px rgba(20,30,80,.4)}
+  .sect .ic{font-size:26px;margin-bottom:12px}
+  .sect h3{font-size:16px;color:var(--navy);margin-bottom:6px}
+  .sect p{font-size:13px;color:var(--muted)}
+
+  /* hébergement */
+  .host{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:46px}
+  @media(max-width:900px){.host{grid-template-columns:1fr}}
+  .hostcard{border:1px solid var(--line);border-radius:20px;padding:32px;background:#fff;position:relative;transition:transform .2s,box-shadow .2s}
+  .hostcard:hover{transform:translateY(-5px);box-shadow:0 26px 52px -30px rgba(20,30,80,.4)}
+  .hostcard .ic{width:54px;height:54px;border-radius:15px;display:grid;place-items:center;font-size:26px;margin-bottom:18px}
+  .hostcard h3{font-size:21px;color:var(--navy)}
+  .hostcard p{color:var(--muted);font-size:14.5px;margin-top:8px}
+  .hostcard ul{list-style:none;margin-top:18px;display:grid;gap:10px}
+  .hostcard li{display:flex;gap:10px;font-size:14px;color:#33405c}
+  .hostcard li .ck{color:var(--success);font-weight:800}
+  .hostcard .badge2{position:absolute;top:22px;right:22px;font-size:11px;font-weight:700;padding:5px 11px;border-radius:20px}
+
+  /* pricing */
+  .price{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:46px;align-items:start}
+  @media(max-width:900px){.price{grid-template-columns:1fr}}
+  .plan{background:#fff;border:1px solid var(--line);border-radius:20px;padding:30px 26px;transition:transform .2s,box-shadow .2s}
+  .plan:hover{transform:translateY(-5px);box-shadow:0 24px 50px -30px rgba(20,30,80,.35)}
+  .plan.pop{border:2px solid var(--brand);box-shadow:0 30px 60px -28px rgba(26,95,212,.45);position:relative}
+  .plan .pop-tag{position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:var(--brand);color:#fff;font-size:12px;font-weight:700;padding:5px 14px;border-radius:20px}
+  .plan .name{font-family:var(--display);font-weight:700;font-size:18px;color:var(--navy)}
+  .plan .pr{font-family:var(--display);font-weight:800;font-size:42px;color:var(--navy);margin:8px 0 2px}
+  .plan .pr small{font-size:15px;font-weight:500;color:var(--muted)}
+  .plan ul{list-style:none;margin:20px 0;display:grid;gap:11px}
+  .plan li{display:flex;gap:10px;font-size:14px;color:#33405c}
+  .plan li .ck{color:var(--success);font-weight:800}
+  .plan .btn{width:100%;justify-content:center;margin-top:8px}
+
+  /* testimonial */
+  .quote{max-width:780px;margin:0 auto;text-align:center}
+  .quote p{font-family:var(--display);font-weight:500;font-size:25px;color:var(--navy);line-height:1.4}
+  .quote .who{margin-top:22px;color:var(--muted);font-size:14.5px}
+
+  /* faq */
+  .faq{max-width:760px;margin:42px auto 0}
+  details{border:1px solid var(--line);border-radius:13px;margin-bottom:12px;background:#fff;overflow:hidden}
+  details summary{list-style:none;cursor:pointer;padding:18px 20px;font-weight:600;font-size:16px;color:var(--navy);display:flex;justify-content:space-between;align-items:center}
+  details summary::-webkit-details-marker{display:none}
+  details summary::after{content:"+";font-size:22px;color:var(--brand);font-weight:400}
+  details[open] summary::after{content:"–"}
+  details p{padding:0 20px 18px;color:var(--muted);font-size:14.5px}
+
+  /* final cta */
+  .final{background:linear-gradient(135deg,var(--brand),#13245e);color:#fff;text-align:center}
+  .final h2{font-size:36px;font-weight:800}
+  .final p{color:#dce7ff;font-size:17px;margin:14px auto 0;max-width:540px}
+
+  /* footer */
+  footer{background:var(--navy);color:#aebbd6;padding:60px 0 30px;font-size:14px}
+  footer .cols{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:30px}
+  @media(max-width:900px){footer .cols{grid-template-columns:1fr 1fr}}
+  footer h4{color:#fff;font-family:var(--font);font-size:14px;font-weight:700;margin-bottom:14px}
+  footer a{display:block;padding:5px 0;color:#aebbd6}footer a:hover{color:#fff}
+  footer .flogo{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  footer .flogo img{height:34px}
+  footer .flogo span{color:#fff;font-family:var(--display);font-weight:800;font-size:18px}
+  footer .bottom{border-top:1px solid rgba(255,255,255,.1);margin-top:40px;padding-top:20px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;font-size:13px;color:#8493b5}
+  footer .by{display:inline-flex;align-items:center;gap:6px;color:#cdd8f0;font-weight:600}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap bar">
+    <a href="#" class="logo"><img src="ofmanager-logo.png" alt="OFManager"><span class="wm">OF<b>Manager</b></span></a>
+    <nav class="main">
+      <a href="#solution">Pourquoi OFManager</a>
+      <a href="#formations">Formations</a>
+      <a href="#automatisations">Automatisations</a>
+      <a href="#tarifs">Tarifs</a>
+      <a href="partenaires-clients.html">Clients</a>
+    </nav>
+    <div class="right">
+      <a href="/login" class="login">Connexion</a>
+      <a href="#demo" class="btn btn-primary" style="padding:10px 18px;font-size:14px">Demander une démo</a>
+    </div>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="wrap grid">
+    <div>
+      <span class="pill reveal">★ Sécurité privée · Incendie · Secourisme · Prévention</span>
+      <h1 class="reveal">Le logiciel des organismes de formation en <em>sécurité &amp; prévention</em></h1>
+      <p class="sub reveal">SST, TFP APS, SSIAP, habilitation électrique… OFManager gère vos <strong style="color:#fff">prérequis réglementaires</strong>, vos <strong style="color:#fff">recyclages</strong> et vos <strong style="color:#fff">grilles de certification</strong> — en toute conformité Qualiopi.</p>
+      <div class="cta reveal">
+        <a href="#demo" class="btn btn-primary">Demander une démo →</a>
+        <a href="#formations" class="btn btn-ghost">Voir les formations gérées</a>
+      </div>
+      <div class="badges reveal">
+        <span class="badge"><span class="ck">✓</span> Prérequis CNAPS &amp; agréments</span>
+        <span class="badge"><span class="ck">✓</span> Recyclages / MAC suivis</span>
+        <span class="badge"><span class="ck">✓</span> Grilles de certification</span>
+      </div>
+      <div class="edited reveal"><img src="ofmanager-logo.png" alt="" style="height:18px;width:auto;opacity:.85"> Une solution conçue et éditée par <strong style="color:#dbe7ff;margin-left:3px">CAP Compétences</strong></div>
+    </div>
+    <div class="shot floatcard reveal">
+      <div class="topbar"><i></i><i></i><i></i></div>
+      <div class="panel">
+        <div style="font-family:var(--display);font-weight:700;color:var(--navy);font-size:13px;margin-bottom:10px">Tableau de bord</div>
+        <div class="k">
+          <div class="kpi"><div class="l">Candidats</div><div class="v" data-count="248">0</div></div>
+          <div class="kpi"><div class="l">Sessions</div><div class="v" data-count="14">0</div></div>
+          <div class="kpi"><div class="l">Réussite</div><div class="v" data-count="94" data-suffix="%">0</div></div>
+        </div>
+        <div class="row"><span class="av">ML</span> Marie Lefèvre · SST <span class="tag">Inscrit</span></div>
+        <div class="row"><span class="av" style="background:#7C3AED">KB</span> Karim Benali · TFP APS <span class="tag" style="background:#fef3c7;color:#a16207">Dossier</span></div>
+        <div class="row"><span class="av" style="background:#0D9488">HP</span> Hugo Petit · MAC APS <span class="tag">Certifié</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TRUST -->
+<section class="trust">
+  <div class="wrap">
+    <div class="lab">Ils digitalisent leur organisme avec OFManager</div>
+    <div class="row"><span>CAP Compétences</span><span>ASPR Sécurité</span><span>Académie Incendie</span><span>Secours &amp; Prévention</span><span>Form'Digital</span></div>
+  </div>
+</section>
+
+<!-- PREUVES / CHIFFRES -->
+<section style="background:#fff;border-bottom:1px solid var(--line);padding:44px 0">
+  <div class="wrap" style="display:grid;grid-template-columns:repeat(4,1fr);gap:20px;text-align:center">
+    <div class="reveal"><div style="font-family:var(--display);font-weight:800;font-size:40px;color:var(--brand)" data-count="100" data-suffix="%">0</div><div style="font-size:13.5px;color:var(--muted)">conforme Qualiopi — 32 indicateurs</div></div>
+    <div class="reveal"><div style="font-family:var(--display);font-weight:800;font-size:40px;color:var(--brand)" data-count="95" data-suffix="%">0</div><div style="font-size:13.5px;color:var(--muted)">de réussite aux certifications*</div></div>
+    <div class="reveal"><div style="font-family:var(--display);font-weight:800;font-size:40px;color:var(--brand)">−70<span style="font-size:24px">%</span></div><div style="font-size:13.5px;color:var(--muted)">de temps administratif*</div></div>
+    <div class="reveal"><div style="font-family:var(--display);font-weight:800;font-size:40px;color:var(--brand)" data-count="6">0</div><div style="font-size:13.5px;color:var(--muted)">certifications préconfigurées</div></div>
+  </div>
+  <p class="wrap" style="text-align:center;font-size:11px;color:#9aa6bd;margin-top:18px">* Chiffres indicatifs — à remplacer par vos résultats réels.</p>
+</section>
+
+<!-- PROBLEME / SOLUTION -->
+<section class="sec center" id="solution">
+  <div class="wrap">
+    <span class="eyebrow reveal">Le quotidien des organismes de formation</span>
+    <h2 class="reveal" style="margin-top:12px">Vous reconnaissez ces galères ?</h2>
+    <p class="lead reveal">La gestion d'un OF se transforme vite en course aux tableurs, aux e-mails et aux relances. OFManager remplace tout ça.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:46px;text-align:left">
+      <div class="reveal" style="background:#fff5f5;border:1px solid #f7dcdc;border-radius:18px;padding:28px">
+        <h3 style="font-size:18px;color:#b3261e;display:flex;align-items:center;gap:9px">✗ Sans OFManager</h3>
+        <div style="margin-top:16px;display:grid;gap:12px;font-size:14.5px;color:#7a3a36">
+          <div>✗ Données éparpillées dans 5 tableurs Excel</div>
+          <div>✗ Convocations, attestations &amp; relances tapées à la main</div>
+          <div>✗ Signatures papier scannées, classées, perdues</div>
+          <div>✗ Pièces du dossier oubliées, recyclages non suivis</div>
+          <div>✗ Stress et nuits blanches avant l'audit Qualiopi</div>
+          <div>✗ Des heures de ressaisie, des erreurs qui coûtent cher</div>
+        </div>
+      </div>
+      <div class="reveal" style="background:#effaf3;border:1px solid #c9ecd6;border-radius:18px;padding:28px">
+        <h3 style="font-size:18px;color:#0f7a4f;display:flex;align-items:center;gap:9px">✓ Avec OFManager</h3>
+        <div style="margin-top:16px;display:grid;gap:12px;font-size:14.5px;color:#256148">
+          <div>✓ Une seule plateforme, toutes vos données reliées</div>
+          <div>✓ Convocations, attestations &amp; relances <strong>envoyées automatiquement</strong></div>
+          <div>✓ <strong>Signature électronique</strong> légale, horodatée, archivée</div>
+          <div>✓ Checklists &amp; <strong>recyclages suivis</strong>, relance des pièces manquantes</div>
+          <div>✓ Dossier d'audit <strong>prêt en permanence</strong>, exportable en 1 clic</div>
+          <div>✓ <strong>Fini la ressaisie</strong> : zéro double saisie, zéro oubli</div>
+        </div>
+      </div>
+    </div>
+    <div class="reveal" style="display:flex;gap:30px;justify-content:center;flex-wrap:wrap;margin-top:40px">
+      <div style="display:flex;align-items:center;gap:10px;font-size:15px;font-weight:600;color:var(--navy)"><span style="font-size:24px">⏱️</span> Gagnez des heures chaque semaine</div>
+      <div style="display:flex;align-items:center;gap:10px;font-size:15px;font-weight:600;color:var(--navy)"><span style="font-size:24px">🎯</span> Supprimez les erreurs de saisie</div>
+      <div style="display:flex;align-items:center;gap:10px;font-size:15px;font-weight:600;color:var(--navy)"><span style="font-size:24px">🔁</span> Éliminez les tâches répétitives</div>
+    </div>
+  </div>
+</section>
+
+<!-- APERÇU PRODUIT (captures réelles) -->
+<section class="sec center" id="apercu">
+  <div class="wrap">
+    <span class="eyebrow reveal">La plateforme en images</span>
+    <h2 class="reveal" style="margin-top:12px">Découvrez OFManager en action</h2>
+    <p class="lead reveal">De vraies captures de la plateforme — cliquez pour explorer chaque module.</p>
+    <div class="tabs reveal">
+      <button class="on" data-shot="dashboard" data-cap="Tableau de bord — vos indicateurs en temps réel">Tableau de bord</button>
+      <button data-shot="kanban" data-cap="Pipeline Kanban — du prospect au certifié">Kanban</button>
+      <button data-shot="sessions" data-cap="Sessions &amp; planning — salles, formateurs, émargement">Sessions</button>
+      <button data-shot="qualiopi" data-cap="Conformité Qualiopi — 32 indicateurs suivis">Qualiopi</button>
+      <button data-shot="bpf" data-cap="BPF pré-rempli automatiquement">BPF</button>
+      <button data-shot="ia" data-cap="Assistant IA intégré">Assistant IA</button>
+    </div>
+    <figure class="shotframe reveal">
+      <div class="browser">
+        <div class="topbar"><i></i><i></i><i></i><span class="url"></span></div>
+        <img id="shotImg" src="screenshots/dashboard.png" alt="Capture de la plateforme OFManager">
+      </div>
+      <figcaption id="shotCap">Tableau de bord — vos indicateurs en temps réel</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- AUTOMATISATIONS / CRM -->
+<section class="sec" id="automatisations" style="background:linear-gradient(180deg,#0a1430,var(--navy));color:#fff">
+  <div class="wrap center">
+    <span class="eyebrow reveal" style="color:var(--brand-light)">Automatisation &amp; CRM</span>
+    <h2 class="reveal" style="color:#fff;margin-top:12px">La plateforme travaille pendant que vous formez</h2>
+    <p class="lead reveal" style="color:#bccbe9;margin-left:auto;margin-right:auto">Les tâches répétitives partent en automatique. Vous, vous gardez le contrôle et la relation client.</p>
+  </div>
+  <div class="wrap" style="display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:46px">
+    <div class="reveal" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:26px">
+      <div style="font-size:26px;margin-bottom:12px">📤</div>
+      <h3 style="color:#fff;font-size:18px">Envois automatiques</h3>
+      <p style="color:#aebbd6;font-size:14.5px;margin-top:8px">Convocations (J-7), attestations d'entrée, certificats de fin, enquêtes de satisfaction, relances : <strong style="color:#fff">programmés et envoyés tout seuls</strong>.</p>
+    </div>
+    <div class="reveal" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:26px">
+      <div style="font-size:26px;margin-bottom:12px">✍️</div>
+      <h3 style="color:#fff;font-size:18px">Signature électronique</h3>
+      <p style="color:#aebbd6;font-size:14.5px;margin-top:8px">Conventions, devis, émargements signés <strong style="color:#fff">en ligne</strong> (valeur légale eIDAS), horodatés et archivés. Zéro papier, zéro scan, zéro perte.</p>
+    </div>
+    <div class="reveal" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:26px">
+      <div style="font-size:26px;margin-bottom:12px">🎯</div>
+      <h3 style="color:#fff;font-size:18px">CRM &amp; pipeline</h3>
+      <p style="color:#aebbd6;font-size:14.5px;margin-top:8px">Prospects multicanaux, <strong style="color:#fff">scoring</strong>, relances programmées, pipeline Kanban : aucun lead oublié, du premier contact à l'inscription.</p>
+    </div>
+  </div>
+  <div class="wrap reveal" style="margin-top:30px;display:flex;gap:14px;flex-wrap:wrap;justify-content:center">
+    <span style="background:rgba(16,185,129,.15);color:#34d399;border:1px solid rgba(16,185,129,.3);border-radius:30px;padding:9px 16px;font-size:14px;font-weight:600">⏱️ Des heures gagnées chaque semaine</span>
+    <span style="background:rgba(16,185,129,.15);color:#34d399;border:1px solid rgba(16,185,129,.3);border-radius:30px;padding:9px 16px;font-size:14px;font-weight:600">🎯 Plus d'erreurs de saisie</span>
+    <span style="background:rgba(16,185,129,.15);color:#34d399;border:1px solid rgba(16,185,129,.3);border-radius:30px;padding:9px 16px;font-size:14px;font-weight:600">🔁 Fin des tâches répétitives</span>
+  </div>
+</section>
+
+<!-- FONCTIONNALITES -->
+<section class="sec center" id="fonctionnalites">
+  <div class="wrap">
+    <span class="eyebrow reveal">Une plateforme, tous vos métiers</span>
+    <h2 class="reveal" style="margin-top:12px">De l'acquisition à la certification</h2>
+    <p class="lead reveal">Tout le cycle de vie de votre organisme, sans jongler entre dix outils.</p>
+    <div class="grid3" style="text-align:left">
+      <div class="feat reveal"><div class="ic">◷</div><h3>CRM &amp; pipeline</h3><p>Prospects multicanaux, scoring, relances et pipeline Kanban du premier contact à l'inscription.</p></div>
+      <div class="feat reveal"><div class="ic">▦</div><h3>Sessions &amp; planning</h3><p>Sessions, salles, formateurs, planning visuel, convocations et émargement signé.</p></div>
+      <div class="feat reveal"><div class="ic">✎</div><h3>Dossiers &amp; signatures</h3><p>Checklist du dossier administratif par candidat, relances, signature électronique légale.</p></div>
+      <div class="feat reveal"><div class="ic">▲</div><h3>Documents automatiques</h3><p>Conventions, convocations, attestations et certificats générés à votre charte, automatiquement.</p></div>
+      <div class="feat reveal"><div class="ic">★</div><h3>E-learning &amp; suivi</h3><p>Parcours en ligne, quiz, suivi de progression et grilles de certification.</p></div>
+      <div class="feat reveal"><div class="ic">✦</div><h3>Assistant IA</h3><p>Rédaction d'e-mails, résumés de dossiers, qualification des leads — votre équipe gagne du temps.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- CONFORMITE / QUALIOPI -->
+<section class="sec conf" id="conformite">
+  <div class="wrap grid">
+    <div class="reveal">
+      <span class="eyebrow" style="color:var(--brand-light)">Qualiopi &amp; préparation à l'audit</span>
+      <h2 style="color:#fff;font-size:34px;margin-top:12px">Arrivez à votre audit l'esprit tranquille</h2>
+      <p style="color:#bccbe9;margin-top:14px;font-size:17px">OFManager rattache automatiquement vos preuves aux <strong style="color:#fff">7 critères et 32 indicateurs</strong> du Référentiel National Qualité. Le jour de l'audit, tout est prêt — et exportable en un clic.</p>
+      <div class="list">
+        <div class="li"><span class="ck">✓</span><div><b>Preuves rattachées en continu</b><span>Chaque session, émargement et document alimente votre dossier qualité automatiquement.</span></div></div>
+        <div class="li"><span class="ck">✓</span><div><b>Dossier d'audit exportable</b><span>Toutes les preuves, classées par indicateur, prêtes pour votre auditeur.</span></div></div>
+        <div class="li"><span class="ck">✓</span><div><b>BPF pré-rempli + RGPD</b><span>Bilan Pédagogique et Financier automatique, registre RGPD, émargements horodatés (eIDAS).</span></div></div>
+      </div>
+      <a href="#demo" class="btn btn-primary" style="margin-top:26px">Préparez votre prochain audit →</a>
+    </div>
+    <div class="reveal" style="text-align:center">
+      <div class="donut"><div class="in"><div><b>100%</b><br><span>conforme</span></div></div></div>
+      <div style="display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-top:26px;max-width:340px;margin-left:auto;margin-right:auto">
+        <span style="font-size:12px;font-weight:600;color:#cfe0ff;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:20px;padding:6px 12px">C1 · Information du public</span>
+        <span style="font-size:12px;font-weight:600;color:#cfe0ff;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:20px;padding:6px 12px">C2 · Objectifs</span>
+        <span style="font-size:12px;font-weight:600;color:#cfe0ff;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:20px;padding:6px 12px">C3 · Accueil &amp; suivi</span>
+        <span style="font-size:12px;font-weight:600;color:#cfe0ff;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:20px;padding:6px 12px">C4 · Moyens</span>
+        <span style="font-size:12px;font-weight:600;color:#cfe0ff;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:20px;padding:6px 12px">C5 · Formateurs</span>
+        <span style="font-size:12px;font-weight:600;color:#cfe0ff;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:20px;padding:6px 12px">C6 · Environnement</span>
+        <span style="font-size:12px;font-weight:600;color:#cfe0ff;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:20px;padding:6px 12px">C7 · Appréciations</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SUR MESURE / MARQUE BLANCHE -->
+<section class="sec wl" id="surmesure">
+  <div class="wrap">
+    <div class="center"><span class="eyebrow reveal">Sur mesure</span><h2 class="reveal" style="margin-top:12px">Une plateforme à votre image, adaptée à votre métier</h2><p class="lead reveal">Marque blanche complète, modules à la carte, parcours réglementaires préconfigurés — et même des développements spécifiques sur demande.</p></div>
+    <div class="wl-grid" style="margin-top:46px">
+      <div class="reveal">
+        <h3 style="font-size:22px;color:var(--navy)">100% personnalisable</h3>
+        <div class="checklist">
+          <div class="li"><span class="ck">✓</span> Votre logo, vos couleurs, votre nom de domaine</div>
+          <div class="li"><span class="ck">✓</span> 10 styles d'interface × 10 palettes au choix</div>
+          <div class="li"><span class="ck">✓</span> Modules activés/désactivés selon vos besoins</div>
+          <div class="li"><span class="ck">✓</span> Documents (conventions, attestations…) à votre charte</div>
+          <div class="li"><span class="ck">✓</span> Parcours métier sur mesure (sécurité, incendie, secours…)</div>
+          <div class="li"><span class="ck">✓</span> Développements spécifiques sur demande</div>
+        </div>
+        <div class="swatches">
+          <i style="background:#1A5FD4"></i><i style="background:#059669"></i><i style="background:#7C3AED"></i><i style="background:#0D9488"></i><i style="background:#EA580C"></i><i style="background:#E11D48"></i><i style="background:#475569"></i><i style="background:#9F1239"></i>
+        </div>
+      </div>
+      <div class="reveal">
+        <div class="designgrid">
+          <figure><div class="browser"><div class="topbar"><i></i><i></i></div><img src="screenshots/design-aurora.png" alt="Design Aurora"></div><figcaption>Aurora</figcaption></figure>
+          <figure><div class="browser"><div class="topbar"><i></i><i></i></div><img src="screenshots/design-humaniste.png" alt="Design Humaniste"></div><figcaption>Humaniste</figcaption></figure>
+          <figure><div class="browser"><div class="topbar"><i></i><i></i></div><img src="screenshots/design-editorial.png" alt="Design Éditorial"></div><figcaption>Éditorial</figcaption></figure>
+        </div>
+        <p style="text-align:center;color:var(--muted);font-size:13px;margin-top:14px">Le même outil, 3 des 10 habillages possibles.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FORMATIONS GÉRÉES -->
+<section class="sec center" id="formations">
+  <div class="wrap">
+    <span class="eyebrow reveal">Vos formations, prêtes à l'emploi</span>
+    <h2 class="reveal" style="margin-top:12px">Conçu autour de vos certifications</h2>
+    <p class="lead reveal">Les parcours, prérequis et documents de chaque formation sont préconfigurés — vous gagnez un temps précieux dès la première session.</p>
+    <div class="grid4" style="grid-template-columns:repeat(3,1fr)">
+      <div class="sect reveal"><div class="ic">⛑️</div><h3>Secourisme</h3><p><strong>SST</strong> &amp; <strong>MAC SST</strong>, PSC1. Grilles de certification INRS pré-remplies, signées par le formateur.</p></div>
+      <a class="sect reveal" href="formation-tfp-aps.html" style="display:block"><div class="ic">🛡️</div><h3>Sécurité privée</h3><p><strong>TFP APS</strong>, <strong>MAC APS</strong>. Prérequis CNAPS, dossier réglementaire, convocation d'examen.</p><span style="display:inline-block;margin-top:10px;font-size:13px;font-weight:600;color:var(--brand)">Voir le process TFP APS →</span></a>
+      <div class="sect reveal"><div class="ic">🚒</div><h3>Sécurité incendie</h3><p><strong>SSIAP 1 · 2 · 3</strong> et leurs recyclages / remises à niveau. Agréments &amp; dossiers gérés.</p></div>
+      <div class="sect reveal"><div class="ic">⚡</div><h3>Habilitation électrique</h3><p><strong>B0–H0, BS, BE, BR, B1/B2…</strong> (NF C18-510). Recyclage triennal et avis de fin de formation.</p></div>
+      <div class="sect reveal"><div class="ic">🦺</div><h3>Prévention</h3><p>Gestes &amp; postures, manipulation d'extincteurs (EPI), évacuation, risques professionnels.</p></div>
+      <a class="sect reveal" href="formation-tfp-aps.html" style="display:flex;flex-direction:column;justify-content:center;background:var(--surface);border-style:dashed"><div class="ic">＋</div><h3>Votre catalogue, illimité</h3><p>Ajoutez <strong>autant de formations que vous voulez</strong> et définissez le dossier &amp; les prérequis de chacune en quelques clics.</p></a>
+    </div>
+
+    <div class="reveal" style="margin-top:34px;background:var(--navy);color:#fff;border-radius:20px;padding:34px;text-align:left">
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:18px;justify-content:space-between">
+        <div style="max-width:420px">
+          <h3 style="color:#fff;font-size:22px">Un suivi pédagogique complet</h3>
+          <p style="color:#bccbe9;font-size:15px;margin-top:8px">Pour chaque session et chaque stagiaire, du premier jour à la certification — tout est tracé, rien ne se perd.</p>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:9px;max-width:600px">
+          <span style="font-size:13px;font-weight:600;color:#cfe0ff;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);border-radius:20px;padding:7px 13px">Test de positionnement</span>
+          <span style="font-size:13px;font-weight:600;color:#cfe0ff;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);border-radius:20px;padding:7px 13px">Émargement signé</span>
+          <span style="font-size:13px;font-weight:600;color:#cfe0ff;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);border-radius:20px;padding:7px 13px">Évaluations</span>
+          <span style="font-size:13px;font-weight:600;color:#cfe0ff;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);border-radius:20px;padding:7px 13px">Progression e-learning</span>
+          <span style="font-size:13px;font-weight:600;color:#cfe0ff;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);border-radius:20px;padding:7px 13px">Grille de certification</span>
+          <span style="font-size:13px;font-weight:600;color:#cfe0ff;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);border-radius:20px;padding:7px 13px">Attestation &amp; certificat</span>
+          <span style="font-size:13px;font-weight:600;color:#cfe0ff;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);border-radius:20px;padding:7px 13px">Satisfaction</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- EXIGENCES MÉTIER -->
+<section class="sec" id="exigences" style="background:var(--surface)">
+  <div class="wrap center">
+    <span class="eyebrow reveal">Les contraintes de votre métier</span>
+    <h2 class="reveal" style="margin-top:12px">Vos exigences réglementaires, gérées nativement</h2>
+    <p class="lead reveal">Pas un outil générique « adapté » : les mécanismes de la sécurité, de l'incendie et du secourisme sont intégrés au cœur de la plateforme.</p>
+  </div>
+  <div class="wrap">
+    <div class="grid3" style="text-align:left">
+      <div class="feat reveal"><div class="ic">🪪</div><h3>Prérequis &amp; autorisations</h3><p>Suivi de l'<strong>autorisation préalable / carte pro CNAPS</strong> (APS), aptitude, agrément SSIAP : statut non fait → en cours → accepté/refusé, par candidat.</p></div>
+      <div class="feat reveal"><div class="ic">🔁</div><h3>Recyclages &amp; MAC</h3><p>Échéancier automatique des <strong>MAC SST</strong>, <strong>MAC APS</strong>, recyclages <strong>SSIAP</strong> et habilitation électrique — relances avant expiration.</p></div>
+      <div class="feat reveal"><div class="ic">📋</div><h3>Grilles de certification</h3><p><strong>Pré-remplies</strong> depuis les inscrits ; le formateur n'a qu'à <strong>cocher &amp; signer</strong>, puis télécharger chaque grille (SST/INRS, APS…).</p></div>
+      <div class="feat reveal"><div class="ic">🎓</div><h3>Examen &amp; convocation</h3><p>Convocation d'examen <strong>seulement pour les formations à examen</strong> (TFP APS, SSIAP) — avec date &amp; lieu (centre d'examen). Aucune pour SST / habilitation.</p></div>
+      <div class="feat reveal"><div class="ic">🗂️</div><h3>Dossier réglementaire</h3><p>Checklist par stagiaire (CNI, photos fond gris, justif. domicile, casier, niveau de langue B1…) avec <strong>relance des pièces manquantes</strong>.</p></div>
+      <div class="feat reveal"><div class="ic">🛡️</div><h3>Traçabilité &amp; preuves</h3><p>Émargements horodatés, attestations, certificats — toutes les preuves prêtes pour <strong>Qualiopi</strong> et vos certificateurs (INRS, France Compétences…).</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- HEBERGEMENT -->
+<section class="sec center" id="hebergement" style="background:var(--surface)">
+  <div class="wrap">
+    <span class="eyebrow reveal">Hébergement au choix</span>
+    <h2 class="reveal" style="margin-top:12px">Chez nous, ou chez vous</h2>
+    <p class="lead reveal">Vous gardez la main : une plateforme clé en main dans notre cloud, ou installée sur votre propre infrastructure.</p>
+    <div class="host" style="text-align:left">
+      <div class="hostcard reveal">
+        <span class="badge2" style="background:#dbeafe;color:#1d4ed8">Recommandé</span>
+        <div class="ic" style="background:#eef3fd;color:var(--brand)">☁️</div>
+        <h3>Cloud OFManager</h3>
+        <p>Hébergé chez nous, prêt à l'emploi. Vous vous concentrez sur la formation, on gère la technique.</p>
+        <ul>
+          <li><span class="ck">✓</span> Mise en route immédiate, zéro installation</li>
+          <li><span class="ck">✓</span> Mises à jour &amp; sauvegardes automatiques</li>
+          <li><span class="ck">✓</span> Hébergement en France, conforme RGPD</li>
+          <li><span class="ck">✓</span> Supervision &amp; sécurité incluses</li>
+        </ul>
+      </div>
+      <div class="hostcard reveal">
+        <span class="badge2" style="background:#ede9fe;color:#6d28d9">Souveraineté</span>
+        <div class="ic" style="background:#f3effe;color:#7C3AED">🏢</div>
+        <h3>Sur vos serveurs (interne)</h3>
+        <p>Installée sur votre propre serveur et votre hébergement. Vos données restent intégralement chez vous.</p>
+        <ul>
+          <li><span class="ck">✓</span> Vos données sur votre infrastructure</li>
+          <li><span class="ck">✓</span> Souveraineté &amp; contrôle total</li>
+          <li><span class="ck">✓</span> Idéal grands comptes &amp; exigences de sécurité</li>
+          <li><span class="ck">✓</span> Déploiement &amp; maintenance accompagnés</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TARIFS -->
+<section class="sec center" id="tarifs">
+  <div class="wrap">
+    <span class="eyebrow reveal">Tarifs simples</span>
+    <h2 class="reveal" style="margin-top:12px">Une formule pour chaque organisme</h2>
+    <p class="lead reveal">Sans engagement. Changez de formule à tout moment, le support est inclus partout. Tarif sur mesure pour l'hébergement interne.</p>
+    <div class="price" style="text-align:left">
+      <div class="plan reveal">
+        <div class="name">Basique</div>
+        <div class="pr">79€ <small>/ mois</small></div>
+        <p style="color:var(--muted);font-size:13px">L'essentiel pour démarrer, conformité incluse.</p>
+        <ul>
+          <li><span class="ck">✓</span> Cœur métier (CRM, sessions, candidats)</li>
+          <li><span class="ck">✓</span> Conformité Qualiopi · BPF · RGPD</li>
+          <li><span class="ck">✓</span> Documents &amp; signatures</li>
+          <li><span class="ck">✓</span> Marque blanche</li>
+        </ul>
+        <a href="#demo" class="btn btn-light">Choisir Basique</a>
+      </div>
+      <div class="plan pop reveal">
+        <span class="pop-tag">Le plus choisi</span>
+        <div class="name" style="color:var(--brand)">Medium</div>
+        <div class="pr">149€ <small>/ mois</small></div>
+        <p style="color:var(--muted);font-size:13px">Gestion complète + modules de productivité.</p>
+        <ul>
+          <li><span class="ck">✓</span> Tout Basique +</li>
+          <li><span class="ck">✓</span> Gestion étendue (B2B, e-learning, compta)</li>
+          <li><span class="ck">✓</span> Notifications, Tâches, Rapports</li>
+          <li><span class="ck">✓</span> Kanban &amp; scoring</li>
+        </ul>
+        <a href="#demo" class="btn btn-primary">Choisir Medium</a>
+      </div>
+      <div class="plan reveal">
+        <div class="name" style="color:#7C3AED">Complet</div>
+        <div class="pr">249€ <small>/ mois</small></div>
+        <p style="color:var(--muted);font-size:13px">Toute la plateforme, IA &amp; support prioritaire.</p>
+        <ul>
+          <li><span class="ck">✓</span> Tout Medium +</li>
+          <li><span class="ck">✓</span> Assistant IA &amp; SMS</li>
+          <li><span class="ck">✓</span> Leads multicanal &amp; portail client</li>
+          <li><span class="ck">✓</span> Support prioritaire</li>
+        </ul>
+        <a href="#demo" class="btn btn-light">Choisir Complet</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TEMOIGNAGE -->
+<section class="sec" style="background:var(--surface)">
+  <div class="wrap quote reveal">
+    <div style="color:var(--amber);font-size:20px;letter-spacing:3px">★★★★★</div>
+    <p>« On a remplacé Excel, les e-mails et les signatures papier par OFManager. L'audit Qualiopi s'est préparé en quelques clics. »</p>
+    <div class="who"><strong style="color:var(--navy)">Sophie M.</strong> — Directrice, organisme de sécurité privée</div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="sec center" id="faq">
+  <div class="wrap">
+    <span class="eyebrow reveal">Questions fréquentes</span>
+    <h2 class="reveal" style="margin-top:12px">Tout ce qu'il faut savoir</h2>
+    <div class="faq reveal" style="text-align:left">
+      <details open><summary>Gère-t-il l'autorisation préalable / la carte pro CNAPS (APS) ?</summary><p>Oui. Pour le TFP APS et le MAC APS, chaque candidat a un suivi de l'autorisation préalable (non fait → en cours → complètement de dossier → accepté/refusé) ou de sa carte pro en cours de validité, dès l'étape prospect.</p></details>
+      <details><summary>Comment fonctionnent les grilles de certification (SST, INRS) ?</summary><p>Elles sont pré-remplies à partir des inscrits et du formateur. Le formateur n'a plus qu'à cocher et signer, puis chaque grille se télécharge séparément depuis le suivi pédagogique. Aucune convocation d'examen n'est envoyée pour le SST/MAC.</p></details>
+      <details><summary>Et les recyclages (MAC SST, recyclage SSIAP, habilitation) ?</summary><p>La plateforme tient l'échéancier des recyclages et MAC obligatoires et relance avant expiration — vous ne perdez plus aucun stagiaire à requalifier.</p></details>
+      <details><summary>Est-ce conforme Qualiopi et adapté à mes certificateurs ?</summary><p>Oui : preuves structurées sur les 32 indicateurs, dossier d'audit exportable, BPF pré-rempli. Les documents et parcours s'alignent sur vos certificateurs (INRS, France Compétences, etc.).</p></details>
+      <details><summary>Peut-on l'héberger en interne et le personnaliser ?</summary><p>Deux options d'hébergement : notre cloud clé en main, ou une installation sur vos propres serveurs (vos données restent chez vous). Logo, couleurs, domaine, modules, documents et parcours métier sont entièrement personnalisables.</p></details>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="sec final" id="demo">
+  <div class="wrap reveal">
+    <h2>Prêt à digitaliser votre organisme ?</h2>
+    <p>Démonstration personnalisée et mise en route accompagnée. Réponse sous 24 h.</p>
+    <div style="margin-top:28px;display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
+      <a href="mailto:contact@ofmanager.fr" class="btn btn-light">Demander une démo</a>
+      <a href="/tarifs" class="btn btn-ghost" style="border-color:rgba(255,255,255,.4)">Voir les tarifs</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap">
+    <div class="cols">
+      <div>
+        <div class="flogo"><img src="ofmanager-logo.png" alt="OFManager"><span>OF<span style="color:var(--brand-light)">Manager</span></span></div>
+        <p style="max-width:300px">Le logiciel tout-en-un des organismes de formation. Gérez, formez, certifiez — à votre marque, sur mesure.</p>
+        <p class="by" style="margin-top:16px"><img src="ofmanager-logo.png" alt="" style="height:18px"> Édité par <strong style="color:#fff;margin-left:2px">CAP Compétences</strong></p>
+      </div>
+      <div><h4>Produit</h4><a href="#fonctionnalites">Fonctionnalités</a><a href="#tarifs">Tarifs</a><a href="#hebergement">Hébergement</a><a href="/login">Connexion</a></div>
+      <div><h4>Entreprise</h4><a href="partenaires-clients.html">Partenaires &amp; clients</a><a href="#faq">FAQ</a><a href="#demo">Demander une démo</a><a href="mailto:contact@ofmanager.fr">Contact</a></div>
+      <div><h4>Légal</h4><a href="#">Mentions légales</a><a href="#">CGV</a><a href="#">Confidentialité</a><a href="#">RGPD</a></div>
+    </div>
+    <div class="bottom"><span>© 2026 OFManager — une solution CAP Compétences. Tous droits réservés.</span><span>contact@ofmanager.fr · 01 23 45 67 89</span></div>
+  </div>
+</footer>
+
+<script>
+  // Révélation au scroll
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e, i) => { if (e.isIntersecting) { e.target.style.transitionDelay = (e.target.dataset.d || (i % 3) * 0.08) + "s"; e.target.classList.add("in"); io.unobserve(e.target); } });
+  }, { threshold: 0.12 });
+  document.querySelectorAll(".reveal").forEach((el) => io.observe(el));
+
+  // Compteurs animés (hero)
+  function animateCount(el) {
+    const target = parseInt(el.dataset.count, 10);
+    const suffix = el.dataset.suffix || "";
+    const dur = 1100; const t0 = performance.now();
+    function step(t) {
+      const p = Math.min(1, (t - t0) / dur);
+      const val = Math.round(target * (1 - Math.pow(1 - p, 3)));
+      el.textContent = val + suffix;
+      if (p < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+  const cio = new IntersectionObserver((entries) => {
+    entries.forEach((e) => { if (e.isIntersecting) { animateCount(e.target); cio.unobserve(e.target); } });
+  }, { threshold: 0.5 });
+  document.querySelectorAll("[data-count]").forEach((el) => cio.observe(el));
+
+  // Galerie de captures (onglets)
+  const img = document.getElementById("shotImg");
+  const cap = document.getElementById("shotCap");
+  document.querySelectorAll(".tabs button").forEach((b) => {
+    b.addEventListener("click", () => {
+      document.querySelectorAll(".tabs button").forEach((x) => x.classList.remove("on"));
+      b.classList.add("on");
+      img.style.opacity = "0";
+      setTimeout(() => { img.src = "screenshots/" + b.dataset.shot + ".png"; cap.textContent = b.dataset.cap; img.style.opacity = "1"; }, 150);
+    });
+  });
+  img.style.transition = "opacity .25s ease";
+</script>
+</body>
+</html>

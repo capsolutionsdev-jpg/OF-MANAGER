@@ -59,10 +59,10 @@ export default async function HomePage() {
               Se connecter
             </Link>
             <Link
-              href="/login"
+              href="/demo"
               className="inline-flex items-center gap-1.5 rounded-lg bg-[#1A5FD4] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1750b5]"
             >
-              Accéder à mon espace <ArrowRight className="h-4 w-4" />
+              Demander une démo <ArrowRight className="h-4 w-4" />
             </Link>
           </nav>
         </div>
@@ -96,10 +96,10 @@ export default async function HomePage() {
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link
-              href="/login"
+              href="/demo"
               className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#1A5FD4] px-6 py-3 text-base font-semibold text-white shadow-md transition hover:bg-[#1750b5] sm:w-auto"
             >
-              Se connecter <ArrowRight className="h-5 w-5" />
+              Demander une démo <ArrowRight className="h-5 w-5" />
             </Link>
             <a
               href="#fonctionnalites"
@@ -180,10 +180,10 @@ export default async function HomePage() {
             Récupérez l'équivalent d'1 à 2 jours par semaine sur l'administratif.
           </p>
           <Link
-            href="/login"
+            href="/demo"
             className="mt-7 inline-flex items-center justify-center gap-2 rounded-xl bg-[#1A5FD4] px-7 py-3 text-base font-semibold text-white shadow-md transition hover:bg-[#1750b5]"
           >
-            Accéder à mon espace <ArrowRight className="h-5 w-5" />
+            Demander une démo <ArrowRight className="h-5 w-5" />
           </Link>
         </div>
       </section>
