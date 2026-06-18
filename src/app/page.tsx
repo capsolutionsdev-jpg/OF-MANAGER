@@ -9,6 +9,7 @@ import {
   CalendarCheck, GraduationCap, Cloud, Building2,
 } from "lucide-react";
 import { auth } from "@/auth";
+import { ScrollReveal } from "@/components/site/scroll-reveal";
 
 export const metadata: Metadata = {
   title: "OFManager — Le logiciel des OF en sécurité, incendie & secourisme",
@@ -59,6 +60,7 @@ export default async function HomePage() {
 
   return (
     <main className="min-h-screen bg-white text-[#0D1B3E]">
+      <ScrollReveal skip={2} />
       {/* Header */}
       <header className="sticky top-0 z-40 border-b border-slate-100 bg-white/85 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-6xl items-center gap-6 px-4 sm:px-6">
@@ -134,6 +136,7 @@ export default async function HomePage() {
             <div key={l}><div className="font-display text-4xl font-extrabold text-[#1A5FD4]">{n}</div><div className="mt-1 text-sm text-slate-500">{l}</div></div>
           ))}
         </div>
+        <p className="mx-auto max-w-6xl px-4 text-center text-[11px] text-slate-400 sm:px-6">* Chiffres indicatifs — à remplacer par vos résultats réels.</p>
       </section>
 
       {/* Problème / Solution */}

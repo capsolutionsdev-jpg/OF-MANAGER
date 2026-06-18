@@ -215,3 +215,25 @@
   border: 1px solid var(--border);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
+
+/* ============================================================
+   Animations d'apparition au scroll (pages vitrine publiques).
+   Activées uniquement quand <html class="reveal-on"> (ajouté par
+   le composant client ScrollReveal) → sans JS, contenu visible.
+   ============================================================ */
+.reveal-on .reveal {
+  opacity: 0;
+  transform: translateY(26px);
+  transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.reveal-on .reveal.in {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal-on .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}

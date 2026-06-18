@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Check } from "lucide-react";
+import { ScrollReveal } from "@/components/site/scroll-reveal";
 
 export const metadata: Metadata = {
   title: "TFP APS sur OFManager — du CNAPS à la certification",
@@ -22,6 +23,7 @@ const steps = [
 export default function TfpApsPage() {
   return (
     <main className="min-h-screen bg-white text-[#0D1B3E]">
+      <ScrollReveal skip={1} />
       <header className="sticky top-0 z-40 border-b border-slate-100 bg-white/90 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-5xl items-center gap-4 px-4 sm:px-6">
           <Link href="/"><Image src="/ofmanager-logo.png" alt="OFManager" width={150} height={48} priority className="h-9 w-auto" /></Link>

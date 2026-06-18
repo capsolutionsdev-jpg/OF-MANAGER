@@ -14,9 +14,18 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CAP Compétence Manager",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://ofmanager.fr"),
+  title: "OFManager — Logiciel des organismes de formation",
   description:
-    "Plateforme de gestion d'organisme de formation certifié Qualiopi.",
+    "OFManager : le logiciel des organismes de formation (sécurité privée, incendie, secourisme, prévention) — conforme Qualiopi, à votre marque. Édité par CAP Compétences.",
+  applicationName: "OFManager",
+  openGraph: {
+    type: "website",
+    siteName: "OFManager",
+    locale: "fr_FR",
+    images: [{ url: "/ofmanager-logo.png", width: 1200, height: 630, alt: "OFManager" }],
+  },
+  twitter: { card: "summary_large_image" },
 };
 
 export default function RootLayout({
