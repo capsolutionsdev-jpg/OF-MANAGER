@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { detectFileType, isRasterImage } from "@/lib/blob";
-import { rateLimit } from "@/lib/rate-limit";
+import { rateLimit, checkLimit } from "@/lib/rate-limit";
 
 // Entêtes (magic bytes) de fichiers réels.
 const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
@@ -62,5 +62,13 @@ describe("rateLimit() — anti-brute-force", () => {
     rateLimit(a, { limit: 1, windowMs: 60_000 });
     expect(rateLimit(a, { limit: 1, windowMs: 60_000 }).ok).toBe(false);
     expect(rateLimit(b, { limit: 1, windowMs: 60_000 }).ok).toBe(true);
+  });
+
+  it("checkLimit() retombe sur la mémoire sans Redis et bloque au seuil", async () => {
+    const key = `chk-${Math.random()}`;
+    const opts = { limit: 2, windowMs: 60_000 };
+    expect((await checkLimit(key, opts)).ok).toBe(true);
+    expect((await checkLimit(key, opts)).ok).toBe(true);
+    expect((await checkLimit(key, opts)).ok).toBe(false);
   });
 });

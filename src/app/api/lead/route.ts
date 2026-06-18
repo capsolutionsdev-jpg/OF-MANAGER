@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { sendEmail } from "@/lib/email";
 import { orgConfig } from "@/lib/org-config";
 import { appBaseUrl } from "@/lib/token";
-import { rateLimit, clientIp } from "@/lib/rate-limit";
+import { checkLimit, clientIp } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -47,7 +47,7 @@ ${infos.message ? `Message    : ${infos.message}\n` : ""}
 // Si LEAD_API_SECRET n'est pas défini, l'endpoint accepte (mode ouvert).
 export async function POST(req: Request) {
   // Anti-flood : 10 leads / minute / IP (protège la création de prospects + e-mails).
-  const rl = rateLimit(`lead:${clientIp(req)}`, { limit: 10, windowMs: 60_000 });
+  const rl = await checkLimit(`lead:${clientIp(req)}`, { limit: 10, windowMs: 60_000 });
   if (!rl.ok) {
     return NextResponse.json(
       { ok: false, error: "Trop de requêtes." },

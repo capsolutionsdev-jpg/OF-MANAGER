@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { authConfig } from "@/auth.config";
-import { rateLimit, clientIp } from "@/lib/rate-limit";
+import { checkLimit, clientIp } from "@/lib/rate-limit";
 
 const credentialsSchema = z.object({
   email: z.string().email(),
@@ -34,8 +34,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         // Anti-brute-force : on plafonne les tentatives par compte ET par IP.
         const ip = request instanceof Request ? clientIp(request) : "unknown";
-        const byEmail = rateLimit(`login-id:${email.toLowerCase()}`, { limit: MAX_PER_EMAIL, windowMs: LOGIN_WINDOW_MS });
-        const byIp = rateLimit(`login-ip:${ip}`, { limit: MAX_PER_IP, windowMs: LOGIN_WINDOW_MS });
+        const [byEmail, byIp] = await Promise.all([
+          checkLimit(`login-id:${email.toLowerCase()}`, { limit: MAX_PER_EMAIL, windowMs: LOGIN_WINDOW_MS }),
+          checkLimit(`login-ip:${ip}`, { limit: MAX_PER_IP, windowMs: LOGIN_WINDOW_MS }),
+        ]);
         if (!byEmail.ok || !byIp.ok) {
           // Trop de tentatives → on refuse sans révéler la cause (anti-énumération).
           return null;
