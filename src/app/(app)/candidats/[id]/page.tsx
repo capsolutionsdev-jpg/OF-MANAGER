@@ -69,6 +69,10 @@ export default async function CandidatDetailPage({
         include: { user: { select: { name: true } } },
         orderBy: { date: "desc" },
       },
+      pieces: {
+        orderBy: { createdAt: "desc" },
+        select: { id: true, label: true, categorie: true, url: true, mimeType: true },
+      },
     },
   });
   if (!candidat) notFound();
@@ -320,7 +324,7 @@ export default async function CandidatDetailPage({
             </p>
           ) : (
             <ul className="space-y-4">
-              {candidat.inscriptions.map((i) => {
+              {candidat.inscriptions.map((i, idx) => {
                 const du = i.montant != null ? Number(i.montant) : 0;
                 const paye = i.paiements.reduce((s, p) => s + Number(p.montant), 0);
                 const restant = Math.max(0, du - paye);
@@ -392,6 +396,29 @@ export default async function CandidatDetailPage({
                       piecesAttendues={i.session.formation.piecesAttendues}
                       piecesRecues={i.piecesRecues}
                     />
+                    {idx === 0 && candidat.pieces.length > 0 && (
+                      <div className="mt-3">
+                        <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                          Pièces déposées par le candidat
+                        </p>
+                        <ul className="space-y-1">
+                          {candidat.pieces.map((p) => (
+                            <li key={p.id}>
+                              <a
+                                href={p.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 text-sm text-primary underline-offset-2 hover:underline"
+                              >
+                                <FileDown className="h-3.5 w-3.5" />
+                                {p.label}
+                                {p.mimeType?.includes("pdf") ? " (PDF)" : " (image)"}
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
 
                   {/* Paiement */}

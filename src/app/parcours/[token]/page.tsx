@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { CheckCircle2, Circle, FileSignature } from "lucide-react";
+import { CheckCircle2, Circle, FileSignature, FolderUp } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { orgConfigFor } from "@/lib/org-identity";
 import {
@@ -9,6 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ParcoursForm } from "@/components/parcours/parcours-form";
+import { DossierUpload } from "@/components/parcours/dossier-upload";
 
 export const dynamic = "force-dynamic";
 
@@ -61,6 +62,14 @@ export default async function ParcoursPage({
   const formDone = !!insc.formCompletedAt;
   const signed = !!insc.signedAt;
   const fmt = (d: Date) => d.toLocaleDateString("fr-FR");
+
+  // Dossier administratif : pièces attendues (par formation) + déjà déposées.
+  const piecesAttendues = insc.session.formation.piecesAttendues ?? [];
+  const pieces = await prisma.pieceJointe.findMany({
+    where: { candidatId: insc.candidatId },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, label: true, categorie: true, url: true, mimeType: true },
+  });
 
   return (
     <main className="min-h-screen bg-muted/40 px-4 py-10">
@@ -153,6 +162,25 @@ export default async function ParcoursPage({
                 Vos documents signés vous ont été envoyés par e-mail. Vous
                 recevrez prochainement votre convocation.
               </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Dossier administratif — dépôt des pièces (adapté à la formation) */}
+        {!signed && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <FolderUp className="h-5 w-5 text-primary" /> Mon dossier administratif
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <DossierUpload
+                token={token}
+                piecesAttendues={piecesAttendues}
+                initialPieces={pieces}
+                initialRecues={insc.piecesRecues}
+              />
             </CardContent>
           </Card>
         )}
