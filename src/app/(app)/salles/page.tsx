@@ -70,7 +70,7 @@ export default async function SallesPage() {
                       <span className="inline-flex items-center gap-2">
                         <span
                           className="inline-block h-3 w-3 rounded-full"
-                          style={{ backgroundColor: s.couleur ?? "#1A5FD4" }}
+                          style={{ backgroundColor: s.couleur ?? "#2C53C0" }}
                         />
                         {s.nom}
                       </span>

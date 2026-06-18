@@ -51,11 +51,17 @@ export default async function LoginPage() {
       data-design={dataDesign}
       style={brandStyle}
     >
-      {/* Panneau de marque (navy) — visible en grand écran */}
-      <div className="relative hidden flex-col justify-between overflow-hidden bg-[#0e1c3f] p-10 text-white lg:flex">
+      {/* Panneau de marque (encre chaude) — visible en grand écran */}
+      <div
+        className="relative hidden flex-col justify-between overflow-hidden p-10 text-white lg:flex"
+        style={{
+          background:
+            "radial-gradient(120% 150% at 88% -20%, #3a3550 0%, transparent 52%), radial-gradient(90% 120% at 5% 120%, #5a3a1e 0%, transparent 50%), linear-gradient(135deg, #1b1825, #221f19)",
+        }}
+      >
         {/* halos décoratifs */}
-        <div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-[#1A5FD4]/30 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-32 -left-20 h-96 w-96 rounded-full bg-[#4D9FFF]/20 blur-3xl" />
+        <div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-[#2c53c0]/30 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-32 -left-20 h-96 w-96 rounded-full bg-[#de8a43]/20 blur-3xl" />
 
         <div className="relative z-10">
           <span className="inline-flex items-center rounded-xl bg-white px-4 py-3 shadow-sm">

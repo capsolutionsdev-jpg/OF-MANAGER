@@ -200,10 +200,10 @@ function ColorPicker({ value, onChange, swatches = true }: { value: string; onCh
         />
       ))}
       {swatches && <span className="mx-1 h-6 w-px bg-border" />}
-      <Input type="text" value={value} onChange={(e) => onChange(e.target.value)} className="h-8 w-28" placeholder="#1A5FD4" />
+      <Input type="text" value={value} onChange={(e) => onChange(e.target.value)} className="h-8 w-28" placeholder="#2C53C0" />
       <input
         type="color"
-        value={/^#[0-9a-fA-F]{6}$/.test(value) ? value : "#1A5FD4"}
+        value={/^#[0-9a-fA-F]{6}$/.test(value) ? value : "#2C53C0"}
         onChange={(e) => onChange(e.target.value)}
         className="h-8 w-10 cursor-pointer rounded border bg-transparent"
         aria-label="Choisir une couleur"
@@ -233,7 +233,7 @@ export function EditOrganismeForm({ org, plans }: { org: OrgFormData; plans?: Pl
   const [signatureUrl, setSignatureUrl] = useState(org.signatureUrl ?? "");
   const [faviconUrl, setFaviconUrl] = useState(org.faviconUrl ?? "");
   const [design, setDesign] = useState(org.design ?? "defaut");
-  const [couleur, setCouleur] = useState(org.couleurPrimaire ?? "#1A5FD4");
+  const [couleur, setCouleur] = useState(org.couleurPrimaire ?? "#2C53C0");
   const [couleur2, setCouleur2] = useState(org.couleurSecondaire ?? "");
   const [docCfg, setDocCfg] = useState<DocumentsConfig>((org.documentsConfig as DocumentsConfig | null) ?? {});
   const setDoc = (key: string, patch: Partial<DocumentsConfig[string]>) =>

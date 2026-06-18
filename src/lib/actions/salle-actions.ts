@@ -30,7 +30,7 @@ export async function createSalle(
       capacite: capacite != null && !Number.isNaN(capacite) ? capacite : null,
       lieu: clean(formData.get("lieu")),
       equipements: clean(formData.get("equipements")),
-      couleur: clean(formData.get("couleur")) ?? "#1A5FD4",
+      couleur: clean(formData.get("couleur")) ?? "#2C53C0",
     },
   });
 

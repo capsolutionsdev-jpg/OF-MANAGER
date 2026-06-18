@@ -25,11 +25,11 @@ export default async function TarifsPage() {
   const has = (planKey: string, feat: string) => plans[planKey as FormuleKey].features.includes(feat);
 
   return (
-    <div className="min-h-screen bg-[#070b1c] text-white">
+    <div className="min-h-screen bg-[#1B1825] text-white">
       {/* Header */}
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
         <Link href="/" className="flex items-center gap-2 text-lg font-bold">
-          <span>OF</span><span className="text-[#4D9FFF]">Manager</span>
+          <span>OF</span><span className="text-[#7B93E8]">Manager</span>
         </Link>
         <Link href="/login" className="rounded-lg border border-white/15 px-4 py-2 text-sm font-medium hover:bg-white/10">
           Se connecter
@@ -41,8 +41,8 @@ export default async function TarifsPage() {
         <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium text-[#9fb0d0]">
           <Check className="h-3.5 w-3.5 text-emerald-400" /> Conforme Qualiopi · BPF · 100% à votre marque
         </span>
-        <h1 className="mt-5 text-4xl font-bold tracking-tight sm:text-5xl" style={{ fontFamily: "'Poppins',system-ui,sans-serif" }}>
-          Un tarif simple pour <span className="text-[#4D9FFF]">chaque organisme</span>
+        <h1 className="mt-5 text-4xl font-bold tracking-tight sm:text-5xl" style={{ fontFamily: "'Plus Jakarta Sans',system-ui,sans-serif" }}>
+          Un tarif simple pour <span className="text-[#7B93E8]">chaque organisme</span>
         </h1>
         <p className="mx-auto mt-4 max-w-xl text-[15px] leading-relaxed text-[#b9c4dd]">
           Du premier contact à la certification — gérez, formez et restez conforme sur une seule plateforme.
@@ -60,15 +60,15 @@ export default async function TarifsPage() {
               key={key}
               className={[
                 "relative flex flex-col rounded-2xl border p-6",
-                isPopular ? "border-[#4D9FFF] bg-white/[0.07] shadow-[0_20px_60px_-20px_rgba(77,159,255,.5)]" : "border-white/10 bg-white/[0.03]",
+                isPopular ? "border-[#7B93E8] bg-white/[0.07] shadow-[0_20px_60px_-20px_rgba(77,159,255,.5)]" : "border-white/10 bg-white/[0.03]",
               ].join(" ")}
             >
               {isPopular && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#1A5FD4] px-3 py-1 text-[11px] font-bold uppercase tracking-wide">
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#2C53C0] px-3 py-1 text-[11px] font-bold uppercase tracking-wide">
                   Le plus choisi
                 </span>
               )}
-              <div className="text-sm font-semibold" style={{ color: key === "BASIQUE" ? "#9fb0d0" : key === "MEDIUM" ? "#4D9FFF" : "#b794ff" }}>
+              <div className="text-sm font-semibold" style={{ color: key === "BASIQUE" ? "#9fb0d0" : key === "MEDIUM" ? "#7B93E8" : "#b794ff" }}>
                 {p.name}
               </div>
               <div className="mt-2 flex items-end gap-1">
@@ -83,7 +83,7 @@ export default async function TarifsPage() {
                 href="/login"
                 className={[
                   "mt-5 flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition",
-                  popular ? "bg-[#1A5FD4] hover:bg-[#1a5fd4]/90" : "border border-white/15 hover:bg-white/10",
+                  popular ? "bg-[#2C53C0] hover:bg-[#2C53C0]/90" : "border border-white/15 hover:bg-white/10",
                 ].join(" ")}
               >
                 Demander une démo <ArrowRight className="h-4 w-4" />
@@ -96,7 +96,7 @@ export default async function TarifsPage() {
 
       {/* Comparison table */}
       <section className="mx-auto max-w-5xl px-6 py-16">
-        <h2 className="mb-6 text-center text-2xl font-bold" style={{ fontFamily: "'Poppins',system-ui,sans-serif" }}>
+        <h2 className="mb-6 text-center text-2xl font-bold" style={{ fontFamily: "'Plus Jakarta Sans',system-ui,sans-serif" }}>
           Comparatif détaillé
         </h2>
         <div className="overflow-hidden rounded-2xl border border-white/10">
@@ -131,13 +131,13 @@ export default async function TarifsPage() {
       {/* CTA */}
       <section className="mx-auto max-w-3xl px-6 pb-20 text-center">
         <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-white/[0.06] to-transparent p-10">
-          <h2 className="text-2xl font-bold" style={{ fontFamily: "'Poppins',system-ui,sans-serif" }}>
+          <h2 className="text-2xl font-bold" style={{ fontFamily: "'Plus Jakarta Sans',system-ui,sans-serif" }}>
             Prêt à digitaliser votre organisme ?
           </h2>
           <p className="mx-auto mt-3 max-w-md text-[15px] text-[#b9c4dd]">
             Démarrez avec une démonstration personnalisée et une mise en route accompagnée.
           </p>
-          <Link href="/login" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#1A5FD4] px-6 py-3 font-semibold hover:bg-[#1a5fd4]/90">
+          <Link href="/login" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#2C53C0] px-6 py-3 font-semibold hover:bg-[#2C53C0]/90">
             Demander une démo <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
@@ -159,7 +159,7 @@ function FeatureGroupRows({
   return (
     <>
       <tr className="bg-white/[0.02]">
-        <td colSpan={4} className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-[#4D9FFF]">
+        <td colSpan={4} className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-[#7B93E8]">
           {label}
         </td>
       </tr>

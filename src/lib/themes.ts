@@ -21,11 +21,11 @@ export type Palette = {
   desc: string;
 };
 
-export const DEFAULT_THEME_COLOR = "#1A5FD4";
+export const DEFAULT_THEME_COLOR = "#2C53C0";
 
 // Palettes de couleur (réutilisables par tous les designs).
 export const THEMES: Palette[] = [
-  { key: "bleu", name: "Bleu Corporate", primary: "#1A5FD4", radius: "0.7rem", desc: "Classique et rassurant" },
+  { key: "bleu", name: "Bleu Cobalt", primary: "#2C53C0", radius: "0.8rem", desc: "Royal et rassurant (défaut)" },
   { key: "emeraude", name: "Émeraude", primary: "#059669", radius: "0.7rem", desc: "Frais et dynamique" },
   { key: "violet", name: "Violet Moderne", primary: "#7C3AED", radius: "0.9rem", desc: "Créatif, premium" },
   { key: "indigo", name: "Indigo Nuit", primary: "#4F46E5", radius: "0.5rem", desc: "Tech et sérieux" },
@@ -68,12 +68,12 @@ const BRICOLAGE = "'Bricolage Grotesque', system-ui, sans-serif";
 export const DESIGNS: Design[] = [
   {
     key: "defaut",
-    name: "Défaut",
-    desc: "L'habillage standard, clair et sobre.",
+    name: "Défaut — Sable & Cobalt",
+    desc: "L'habillage standard : sable chaleureux, cobalt, titres Plus Jakarta.",
     mode: "light",
     fontSans: SANS.inter,
-    fontHeading: SANS.inter,
-    defaultColor: "#1A5FD4",
+    fontHeading: SANS.jakarta,
+    defaultColor: "#2C53C0",
     vars: {}, // utilise les valeurs de :root (globals.css)
   },
   {
@@ -411,7 +411,7 @@ export function themeVars(
 ): Record<string, string> {
   const t = getPalette(themeKey);
   const primary = t ? t.primary : couleurPrimaire?.trim() || DEFAULT_THEME_COLOR;
-  const radius = t ? t.radius : "0.7rem";
+  const radius = t ? t.radius : "0.8rem";
   return {
     "--primary": primary,
     "--primary-foreground": "#ffffff",

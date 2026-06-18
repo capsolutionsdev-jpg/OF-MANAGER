@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { DemiJournee } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { auth } from "@/auth";
 import { generateToken, appBaseUrl } from "@/lib/token";
 import { joursSession, dayKey } from "@/lib/emargement";
@@ -19,8 +20,9 @@ export async function prepareEmargementSignatures(
 ): Promise<{ ok: boolean; created: number; error?: string }> {
   const session = await auth();
   if (!session?.user) return { ok: false, created: 0, error: "Non autorisé." };
+  const db = await getTenantDb();
 
-  const s = await prisma.session.findUnique({
+  const s = await db.session.findUnique({
     where: { id: sessionId },
     include: {
       seances: { orderBy: { date: "asc" } },
@@ -54,7 +56,7 @@ export async function prepareEmargementSignatures(
       })),
   ];
 
-  const existing = await prisma.emargementSignature.findMany({
+  const existing = await db.emargementSignature.findMany({
     where: { sessionId },
     select: { email: true, role: true, date: true, demi: true },
   });
@@ -96,7 +98,7 @@ export async function prepareEmargementSignatures(
   }
 
   if (toCreate.length > 0) {
-    await prisma.emargementSignature.createMany({ data: toCreate });
+    await db.emargementSignature.createMany({ data: toCreate });
   }
 
   revalidatePath(`/sessions/${sessionId}/emargement`);
@@ -113,8 +115,9 @@ export async function sendEmargementLink(
 ): Promise<{ ok: boolean; error?: string }> {
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Non autorisé." };
+  const db = await getTenantDb();
 
-  const e = await prisma.emargementSignature.findUnique({
+  const e = await db.emargementSignature.findUnique({
     where: { id: emargementId },
     include: { session: { include: { formation: true } } },
   });
@@ -142,7 +145,7 @@ ${org.representant} — ${org.name}`;
 
   const res = await sendEmail({ to: e.email, subject, body });
 
-  await prisma.emargementSignature.update({
+  await db.emargementSignature.update({
     where: { id: emargementId },
     data: { sentAt: new Date() },
   });

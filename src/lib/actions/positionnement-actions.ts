@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import type { PositionnementQuestion } from "@/lib/positionnement";
 
 async function requireUser() {
@@ -18,6 +18,7 @@ export async function savePositionnementQuestions(
   questions: PositionnementQuestion[],
 ): Promise<{ ok: boolean; error?: string }> {
   await requireUser();
+  const db = await getTenantDb();
   const propres = questions
     .map((q, idx) => ({
       id: q.id?.trim() || `q${idx + 1}`,
@@ -37,7 +38,7 @@ export async function savePositionnementQuestions(
   if (propres.length === 0)
     return { ok: false, error: "Au moins une question valide est requise (les QCU/QCM doivent avoir ≥ 2 options)." };
 
-  await prisma.formation.update({
+  await db.formation.update({
     where: { id: formationId },
     data: { positionnementQuestions: propres as unknown as Prisma.InputJsonValue },
   });
@@ -50,7 +51,8 @@ export async function resetPositionnementQuestions(
   formationId: string,
 ): Promise<{ ok: boolean }> {
   await requireUser();
-  await prisma.formation.update({
+  const db = await getTenantDb();
+  await db.formation.update({
     where: { id: formationId },
     data: { positionnementQuestions: Prisma.DbNull },
   });

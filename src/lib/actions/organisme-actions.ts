@@ -14,7 +14,7 @@ export type ConsoleState = { ok?: boolean; error?: string; id?: string; sousDoma
 
 // Valeurs d'amorçage d'un nouvel organisme (modifiables ensuite dans la console).
 const DEFAULT_DESIGN = "defaut";
-const DEFAULT_COULEUR = "#1A5FD4";
+const DEFAULT_COULEUR = "#2C53C0";
 
 const clean = (v: FormDataEntryValue | null) => {
   const s = typeof v === "string" ? v.trim() : "";

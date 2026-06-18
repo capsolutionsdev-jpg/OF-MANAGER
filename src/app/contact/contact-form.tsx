@@ -11,9 +11,9 @@ export function ContactForm() {
     return (
       <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-8 text-center">
         <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/15 text-2xl text-emerald-600">✓</div>
-        <h2 className="text-xl font-bold text-[#0D1B3E]">Message bien reçu !</h2>
+        <h2 className="text-xl font-bold text-[#221F19]">Message bien reçu !</h2>
         <p className="mt-2 text-sm text-slate-600">Notre équipe vous rappelle très vite. Merci de votre intérêt pour OFManager.</p>
-        <Link href="/" className="mt-6 inline-flex rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-[#0D1B3E] hover:bg-slate-50">← Retour au site</Link>
+        <Link href="/" className="mt-6 inline-flex rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-[#221F19] hover:bg-slate-50">← Retour au site</Link>
       </div>
     );
   }
@@ -22,28 +22,28 @@ export function ContactForm() {
     <form action={action} className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <label htmlFor="nom" className="text-sm font-medium text-[#0D1B3E]">Nom *</label>
-          <input id="nom" name="nom" required className="h-11 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-[#1A5FD4] focus:ring-2 focus:ring-[#1A5FD4]/20" placeholder="Prénom NOM" />
+          <label htmlFor="nom" className="text-sm font-medium text-[#221F19]">Nom *</label>
+          <input id="nom" name="nom" required className="h-11 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-[#2C53C0] focus:ring-2 focus:ring-[#2C53C0]/20" placeholder="Prénom NOM" />
         </div>
         <div className="space-y-1.5">
-          <label htmlFor="organisme" className="text-sm font-medium text-[#0D1B3E]">Organisme</label>
-          <input id="organisme" name="organisme" className="h-11 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-[#1A5FD4] focus:ring-2 focus:ring-[#1A5FD4]/20" placeholder="Nom de votre OF" />
+          <label htmlFor="organisme" className="text-sm font-medium text-[#221F19]">Organisme</label>
+          <input id="organisme" name="organisme" className="h-11 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-[#2C53C0] focus:ring-2 focus:ring-[#2C53C0]/20" placeholder="Nom de votre OF" />
         </div>
         <div className="space-y-1.5">
-          <label htmlFor="email" className="text-sm font-medium text-[#0D1B3E]">E-mail *</label>
-          <input id="email" name="email" type="email" required className="h-11 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-[#1A5FD4] focus:ring-2 focus:ring-[#1A5FD4]/20" placeholder="vous@of.fr" />
+          <label htmlFor="email" className="text-sm font-medium text-[#221F19]">E-mail *</label>
+          <input id="email" name="email" type="email" required className="h-11 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-[#2C53C0] focus:ring-2 focus:ring-[#2C53C0]/20" placeholder="vous@of.fr" />
         </div>
         <div className="space-y-1.5">
-          <label htmlFor="telephone" className="text-sm font-medium text-[#0D1B3E]">Téléphone</label>
-          <input id="telephone" name="telephone" className="h-11 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-[#1A5FD4] focus:ring-2 focus:ring-[#1A5FD4]/20" placeholder="06 12 34 56 78" />
+          <label htmlFor="telephone" className="text-sm font-medium text-[#221F19]">Téléphone</label>
+          <input id="telephone" name="telephone" className="h-11 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-[#2C53C0] focus:ring-2 focus:ring-[#2C53C0]/20" placeholder="06 12 34 56 78" />
         </div>
       </div>
       <div className="space-y-1.5">
-        <label htmlFor="message" className="text-sm font-medium text-[#0D1B3E]">Votre message</label>
-        <textarea id="message" name="message" rows={4} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#1A5FD4] focus:ring-2 focus:ring-[#1A5FD4]/20" placeholder="Une question, un projet ? Écrivez-nous, on vous rappelle." />
+        <label htmlFor="message" className="text-sm font-medium text-[#221F19]">Votre message</label>
+        <textarea id="message" name="message" rows={4} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#2C53C0] focus:ring-2 focus:ring-[#2C53C0]/20" placeholder="Une question, un projet ? Écrivez-nous, on vous rappelle." />
       </div>
       {state?.error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{state.error}</p>}
-      <button type="submit" disabled={pending} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#1A5FD4] px-6 py-3 text-base font-semibold text-white shadow-md transition hover:bg-[#1750b5] disabled:opacity-60 sm:w-auto">
+      <button type="submit" disabled={pending} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#2C53C0] px-6 py-3 text-base font-semibold text-white shadow-md transition hover:bg-[#21429E] disabled:opacity-60 sm:w-auto">
         {pending ? "Envoi…" : "Être rappelé(e)"}
       </button>
       <p className="text-xs text-slate-500">On vous recontacte sous 24 h. Sans engagement.</p>

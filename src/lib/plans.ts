@@ -47,7 +47,7 @@ export const PLANS: Record<FormuleKey, Plan> = {
     features: BASIQUE_FEATURES, supportLevel: "Support e-mail (48 h)",
   },
   MEDIUM: {
-    key: "MEDIUM", name: "Medium", price: 149, color: "#1A5FD4",
+    key: "MEDIUM", name: "Medium", price: 149, color: "#2C53C0",
     tagline: "Gestion complète + modules de productivité",
     features: MEDIUM_FEATURES, supportLevel: "Support e-mail (24 h)",
   },

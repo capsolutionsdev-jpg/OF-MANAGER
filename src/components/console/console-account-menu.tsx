@@ -18,7 +18,7 @@ export function ConsoleAccountMenu({ name, email }: { name: string; email: strin
     <DropdownMenu>
       <DropdownMenuTrigger render={<Button variant="ghost" className="flex items-center gap-2 px-1.5" />}>
         <Avatar className="h-8 w-8">
-          <AvatarFallback className="bg-[#0e1c3f] text-xs font-semibold text-white">{initials}</AvatarFallback>
+          <AvatarFallback className="bg-[#221F19] text-xs font-semibold text-white">{initials}</AvatarFallback>
         </Avatar>
         <span className="hidden text-sm font-medium sm:inline">{name || email}</span>
         <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />

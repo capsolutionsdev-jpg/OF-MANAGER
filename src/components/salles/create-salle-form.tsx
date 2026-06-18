@@ -42,7 +42,7 @@ export function CreateSalleForm() {
       <div className="flex items-end gap-2">
         <div className="space-y-1.5">
           <Label htmlFor="couleur">Couleur</Label>
-          <Input id="couleur" name="couleur" type="color" defaultValue="#1A5FD4" className="h-9 w-12 p-1" />
+          <Input id="couleur" name="couleur" type="color" defaultValue="#2C53C0" className="h-9 w-12 p-1" />
         </div>
         <Button type="submit" disabled={isPending}>
           <Plus className="mr-1.5 h-4 w-4" />
