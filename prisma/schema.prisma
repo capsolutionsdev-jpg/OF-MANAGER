@@ -154,6 +154,15 @@ enum CandidatStatut {
   ARCHIVE
 }
 
+// Suivi de l'autorisation préalable CNAPS (sécurité privée — TFP APS, MAC APS).
+enum CnapsStatut {
+  NON_FAIT
+  EN_COURS
+  COMPLETEMENT_DOSSIER
+  ACCEPTE
+  REFUSE
+}
+
 enum SessionStatut {
   PLANIFIEE
   OUVERTE
@@ -414,6 +423,11 @@ model Candidat {
   relanceDate   DateTime? // prochaine relance commerciale
   assignedToId  String?
   assignedTo    User?     @relation("CandidatAssigne", fields: [assignedToId], references: [id])
+
+  // ── Sécurité privée : prérequis réglementaires (TFP APS, MAC APS) ──
+  cnapsStatut      CnapsStatut? // suivi de l'autorisation préalable CNAPS
+  carteProNumero   String?      // n° de carte professionnelle (si déjà titulaire)
+  carteProValidite DateTime?    // date de fin de validité de la carte pro
 
   interactionsCandidat CandidatInteraction[]
 

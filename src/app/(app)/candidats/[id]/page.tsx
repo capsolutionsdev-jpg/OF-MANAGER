@@ -15,6 +15,7 @@ import {
 import {
   STATUT_LABELS,
   FINANCEMENT_LABELS,
+  CNAPS_STATUT_LABELS,
 } from "@/lib/validators/candidat";
 import { INSCRIPTION_STATUT_LABELS } from "@/lib/validators/inscription";
 import { INTERACTION_LABELS } from "@/lib/validators/crm";
@@ -214,6 +215,19 @@ export default async function CandidatDetailPage({
                     : null
                 }
               />
+              {(candidat.cnapsStatut || candidat.carteProNumero || candidat.carteProValidite) && (
+                <>
+                  <Field
+                    label="Autorisation préalable CNAPS"
+                    value={candidat.cnapsStatut ? CNAPS_STATUT_LABELS[candidat.cnapsStatut] : null}
+                  />
+                  <Field label="N° carte professionnelle" value={candidat.carteProNumero} />
+                  <Field
+                    label="Validité carte pro"
+                    value={candidat.carteProValidite ? candidat.carteProValidite.toLocaleDateString("fr-FR") : null}
+                  />
+                </>
+              )}
             </dl>
           </CardContent>
         </Card>

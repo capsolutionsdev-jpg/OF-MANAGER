@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { FinancementType, CandidatStatut } from "@prisma/client";
+import { FinancementType, CandidatStatut, CnapsStatut } from "@prisma/client";
 
 const optionalText = z.string().trim().optional().or(z.literal(""));
 
@@ -29,7 +29,20 @@ export const candidatFormSchema = z.object({
   financementType: z.nativeEnum(FinancementType).or(z.literal("")).optional(),
   formationSouhaiteeId: optionalText,
   statut: z.nativeEnum(CandidatStatut),
+  // Sécurité privée (TFP APS / MAC APS) : prérequis réglementaires
+  cnapsStatut: z.nativeEnum(CnapsStatut).or(z.literal("")).optional(),
+  carteProNumero: optionalText,
+  carteProValidite: optionalText, // chaîne "AAAA-MM-JJ"
 });
+
+/** Libellés du suivi de l'autorisation préalable CNAPS. */
+export const CNAPS_STATUT_LABELS: Record<CnapsStatut, string> = {
+  NON_FAIT: "Non fait",
+  EN_COURS: "Demande en cours",
+  COMPLETEMENT_DOSSIER: "Complètement de dossier",
+  ACCEPTE: "Accepté",
+  REFUSE: "Refusé",
+};
 
 export type CandidatFormValues = z.infer<typeof candidatFormSchema>;
 

@@ -37,6 +37,9 @@ function toData(v: CandidatFormValues) {
     financementType: v.financementType ? v.financementType : null,
     formationSouhaiteeId: clean(v.formationSouhaiteeId),
     statut: v.statut,
+    cnapsStatut: v.cnapsStatut ? v.cnapsStatut : null,
+    carteProNumero: clean(v.carteProNumero),
+    carteProValidite: v.carteProValidite ? new Date(v.carteProValidite) : null,
   };
 }
 

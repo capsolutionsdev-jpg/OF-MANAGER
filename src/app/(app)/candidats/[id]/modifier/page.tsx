@@ -70,6 +70,9 @@ export default async function ModifierCandidatPage({
             assignedToId: c.assignedToId ?? "",
             financementType: c.financementType ?? undefined,
             statut: c.statut,
+            cnapsStatut: c.cnapsStatut ?? "",
+            carteProNumero: c.carteProNumero ?? "",
+            carteProValidite: c.carteProValidite ? c.carteProValidite.toISOString().slice(0, 10) : "",
           }}
         />
       </div>

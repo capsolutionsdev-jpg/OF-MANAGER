@@ -12,6 +12,7 @@ import {
   type CandidatFormValues,
   FINANCEMENT_LABELS,
   STATUT_LABELS,
+  CNAPS_STATUT_LABELS,
   SOURCE_CONNAISSANCE_OPTIONS,
   DIPLOME_OPTIONS,
 } from "@/lib/validators/candidat";
@@ -75,6 +76,9 @@ export function CandidatForm({
       financementType: "",
       formationSouhaiteeId: "",
       statut: "NOUVEAU",
+      cnapsStatut: "",
+      carteProNumero: "",
+      carteProValidite: "",
       ...defaultValues,
     },
   });
@@ -275,6 +279,31 @@ export function CandidatForm({
                 <option key={u.id} value={u.id}>{u.name}</option>
               ))}
             </select>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Sécurité privée (CNAPS)</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-2">
+            <Label htmlFor="cnapsStatut">Autorisation préalable CNAPS</Label>
+            <select id="cnapsStatut" className={selectClass} {...register("cnapsStatut")}>
+              <option value="">— Non concerné —</option>
+              {Object.entries(CNAPS_STATUT_LABELS).map(([v, l]) => (
+                <option key={v} value={v}>{l}</option>
+              ))}
+            </select>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="carteProNumero">N° carte professionnelle</Label>
+            <Input id="carteProNumero" placeholder="CAR-…" {...register("carteProNumero")} />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="carteProValidite">Validité carte pro</Label>
+            <Input id="carteProValidite" type="date" {...register("carteProValidite")} />
           </div>
         </CardContent>
       </Card>
