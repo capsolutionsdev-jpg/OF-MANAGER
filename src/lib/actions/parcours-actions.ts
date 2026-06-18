@@ -4,8 +4,10 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import bcrypt from "bcryptjs";
 import {
+  DocumentType,
   EmailStatut,
   FinancementType,
+  Prisma,
   SignatureProvider,
   SignatureStatut,
 } from "@prisma/client";
@@ -230,6 +232,55 @@ export async function submitSatisfactionEntreprise(
       satisfactionEntrepriseCompletedAt: new Date(),
     },
   });
+  return { ok: true };
+}
+
+/**
+ * Soumission publique de l'enquête de suivi à 6 mois (Qualiopi ind. 11).
+ * Stocke les réponses + la signature, puis CLASSE le document dans la session
+ * (DocumentGenere de type SUIVI_6MOIS, consultable côté OF).
+ */
+export async function submitSuivi6Mois(
+  token: string,
+  reponses: import("@/lib/suivi6mois").Suivi6MoisReponses,
+  signatureDataUrl?: string,
+): Promise<{ ok: boolean; error?: string }> {
+  if (!reponses?.situation) return { ok: false, error: "Merci d'indiquer votre situation." };
+  if (!signatureDataUrl || !signatureDataUrl.startsWith("data:image/"))
+    return { ok: false, error: "Merci de dessiner votre signature." };
+
+  const insc = await prisma.inscription.findFirst({
+    where: { suivi6moisToken: token },
+    select: { id: true, organismeId: true, sessionId: true, suivi6moisCompletedAt: true },
+  });
+  if (!insc) return { ok: false, error: "Lien invalide ou expiré." };
+  if (insc.suivi6moisCompletedAt) return { ok: true }; // déjà répondu
+
+  await prisma.inscription.update({
+    where: { id: insc.id },
+    data: {
+      suivi6moisJson: reponses as Prisma.InputJsonValue,
+      suivi6moisSignature: signatureDataUrl,
+      suivi6moisCompletedAt: new Date(),
+    },
+  });
+
+  // Classe le document dans la session (évite les doublons si re-soumission).
+  const existing = await prisma.documentGenere.findFirst({
+    where: { inscriptionId: insc.id, type: DocumentType.SUIVI_6MOIS },
+    select: { id: true },
+  });
+  if (!existing) {
+    await prisma.documentGenere.create({
+      data: {
+        organismeId: insc.organismeId,
+        type: DocumentType.SUIVI_6MOIS,
+        inscriptionId: insc.id,
+        sessionId: insc.sessionId,
+        fileUrl: `/suivi/${token}/document`,
+      },
+    });
+  }
   return { ok: true };
 }
 

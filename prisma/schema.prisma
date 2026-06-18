@@ -238,6 +238,7 @@ enum DocumentType {
   BILAN_INDIVIDUEL
   RELEVE_PRESENCE
   COMPTE_RENDU_PEDAGOGIQUE
+  SUIVI_6MOIS
   DOCUMENT_CPF
   DOCUMENT_OPCO
   AUTRE
@@ -289,6 +290,20 @@ enum FactureFormateurStatut {
   EN_COURS   // règlement en cours
   PAYEE      // réglée
   REJETEE    // refusée (montant/justificatif à revoir)
+}
+
+// Validation par l'OF d'une pièce du dossier administratif déposée par le candidat.
+enum PieceStatut {
+  EN_ATTENTE // déposée, à vérifier
+  VALIDEE    // conforme
+  REFUSEE    // à refaire (cf. motif)
+}
+
+// Auteur d'un message de la messagerie OF ↔ candidat / formateur.
+enum MessageAuteur {
+  OF        // organisme (staff)
+  CANDIDAT
+  FORMATEUR
 }
 
 enum QualiopiStatut {
@@ -451,6 +466,7 @@ model Candidat {
   inscriptions Inscription[]
   pieces       PieceJointe[]
   consentements Consentement[]
+  conversations Conversation[]
 
   createdById String?
   createdBy   User?    @relation("CandidatCreePar", fields: [createdById], references: [id])
@@ -492,6 +508,9 @@ model PieceJointe {
   url       String
   mimeType  String?
   taille    Int?
+  // Validation par l'OF (dossier administratif)
+  statut     PieceStatut @default(EN_ATTENTE)
+  motifRefus String?
   uploadedById String?
   uploadedBy   User?  @relation("PieceUploadeePar", fields: [uploadedById], references: [id])
   createdAt DateTime @default(now())
@@ -662,6 +681,8 @@ model Formateur {
   seances    Seance[]
   formations Formation[]
   factures   FactureFormateur[]
+  disponibilites Disponibilite[]
+  conversations  Conversation[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -748,6 +769,15 @@ model Inscription {
   satisfactionEntrepriseCompletedAt DateTime?
   docsFinSentAt       DateTime? // documents de fin de formation envoyés
 
+  // ── Enquête de suivi à 6 mois (Qualiopi ind. 11 — devenir/insertion pro) ──
+  // Token indexé (non @unique) pour éviter une contrainte bloquante en prod ;
+  // généré aléatoirement (24 octets) → collision négligeable. Lecture via findFirst.
+  suivi6moisToken       String? // lien public de l'enquête à 6 mois
+  suivi6moisSentAt      DateTime? // enquête 6 mois envoyée
+  suivi6moisJson        Json? // réponses (situation pro, lien formation, etc.)
+  suivi6moisCompletedAt DateTime?
+  suivi6moisSignature   String?   @db.Text // signature manuscrite (PNG data URL)
+
   // RGPD & signature (formulaire public)
   consentementRgpd Boolean   @default(false)
   consentementDate DateTime?
@@ -767,6 +797,7 @@ model Inscription {
   @@unique([candidatId, sessionId])
   @@index([statut])
   @@index([organismeId])
+  @@index([suivi6moisToken])
 }
 
 // =============================================================
@@ -1222,6 +1253,58 @@ model FactureFormateur {
   @@index([organismeId])
   @@index([formateurId])
   @@index([statut])
+}
+
+// Disponibilité déclarée par un formateur (planification des sessions par l'OF).
+model Disponibilite {
+  id          String   @id @default(cuid())
+  organismeId String? // tenant (multi-OF)
+  formateurId String
+  formateur   Formateur @relation(fields: [formateurId], references: [id], onDelete: Cascade)
+  date        DateTime  @db.Date
+  demi        DemiJournee? // null = journée entière
+  dispo       Boolean   @default(true) // true = disponible, false = indisponible
+  note        String?
+  createdAt   DateTime  @default(now())
+
+  @@index([organismeId])
+  @@index([formateurId])
+  @@index([date])
+}
+
+// Fil de discussion OF ↔ candidat ou OF ↔ formateur (messagerie légère).
+model Conversation {
+  id          String   @id @default(cuid())
+  organismeId String? // tenant (multi-OF)
+  sujet       String?
+  candidatId  String?
+  candidat    Candidat?  @relation(fields: [candidatId], references: [id], onDelete: Cascade)
+  formateurId String?
+  formateur   Formateur? @relation(fields: [formateurId], references: [id], onDelete: Cascade)
+
+  messages    Message[]
+  lastMessageAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  @@index([organismeId])
+  @@index([candidatId])
+  @@index([formateurId])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  organismeId    String? // tenant (multi-OF)
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  auteur         MessageAuteur
+  auteurUserId   String?
+  corps          String       @db.Text
+  luParOf        Boolean      @default(false) // lu côté organisme
+  luParClient    Boolean      @default(false) // lu côté candidat/formateur
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId])
+  @@index([organismeId])
 }
 
 // =============================================================

@@ -22,6 +22,7 @@ import { INTERACTION_LABELS } from "@/lib/validators/crm";
 import { anonymiseCandidat } from "@/lib/actions/rgpd-actions";
 import { resendParcoursAction } from "@/lib/actions/parcours-actions";
 import { DossierChecklist } from "@/components/inscriptions/dossier-checklist";
+import { PieceValidation } from "@/components/inscriptions/piece-validation";
 import { RecordPaymentDialog } from "@/components/comptabilite/record-payment-dialog";
 import { SendProspectLinkButton } from "@/components/crm/send-prospect-link-button";
 import { CrmPanel } from "@/components/crm/crm-panel";
@@ -71,7 +72,7 @@ export default async function CandidatDetailPage({
       },
       pieces: {
         orderBy: { createdAt: "desc" },
-        select: { id: true, label: true, categorie: true, url: true, mimeType: true },
+        select: { id: true, label: true, categorie: true, url: true, mimeType: true, statut: true, motifRefus: true },
       },
     },
   });
@@ -396,29 +397,7 @@ export default async function CandidatDetailPage({
                       piecesAttendues={i.session.formation.piecesAttendues}
                       piecesRecues={i.piecesRecues}
                     />
-                    {idx === 0 && candidat.pieces.length > 0 && (
-                      <div className="mt-3">
-                        <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                          Pièces déposées par le candidat
-                        </p>
-                        <ul className="space-y-1">
-                          {candidat.pieces.map((p) => (
-                            <li key={p.id}>
-                              <a
-                                href={p.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1.5 text-sm text-primary underline-offset-2 hover:underline"
-                              >
-                                <FileDown className="h-3.5 w-3.5" />
-                                {p.label}
-                                {p.mimeType?.includes("pdf") ? " (PDF)" : " (image)"}
-                              </a>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+                    {idx === 0 && <PieceValidation pieces={candidat.pieces} />}
                   </div>
 
                   {/* Paiement */}

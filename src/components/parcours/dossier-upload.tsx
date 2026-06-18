@@ -38,6 +38,12 @@ function fileToDataUrl(file: File, maxW = 1600): Promise<string> {
 
 function isImg(mime: string | null) { return !!mime && mime.startsWith("image/"); }
 
+function StatutPill({ statut }: { statut: PieceDTO["statut"] }) {
+  if (statut === "VALIDEE") return <span className="rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700">Validée</span>;
+  if (statut === "REFUSEE") return <span className="rounded bg-red-500/10 px-1.5 py-0.5 text-[10px] font-medium text-red-700">Refusée</span>;
+  return <span className="rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">À vérifier</span>;
+}
+
 export function DossierUpload({
   token, piecesAttendues, initialPieces, initialRecues,
 }: {
@@ -120,14 +126,20 @@ export function DossierUpload({
 
                 {/* fichiers déjà déposés pour cette pièce */}
                 {piecesFor(label).map((p) => (
-                  <div key={p.id} className="mt-2 flex items-center gap-2 rounded-md bg-muted/40 px-2 py-1 text-xs">
-                    {isImg(p.mimeType) ? <ImagePlus className="h-3.5 w-3.5" /> : <FileText className="h-3.5 w-3.5" />}
-                    <a href={p.url} target="_blank" rel="noopener noreferrer" className="flex-1 truncate underline">
-                      {p.mimeType?.includes("pdf") ? "Voir le PDF" : "Voir l'image"}
-                    </a>
-                    <button type="button" onClick={() => remove(p.id, label)} className="text-muted-foreground hover:text-destructive" aria-label="Supprimer">
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                  <div key={p.id} className="mt-2">
+                    <div className="flex items-center gap-2 rounded-md bg-muted/40 px-2 py-1 text-xs">
+                      {isImg(p.mimeType) ? <ImagePlus className="h-3.5 w-3.5" /> : <FileText className="h-3.5 w-3.5" />}
+                      <a href={p.url} target="_blank" rel="noopener noreferrer" className="flex-1 truncate underline">
+                        {p.mimeType?.includes("pdf") ? "Voir le PDF" : "Voir l'image"}
+                      </a>
+                      <StatutPill statut={p.statut} />
+                      <button type="button" onClick={() => remove(p.id, label)} className="text-muted-foreground hover:text-destructive" aria-label="Supprimer">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                    {p.statut === "REFUSEE" && p.motifRefus && (
+                      <p className="mt-0.5 pl-2 text-[11px] text-red-600">Refusée : {p.motifRefus} — merci de redéposer.</p>
+                    )}
                   </div>
                 ))}
 

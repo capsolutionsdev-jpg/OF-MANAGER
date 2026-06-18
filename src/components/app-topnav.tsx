@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { NavLinks, Brand } from "@/components/app-sidebar";
 import { NotificationBell } from "@/components/notifications/notification-bell";
-import { visibleNavItems, roleLabels } from "@/lib/navigation";
+import { buildNav, roleLabels } from "@/lib/navigation";
 import type { NotificationsData } from "@/lib/notifications";
 import { cn } from "@/lib/utils";
 
@@ -33,9 +33,6 @@ type NavUser = {
   fonctionnalites?: string[];
 };
 
-// Nombre d'items affichés directement dans la barre ; le reste va dans « Plus ».
-const INLINE = 6;
-
 export function AppTopNav({
   user,
   brand,
@@ -46,9 +43,7 @@ export function AppTopNav({
   notifications?: NotificationsData;
 }) {
   const pathname = usePathname();
-  const items = visibleNavItems(user.role, user.permissions ?? [], user.fonctionnalites ?? []);
-  const inline = items.slice(0, INLINE);
-  const overflow = items.slice(INLINE);
+  const { standalone, groups } = buildNav(user.role, user.permissions ?? [], user.fonctionnalites ?? []);
   const label = user.name || user.email || "Utilisateur";
   const initials = label.slice(0, 2).toUpperCase();
 
@@ -103,43 +98,40 @@ export function AppTopNav({
           )}
         </Link>
 
-        {/* Navigation inline (desktop) */}
+        {/* Navigation (desktop) : liens directs + un menu par catégorie */}
         <nav className="hidden flex-1 items-center gap-0.5 lg:flex">
-          {inline.map((it) => (
+          {standalone.map((it) => (
             <Link key={it.href} href={it.href} className={linkCls(isActive(it.href))}>
               {it.label}
             </Link>
           ))}
-          {overflow.length > 0 && (
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <button
-                    className={linkCls(overflow.some((it) => isActive(it.href)))}
-                  />
-                }
-              >
-                <span className="inline-flex items-center gap-1">
-                  Plus <ChevronDown className="h-3.5 w-3.5" />
-                </span>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-52">
-                {overflow.map((it) => (
-                  <Link
-                    key={it.href}
-                    href={it.href}
-                    className={cn(
-                      "flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-muted",
-                      isActive(it.href) && "bg-muted font-medium",
-                    )}
-                  >
-                    <it.icon className="h-4 w-4 text-muted-foreground" />
-                    {it.label}
-                  </Link>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+          {groups.map((g) => {
+            const groupActive = g.items.some((it) => isActive(it.href));
+            return (
+              <DropdownMenu key={g.name}>
+                <DropdownMenuTrigger render={<button className={linkCls(groupActive)} />}>
+                  <span className="inline-flex items-center gap-1">
+                    {g.name} <ChevronDown className="h-3.5 w-3.5" />
+                  </span>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-56">
+                  {g.items.map((it) => (
+                    <Link
+                      key={it.href}
+                      href={it.href}
+                      className={cn(
+                        "flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-muted",
+                        isActive(it.href) && "bg-muted font-medium",
+                      )}
+                    >
+                      <it.icon className="h-4 w-4 text-muted-foreground" />
+                      {it.label}
+                    </Link>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            );
+          })}
         </nav>
 
         {/* Actions à droite */}
@@ -160,7 +152,7 @@ export function AppTopNav({
               render={<Button variant="ghost" className="flex items-center gap-2 px-1.5" />}
             >
               <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-[#0e1c3f] text-xs font-semibold text-white">
+                <AvatarFallback className="bg-[#221F19] text-xs font-semibold text-white">
                   {initials}
                 </AvatarFallback>
               </Avatar>

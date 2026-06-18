@@ -1,10 +1,15 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
+import { PieceStatut } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
+import { auth } from "@/auth";
 import { storeUpload, parseDataUrl, extFromMime } from "@/lib/blob";
 
 const MAX_BYTES = 8 * 1024 * 1024; // 8 Mo / pièce
 const ALLOWED = ["image/png", "image/jpeg", "image/webp", "application/pdf"];
+const STAFF = ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"];
 
 export type PieceDTO = {
   id: string;
@@ -12,7 +17,14 @@ export type PieceDTO = {
   categorie: string | null;
   url: string;
   mimeType: string | null;
+  statut: PieceStatut;
+  motifRefus: string | null;
 };
+
+const PIECE_SELECT = {
+  id: true, label: true, categorie: true, url: true, mimeType: true,
+  statut: true, motifRefus: true,
+} as const;
 
 /** Résout l'inscription + candidat à partir du token public, sinon null. */
 async function inscriptionByToken(token: string) {
@@ -36,7 +48,7 @@ export async function listPiecesParcours(token: string): Promise<{ ok: boolean; 
   const pieces = await prisma.pieceJointe.findMany({
     where: { candidatId: insc.candidatId },
     orderBy: { createdAt: "desc" },
-    select: { id: true, label: true, categorie: true, url: true, mimeType: true },
+    select: PIECE_SELECT,
   });
   return { ok: true, pieces };
 }
@@ -82,7 +94,7 @@ export async function uploadPieceParcours(
       mimeType: parsed.mime,
       taille: parsed.data.byteLength,
     },
-    select: { id: true, label: true, categorie: true, url: true, mimeType: true },
+    select: PIECE_SELECT,
   });
 
   // Marque la pièce attendue comme reçue (côté checklist admin).
@@ -142,5 +154,28 @@ export async function deletePieceParcours(
       data: { piecesRecues: { set: insc.piecesRecues.filter((p) => p !== piece.label) } },
     });
   }
+  return { ok: true };
+}
+
+/** Côté OF : valide ou refuse une pièce du dossier (avec motif si refus). */
+export async function setPieceStatut(
+  pieceId: string,
+  statut: PieceStatut,
+  motifRefus?: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const session = await auth();
+  if (!session?.user || !STAFF.includes(session.user.role as string))
+    return { ok: false, error: "Non autorisé." };
+  const db = await getTenantDb(); // cloisonné par organisme
+  const piece = await db.pieceJointe.findUnique({ where: { id: pieceId }, select: { id: true, candidatId: true } });
+  if (!piece) return { ok: false, error: "Pièce introuvable." };
+  await db.pieceJointe.update({
+    where: { id: pieceId },
+    data: {
+      statut,
+      motifRefus: statut === PieceStatut.REFUSEE ? (motifRefus?.trim() || "Pièce non conforme") : null,
+    },
+  });
+  revalidatePath(`/candidats/${piece.candidatId}`);
   return { ok: true };
 }

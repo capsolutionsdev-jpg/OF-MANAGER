@@ -21,7 +21,7 @@ export default async function MaFacturationPage() {
   const db = await getTenantDb();
   const session = await auth();
   const formateur = session?.user?.id
-    ? await db.formateur.findUnique({ where: { userId: session.user.id }, select: { id: true } })
+    ? await db.formateur.findUnique({ where: { userId: session.user.id }, select: { id: true, tarifJournalier: true } })
     : null;
 
   if (!formateur) {
@@ -41,7 +41,11 @@ export default async function MaFacturationPage() {
     db.session.findMany({
       where: { formateurs: { some: { id: formateur.id } }, isArchived: false },
       orderBy: { dateDebut: "desc" },
-      select: { id: true, dateDebut: true, formation: { select: { titre: true } } },
+      select: {
+        id: true, dateDebut: true, dateFin: true, tarifFormateurJour: true,
+        formation: { select: { titre: true } },
+        _count: { select: { seances: true } },
+      },
     }),
     db.factureFormateur.findMany({
       where: { formateurId: formateur.id },
@@ -55,9 +59,16 @@ export default async function MaFacturationPage() {
   ]);
 
   const fmt = (d: Date) => d.toLocaleDateString("fr-FR");
-  const sessionOptions = sessions.map((s) => ({
-    id: s.id, label: `${s.formation.titre} — ${fmt(s.dateDebut)}`,
-  }));
+  const tarifFormateur = formateur.tarifJournalier != null ? Number(formateur.tarifJournalier) : null;
+  const sessionOptions = sessions.map((s) => {
+    const jours = Math.max(
+      s._count.seances,
+      Math.round((s.dateFin.getTime() - s.dateDebut.getTime()) / 86400000) + 1,
+    );
+    const tarifJour = s.tarifFormateurJour != null ? Number(s.tarifFormateurJour) : tarifFormateur;
+    const montantSuggere = tarifJour != null ? Math.round(tarifJour * jours * 100) / 100 : null;
+    return { id: s.id, label: `${s.formation.titre} — ${fmt(s.dateDebut)}`, montantSuggere };
+  });
 
   return (
     <div className="space-y-6">

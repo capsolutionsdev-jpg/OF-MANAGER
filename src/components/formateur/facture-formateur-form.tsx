@@ -18,7 +18,7 @@ function fileToDataUrl(file: File): Promise<string> {
   });
 }
 
-export function FactureFormateurForm({ sessions }: { sessions: { id: string; label: string }[] }) {
+export function FactureFormateurForm({ sessions }: { sessions: { id: string; label: string; montantSuggere: number | null }[] }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [montant, setMontant] = useState("");

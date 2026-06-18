@@ -289,6 +289,59 @@ export const navItems: NavItem[] = [
   },
 ];
 
+// ── Regroupement de la barre de navigation par catégories (barre allégée) ──
+// Les entrées non listées ici (ex. Tableau de bord, espaces apprenant/formateur)
+// restent des liens directs. Les entrées « __footer » sortent de la barre et
+// vont dans le pied de page (avec les mentions légales).
+const GROUP_BY_HREF: Record<string, string> = {
+  "/crm": "Commercial", "/kanban": "Commercial", "/taches": "Commercial",
+  "/notifications": "Commercial", "/leads-multicanal": "Commercial",
+  "/scoring": "Commercial", "/portail-client": "Commercial",
+  "/candidats": "Formation", "/clients-pro": "Formation", "/formations": "Formation",
+  "/sessions": "Formation", "/planning": "Formation", "/salles": "Formation",
+  "/elearning": "Formation", "/formateurs": "Formation",
+  "/sms": "Communication", "/ia": "Communication", "/signatures": "Communication",
+  "/automatisations": "Communication",
+  "/comptabilite": "Finance", "/devis": "Finance", "/bpf": "Finance", "/rapports": "Finance",
+  "/qualiopi": "Qualité",
+  "/rgpd": "__footer", "/support": "__footer",
+};
+
+export const NAV_GROUP_ORDER = ["Commercial", "Formation", "Communication", "Finance", "Qualité"];
+
+export type NavSection = {
+  standalone: NavItem[];
+  groups: { name: string; items: NavItem[] }[];
+  footer: NavItem[];
+};
+
+/** Construit la navigation regroupée pour un utilisateur (barre + footer). */
+export function buildNav(
+  role: Role,
+  permissions: string[],
+  fonctionnalites: string[] = [],
+): NavSection {
+  const items = visibleNavItems(role, permissions, fonctionnalites);
+  const standalone: NavItem[] = [];
+  const footer: NavItem[] = [];
+  const byGroup = new Map<string, NavItem[]>();
+  for (const it of items) {
+    const g = GROUP_BY_HREF[it.href];
+    if (!g) standalone.push(it);
+    else if (g === "__footer") footer.push(it);
+    else {
+      const arr = byGroup.get(g) ?? [];
+      arr.push(it);
+      byGroup.set(g, arr);
+    }
+  }
+  const groups = NAV_GROUP_ORDER.filter((g) => byGroup.has(g)).map((g) => ({
+    name: g,
+    items: byGroup.get(g)!,
+  }));
+  return { standalone, groups, footer };
+}
+
 export const roleLabels: Record<Role, string> = {
   SUPERADMIN: "Super-administrateur (éditeur)",
   ADMIN: "Administrateur",

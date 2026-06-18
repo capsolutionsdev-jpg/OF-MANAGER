@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { Clock, AlertTriangle } from "lucide-react";
 import { auth } from "@/auth";
 import { AppTopNav } from "@/components/app-topnav";
+import { buildNav } from "@/lib/navigation";
 import { getBranding, getCurrentOrganisme } from "@/lib/org";
 import { designVars, getDesign } from "@/lib/themes";
 import { hasFeature } from "@/lib/features";
@@ -81,6 +82,12 @@ export default async function AppLayout({
     ? await getNotifications()
     : undefined;
 
+  // Pied de page : liens « légaux » sortis de la barre (RGPD, Support) + mentions.
+  const footerItems = buildNav(navUser.role, navUser.permissions ?? [], navUser.fonctionnalites ?? []).footer;
+  const legalLine = [org?.raisonSociale || branding.nom, org?.siret ? `SIRET ${org.siret}` : null, org?.nda ? `NDA ${org.nda}` : null]
+    .filter(Boolean)
+    .join(" · ");
+
   return (
     <div
       className={cn("min-h-screen bg-muted/40", isDark && "dark")}
@@ -101,6 +108,22 @@ export default async function AppLayout({
         </div>
       )}
       <main className="mx-auto max-w-[1500px] p-4 md:p-6">{children}</main>
+
+      <footer className="mt-8 border-t bg-card/40">
+        <div className="mx-auto flex max-w-[1500px] flex-col gap-2 px-4 py-5 text-xs text-muted-foreground md:flex-row md:items-center md:justify-between md:px-6">
+          <p>{legalLine || branding.nom}</p>
+          <nav className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            <Link href="/mentions-legales" className="hover:text-foreground hover:underline">
+              Mentions légales
+            </Link>
+            {footerItems.map((it) => (
+              <Link key={it.href} href={it.href} className="hover:text-foreground hover:underline">
+                {it.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
+      </footer>
     </div>
   );
 }

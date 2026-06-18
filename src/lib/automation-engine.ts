@@ -398,6 +398,43 @@ ${org.representant} — ${org.name}`,
       });
       counts.docsFin++;
     }
+
+    // ── 4bis) SUIVI À 6 MOIS (Qualiopi ind. 11 — devenir / insertion pro) ──
+    const suiviRule = auto("suivi_6mois", true);
+    const sixMois = new Date(s.dateFin);
+    sixMois.setMonth(sixMois.getMonth() + 6);
+    if (suiviRule.on && !i.suivi6moisSentAt && now >= sixMois) {
+      const suiviToken = i.suivi6moisToken ?? generateToken();
+      if (!i.suivi6moisToken) {
+        await prisma.inscription.update({
+          where: { id: i.id },
+          data: { suivi6moisToken: suiviToken },
+        });
+      }
+      const subject = `Et 6 mois après ? Votre suivi — ${f.titre}`;
+      const body = `Bonjour ${prenom},
+
+Il y a environ 6 mois, vous terminiez la formation « ${f.titre} ». Dans le cadre de notre démarche qualité (Qualiopi), nous aimerions savoir où vous en êtes aujourd'hui (situation professionnelle, lien avec la formation…).
+
+Merci de répondre à ce court questionnaire (2 minutes) et de le signer :
+${base}/suivi/${suiviToken}
+
+Vos réponses nous aident à améliorer nos formations.
+
+Cordialement,
+${org.representant} — ${org.name}`;
+      await logAndSend({ to, subject, body, sessionId: s.id });
+      await maybeSms(
+        suiviRule.channel,
+        i.candidat.telephone,
+        suiviRule.body ||
+          `${prenom}, 2 min pour nous dire où vous en êtes 6 mois après « ${f.titre} » : ${base}/suivi/${suiviToken}`,
+      );
+      await prisma.inscription.update({
+        where: { id: i.id },
+        data: { suivi6moisSentAt: new Date() },
+      });
+    }
   }
 
   // ── 5) COMPTE-RENDU FORMATEUR (session terminée, formateur avec e-mail, non envoyé) ──

@@ -68,7 +68,7 @@ export default async function ParcoursPage({
   const pieces = await prisma.pieceJointe.findMany({
     where: { candidatId: insc.candidatId },
     orderBy: { createdAt: "desc" },
-    select: { id: true, label: true, categorie: true, url: true, mimeType: true },
+    select: { id: true, label: true, categorie: true, url: true, mimeType: true, statut: true, motifRefus: true },
   });
 
   return (
