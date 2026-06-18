@@ -1,17 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { Copy, Check, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
+const noop = () => () => {};
+
 /** Affiche le lien public d'acceptation du devis et permet de le copier. */
 export function CopyAcceptLink({ path }: { path: string }) {
-  const [origin, setOrigin] = useState("");
   const [copied, setCopied] = useState(false);
-
-  useEffect(() => setOrigin(window.location.origin), []);
+  // Origine lue côté client sans effet ni setState (évite le mismatch
+  // d'hydratation : "" rendu sur le serveur, origine réelle sur le client).
+  const origin = useSyncExternalStore(noop, () => window.location.origin, () => "");
   const url = origin ? `${origin}${path}` : path;
 
   async function copy() {

@@ -1,4 +1,4 @@
-import { LifeBuoy, Send, Inbox } from "lucide-react";
+import { Send, Inbox } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

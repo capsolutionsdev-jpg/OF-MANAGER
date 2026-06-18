@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { UserPlus, FileDown } from "lucide-react";
@@ -130,9 +131,9 @@ export function QuickEnrollModal({
             {available.length === 0 ? (
               <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
                 Aucune session ouverte pour cette formation.{" "}
-                <a href="/sessions/nouvelle" className="underline">
+                <Link href="/sessions/nouvelle" className="underline">
                   Créez une session
-                </a>{" "}
+                </Link>{" "}
                 ou choisissez une autre formation.
               </p>
             ) : (

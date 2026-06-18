@@ -20,7 +20,6 @@ async function uniqueSlug(base: string, ignoreId?: string): Promise<string> {
   const root = slugify(base) || "cours";
   let slug = root;
   let n = 1;
-  // eslint-disable-next-line no-constant-condition
   while (true) {
     const existing = await db.cours.findUnique({ where: { slug } });
     if (!existing || existing.id === ignoreId) return slug;
