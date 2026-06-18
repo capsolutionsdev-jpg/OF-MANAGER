@@ -23,6 +23,7 @@ import { anonymiseCandidat } from "@/lib/actions/rgpd-actions";
 import { resendParcoursAction } from "@/lib/actions/parcours-actions";
 import { DossierChecklist } from "@/components/inscriptions/dossier-checklist";
 import { PieceValidation } from "@/components/inscriptions/piece-validation";
+import { CandidatAccessPanel } from "@/components/candidats/candidat-access-panel";
 import { RecordPaymentDialog } from "@/components/comptabilite/record-payment-dialog";
 import { SendProspectLinkButton } from "@/components/crm/send-prospect-link-button";
 import { CrmPanel } from "@/components/crm/crm-panel";
@@ -74,6 +75,7 @@ export default async function CandidatDetailPage({
         orderBy: { createdAt: "desc" },
         select: { id: true, label: true, categorie: true, url: true, mimeType: true, statut: true, motifRefus: true },
       },
+      apprenant: { select: { userId: true } },
     },
   });
   if (!candidat) notFound();
@@ -192,6 +194,11 @@ export default async function CandidatDetailPage({
               <Field label="Ville" value={candidat.ville} />
               <Field label="Pays" value={candidat.pays} />
             </dl>
+            <CandidatAccessPanel
+              candidatId={candidat.id}
+              hasAccount={!!candidat.apprenant?.userId}
+              email={candidat.email}
+            />
           </CardContent>
         </Card>
 
