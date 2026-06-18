@@ -71,6 +71,7 @@ export default async function HomePage() {
             <a href="#automatisations" className="hover:text-[#1A5FD4]">Automatisations</a>
             <a href="#tarifs" className="hover:text-[#1A5FD4]">Tarifs</a>
             <Link href="/partenaires" className="hover:text-[#1A5FD4]">Clients</Link>
+            <Link href="/contact" className="hover:text-[#1A5FD4]">Contact</Link>
           </nav>
           <div className="ml-auto flex items-center gap-3">
             <Link href="/login" className="hidden text-sm font-semibold text-[#0D1B3E] hover:text-[#1A5FD4] sm:block">Connexion</Link>
@@ -380,7 +381,7 @@ export default async function HomePage() {
             <p className="mt-4 text-sm">Édité par <strong className="text-white">CAP Compétences</strong></p>
           </div>
           <div><h4 className="mb-3 font-bold text-white">Produit</h4>{[["Fonctionnalités", "#fonctionnalites"], ["Tarifs", "#tarifs"], ["Hébergement", "#hebergement"]].map(([t, h]) => <a key={t} href={h} className="block py-1 text-sm hover:text-white">{t}</a>)}<Link href="/login" className="block py-1 text-sm hover:text-white">Connexion</Link></div>
-          <div><h4 className="mb-3 font-bold text-white">Entreprise</h4><Link href="/partenaires" className="block py-1 text-sm hover:text-white">Partenaires & clients</Link><Link href="/solutions/tfp-aps" className="block py-1 text-sm hover:text-white">TFP APS</Link><Link href="/demo" className="block py-1 text-sm hover:text-white">Demander une démo</Link></div>
+          <div><h4 className="mb-3 font-bold text-white">Entreprise</h4><Link href="/partenaires" className="block py-1 text-sm hover:text-white">Partenaires & clients</Link><Link href="/solutions/tfp-aps" className="block py-1 text-sm hover:text-white">TFP APS</Link><Link href="/demo" className="block py-1 text-sm hover:text-white">Demander une démo</Link><Link href="/contact" className="block py-1 text-sm hover:text-white">Contact</Link></div>
           <div><h4 className="mb-3 font-bold text-white">Légal</h4>{["Mentions légales", "CGV", "Confidentialité", "RGPD"].map((t) => <a key={t} href="#" className="block py-1 text-sm hover:text-white">{t}</a>)}</div>
         </div>
         <div className="border-t border-white/10 py-5 text-center text-xs text-[#8493b5]">© 2026 OFManager — une solution CAP Compétences. Tous droits réservés.</div>

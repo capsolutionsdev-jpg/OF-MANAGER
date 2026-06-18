@@ -1537,3 +1537,37 @@ model SupportMessage {
 
   @@index([ticketId])
 }
+
+// =============================================================
+//  LEADS COMMERCIAUX OFManager — prospects issus du site vitrine
+//  (formulaire de contact / demande de démo). Niveau ÉDITEUR (pas
+//  de tenant) : gérés depuis la console SUPERADMIN /console/prospects.
+// =============================================================
+enum LeadStatut {
+  NOUVEAU
+  A_RAPPELER
+  RAPPELE
+  CONVERTI
+  PERDU
+}
+
+model Lead {
+  id          String     @id @default(cuid())
+  nom         String
+  organisme   String?
+  email       String
+  telephone   String?
+  message     String?    @db.Text
+  source      String?    // "contact" | "demo"
+  hebergement String?    // préférence d'hébergement (demande de démo)
+  formations  String[]   @default([]) // formations concernées (demande de démo)
+  statut      LeadStatut @default(NOUVEAU)
+  notes       String?    @db.Text // notes internes de l'équipe OFManager
+  rappeleAt   DateTime?  // date du rappel effectué
+  lu          Boolean    @default(false) // consulté par l'éditeur (badge)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([statut])
+  @@index([createdAt])
+}

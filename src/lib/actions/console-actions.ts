@@ -1,13 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { OrganismeStatut, SupportStatut } from "@prisma/client";
+import { OrganismeStatut, SupportStatut, LeadStatut } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/superadmin-guard";
 import { sendEmail } from "@/lib/email";
 
 const STATUTS = new Set(Object.values(OrganismeStatut) as string[]);
 const SUPPORT_STATUTS = new Set(Object.values(SupportStatut) as string[]);
+const LEAD_STATUTS = new Set(Object.values(LeadStatut) as string[]);
 
 /** Change rapidement le statut d'un organisme (tableau de bord / liste console). */
 export async function setOrganismeStatut(id: string, statut: string): Promise<void> {
@@ -82,5 +83,46 @@ export async function markSupportRead(ticketId: string): Promise<void> {
   await requireSuperAdmin();
   await prisma.supportTicket.update({ where: { id: ticketId }, data: { nonLuSupport: false } });
   revalidatePath("/console/support");
+  revalidatePath("/console");
+}
+
+// ── Leads commerciaux (prospects du site vitrine) ────────────────────────────
+
+/** Change le statut d'un lead (Nouveau / À rappeler / Rappelé / Converti / Perdu). */
+export async function setLeadStatut(id: string, statut: string): Promise<void> {
+  await requireSuperAdmin();
+  if (!LEAD_STATUTS.has(statut)) return;
+  await prisma.lead.update({
+    where: { id },
+    data: {
+      statut: statut as LeadStatut,
+      lu: true,
+      ...(statut === "RAPPELE" ? { rappeleAt: new Date() } : {}),
+    },
+  });
+  revalidatePath("/console/prospects");
+  revalidatePath("/console");
+}
+
+/** Enregistre les notes internes d'un lead. */
+export async function setLeadNotes(id: string, notes: string): Promise<void> {
+  await requireSuperAdmin();
+  await prisma.lead.update({ where: { id }, data: { notes: notes.trim() || null, lu: true } });
+  revalidatePath("/console/prospects");
+}
+
+/** Marque un lead comme consulté (retire le badge « nouveau »). */
+export async function markLeadRead(id: string): Promise<void> {
+  await requireSuperAdmin();
+  await prisma.lead.update({ where: { id }, data: { lu: true } });
+  revalidatePath("/console/prospects");
+  revalidatePath("/console");
+}
+
+/** Supprime un lead. */
+export async function deleteLead(id: string): Promise<void> {
+  await requireSuperAdmin();
+  await prisma.lead.delete({ where: { id } });
+  revalidatePath("/console/prospects");
   revalidatePath("/console");
 }

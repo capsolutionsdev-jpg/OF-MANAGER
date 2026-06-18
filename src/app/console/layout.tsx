@@ -11,7 +11,10 @@ export default async function ConsoleLayout({
   children: React.ReactNode;
 }) {
   const session = await requireSuperAdmin();
-  const supportUnread = await prisma.supportTicket.count({ where: { nonLuSupport: true } });
+  const [supportUnread, leadsNew] = await Promise.all([
+    prisma.supportTicket.count({ where: { nonLuSupport: true } }),
+    prisma.lead.count({ where: { lu: false } }),
+  ]);
 
   return (
     <div className="min-h-screen bg-muted/40">
@@ -25,7 +28,7 @@ export default async function ConsoleLayout({
             </span>
           </div>
           <div className="ml-2">
-            <ConsoleNav supportUnread={supportUnread} />
+            <ConsoleNav supportUnread={supportUnread} leadsNew={leadsNew} />
           </div>
           <div className="ml-auto">
             <ConsoleAccountMenu
