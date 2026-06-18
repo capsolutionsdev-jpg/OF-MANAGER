@@ -223,7 +223,7 @@ const SECTIONS = [
   { id: "avance", label: "Avancé & limites", icon: Settings2 },
 ] as const;
 
-export function EditOrganismeForm({ org }: { org: OrgFormData }) {
+export function EditOrganismeForm({ org, prices }: { org: OrgFormData; prices?: Partial<Record<FormuleKey, number>> }) {
   const action = updateOrganisme.bind(null, org.id);
   const [state, formAction, isPending] = useActionState<ConsoleState | undefined, FormData>(action, undefined);
 
@@ -394,7 +394,7 @@ export function EditOrganismeForm({ org }: { org: OrgFormData }) {
           <Card>
             <CardHeader className="py-3"><CardTitle className="text-sm text-muted-foreground">Abonnement & fonctionnalités</CardTitle></CardHeader>
             <CardContent>
-              <FormuleSelector defaultFormule={(org.formule as FormuleKey | null) ?? null} defaultFeatures={org.fonctionnalites} />
+              <FormuleSelector defaultFormule={(org.formule as FormuleKey | null) ?? null} defaultFeatures={org.fonctionnalites} prices={prices} />
             </CardContent>
           </Card>
 
@@ -425,13 +425,13 @@ export function EditOrganismeForm({ org }: { org: OrgFormData }) {
             </CardContent>
           </Card>
           <Card>
-            <CardHeader className="py-3"><CardTitle className="flex items-center gap-1.5 text-sm text-muted-foreground"><KeyRound className="h-4 w-4" /> Clés d'intégration (par organisme)</CardTitle></CardHeader>
+            <CardHeader className="py-3"><CardTitle className="flex items-center gap-1.5 text-sm text-muted-foreground"><KeyRound className="h-4 w-4" /> Clés d&apos;intégration (par organisme)</CardTitle></CardHeader>
             <CardContent className="grid gap-4 sm:grid-cols-2">
               <Field name="brevoApiKey" label="Clé API Brevo (e-mail + SMS)" value={org.brevoApiKey} placeholder="xkeysib-…" hint="Envoi des e-mails & SMS au nom de l'OF." />
               <Field name="anthropicApiKey" label="Clé API Claude (Assistant IA)" value={org.anthropicApiKey} placeholder="sk-ant-…" hint="Active la génération IA pour cet OF." />
               <Field name="yousignApiKey" label="Clé API Yousign (signature)" value={org.yousignApiKey} placeholder="…" hint="Signature électronique prestataire." />
               <p className="text-[11px] text-muted-foreground sm:col-span-2">
-                Laisser vide = repli sur la configuration globale (ou mode démo). Chaque clé est propre à l'organisme.
+                Laisser vide = repli sur la configuration globale (ou mode démo). Chaque clé est propre à l&apos;organisme.
               </p>
             </CardContent>
           </Card>
@@ -492,11 +492,11 @@ export function EditOrganismeForm({ org }: { org: OrgFormData }) {
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="rounded-lg border p-3">
                   <div className="flex items-center gap-2 text-sm font-medium"><Server className="h-4 w-4 text-primary" /> Hébergé par OFManager (SaaS)</div>
-                  <p className="mt-1 text-xs text-muted-foreground">L'OF utilise son sous-domaine <code>{org.sousDomaine || "mon-of"}.ofmanager.fr</code>. Tout est piloté ici, mises à jour incluses.</p>
+                  <p className="mt-1 text-xs text-muted-foreground">L&apos;OF utilise son sous-domaine <code>{org.sousDomaine || "mon-of"}.ofmanager.fr</code>. Tout est piloté ici, mises à jour incluses.</p>
                 </div>
                 <div className="rounded-lg border p-3">
                   <div className="flex items-center gap-2 text-sm font-medium"><Download className="h-4 w-4 text-primary" /> Auto-hébergé (chez le client)</div>
-                  <p className="mt-1 text-xs text-muted-foreground">Téléchargez le package prêt à déployer (config + Dockerfile + docker-compose + .env.example + README + script d'init) pour une instance dédiée (base & domaine propres). Secrets non inclus.</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Téléchargez le package prêt à déployer (config + Dockerfile + docker-compose + .env.example + README + script d&apos;init) pour une instance dédiée (base & domaine propres). Secrets non inclus.</p>
                   <a
                     href={`/console/${org.id}/export`}
                     className="mt-2 inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium hover:bg-muted"

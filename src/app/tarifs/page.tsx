@@ -1,7 +1,8 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { Check, Minus, LifeBuoy, ArrowRight } from "lucide-react";
-import { PLANS, PLAN_ORDER, euros } from "@/lib/plans";
+import { PLAN_ORDER, euros, type FormuleKey } from "@/lib/plans";
+import { getResolvedPlans } from "@/lib/pricing";
 import { FEATURES, FEATURE_GROUPS, type Feature } from "@/lib/features";
 
 export const metadata: Metadata = {
@@ -9,16 +10,19 @@ export const metadata: Metadata = {
   description: "Trois formules pour digitaliser votre organisme de formation : Basique, Medium, Complet. Conforme Qualiopi, 100% à votre marque.",
 };
 
+// Les tarifs sont éditables dans la console → on rend la page dynamiquement
+// pour refléter immédiatement tout changement de prix.
+export const dynamic = "force-dynamic";
+
 const GROUP_LABEL: Record<string, string> = {
   "Cœur": "Cœur métier & conformité",
   "Modules avancés": "Modules avancés",
   "Support": "Support",
 };
 
-const POPULAR = "MEDIUM";
-
-export default function TarifsPage() {
-  const has = (planKey: string, feat: string) => PLANS[planKey as keyof typeof PLANS].features.includes(feat);
+export default async function TarifsPage() {
+  const { plans, popular } = await getResolvedPlans();
+  const has = (planKey: string, feat: string) => plans[planKey as FormuleKey].features.includes(feat);
 
   return (
     <div className="min-h-screen bg-[#070b1c] text-white">
@@ -49,17 +53,17 @@ export default function TarifsPage() {
       {/* Pricing cards */}
       <section className="mx-auto grid max-w-5xl gap-5 px-6 sm:grid-cols-3">
         {PLAN_ORDER.map((key) => {
-          const p = PLANS[key];
-          const popular = key === POPULAR;
+          const p = plans[key];
+          const isPopular = key === popular;
           return (
             <div
               key={key}
               className={[
                 "relative flex flex-col rounded-2xl border p-6",
-                popular ? "border-[#4D9FFF] bg-white/[0.07] shadow-[0_20px_60px_-20px_rgba(77,159,255,.5)]" : "border-white/10 bg-white/[0.03]",
+                isPopular ? "border-[#4D9FFF] bg-white/[0.07] shadow-[0_20px_60px_-20px_rgba(77,159,255,.5)]" : "border-white/10 bg-white/[0.03]",
               ].join(" ")}
             >
-              {popular && (
+              {isPopular && (
                 <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#1A5FD4] px-3 py-1 text-[11px] font-bold uppercase tracking-wide">
                   Le plus choisi
                 </span>
@@ -102,8 +106,8 @@ export default function TarifsPage() {
                 <th className="px-4 py-3 text-left font-medium text-[#b9c4dd]">Fonctionnalité</th>
                 {PLAN_ORDER.map((key) => (
                   <th key={key} className="px-4 py-3 text-center font-semibold">
-                    {PLANS[key].name}
-                    <div className="text-[11px] font-normal text-[#9fb0d0]">{euros(PLANS[key].price)}/mois</div>
+                    {plans[key].name}
+                    <div className="text-[11px] font-normal text-[#9fb0d0]">{euros(plans[key].price)}/mois</div>
                   </th>
                 ))}
               </tr>

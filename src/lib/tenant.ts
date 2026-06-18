@@ -18,7 +18,9 @@ import { prisma } from "@/lib/prisma";
  */
 // SupportMessage n'a pas d'organismeId : il est sécurisé via son ticket parent
 // (SupportTicket, lui cloisonné). On l'exempte donc de l'injection automatique.
-const GLOBAL_MODELS = new Set<string>(["Organisme", "SupportMessage"]);
+// PlanTarif est un référentiel global (tarifs des formules), pas une donnée
+// tenant : on l'exempte du cloisonnement.
+const GLOBAL_MODELS = new Set<string>(["Organisme", "SupportMessage", "PlanTarif"]);
 
 // Opérations dont le `where` accepte des filtres non-uniques → injection directe.
 const WHERE_OPS = new Set([

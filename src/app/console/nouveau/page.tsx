@@ -2,10 +2,12 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { CreateOrganismeForm } from "@/components/console/create-organisme-form";
+import { getPlanPrices } from "@/lib/pricing";
 
 export const dynamic = "force-dynamic";
 
-export default function NouvelOrganismePage() {
+export default async function NouvelOrganismePage() {
+  const prices = await getPlanPrices();
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <Link
@@ -18,7 +20,7 @@ export default function NouvelOrganismePage() {
         title="Nouvel organisme"
         subtitle="Créez l'instance d'un organisme de formation client et son compte gérant"
       />
-      <CreateOrganismeForm />
+      <CreateOrganismeForm prices={prices} />
     </div>
   );
 }

@@ -20,9 +20,12 @@ const GROUP_LABEL: Record<string, string> = {
 export function FormuleSelector({
   defaultFormule = "MEDIUM",
   defaultFeatures,
+  prices,
 }: {
   defaultFormule?: FormuleKey | null;
   defaultFeatures?: string[];
+  /** Prix édités (console /tarifs). Repli sur les prix par défaut si absent. */
+  prices?: Partial<Record<FormuleKey, number>>;
 }) {
   const [formule, setFormule] = useState<FormuleKey | null>(defaultFormule ?? null);
   const [feats, setFeats] = useState<Set<string>>(
@@ -69,7 +72,7 @@ export function FormuleSelector({
                   <span className="font-semibold" style={{ color: p.color }}>{p.name}</span>
                   {active && <Check className="h-4 w-4 text-primary" />}
                 </div>
-                <div className="mt-1 text-lg font-bold">{euros(p.price)}<span className="text-xs font-normal text-muted-foreground"> /mois</span></div>
+                <div className="mt-1 text-lg font-bold">{euros(prices?.[key] ?? p.price)}<span className="text-xs font-normal text-muted-foreground"> /mois</span></div>
                 <p className="mt-1 text-[11px] leading-snug text-muted-foreground">{p.tagline}</p>
                 <p className="mt-2 flex items-center gap-1 text-[11px] text-muted-foreground">
                   <Headset className="h-3 w-3" /> {p.supportLevel}

@@ -4,7 +4,8 @@
 
 import { prisma } from "@/lib/prisma";
 import { ADVANCED_FEATURE_KEYS, featureLabel } from "@/lib/features";
-import { monthlyRevenue, planForOrg, PLAN_ORDER, PLANS, type FormuleKey } from "@/lib/plans";
+import { planKeyForOrg, PLAN_ORDER, PLANS, type FormuleKey } from "@/lib/plans";
+import { getPlanPrices } from "@/lib/pricing";
 
 export type OrgRow = {
   id: string;
@@ -52,7 +53,7 @@ export type ConsoleOverview = {
 const MONTHS = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
 
 export async function getConsoleOverview(): Promise<ConsoleOverview> {
-  const [organismes, candByOrg, sessByOrg] = await Promise.all([
+  const [organismes, candByOrg, sessByOrg, prices] = await Promise.all([
     prisma.organisme.findMany({
       orderBy: { createdAt: "desc" },
       select: {
@@ -71,6 +72,7 @@ export async function getConsoleOverview(): Promise<ConsoleOverview> {
     }),
     prisma.candidat.groupBy({ by: ["organismeId"], _count: { _all: true } }),
     prisma.session.groupBy({ by: ["organismeId"], _count: { _all: true } }),
+    getPlanPrices(),
   ]);
 
   const candMap = new Map<string, number>();
@@ -79,7 +81,7 @@ export async function getConsoleOverview(): Promise<ConsoleOverview> {
   for (const s of sessByOrg) if (s.organismeId) sessMap.set(s.organismeId, s._count._all);
 
   const rows: OrgRow[] = organismes.map((o) => {
-    const plan = planForOrg(o.formule, o.fonctionnalites);
+    const planKey = planKeyForOrg(o.formule, o.fonctionnalites);
     return {
       id: o.id,
       nom: o.nom,
@@ -94,9 +96,10 @@ export async function getConsoleOverview(): Promise<ConsoleOverview> {
       userCount: o._count.users,
       candidatCount: candMap.get(o.id) ?? 0,
       sessionCount: sessMap.get(o.id) ?? 0,
-      planKey: plan.key,
-      planName: plan.name,
-      mrr: monthlyRevenue(o.statut, o.formule, o.fonctionnalites),
+      planKey,
+      planName: PLANS[planKey].name,
+      // Prix réel (édité dans la console) si l'organisme est actif, sinon 0.
+      mrr: o.statut === "ACTIF" ? prices[planKey] : 0,
     };
   });
 

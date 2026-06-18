@@ -1571,3 +1571,17 @@ model Lead {
   @@index([statut])
   @@index([createdAt])
 }
+
+// Tarif d'une formule, éditable par le SUPERADMIN depuis la console.
+// Une ligne par formule ; en l'absence de ligne on retombe sur les valeurs par
+// défaut de lib/plans.ts. La vitrine (/tarifs) et le tableau de bord (MRR)
+// lisent ces valeurs. Modèle GLOBAL (hors cloisonnement multi-tenant).
+model PlanTarif {
+  id           String            @id @default(cuid())
+  formule      FormuleAbonnement @unique
+  prix         Int // € / mois (HT)
+  tagline      String
+  supportLevel String
+  populaire    Boolean           @default(false) // badge « le plus choisi »
+  updatedAt    DateTime          @updatedAt
+}
