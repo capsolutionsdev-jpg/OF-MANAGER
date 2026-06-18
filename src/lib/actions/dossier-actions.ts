@@ -5,10 +5,9 @@ import { PieceStatut } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getTenantDb } from "@/lib/tenant";
 import { auth } from "@/auth";
-import { storeUpload, parseDataUrl, extFromMime } from "@/lib/blob";
+import { storeUpload, parseDataUrl, extFromMime, detectFileType, isRasterImage } from "@/lib/blob";
 
 const MAX_BYTES = 8 * 1024 * 1024; // 8 Mo / pièce
-const ALLOWED = ["image/png", "image/jpeg", "image/webp", "application/pdf"];
 const STAFF = ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"];
 
 export type PieceDTO = {
@@ -66,17 +65,18 @@ export async function uploadPieceParcours(
 
   const parsed = parseDataUrl(input.dataUrl);
   if (!parsed) return { ok: false, error: "Fichier illisible." };
-  if (!ALLOWED.includes(parsed.mime))
-    return { ok: false, error: "Format accepté : PDF, JPEG, PNG ou WebP." };
   if (parsed.data.byteLength > MAX_BYTES)
     return { ok: false, error: "Fichier trop volumineux (max 8 Mo)." };
+  // Type vérifié sur les OCTETS, pas le MIME annoncé (anti SVG/HTML déguisé).
+  const detected = detectFileType(parsed.data);
+  if (detected !== "application/pdf" && !isRasterImage(detected))
+    return { ok: false, error: "Format accepté : PDF, JPEG, PNG ou WebP." };
 
-  const ext = extFromMime(parsed.mime);
   const url = await storeUpload({
     data: parsed.data,
     folder: `dossiers/${insc.candidatId}`,
-    ext,
-    contentType: parsed.mime,
+    ext: extFromMime(detected!),
+    contentType: detected!,
   });
 
   const attendues = insc.session.formation.piecesAttendues ?? [];
@@ -91,7 +91,7 @@ export async function uploadPieceParcours(
       label,
       categorie: "ADMINISTRATIF",
       url,
-      mimeType: parsed.mime,
+      mimeType: detected!,
       taille: parsed.data.byteLength,
     },
     select: PIECE_SELECT,

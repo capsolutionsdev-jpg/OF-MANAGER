@@ -32,6 +32,16 @@ export default async function ConsoleOrganismePage({
   const { plans } = await getResolvedPlans();
   const ordered = PLAN_ORDER.map((k) => plans[k]);
 
+  // Sécurité : on ne transmet JAMAIS les clés API au navigateur, seulement leur
+  // état (définie ou non). cf. SecretField + updateOrganisme.
+  const { brevoApiKey, anthropicApiKey, yousignApiKey, ...orgRest } = org;
+  const formOrg = {
+    ...orgRest,
+    brevoApiKeySet: !!brevoApiKey,
+    anthropicApiKeySet: !!anthropicApiKey,
+    yousignApiKeySet: !!yousignApiKey,
+  };
+
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <Link
@@ -76,7 +86,7 @@ export default async function ConsoleOrganismePage({
         </CardContent>
       </Card>
 
-      <EditOrganismeForm org={org} plans={ordered} />
+      <EditOrganismeForm org={formOrg} plans={ordered} />
     </div>
   );
 }

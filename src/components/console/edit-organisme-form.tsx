@@ -49,9 +49,10 @@ export type OrgFormData = {
   sousDomaine: string | null;
   emailExpediteurNom: string | null;
   emailExpediteur: string | null;
-  brevoApiKey: string | null;
-  anthropicApiKey: string | null;
-  yousignApiKey: string | null;
+  // Secrets : on n'expose JAMAIS la valeur au navigateur — seulement l'état.
+  brevoApiKeySet: boolean;
+  anthropicApiKeySet: boolean;
+  yousignApiKeySet: boolean;
   automationsConfig: unknown;
   maxSmsMois: number | null;
   logoUrl: string | null;
@@ -107,6 +108,33 @@ function Field({
       <Label htmlFor={name}>{label}</Label>
       <Input id={name} name={name} type={type} defaultValue={value ?? ""} placeholder={placeholder} />
       {hint && <p className="text-[11px] text-muted-foreground">{hint}</p>}
+    </div>
+  );
+}
+
+/**
+ * Champ « secret » en écriture seule : la valeur n'est jamais envoyée au
+ * navigateur. On affiche uniquement si une clé est déjà définie ; laisser vide
+ * conserve la clé existante (cf. updateOrganisme côté serveur).
+ */
+function SecretField({
+  name, label, isSet, placeholder, hint,
+}: { name: string; label: string; isSet: boolean; placeholder?: string; hint?: string }) {
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor={name}>{label}</Label>
+      <Input
+        id={name}
+        name={name}
+        type="password"
+        autoComplete="new-password"
+        defaultValue=""
+        placeholder={isSet ? "•••••••••• (définie — laisser vide pour conserver)" : placeholder ?? "Non définie"}
+      />
+      <p className="text-[11px] text-muted-foreground">
+        {isSet ? "Une clé est enregistrée. " : "Aucune clé enregistrée. "}
+        {hint}
+      </p>
     </div>
   );
 }
@@ -427,9 +455,9 @@ export function EditOrganismeForm({ org, plans }: { org: OrgFormData; plans?: Pl
           <Card>
             <CardHeader className="py-3"><CardTitle className="flex items-center gap-1.5 text-sm text-muted-foreground"><KeyRound className="h-4 w-4" /> Clés d&apos;intégration (par organisme)</CardTitle></CardHeader>
             <CardContent className="grid gap-4 sm:grid-cols-2">
-              <Field name="brevoApiKey" label="Clé API Brevo (e-mail + SMS)" value={org.brevoApiKey} placeholder="xkeysib-…" hint="Envoi des e-mails & SMS au nom de l'OF." />
-              <Field name="anthropicApiKey" label="Clé API Claude (Assistant IA)" value={org.anthropicApiKey} placeholder="sk-ant-…" hint="Active la génération IA pour cet OF." />
-              <Field name="yousignApiKey" label="Clé API Yousign (signature)" value={org.yousignApiKey} placeholder="…" hint="Signature électronique prestataire." />
+              <SecretField name="brevoApiKey" label="Clé API Brevo (e-mail + SMS)" isSet={org.brevoApiKeySet} placeholder="xkeysib-…" hint="Envoi des e-mails & SMS au nom de l'OF." />
+              <SecretField name="anthropicApiKey" label="Clé API Claude (Assistant IA)" isSet={org.anthropicApiKeySet} placeholder="sk-ant-…" hint="Active la génération IA pour cet OF." />
+              <SecretField name="yousignApiKey" label="Clé API Yousign (signature)" isSet={org.yousignApiKeySet} placeholder="…" hint="Signature électronique prestataire." />
               <p className="text-[11px] text-muted-foreground sm:col-span-2">
                 Laisser vide = repli sur la configuration globale (ou mode démo). Chaque clé est propre à l&apos;organisme.
               </p>

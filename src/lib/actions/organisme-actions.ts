@@ -153,6 +153,13 @@ export async function updateOrganisme(
     }
   }
 
+  // Clés API (write-only) : on ne met à jour que si une nouvelle valeur est
+  // saisie — un champ laissé vide conserve la clé existante (jamais d'effacement
+  // accidentel), et la valeur n'a jamais transité par le navigateur (SecretField).
+  const newBrevo = String(formData.get("brevoApiKey") ?? "").trim();
+  const newAnthropic = String(formData.get("anthropicApiKey") ?? "").trim();
+  const newYousign = String(formData.get("yousignApiKey") ?? "").trim();
+
   await prisma.organisme.update({
     where: { id },
     data: {
@@ -181,9 +188,9 @@ export async function updateOrganisme(
       sousDomaine: clean(formData.get("sousDomaine")),
       emailExpediteurNom: clean(formData.get("emailExpediteurNom")),
       emailExpediteur: clean(formData.get("emailExpediteur")),
-      brevoApiKey: clean(formData.get("brevoApiKey")),
-      anthropicApiKey: clean(formData.get("anthropicApiKey")),
-      yousignApiKey: clean(formData.get("yousignApiKey")),
+      ...(newBrevo ? { brevoApiKey: newBrevo } : {}),
+      ...(newAnthropic ? { anthropicApiKey: newAnthropic } : {}),
+      ...(newYousign ? { yousignApiKey: newYousign } : {}),
       automationsConfig: automationsConfig as Prisma.InputJsonValue,
       maxSmsMois: readPositiveInt(formData.get("maxSmsMois")),
       logoUrl: clean(formData.get("logoUrl")),
