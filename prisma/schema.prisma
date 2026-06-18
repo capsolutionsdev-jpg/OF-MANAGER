@@ -283,6 +283,14 @@ enum FactureStatut {
   AVOIR
 }
 
+// Suivi du règlement d'une facture déposée par un formateur (sous-traitant).
+enum FactureFormateurStatut {
+  EN_ATTENTE // soumise par le formateur, à traiter par l'OF
+  EN_COURS   // règlement en cours
+  PAYEE      // réglée
+  REJETEE    // refusée (montant/justificatif à revoir)
+}
+
 enum QualiopiStatut {
   CONFORME
   NON_CONFORME
@@ -599,6 +607,7 @@ model Session {
   conventions  Convention[]
   emailLogs    EmailLog[]
   emargementSignatures EmargementSignature[]
+  facturesFormateur FactureFormateur[]
 
   createdById String?
   createdBy   User?    @relation("SessionCreeePar", fields: [createdById], references: [id])
@@ -652,6 +661,7 @@ model Formateur {
   sessions   Session[]   @relation("SessionFormateurs")
   seances    Seance[]
   formations Formation[]
+  factures   FactureFormateur[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1187,6 +1197,31 @@ model Paiement {
   @@index([inscriptionId])
   @@index([enregistreParId])
   @@index([organismeId])
+}
+
+// Facture déposée par un formateur (sous-traitant) depuis son espace, avec suivi
+// de paiement côté OF (en attente → en cours → payée).
+model FactureFormateur {
+  id          String   @id @default(cuid())
+  organismeId String? // tenant (multi-OF)
+  formateurId String
+  formateur   Formateur @relation(fields: [formateurId], references: [id], onDelete: Cascade)
+  sessionId   String?
+  session     Session?  @relation(fields: [sessionId], references: [id])
+
+  reference   String?
+  montant     Decimal  @db.Decimal(10, 2)
+  fichierUrl  String?  @db.Text // PDF/justificatif déposé par le formateur
+  commentaire String?  @db.Text
+  statut      FactureFormateurStatut @default(EN_ATTENTE)
+  paidAt      DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organismeId])
+  @@index([formateurId])
+  @@index([statut])
 }
 
 // =============================================================

@@ -1,8 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import bcrypt from "bcryptjs";
 import { getTenantDb } from "@/lib/tenant";
+import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 
 type Res = { ok: boolean; error?: string };
@@ -79,6 +81,52 @@ export async function createApprenantAccount(
   });
 
   revalidatePath("/elearning/apprenants");
+  return { ok: true };
+}
+
+/** Apprenant connecté (via son compte utilisateur), sinon null. */
+async function currentApprenant() {
+  const session = await auth();
+  if (!session?.user?.id || session.user.role !== "APPRENANT") return null;
+  return prisma.apprenant.findUnique({
+    where: { userId: session.user.id },
+    select: { id: true, candidatId: true },
+  });
+}
+
+/**
+ * Signature d'une feuille d'émargement DEPUIS l'espace apprenant connecté.
+ * Vérifie que la ligne appartient bien au candidat de l'apprenant connecté
+ * (impossible de signer l'émargement d'un autre stagiaire).
+ */
+export async function signMyEmargement(
+  emargementId: string,
+  signatureDataUrl?: string,
+): Promise<Res> {
+  if (!signatureDataUrl || !signatureDataUrl.startsWith("data:image/"))
+    return { ok: false, error: "Merci de dessiner votre signature." };
+
+  const appr = await currentApprenant();
+  if (!appr) return { ok: false, error: "Non autorisé." };
+
+  const row = await prisma.emargementSignature.findFirst({
+    where: { id: emargementId, candidatId: appr.candidatId },
+    select: { id: true, signedAt: true },
+  });
+  if (!row) return { ok: false, error: "Émargement introuvable." };
+  if (row.signedAt) return { ok: true };
+
+  const hdrs = await headers();
+  const ip =
+    hdrs.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    hdrs.get("x-real-ip") ??
+    null;
+
+  await prisma.emargementSignature.update({
+    where: { id: row.id },
+    data: { signedAt: new Date(), signatureIp: ip, signatureDataUrl },
+  });
+  revalidatePath("/mes-emargements");
   return { ok: true };
 }
 

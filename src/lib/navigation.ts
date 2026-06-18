@@ -76,6 +76,36 @@ export const navItems: NavItem[] = [
     roles: ["APPRENANT"],
   },
   {
+    label: "Mes documents",
+    href: "/mes-documents",
+    icon: FileText,
+    roles: ["APPRENANT"],
+  },
+  {
+    label: "Mes émargements",
+    href: "/mes-emargements",
+    icon: PenLine,
+    roles: ["APPRENANT"],
+  },
+  {
+    label: "Mes sessions",
+    href: "/mes-sessions",
+    icon: CalendarDays,
+    roles: ["FORMATEUR"],
+  },
+  {
+    label: "Mes contrats",
+    href: "/mes-contrats",
+    icon: FileText,
+    roles: ["FORMATEUR"],
+  },
+  {
+    label: "Ma facturation",
+    href: "/ma-facturation",
+    icon: Wallet,
+    roles: ["FORMATEUR"],
+  },
+  {
     label: "CRM",
     href: "/crm",
     icon: Target,
@@ -170,14 +200,14 @@ export const navItems: NavItem[] = [
     label: "Sessions",
     href: "/sessions",
     icon: CalendarDays,
-    roles: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT", "FORMATEUR"],
+    roles: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
     permission: "sessions",
   },
   {
     label: "Planning",
     href: "/planning",
     icon: CalendarRange,
-    roles: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT", "FORMATEUR"],
+    roles: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
     permission: "planning",
   },
   {

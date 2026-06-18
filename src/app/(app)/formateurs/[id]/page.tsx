@@ -11,6 +11,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ACADEMY_LABELS, ACADEMY_ORDER } from "@/lib/validators/formation";
+import {
+  FormateurFacturesAdmin,
+  FormateurAccessPanel,
+  type FactureRow,
+} from "@/components/formateur/formateur-admin-panels";
 
 function Field({ label, value }: { label: string; value?: string | null }) {
   return (
@@ -35,9 +40,23 @@ export default async function FormateurDetailPage({
     include: {
       sessions: { include: { formation: true }, orderBy: { dateDebut: "asc" } },
       formations: { select: { id: true, titre: true }, orderBy: { titre: "asc" } },
+      factures: {
+        orderBy: { createdAt: "desc" },
+        include: { session: { include: { formation: { select: { titre: true } } } } },
+      },
     },
   });
   if (!f) notFound();
+
+  const factureRows: FactureRow[] = f.factures.map((x) => ({
+    id: x.id,
+    reference: x.reference,
+    montant: Number(x.montant).toLocaleString("fr-FR", { style: "currency", currency: "EUR" }),
+    statut: x.statut,
+    fichierUrl: x.fichierUrl,
+    createdAt: x.createdAt.toLocaleDateString("fr-FR"),
+    sessionTitre: x.session?.formation.titre ?? null,
+  }));
 
   const now = new Date();
   const etatBadge = (dDeb: Date, dFin: Date) =>
@@ -119,6 +138,24 @@ export default async function FormateurDetailPage({
               )}
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Espace formateur (accès)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <FormateurAccessPanel formateurId={f.id} hasAccess={!!f.userId} email={f.email} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Factures du formateur & règlement</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <FormateurFacturesAdmin factures={factureRows} />
         </CardContent>
       </Card>
 
