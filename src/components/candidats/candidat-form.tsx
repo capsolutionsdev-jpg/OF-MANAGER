@@ -79,6 +79,8 @@ export function CandidatForm({
       cnapsStatut: "",
       carteProNumero: "",
       carteProValidite: "",
+      situationHandicap: false,
+      besoinsAdaptation: "",
       ...defaultValues,
     },
   });
@@ -304,6 +306,28 @@ export function CandidatForm({
           <div className="grid gap-2">
             <Label htmlFor="carteProValidite">Validité carte pro</Label>
             <Input id="carteProValidite" type="date" {...register("carteProValidite")} />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Accessibilité (handicap)</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <label className="flex items-center gap-2 text-sm font-medium">
+            <input type="checkbox" className="h-4 w-4 rounded border" {...register("situationHandicap")} />
+            Situation de handicap déclarée
+          </label>
+          <div className="grid gap-2">
+            <Label htmlFor="besoinsAdaptation">Besoins d&apos;adaptation pédagogique</Label>
+            <textarea
+              id="besoinsAdaptation"
+              rows={3}
+              className="w-full rounded-md border bg-transparent px-3 py-2 text-sm"
+              placeholder="Aménagements nécessaires (matériel, temps majoré, accompagnement…). Le référent handicap est contacté si besoin."
+              {...register("besoinsAdaptation")}
+            />
           </div>
         </CardContent>
       </Card>

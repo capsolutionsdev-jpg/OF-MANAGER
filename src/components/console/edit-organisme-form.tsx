@@ -60,6 +60,9 @@ export type OrgFormData = {
   signatureUrl: string | null;
   faviconUrl: string | null;
   maxUtilisateurs: number | null;
+  dureeConservationMois: number | null;
+  referentHandicapNom: string | null;
+  referentHandicapContact: string | null;
   notes: string | null;
   documentsConfig: unknown;
   statut: string;
@@ -556,6 +559,15 @@ export function EditOrganismeForm({ org, plans }: { org: OrgFormData; plans?: Pl
               </div>
               <Field name="maxUtilisateurs" label="Nombre max d'utilisateurs" value={org.maxUtilisateurs} type="number" placeholder="Illimité si vide" />
               <Field name="maxSmsMois" label="Quota SMS / mois" value={org.maxSmsMois} type="number" placeholder="Illimité si vide" />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="py-3"><CardTitle className="text-sm text-muted-foreground">Conformité — RGPD &amp; accessibilité</CardTitle></CardHeader>
+            <CardContent className="grid gap-4 sm:grid-cols-2">
+              <Field name="dureeConservationMois" label="Durée de conservation (mois)" value={org.dureeConservationMois} type="number" placeholder="36" hint="Au-delà sans activité, les données candidats sont anonymisées automatiquement (purge RGPD)." />
+              <div className="hidden sm:block" />
+              <Field name="referentHandicapNom" label="Référent handicap (Qualiopi 26)" value={org.referentHandicapNom} placeholder="Nom du référent" />
+              <Field name="referentHandicapContact" label="Contact du référent handicap" value={org.referentHandicapContact} placeholder="e-mail / téléphone" />
             </CardContent>
           </Card>
           <Card>

@@ -1,5 +1,6 @@
-import { Shield, FileDown, Trash2 } from "lucide-react";
-import { getTenantDb } from "@/lib/tenant";
+import { Shield, FileDown, Trash2, Clock, Accessibility } from "lucide-react";
+import { requireTenant } from "@/lib/tenant";
+import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -37,8 +38,12 @@ const selectClass =
   "h-9 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50";
 
 export default async function RgpdPage() {
-  const db = await getTenantDb();
-  const [requests, consentements, nbConsent] = await Promise.all([
+  const { organismeId, db } = await requireTenant();
+  const [org, requests, consentements, nbConsent] = await Promise.all([
+    prisma.organisme.findUnique({
+      where: { id: organismeId },
+      select: { dureeConservationMois: true, referentHandicapNom: true, referentHandicapContact: true },
+    }),
     db.dataRequest.findMany({ orderBy: { requestedAt: "desc" } }),
     db.consentement.findMany({
       orderBy: { accepteLe: "desc" },
@@ -56,6 +61,44 @@ export default async function RgpdPage() {
           Consentements, demandes d&apos;accès et de suppression, registre des
           traitements.
         </p>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <Clock className="h-4 w-4" /> Durée de conservation
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">{org?.dureeConservationMois ?? 36} mois</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Au-delà, sans activité, les données candidats sont anonymisées
+              automatiquement (purge quotidienne). Modifiable par l&apos;éditeur.
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <Accessibility className="h-4 w-4" /> Référent handicap (Qualiopi 26)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {org?.referentHandicapNom ? (
+              <>
+                <p className="font-semibold">{org.referentHandicapNom}</p>
+                {org.referentHandicapContact && (
+                  <p className="mt-0.5 text-sm text-muted-foreground">{org.referentHandicapContact}</p>
+                )}
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Non renseigné — à définir avec l&apos;éditeur pour la conformité accessibilité.
+              </p>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">

@@ -121,6 +121,11 @@ model Organisme {
   stripeSubscriptionId String?
   abonnementJusquau    DateTime? // fin de la période payée en cours (current_period_end)
 
+  // Conformité RGPD + accessibilité (Qualiopi ind. 26)
+  dureeConservationMois  Int     @default(36) // durée de conservation des données candidats (mois) → purge auto
+  referentHandicapNom    String? // référent handicap désigné par l'OF
+  referentHandicapContact String? // e-mail / téléphone du référent handicap
+
   users          User[]
   supportTickets SupportTicket[]
 
@@ -457,6 +462,11 @@ model Candidat {
   cnapsStatut      CnapsStatut? // suivi de l'autorisation préalable CNAPS
   carteProNumero   String?      // n° de carte professionnelle (si déjà titulaire)
   carteProValidite DateTime?    // date de fin de validité de la carte pro
+
+  // ── Accessibilité (Qualiopi ind. 26) + RGPD ──
+  situationHandicap Boolean   @default(false) // situation de handicap déclarée
+  besoinsAdaptation String?   @db.Text // adaptations pédagogiques nécessaires
+  anonymiseLe       DateTime? // horodatage de l'anonymisation RGPD (purge / effacement)
 
   interactionsCandidat CandidatInteraction[]
 
