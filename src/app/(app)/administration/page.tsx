@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ShieldCheck, UserPlus, Users, Building2, UserCog, GraduationCap, ChevronRight } from "lucide-react";
+import { ShieldCheck, UserPlus, Users, Building2, UserCog, GraduationCap, ChevronRight, CreditCard } from "lucide-react";
 import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
 import { orgConfigFor } from "@/lib/org-identity";
 import { roleLabels } from "@/lib/navigation";
 import {
@@ -11,9 +12,21 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { ChangePasswordForm } from "@/app/(app)/mon-compte/change-password-form";
+import { getResolvedPlans } from "@/lib/pricing";
+import { PLAN_ORDER, planKeyForOrg, euros } from "@/lib/plans";
+import { isStripeConfigured } from "@/lib/stripe";
+import { SubscribePanel } from "@/components/billing/subscribe-panel";
+import { ManageSubscriptionButton } from "@/components/billing/manage-subscription-button";
 
 export const dynamic = "force-dynamic";
+
+const STATUT_BADGE: Record<string, { label: string; cls: string }> = {
+  ACTIF: { label: "Abonnement actif", cls: "bg-emerald-500/10 text-emerald-700" },
+  ESSAI: { label: "Période d'essai", cls: "bg-amber-500/10 text-amber-700" },
+  SUSPENDU: { label: "Suspendu", cls: "bg-rose-500/10 text-rose-700" },
+};
 
 const COMPTES = [
   { href: "/administration/comptes/collaborateur", icon: Users, title: "Collaborateur", desc: "Responsable formation, assistant — avec accès par section." },
@@ -28,6 +41,19 @@ export default async function AdministrationPage() {
   if (session.user.role !== "ADMIN") redirect("/dashboard");
   const me = session.user;
   const org = await orgConfigFor(me.organismeId ?? null);
+
+  // Abonnement (facturation Stripe)
+  const orgRow = me.organismeId
+    ? await prisma.organisme.findUnique({
+        where: { id: me.organismeId },
+        select: { statut: true, formule: true, fonctionnalites: true, abonnementJusquau: true, stripeCustomerId: true },
+      })
+    : null;
+  const { plans, popular } = await getResolvedPlans();
+  const ordered = PLAN_ORDER.map((k) => plans[k]);
+  const currentPlan = orgRow ? plans[planKeyForOrg(orgRow.formule, orgRow.fonctionnalites)] : null;
+  const statutInfo = STATUT_BADGE[orgRow?.statut ?? "ESSAI"] ?? STATUT_BADGE.ESSAI;
+  const isActif = orgRow?.statut === "ACTIF";
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -69,6 +95,46 @@ export default async function AdministrationPage() {
               </Link>
             ))}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Abonnement & facturation */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <CreditCard className="h-4 w-4 text-primary" /> Abonnement
+          </CardTitle>
+          <CardDescription>Votre formule, votre facturation et le paiement en ligne.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap items-center gap-3 text-sm">
+            <Badge className={statutInfo.cls}>{statutInfo.label}</Badge>
+            {currentPlan && (
+              <span className="font-medium">
+                Formule {currentPlan.name} · {euros(currentPlan.price)}/mois
+              </span>
+            )}
+            {orgRow?.abonnementJusquau && (
+              <span className="text-muted-foreground">
+                Prochaine échéance : {orgRow.abonnementJusquau.toLocaleDateString("fr-FR")}
+              </span>
+            )}
+          </div>
+
+          {isActif && orgRow?.stripeCustomerId ? (
+            <ManageSubscriptionButton />
+          ) : (
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">
+                {isActif
+                  ? "Votre compte est actif."
+                  : "Choisissez une formule pour activer (ou réactiver) votre espace :"}
+              </p>
+              {!isActif && (
+                <SubscribePanel plans={ordered} popular={popular} configured={isStripeConfigured()} />
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 

@@ -115,6 +115,12 @@ model Organisme {
   maxUtilisateurs Int?
   notes           String?            @db.Text
 
+  // Facturation Stripe (abonnement self-serve). Renseignés par le checkout +
+  // le webhook ; vides tant que l'organisme n'a pas souscrit.
+  stripeCustomerId     String? // client Stripe (1 par organisme ; pas de contrainte unique pour éviter une migration destructive)
+  stripeSubscriptionId String?
+  abonnementJusquau    DateTime? // fin de la période payée en cours (current_period_end)
+
   users          User[]
   supportTickets SupportTicket[]
 
