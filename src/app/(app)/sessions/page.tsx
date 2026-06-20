@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus, CalendarDays } from "lucide-react";
+import { Plus, CalendarDays, Download } from "lucide-react";
 import { getTenantDb } from "@/lib/tenant";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -79,6 +79,12 @@ export default async function SessionsPage() {
         title="Sessions"
         subtitle={`${sessions.length} session${sessions.length > 1 ? "s" : ""} au total`}
       >
+        {sessions.length > 0 && (
+          <Button variant="outline" render={<a href="/sessions/export" download />}>
+            <Download className="mr-2 h-4 w-4" />
+            Exporter (CSV)
+          </Button>
+        )}
         <Button render={<Link href="/sessions/nouvelle" />}>
           <Plus className="mr-2 h-4 w-4" />
           Nouvelle session
