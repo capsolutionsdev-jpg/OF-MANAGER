@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Check, Headset } from "lucide-react";
 import { FEATURES, FEATURE_GROUPS } from "@/lib/features";
-import { PLANS, PLAN_ORDER, featuresForFormule, euros, type FormuleKey } from "@/lib/plans";
+import { PLANS, PLAN_ORDER, euros, type FormuleKey, type Plan } from "@/lib/plans";
 import { cn } from "@/lib/utils";
 
 const GROUP_LABEL: Record<string, string> = {
@@ -20,23 +20,32 @@ const GROUP_LABEL: Record<string, string> = {
 export function FormuleSelector({
   defaultFormule = "MEDIUM",
   defaultFeatures,
+  plans,
 }: {
   defaultFormule?: FormuleKey | null;
   defaultFeatures?: string[];
+  /** Formules résolues (console /tarifs) : nom, prix, accroche, composition. Repli sur les défauts. */
+  plans?: Plan[];
 }) {
+  // Carte des formules résolues (overrides DB) avec repli sur les défauts du code.
+  const planByKey = { ...PLANS } as Record<FormuleKey, Plan>;
+  if (plans) for (const p of plans) planByKey[p.key as FormuleKey] = p;
+  const featuresOf = (key: FormuleKey) => planByKey[key].features;
+
   const [formule, setFormule] = useState<FormuleKey | null>(defaultFormule ?? null);
   const [feats, setFeats] = useState<Set<string>>(
-    () => new Set(defaultFeatures ?? (defaultFormule ? featuresForFormule(defaultFormule) : [])),
+    () => new Set(defaultFeatures ?? (defaultFormule ? featuresOf(defaultFormule) : [])),
   );
 
   const pickFormule = (key: FormuleKey) => {
     setFormule(key);
-    setFeats(new Set(featuresForFormule(key))); // réinitialise au bundle de la formule
+    setFeats(new Set(featuresOf(key))); // réinitialise au bundle (résolu) de la formule
   };
   const toggle = (key: string) =>
     setFeats((prev) => {
       const next = new Set(prev);
-      next.has(key) ? next.delete(key) : next.add(key);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
 
@@ -53,7 +62,7 @@ export function FormuleSelector({
         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">1. Formule d&apos;abonnement</p>
         <div className="grid gap-3 sm:grid-cols-3">
           {PLAN_ORDER.map((key) => {
-            const p = PLANS[key];
+            const p = planByKey[key];
             const active = formule === key;
             return (
               <button

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Building2, Palette, LifeBuoy, PhoneCall } from "lucide-react";
+import { LayoutDashboard, Building2, Palette, LifeBuoy, PhoneCall, BadgeEuro } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const ITEMS = [
@@ -10,6 +10,7 @@ const ITEMS = [
   { href: "/console/organismes", label: "Organismes", icon: Building2 },
   { href: "/console/prospects", label: "Prospects", icon: PhoneCall, badgeKey: "prospects" as const },
   { href: "/console/support", label: "Support", icon: LifeBuoy, badgeKey: "support" as const },
+  { href: "/console/tarifs", label: "Tarifs", icon: BadgeEuro },
   { href: "/console/designs", label: "Designs", icon: Palette },
 ];
 

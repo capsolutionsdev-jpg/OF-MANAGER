@@ -138,7 +138,7 @@ async function main() {
       telephone: id.telephone ?? null,
       email: id.email ?? null,
       design: design.design ?? "defaut",
-      couleurPrimaire: design.couleurPrimaire ?? "#1A5FD4",
+      couleurPrimaire: design.couleurPrimaire ?? "#2C53C0",
       theme: design.theme ?? null,
       logoUrl: design.logoUrl ?? null,
       fonctionnalites: cfg.abonnement?.fonctionnalites ?? [],

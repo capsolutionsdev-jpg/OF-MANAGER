@@ -5,11 +5,16 @@ import { redirect } from "next/navigation";
 import { Clock, AlertTriangle } from "lucide-react";
 import { auth } from "@/auth";
 import { AppTopNav } from "@/components/app-topnav";
+import { buildNav } from "@/lib/navigation";
 import { getBranding, getCurrentOrganisme } from "@/lib/org";
 import { designVars, getDesign } from "@/lib/themes";
 import { hasFeature } from "@/lib/features";
 import { getNotifications } from "@/lib/notifications";
 import { trialStatus } from "@/lib/trial";
+import { getResolvedPlans } from "@/lib/pricing";
+import { PLAN_ORDER } from "@/lib/plans";
+import { isStripeConfigured } from "@/lib/stripe";
+import { SubscribePanel } from "@/components/billing/subscribe-panel";
 import { cn } from "@/lib/utils";
 
 // Rendu dynamique : ces pages lisent la base de données et la session,
@@ -50,21 +55,32 @@ export default async function AppLayout({
 
   // Essai expiré → on bloque l'accès à l'application (le gérant doit souscrire).
   if (trial.expired) {
+    const isAdmin = session.user.role === "ADMIN";
+    const { plans, popular } = await getResolvedPlans();
+    const ordered = PLAN_ORDER.map((k) => plans[k]);
     return (
       <div className="grid min-h-screen place-items-center bg-muted/40 p-6" style={brandStyle}>
-        <div data-slot="card" className="max-w-md rounded-2xl border bg-card p-8 text-center shadow-sm">
+        <div data-slot="card" className="w-full max-w-2xl rounded-2xl border bg-card p-8 text-center shadow-sm">
           <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full bg-amber-500/10 text-amber-600">
             <Clock className="h-6 w-6" />
           </div>
           <h1 className="text-xl font-bold">Période d&apos;essai terminée</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Votre essai gratuit de {branding.nom} est arrivé à échéance. Pour réactiver votre
-            espace, souscrivez à une formule — notre équipe vous accompagne.
+          <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
+            Votre essai gratuit de {branding.nom} est arrivé à échéance. Choisissez une
+            formule pour réactiver votre espace — le support est inclus partout.
           </p>
-          <div className="mt-6 flex flex-col items-center gap-2">
-            <Link href="/tarifs" className="rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground">
-              Voir les formules
-            </Link>
+
+          {isAdmin ? (
+            <div className="mt-6">
+              <SubscribePanel plans={ordered} popular={popular} configured={isStripeConfigured()} />
+            </div>
+          ) : (
+            <p className="mt-6 rounded-lg border bg-muted/40 p-4 text-sm text-muted-foreground">
+              Contactez le gérant de votre organisme pour réactiver l&apos;accès.
+            </p>
+          )}
+
+          <div className="mt-6">
             <Link href="/deconnexion" prefetch={false} className="text-xs text-muted-foreground hover:text-foreground">
               Se déconnecter
             </Link>
@@ -80,6 +96,12 @@ export default async function AppLayout({
   const notifications = hasFeature(navUser.fonctionnalites, "notifications")
     ? await getNotifications()
     : undefined;
+
+  // Pied de page : liens « légaux » sortis de la barre (RGPD, Support) + mentions.
+  const footerItems = buildNav(navUser.role, navUser.permissions ?? [], navUser.fonctionnalites ?? []).footer;
+  const legalLine = [org?.raisonSociale || branding.nom, org?.siret ? `SIRET ${org.siret}` : null, org?.nda ? `NDA ${org.nda}` : null]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <div
@@ -101,6 +123,22 @@ export default async function AppLayout({
         </div>
       )}
       <main className="mx-auto max-w-[1500px] p-4 md:p-6">{children}</main>
+
+      <footer className="mt-8 border-t bg-card/40">
+        <div className="mx-auto flex max-w-[1500px] flex-col gap-2 px-4 py-5 text-xs text-muted-foreground md:flex-row md:items-center md:justify-between md:px-6">
+          <p>{legalLine || branding.nom}</p>
+          <nav className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            <Link href="/mentions-legales" className="hover:text-foreground hover:underline">
+              Mentions légales
+            </Link>
+            {footerItems.map((it) => (
+              <Link key={it.href} href={it.href} className="hover:text-foreground hover:underline">
+                {it.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
+      </footer>
     </div>
   );
 }

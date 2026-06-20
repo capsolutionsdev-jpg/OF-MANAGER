@@ -29,6 +29,7 @@ export const AUTOMATION_EVENTS: AutomationEvent[] = [
   { key: "docs_fin", label: "Documents de fin (attestation + certificat)", quand: "À la fin de la formation", defaultOn: true, smsable: false },
   { key: "compte_rendu", label: "Compte rendu formateur", quand: "À la fin — au formateur", defaultOn: true, smsable: false },
   { key: "emargement", label: "Lien d'émargement", quand: "Chaque demi-journée (matin / après-midi)", defaultOn: true, smsable: true },
+  { key: "suivi_6mois", label: "Enquête de suivi à 6 mois (Qualiopi)", quand: "6 mois après la fin — devenir/insertion pro", defaultOn: true, smsable: true },
 ];
 
 export type AutomationRule = {

@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { FormuleSelector } from "@/components/console/formule-selector";
+import type { Plan } from "@/lib/plans";
 
 /** Normalise un texte en label de sous-domaine (miroir client de toSubdomain). */
 function toSub(s: string): string {
@@ -24,7 +25,7 @@ function toSub(s: string): string {
     .slice(0, 40);
 }
 
-export function CreateOrganismeForm() {
+export function CreateOrganismeForm({ plans }: { plans?: Plan[] }) {
   const [state, formAction, isPending] = useActionState<
     ConsoleState | undefined,
     FormData
@@ -124,7 +125,7 @@ export function CreateOrganismeForm() {
           </div>
 
           <div className="rounded-lg border p-4">
-            <FormuleSelector defaultFormule="MEDIUM" />
+            <FormuleSelector defaultFormule="MEDIUM" plans={plans} />
           </div>
 
           {state?.error && (

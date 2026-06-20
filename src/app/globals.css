@@ -9,7 +9,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-heading: var(--font-heading);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -48,39 +48,57 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* ─────────────────────────────────────────────────────────────
+   Direction « Sable & Cobalt » — thème PAR DÉFAUT.
+   Surfaces sable chaleureuses, encre, bleu cobalt posé, accents
+   ambre & émeraude. Pilote la console (surface éditeur) et la
+   plateforme client en design « defaut ». Les 10 skins par tenant
+   (cf. lib/themes.ts) surchargent ces valeurs et restent intacts.
+   ───────────────────────────────────────────────────────────── */
 :root {
-  --background: oklch(0.99 0.003 264);
-  --foreground: oklch(0.18 0.02 264);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.18 0.02 264);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.18 0.02 264);
-  --primary: oklch(0.55 0.2 262);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.967 0.004 264);
-  --secondary-foreground: oklch(0.28 0.02 264);
-  --muted: oklch(0.967 0.004 264);
-  --muted-foreground: oklch(0.52 0.02 264);
-  --accent: oklch(0.95 0.025 262);
-  --accent-foreground: oklch(0.42 0.13 262);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.92 0.005 264);
-  --input: oklch(0.92 0.005 264);
-  --ring: oklch(0.55 0.2 262);
-  --chart-1: oklch(0.6 0.18 262);
-  --chart-2: oklch(0.7 0.14 162);
-  --chart-3: oklch(0.77 0.15 75);
-  --chart-4: oklch(0.62 0.2 300);
-  --chart-5: oklch(0.64 0.2 20);
-  --radius: 0.7rem;
-  --sidebar: oklch(0.985 0.004 264);
-  --sidebar-foreground: oklch(0.2 0.02 264);
-  --sidebar-primary: oklch(0.55 0.2 262);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.95 0.025 262);
-  --sidebar-accent-foreground: oklch(0.42 0.13 262);
-  --sidebar-border: oklch(0.92 0.005 264);
-  --sidebar-ring: oklch(0.55 0.2 262);
+  --background: #f6f2eb; /* sable */
+  --foreground: #221f19; /* encre chaude */
+  --card: #ffffff;
+  --card-foreground: #221f19;
+  --popover: #ffffff;
+  --popover-foreground: #221f19;
+  --primary: #2c53c0; /* cobalt royal */
+  --primary-foreground: #ffffff;
+  --secondary: #efe9dd; /* surface sable soutenue */
+  --secondary-foreground: #2a2620;
+  --muted: #efe9dd;
+  --muted-foreground: #6b6256; /* taupe */
+  --accent: #eceffa; /* teinte cobalt (survols) */
+  --accent-foreground: #21429e;
+  --destructive: #c2410c;
+  --border: #e7e0d3; /* filet chaud */
+  --input: #e7e0d3;
+  --ring: #2c53c0;
+  --chart-1: #2c53c0; /* cobalt */
+  --chart-2: #10a074; /* émeraude */
+  --chart-3: #de8a43; /* ambre */
+  --chart-4: #7c5cfc; /* violet */
+  --chart-5: #e06a4b; /* corail chaud */
+  --radius: 0.8rem;
+  --sidebar: #fbf8f2;
+  --sidebar-foreground: #221f19;
+  --sidebar-primary: #2c53c0;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eceffa;
+  --sidebar-accent-foreground: #21429e;
+  --sidebar-border: #e7e0d3;
+  --sidebar-ring: #2c53c0;
+  /* Tokens de marque réutilisables (vitrine + composants) */
+  --brand: #2c53c0;
+  --brand-strong: #21429e;
+  --brand-tint: #eceffa;
+  --amber: #de8a43;
+  --amber-tint: #fbf1e2;
+  --success: #10a074;
+  --success-tint: #e5f6ef;
+  --ink: #221f19;
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-heading: "Plus Jakarta Sans", system-ui, sans-serif;
 }
 
 .dark {
@@ -126,6 +144,16 @@
   }
   html {
     @apply font-sans;
+  }
+  /* Titres en police d'en-tête (Plus Jakarta par défaut) sur toutes les
+     surfaces — console, vitrine, login. Les designs tenant la surchargent. */
+  h1,
+  h2,
+  h3,
+  h4,
+  [data-slot="card-title"] {
+    font-family: var(--font-heading);
+    letter-spacing: -0.01em;
   }
 }
 

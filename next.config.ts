@@ -11,6 +11,11 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Épingle la racine du projet : évite que Next infère un mauvais workspace root
+  // à cause d'un package-lock.json parasite ailleurs sur la machine (ex.
+  // C:\Users\…\package-lock.json). Fiabilise aussi le tracing du build standalone.
+  turbopack: { root: process.cwd() },
+  outputFileTracingRoot: process.cwd(),
   // Sortie autonome (server.js + deps minimales) pour le déploiement self-host
   // via Docker. Sans effet sur Vercel, qui utilise sa propre cible de build.
   output: "standalone",

@@ -60,7 +60,9 @@ export async function anonymiseCandidat(formData: FormData) {
       situationPro: null,
       employeur: null,
       posteOccupe: null,
+      besoinsAdaptation: null,
       statut: "ARCHIVE",
+      anonymiseLe: new Date(),
     },
   });
   await db.auditLog.create({

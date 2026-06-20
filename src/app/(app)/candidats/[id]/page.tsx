@@ -22,6 +22,8 @@ import { INTERACTION_LABELS } from "@/lib/validators/crm";
 import { anonymiseCandidat } from "@/lib/actions/rgpd-actions";
 import { resendParcoursAction } from "@/lib/actions/parcours-actions";
 import { DossierChecklist } from "@/components/inscriptions/dossier-checklist";
+import { PieceValidation } from "@/components/inscriptions/piece-validation";
+import { CandidatAccessPanel } from "@/components/candidats/candidat-access-panel";
 import { RecordPaymentDialog } from "@/components/comptabilite/record-payment-dialog";
 import { SendProspectLinkButton } from "@/components/crm/send-prospect-link-button";
 import { CrmPanel } from "@/components/crm/crm-panel";
@@ -69,6 +71,11 @@ export default async function CandidatDetailPage({
         include: { user: { select: { name: true } } },
         orderBy: { date: "desc" },
       },
+      pieces: {
+        orderBy: { createdAt: "desc" },
+        select: { id: true, label: true, categorie: true, url: true, mimeType: true, statut: true, motifRefus: true },
+      },
+      apprenant: { select: { userId: true } },
     },
   });
   if (!candidat) notFound();
@@ -187,6 +194,11 @@ export default async function CandidatDetailPage({
               <Field label="Ville" value={candidat.ville} />
               <Field label="Pays" value={candidat.pays} />
             </dl>
+            <CandidatAccessPanel
+              candidatId={candidat.id}
+              hasAccount={!!candidat.apprenant?.userId}
+              email={candidat.email}
+            />
           </CardContent>
         </Card>
 
@@ -320,7 +332,7 @@ export default async function CandidatDetailPage({
             </p>
           ) : (
             <ul className="space-y-4">
-              {candidat.inscriptions.map((i) => {
+              {candidat.inscriptions.map((i, idx) => {
                 const du = i.montant != null ? Number(i.montant) : 0;
                 const paye = i.paiements.reduce((s, p) => s + Number(p.montant), 0);
                 const restant = Math.max(0, du - paye);
@@ -392,6 +404,7 @@ export default async function CandidatDetailPage({
                       piecesAttendues={i.session.formation.piecesAttendues}
                       piecesRecues={i.piecesRecues}
                     />
+                    {idx === 0 && <PieceValidation pieces={candidat.pieces} />}
                   </div>
 
                   {/* Paiement */}

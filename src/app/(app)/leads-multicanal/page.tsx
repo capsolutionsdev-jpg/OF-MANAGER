@@ -10,6 +10,8 @@ export const dynamic = "force-dynamic";
 
 export default async function LeadsPage() {
   const db = await getTenantDb();
+  // Server Component : évalué à chaque requête serveur (pas de re-render React).
+  // eslint-disable-next-line react-hooks/purity
   const since = new Date(Date.now() - 90 * 24 * 3600 * 1000);
 
   const [recents, all] = await Promise.all([

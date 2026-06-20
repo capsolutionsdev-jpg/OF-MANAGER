@@ -40,6 +40,8 @@ function toData(v: CandidatFormValues) {
     cnapsStatut: v.cnapsStatut ? v.cnapsStatut : null,
     carteProNumero: clean(v.carteProNumero),
     carteProValidite: v.carteProValidite ? new Date(v.carteProValidite) : null,
+    situationHandicap: !!v.situationHandicap,
+    besoinsAdaptation: clean(v.besoinsAdaptation),
   };
 }
 

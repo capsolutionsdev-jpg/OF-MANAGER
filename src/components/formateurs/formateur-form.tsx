@@ -12,10 +12,6 @@ import {
   type FormateurFormValues,
 } from "@/lib/validators/formateur";
 import {
-  ACADEMY_LABELS,
-  ACADEMY_ORDER,
-} from "@/lib/validators/formation";
-import {
   createFormateur,
   updateFormateur,
 } from "@/lib/actions/formateur-actions";
@@ -82,11 +78,6 @@ export function FormateurForm({
       } else toast.error(res.error);
     });
   }
-
-  const groupes = ACADEMY_ORDER.map((a) => ({
-    academy: a,
-    items: formations.filter((f) => f.academy === a),
-  })).filter((g) => g.items.length > 0);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -163,63 +154,30 @@ export function FormateurForm({
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Académies & formations</CardTitle>
+          <CardTitle className="text-base">Formations</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-5">
-          <div className="grid gap-2">
-            <Label>Académie(s) dans laquelle/lesquelles il forme</Label>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              {ACADEMY_ORDER.map((a) => (
+        <CardContent className="space-y-2">
+          <Label>Formations qu&apos;il peut animer</Label>
+          {formations.length === 0 ? (
+            <p className="text-xs text-muted-foreground">Aucune formation au catalogue.</p>
+          ) : (
+            <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+              {formations.map((f) => (
                 <label
-                  key={a}
-                  className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm"
+                  key={f.id}
+                  className="flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm"
                 >
                   <input
                     type="checkbox"
-                    value={a}
-                    {...register("academies")}
+                    value={f.id}
+                    {...register("formationIds")}
                     className="h-4 w-4"
                   />
-                  {ACADEMY_LABELS[a]}
+                  <span className="truncate">{f.titre}</span>
                 </label>
               ))}
             </div>
-          </div>
-
-          <div className="grid gap-2">
-            <Label>Formations qu&apos;il peut animer (par académie)</Label>
-            {formations.length === 0 ? (
-              <p className="text-xs text-muted-foreground">
-                Aucune formation au catalogue.
-              </p>
-            ) : (
-              <div className="space-y-4">
-                {groupes.map((g) => (
-                  <div key={g.academy}>
-                    <p className="mb-1.5 text-xs font-semibold text-muted-foreground">
-                      {ACADEMY_LABELS[g.academy]}
-                    </p>
-                    <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-                      {g.items.map((f) => (
-                        <label
-                          key={f.id}
-                          className="flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm"
-                        >
-                          <input
-                            type="checkbox"
-                            value={f.id}
-                            {...register("formationIds")}
-                            className="h-4 w-4"
-                          />
-                          <span className="truncate">{f.titre}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          )}
         </CardContent>
       </Card>
 

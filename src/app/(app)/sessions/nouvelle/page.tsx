@@ -2,7 +2,6 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { getTenantDb } from "@/lib/tenant";
 import { SessionForm } from "@/components/sessions/session-form";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
 export default async function NouvelleSessionPage() {

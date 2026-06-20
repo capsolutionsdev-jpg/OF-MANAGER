@@ -6,14 +6,15 @@ import { Role, OrganismeStatut, FormuleAbonnement, Prisma } from "@prisma/client
 import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/superadmin-guard";
 import { FEATURE_KEYS, CORE_FEATURE_KEYS } from "@/lib/features";
-import { FORMULE_KEYS, featuresForFormule, type FormuleKey } from "@/lib/plans";
+import { FORMULE_KEYS, type FormuleKey } from "@/lib/plans";
+import { resolveFeaturesForFormule } from "@/lib/pricing";
 import { uniqueSubdomain, toSubdomain, isValidSubdomain } from "@/lib/subdomain";
 
 export type ConsoleState = { ok?: boolean; error?: string; id?: string; sousDomaine?: string };
 
 // Valeurs d'amorçage d'un nouvel organisme (modifiables ensuite dans la console).
 const DEFAULT_DESIGN = "defaut";
-const DEFAULT_COULEUR = "#1A5FD4";
+const DEFAULT_COULEUR = "#2C53C0";
 
 const clean = (v: FormDataEntryValue | null) => {
   const s = typeof v === "string" ? v.trim() : "";
@@ -76,8 +77,8 @@ export async function createOrganisme(
   const formule = readFormule(formData);
   let fonctionnalites = FEATURE_KEYS.filter((k) => formData.get(`feat_${k}`) === "on");
   if (fonctionnalites.length === 0) {
-    // repli : bundle de la formule choisie, sinon le « Cœur ».
-    fonctionnalites = formule ? featuresForFormule(formule as FormuleKey) : CORE_FEATURE_KEYS;
+    // repli : composition (résolue) de la formule choisie, sinon le « Cœur ».
+    fonctionnalites = formule ? await resolveFeaturesForFormule(formule as FormuleKey) : CORE_FEATURE_KEYS;
   }
 
   const org = await prisma.organisme.create({
@@ -152,6 +153,13 @@ export async function updateOrganisme(
     }
   }
 
+  // Clés API (write-only) : on ne met à jour que si une nouvelle valeur est
+  // saisie — un champ laissé vide conserve la clé existante (jamais d'effacement
+  // accidentel), et la valeur n'a jamais transité par le navigateur (SecretField).
+  const newBrevo = String(formData.get("brevoApiKey") ?? "").trim();
+  const newAnthropic = String(formData.get("anthropicApiKey") ?? "").trim();
+  const newYousign = String(formData.get("yousignApiKey") ?? "").trim();
+
   await prisma.organisme.update({
     where: { id },
     data: {
@@ -180,9 +188,9 @@ export async function updateOrganisme(
       sousDomaine: clean(formData.get("sousDomaine")),
       emailExpediteurNom: clean(formData.get("emailExpediteurNom")),
       emailExpediteur: clean(formData.get("emailExpediteur")),
-      brevoApiKey: clean(formData.get("brevoApiKey")),
-      anthropicApiKey: clean(formData.get("anthropicApiKey")),
-      yousignApiKey: clean(formData.get("yousignApiKey")),
+      ...(newBrevo ? { brevoApiKey: newBrevo } : {}),
+      ...(newAnthropic ? { anthropicApiKey: newAnthropic } : {}),
+      ...(newYousign ? { yousignApiKey: newYousign } : {}),
       automationsConfig: automationsConfig as Prisma.InputJsonValue,
       maxSmsMois: readPositiveInt(formData.get("maxSmsMois")),
       logoUrl: clean(formData.get("logoUrl")),
@@ -190,6 +198,9 @@ export async function updateOrganisme(
       signatureUrl: clean(formData.get("signatureUrl")),
       faviconUrl: clean(formData.get("faviconUrl")),
       maxUtilisateurs: readPositiveInt(formData.get("maxUtilisateurs")),
+      dureeConservationMois: readPositiveInt(formData.get("dureeConservationMois")) ?? 36,
+      referentHandicapNom: clean(formData.get("referentHandicapNom")),
+      referentHandicapContact: clean(formData.get("referentHandicapContact")),
       notes: clean(formData.get("notes")),
       documentsConfig: documentsConfig as Prisma.InputJsonValue,
       statut,

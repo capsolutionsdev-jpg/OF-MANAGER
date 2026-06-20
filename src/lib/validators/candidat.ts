@@ -33,6 +33,9 @@ export const candidatFormSchema = z.object({
   cnapsStatut: z.nativeEnum(CnapsStatut).or(z.literal("")).optional(),
   carteProNumero: optionalText,
   carteProValidite: optionalText, // chaîne "AAAA-MM-JJ"
+  // Accessibilité (Qualiopi ind. 26)
+  situationHandicap: z.boolean().optional(),
+  besoinsAdaptation: optionalText,
 });
 
 /** Libellés du suivi de l'autorisation préalable CNAPS. */

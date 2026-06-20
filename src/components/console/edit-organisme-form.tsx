@@ -13,7 +13,7 @@ import { THEMES, DESIGNS, designVars } from "@/lib/themes";
 import { FormuleSelector } from "@/components/console/formule-selector";
 import { AutomationMatrix } from "@/components/console/automation-matrix";
 import { parseAutomationsConfig } from "@/lib/automations";
-import type { FormuleKey } from "@/lib/plans";
+import type { FormuleKey, Plan } from "@/lib/plans";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -49,9 +49,10 @@ export type OrgFormData = {
   sousDomaine: string | null;
   emailExpediteurNom: string | null;
   emailExpediteur: string | null;
-  brevoApiKey: string | null;
-  anthropicApiKey: string | null;
-  yousignApiKey: string | null;
+  // Secrets : on n'expose JAMAIS la valeur au navigateur — seulement l'état.
+  brevoApiKeySet: boolean;
+  anthropicApiKeySet: boolean;
+  yousignApiKeySet: boolean;
   automationsConfig: unknown;
   maxSmsMois: number | null;
   logoUrl: string | null;
@@ -59,6 +60,9 @@ export type OrgFormData = {
   signatureUrl: string | null;
   faviconUrl: string | null;
   maxUtilisateurs: number | null;
+  dureeConservationMois: number | null;
+  referentHandicapNom: string | null;
+  referentHandicapContact: string | null;
   notes: string | null;
   documentsConfig: unknown;
   statut: string;
@@ -107,6 +111,33 @@ function Field({
       <Label htmlFor={name}>{label}</Label>
       <Input id={name} name={name} type={type} defaultValue={value ?? ""} placeholder={placeholder} />
       {hint && <p className="text-[11px] text-muted-foreground">{hint}</p>}
+    </div>
+  );
+}
+
+/**
+ * Champ « secret » en écriture seule : la valeur n'est jamais envoyée au
+ * navigateur. On affiche uniquement si une clé est déjà définie ; laisser vide
+ * conserve la clé existante (cf. updateOrganisme côté serveur).
+ */
+function SecretField({
+  name, label, isSet, placeholder, hint,
+}: { name: string; label: string; isSet: boolean; placeholder?: string; hint?: string }) {
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor={name}>{label}</Label>
+      <Input
+        id={name}
+        name={name}
+        type="password"
+        autoComplete="new-password"
+        defaultValue=""
+        placeholder={isSet ? "•••••••••• (définie — laisser vide pour conserver)" : placeholder ?? "Non définie"}
+      />
+      <p className="text-[11px] text-muted-foreground">
+        {isSet ? "Une clé est enregistrée. " : "Aucune clé enregistrée. "}
+        {hint}
+      </p>
     </div>
   );
 }
@@ -200,10 +231,10 @@ function ColorPicker({ value, onChange, swatches = true }: { value: string; onCh
         />
       ))}
       {swatches && <span className="mx-1 h-6 w-px bg-border" />}
-      <Input type="text" value={value} onChange={(e) => onChange(e.target.value)} className="h-8 w-28" placeholder="#1A5FD4" />
+      <Input type="text" value={value} onChange={(e) => onChange(e.target.value)} className="h-8 w-28" placeholder="#2C53C0" />
       <input
         type="color"
-        value={/^#[0-9a-fA-F]{6}$/.test(value) ? value : "#1A5FD4"}
+        value={/^#[0-9a-fA-F]{6}$/.test(value) ? value : "#2C53C0"}
         onChange={(e) => onChange(e.target.value)}
         className="h-8 w-10 cursor-pointer rounded border bg-transparent"
         aria-label="Choisir une couleur"
@@ -223,7 +254,7 @@ const SECTIONS = [
   { id: "avance", label: "Avancé & limites", icon: Settings2 },
 ] as const;
 
-export function EditOrganismeForm({ org }: { org: OrgFormData }) {
+export function EditOrganismeForm({ org, plans }: { org: OrgFormData; plans?: Plan[] }) {
   const action = updateOrganisme.bind(null, org.id);
   const [state, formAction, isPending] = useActionState<ConsoleState | undefined, FormData>(action, undefined);
 
@@ -233,7 +264,7 @@ export function EditOrganismeForm({ org }: { org: OrgFormData }) {
   const [signatureUrl, setSignatureUrl] = useState(org.signatureUrl ?? "");
   const [faviconUrl, setFaviconUrl] = useState(org.faviconUrl ?? "");
   const [design, setDesign] = useState(org.design ?? "defaut");
-  const [couleur, setCouleur] = useState(org.couleurPrimaire ?? "#1A5FD4");
+  const [couleur, setCouleur] = useState(org.couleurPrimaire ?? "#2C53C0");
   const [couleur2, setCouleur2] = useState(org.couleurSecondaire ?? "");
   const [docCfg, setDocCfg] = useState<DocumentsConfig>((org.documentsConfig as DocumentsConfig | null) ?? {});
   const setDoc = (key: string, patch: Partial<DocumentsConfig[string]>) =>
@@ -394,7 +425,7 @@ export function EditOrganismeForm({ org }: { org: OrgFormData }) {
           <Card>
             <CardHeader className="py-3"><CardTitle className="text-sm text-muted-foreground">Abonnement & fonctionnalités</CardTitle></CardHeader>
             <CardContent>
-              <FormuleSelector defaultFormule={(org.formule as FormuleKey | null) ?? null} defaultFeatures={org.fonctionnalites} />
+              <FormuleSelector defaultFormule={(org.formule as FormuleKey | null) ?? null} defaultFeatures={org.fonctionnalites} plans={plans} />
             </CardContent>
           </Card>
 
@@ -425,13 +456,13 @@ export function EditOrganismeForm({ org }: { org: OrgFormData }) {
             </CardContent>
           </Card>
           <Card>
-            <CardHeader className="py-3"><CardTitle className="flex items-center gap-1.5 text-sm text-muted-foreground"><KeyRound className="h-4 w-4" /> Clés d'intégration (par organisme)</CardTitle></CardHeader>
+            <CardHeader className="py-3"><CardTitle className="flex items-center gap-1.5 text-sm text-muted-foreground"><KeyRound className="h-4 w-4" /> Clés d&apos;intégration (par organisme)</CardTitle></CardHeader>
             <CardContent className="grid gap-4 sm:grid-cols-2">
-              <Field name="brevoApiKey" label="Clé API Brevo (e-mail + SMS)" value={org.brevoApiKey} placeholder="xkeysib-…" hint="Envoi des e-mails & SMS au nom de l'OF." />
-              <Field name="anthropicApiKey" label="Clé API Claude (Assistant IA)" value={org.anthropicApiKey} placeholder="sk-ant-…" hint="Active la génération IA pour cet OF." />
-              <Field name="yousignApiKey" label="Clé API Yousign (signature)" value={org.yousignApiKey} placeholder="…" hint="Signature électronique prestataire." />
+              <SecretField name="brevoApiKey" label="Clé API Brevo (e-mail + SMS)" isSet={org.brevoApiKeySet} placeholder="xkeysib-…" hint="Envoi des e-mails & SMS au nom de l'OF." />
+              <SecretField name="anthropicApiKey" label="Clé API Claude (Assistant IA)" isSet={org.anthropicApiKeySet} placeholder="sk-ant-…" hint="Active la génération IA pour cet OF." />
+              <SecretField name="yousignApiKey" label="Clé API Yousign (signature)" isSet={org.yousignApiKeySet} placeholder="…" hint="Signature électronique prestataire." />
               <p className="text-[11px] text-muted-foreground sm:col-span-2">
-                Laisser vide = repli sur la configuration globale (ou mode démo). Chaque clé est propre à l'organisme.
+                Laisser vide = repli sur la configuration globale (ou mode démo). Chaque clé est propre à l&apos;organisme.
               </p>
             </CardContent>
           </Card>
@@ -492,11 +523,11 @@ export function EditOrganismeForm({ org }: { org: OrgFormData }) {
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="rounded-lg border p-3">
                   <div className="flex items-center gap-2 text-sm font-medium"><Server className="h-4 w-4 text-primary" /> Hébergé par OFManager (SaaS)</div>
-                  <p className="mt-1 text-xs text-muted-foreground">L'OF utilise son sous-domaine <code>{org.sousDomaine || "mon-of"}.ofmanager.fr</code>. Tout est piloté ici, mises à jour incluses.</p>
+                  <p className="mt-1 text-xs text-muted-foreground">L&apos;OF utilise son sous-domaine <code>{org.sousDomaine || "mon-of"}.ofmanager.fr</code>. Tout est piloté ici, mises à jour incluses.</p>
                 </div>
                 <div className="rounded-lg border p-3">
                   <div className="flex items-center gap-2 text-sm font-medium"><Download className="h-4 w-4 text-primary" /> Auto-hébergé (chez le client)</div>
-                  <p className="mt-1 text-xs text-muted-foreground">Téléchargez le package prêt à déployer (config + Dockerfile + docker-compose + .env.example + README + script d'init) pour une instance dédiée (base & domaine propres). Secrets non inclus.</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Téléchargez le package prêt à déployer (config + Dockerfile + docker-compose + .env.example + README + script d&apos;init) pour une instance dédiée (base & domaine propres). Secrets non inclus.</p>
                   <a
                     href={`/console/${org.id}/export`}
                     className="mt-2 inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium hover:bg-muted"
@@ -528,6 +559,15 @@ export function EditOrganismeForm({ org }: { org: OrgFormData }) {
               </div>
               <Field name="maxUtilisateurs" label="Nombre max d'utilisateurs" value={org.maxUtilisateurs} type="number" placeholder="Illimité si vide" />
               <Field name="maxSmsMois" label="Quota SMS / mois" value={org.maxSmsMois} type="number" placeholder="Illimité si vide" />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="py-3"><CardTitle className="text-sm text-muted-foreground">Conformité — RGPD &amp; accessibilité</CardTitle></CardHeader>
+            <CardContent className="grid gap-4 sm:grid-cols-2">
+              <Field name="dureeConservationMois" label="Durée de conservation (mois)" value={org.dureeConservationMois} type="number" placeholder="36" hint="Au-delà sans activité, les données candidats sont anonymisées automatiquement (purge RGPD)." />
+              <div className="hidden sm:block" />
+              <Field name="referentHandicapNom" label="Référent handicap (Qualiopi 26)" value={org.referentHandicapNom} placeholder="Nom du référent" />
+              <Field name="referentHandicapContact" label="Contact du référent handicap" value={org.referentHandicapContact} placeholder="e-mail / téléphone" />
             </CardContent>
           </Card>
           <Card>

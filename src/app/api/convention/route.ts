@@ -14,11 +14,11 @@ export const runtime = "nodejs";
 const DOC_STYLE = `<style>
   * { box-sizing: border-box; }
   body { font-family: Arial, Helvetica, sans-serif; color: #111; font-size: 11px; margin: 0; }
-  .doc-header { display: flex; align-items: center; gap: 16px; border-bottom: 2px solid #0D1B3E; padding-bottom: 8px; margin-bottom: 14px; }
+  .doc-header { display: flex; align-items: center; gap: 16px; border-bottom: 2px solid #221F19; padding-bottom: 8px; margin-bottom: 14px; }
   .doc-logo { height: 54px; width: auto; }
   .doc-org { font-size: 10px; line-height: 1.45; }
-  h1, .doc-title { font-size: 17px; text-align: center; color: #0D1B3E; margin: 6px 0 14px; }
-  h2 { font-size: 12px; margin: 12px 0 4px; color: #0D1B3E; }
+  h1, .doc-title { font-size: 17px; text-align: center; color: #221F19; margin: 6px 0 14px; }
+  h2 { font-size: 12px; margin: 12px 0 4px; color: #221F19; }
   p, td, th, li { font-size: 11px; line-height: 1.5; }
   table.doc-table { border-collapse: collapse; width: 100%; margin: 6px 0; }
   .doc-table td, .doc-table th { border: 1px solid #999; padding: 4px 7px; text-align: left; vertical-align: top; }

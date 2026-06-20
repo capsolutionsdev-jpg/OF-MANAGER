@@ -51,7 +51,7 @@ export function NotificationBell({ data }: { data: NotificationsData }) {
           </span>
         )}
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-[360px] p-0">
+      <DropdownMenuContent align="end" className="w-[min(92vw,360px)] p-0">
         <div className="flex items-center justify-between border-b px-3 py-2">
           <span className="text-sm font-semibold">Notifications</span>
           {items.length > 0 && (

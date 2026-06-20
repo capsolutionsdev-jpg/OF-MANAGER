@@ -1,8 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import bcrypt from "bcryptjs";
 import { getTenantDb } from "@/lib/tenant";
+import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 
 type Res = { ok: boolean; error?: string };
@@ -80,6 +82,92 @@ export async function createApprenantAccount(
 
   revalidatePath("/elearning/apprenants");
   return { ok: true };
+}
+
+/** Apprenant connecté (via son compte utilisateur), sinon null. */
+async function currentApprenant() {
+  const session = await auth();
+  if (!session?.user?.id || session.user.role !== "APPRENANT") return null;
+  return prisma.apprenant.findUnique({
+    where: { userId: session.user.id },
+    select: { id: true, candidatId: true },
+  });
+}
+
+/**
+ * Signature d'une feuille d'émargement DEPUIS l'espace apprenant connecté.
+ * Vérifie que la ligne appartient bien au candidat de l'apprenant connecté
+ * (impossible de signer l'émargement d'un autre stagiaire).
+ */
+export async function signMyEmargement(
+  emargementId: string,
+  signatureDataUrl?: string,
+): Promise<Res> {
+  if (!signatureDataUrl || !signatureDataUrl.startsWith("data:image/"))
+    return { ok: false, error: "Merci de dessiner votre signature." };
+
+  const appr = await currentApprenant();
+  if (!appr) return { ok: false, error: "Non autorisé." };
+
+  const row = await prisma.emargementSignature.findFirst({
+    where: { id: emargementId, candidatId: appr.candidatId },
+    select: { id: true, signedAt: true },
+  });
+  if (!row) return { ok: false, error: "Émargement introuvable." };
+  if (row.signedAt) return { ok: true };
+
+  const hdrs = await headers();
+  const ip =
+    hdrs.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    hdrs.get("x-real-ip") ??
+    null;
+
+  await prisma.emargementSignature.update({
+    where: { id: row.id },
+    data: { signedAt: new Date(), signatureIp: ip, signatureDataUrl },
+  });
+  revalidatePath("/mes-emargements");
+  return { ok: true };
+}
+
+export type AccountState = { ok?: boolean; error?: string; id?: string };
+const STAFF_ADMIN = ["ADMIN", "RESPONSABLE_FORMATION"];
+const cleanStr = (v: FormDataEntryValue | null) => {
+  const s = typeof v === "string" ? v.trim() : "";
+  return s === "" ? null : s;
+};
+
+/**
+ * Crée un CANDIDAT + son compte « espace apprenant » en une fois
+ * (depuis Administration → Créer un compte → Candidat).
+ */
+export async function createCandidatWithAccount(
+  _prev: AccountState | undefined,
+  formData: FormData,
+): Promise<AccountState> {
+  const session = await auth();
+  if (!session?.user || !STAFF_ADMIN.includes(session.user.role as string))
+    return { error: "Non autorisé." };
+
+  const prenom = String(formData.get("prenom") ?? "").trim();
+  const nom = String(formData.get("nom") ?? "").trim();
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const password = String(formData.get("password") ?? "");
+  if (!prenom || !nom) return { error: "Nom et prénom requis." };
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { error: "E-mail invalide." };
+  if (password.length < 6) return { error: "Mot de passe : 6 caractères minimum." };
+
+  const db = await getTenantDb();
+  const candidat = await db.candidat.create({
+    data: { prenom, nom, email, telephone: cleanStr(formData.get("telephone")) },
+    select: { id: true },
+  });
+
+  const r = await createApprenantAccount(candidat.id, password);
+  if (!r.ok) return { error: r.error };
+
+  revalidatePath("/candidats");
+  return { ok: true, id: candidat.id };
 }
 
 /** Attribue un cours à un apprenant. */

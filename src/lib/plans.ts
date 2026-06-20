@@ -47,7 +47,7 @@ export const PLANS: Record<FormuleKey, Plan> = {
     features: BASIQUE_FEATURES, supportLevel: "Support e-mail (48 h)",
   },
   MEDIUM: {
-    key: "MEDIUM", name: "Medium", price: 149, color: "#1A5FD4",
+    key: "MEDIUM", name: "Medium", price: 149, color: "#2C53C0",
     tagline: "Gestion complète + modules de productivité",
     features: MEDIUM_FEATURES, supportLevel: "Support e-mail (24 h)",
   },
@@ -75,18 +75,30 @@ function advancedCount(fonctionnalites: string[] | null | undefined): number {
 }
 
 /**
- * Plan d'un organisme : sa formule si elle est posée, sinon une estimation
- * dérivée du nombre de modules avancés activés (compat des tenants existants).
+ * Formule (clé) d'un organisme : sa formule si elle est posée, sinon une
+ * estimation dérivée du nombre de modules avancés activés (compat des tenants
+ * existants). Fonction pure — sert aussi à appliquer les prix édités (cf. pricing.ts).
+ */
+export function planKeyForOrg(
+  formule: string | null | undefined,
+  fonctionnalites: string[] | null | undefined,
+): FormuleKey {
+  if (formule && (formule in PLANS)) return formule as FormuleKey;
+  const n = advancedCount(fonctionnalites);
+  if (n >= 5) return "COMPLET";
+  if (n >= 1) return "MEDIUM";
+  return "BASIQUE";
+}
+
+/**
+ * Plan d'un organisme (valeurs par défaut, prix de repère). Pour le prix réel
+ * facturé/affiché, passer par les tarifs édités (lib/pricing.ts).
  */
 export function planForOrg(
   formule: string | null | undefined,
   fonctionnalites: string[] | null | undefined,
 ): Plan {
-  if (formule && (formule in PLANS)) return PLANS[formule as FormuleKey];
-  const n = advancedCount(fonctionnalites);
-  if (n >= 5) return PLANS.COMPLET;
-  if (n >= 1) return PLANS.MEDIUM;
-  return PLANS.BASIQUE;
+  return PLANS[planKeyForOrg(formule, fonctionnalites)];
 }
 
 /** Revenu mensuel facturable : prix de la formule si ACTIF, 0 sinon. */

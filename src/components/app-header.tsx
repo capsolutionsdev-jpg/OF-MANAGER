@@ -72,7 +72,7 @@ export function AppHeader({ user }: { user: HeaderUser }) {
           }
         >
           <Avatar className="h-8 w-8">
-            <AvatarFallback className="bg-[#0e1c3f] text-xs font-semibold text-white">
+            <AvatarFallback className="bg-[#221F19] text-xs font-semibold text-white">
               {initials}
             </AvatarFallback>
           </Avatar>

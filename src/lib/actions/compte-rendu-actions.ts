@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { EmailStatut } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { getTenantDb } from "@/lib/tenant";
 import { auth } from "@/auth";
 import { sendEmail, emailConfigured } from "@/lib/email";
 import { orgConfigFor } from "@/lib/org-identity";
@@ -17,7 +18,8 @@ const fmt = (d: Date) => d.toLocaleDateString("fr-FR");
 export async function sendCompteRendu(
   sessionId: string,
 ): Promise<{ ok: boolean; demo: boolean; error?: string }> {
-  const s = await prisma.session.findUnique({
+  const db = await getTenantDb(); // cloisonne : session d'un autre OF → introuvable
+  const s = await db.session.findUnique({
     where: { id: sessionId },
     include: { formation: true, formateurs: true },
   });
@@ -34,7 +36,7 @@ export async function sendCompteRendu(
 
   const token = s.crFormateurToken ?? generateToken();
   if (!s.crFormateurToken) {
-    await prisma.session.update({
+    await db.session.update({
       where: { id: sessionId },
       data: { crFormateurToken: token },
     });

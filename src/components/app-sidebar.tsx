@@ -40,7 +40,7 @@ function NavLinks({
               "group/nav flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
               dark
                 ? active
-                  ? "bg-white text-[#0e1c3f] shadow-sm"
+                  ? "bg-white text-[#221F19] shadow-sm"
                   : "text-white/70 hover:bg-white/10 hover:text-white"
                 : active
                   ? "bg-primary text-primary-foreground shadow-sm"
@@ -107,7 +107,7 @@ export function AppSidebar({
   fonctionnalites?: string[];
 }) {
   return (
-    <aside className="hidden w-64 shrink-0 flex-col bg-[#0e1c3f] md:flex">
+    <aside className="hidden w-64 shrink-0 flex-col bg-[#221F19] md:flex">
       <Brand tone="dark" />
       <NavLinks role={role} permissions={permissions} fonctionnalites={fonctionnalites} tone="dark" />
       <div className="border-t border-white/10 p-4">

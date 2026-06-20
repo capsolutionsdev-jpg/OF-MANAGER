@@ -17,6 +17,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { FINANCEMENT_LABELS } from "@/lib/validators/candidat";
+import { SITUATION_LABELS, EMPLOI_KEYS, type Suivi6MoisReponses } from "@/lib/suivi6mois";
 
 export const dynamic = "force-dynamic";
 
@@ -77,6 +78,8 @@ export default async function BpfPage({
           financementType: true,
           montant: true,
           resultatCertification: true,
+          suivi6moisJson: true,
+          suivi6moisCompletedAt: true,
         },
       },
     },
@@ -116,6 +119,9 @@ export default async function BpfPage({
 
   // ── Agrégation certification ──
   const cert = { CERTIFIE: 0, AJOURNE: 0, ABANDON: 0, NON_EVALUE: 0 };
+
+  // ── Agrégation suivi à 6 mois (insertion professionnelle) ──
+  const suivi = { repondants: 0, enquetes: 0, enEmploi: 0, enLien: 0, parSituation: new Map<string, number>() };
 
   let totalHeures = 0;
   let totalStagiaires = 0;
@@ -162,6 +168,15 @@ export default async function BpfPage({
       parFinancement.set(fk, cur);
 
       cert[i.resultatCertification] += 1;
+
+      // Suivi à 6 mois (devenir / insertion)
+      if (i.suivi6moisCompletedAt && i.suivi6moisJson) {
+        const r = i.suivi6moisJson as Suivi6MoisReponses;
+        suivi.repondants += 1;
+        suivi.parSituation.set(r.situation, (suivi.parSituation.get(r.situation) ?? 0) + 1);
+        if (EMPLOI_KEYS.has(r.situation)) suivi.enEmploi += 1;
+        if (r.lienFormation === "oui" || r.lienFormation === "partiel") suivi.enLien += 1;
+      }
     }
 
     totalHeures += h;
@@ -182,6 +197,10 @@ export default async function BpfPage({
   const certEvalues = cert.CERTIFIE + cert.AJOURNE + cert.ABANDON;
   const tauxReussite =
     certEvalues > 0 ? Math.round((cert.CERTIFIE / certEvalues) * 100) : null;
+
+  const tauxEmploi = suivi.repondants > 0 ? Math.round((suivi.enEmploi / suivi.repondants) * 100) : null;
+  const tauxLien = suivi.enEmploi > 0 ? Math.round((suivi.enLien / suivi.enEmploi) * 100) : null;
+  const suiviSituations = [...suivi.parSituation.entries()].sort((a, b) => b[1] - a[1]);
 
   const finLabel = (k: string) =>
     k === "NON_PRECISE"
@@ -342,6 +361,70 @@ export default async function BpfPage({
                 Le taux de réussite est calculé sur les stagiaires évalués
                 (certifiés / (certifiés + ajournés + abandons)).
               </p>
+            </CardContent>
+          </Card>
+
+          {/* Insertion à 6 mois (suivi Qualiopi indicateur 11) */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="flex flex-wrap items-center gap-2 text-base">
+                <Users className="h-4 w-4" /> Insertion à 6 mois (suivi Qualiopi)
+                {tauxEmploi !== null && (
+                  <Badge className="bg-emerald-500/10 text-emerald-700">Taux d&apos;emploi : {tauxEmploi}%</Badge>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {suivi.repondants === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Aucune réponse à l&apos;enquête de suivi à 6 mois sur cette période (les enquêtes sont
+                  envoyées automatiquement 6 mois après la fin de chaque session).
+                </p>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    <div className="rounded-lg border bg-muted/30 p-3 text-center">
+                      <p className="text-2xl font-bold">{suivi.repondants}</p>
+                      <p className="text-xs text-muted-foreground">Répondants</p>
+                    </div>
+                    <div className="rounded-lg border bg-emerald-500/5 p-3 text-center">
+                      <p className="text-2xl font-bold text-emerald-700">{suivi.enEmploi}</p>
+                      <p className="text-xs text-muted-foreground">En emploi</p>
+                    </div>
+                    <div className="rounded-lg border bg-sky-500/5 p-3 text-center">
+                      <p className="text-2xl font-bold text-sky-700">{tauxEmploi}%</p>
+                      <p className="text-xs text-muted-foreground">Taux d&apos;emploi</p>
+                    </div>
+                    <div className="rounded-lg border bg-primary/5 p-3 text-center">
+                      <p className="text-2xl font-bold text-primary">{tauxLien ?? "—"}{tauxLien !== null ? "%" : ""}</p>
+                      <p className="text-xs text-muted-foreground">En lien avec la formation</p>
+                    </div>
+                  </div>
+                  <div className="mt-3">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Situation à 6 mois</TableHead>
+                          <TableHead className="text-right">Bénéficiaires</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {suiviSituations.map(([k, n]) => (
+                          <TableRow key={k}>
+                            <TableCell>{SITUATION_LABELS[k] ?? k}</TableCell>
+                            <TableCell className="text-right">{n}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    Le taux d&apos;emploi rapporte les bénéficiaires en emploi (CDI, CDD/intérim, indépendant,
+                    alternance) au nombre de répondants. « En lien avec la formation » est calculé parmi les
+                    répondants en emploi.
+                  </p>
+                </>
+              )}
             </CardContent>
           </Card>
 

@@ -106,7 +106,7 @@ export default async function PlanningPage({
                     key={s.id}
                     href={`/sessions/${s.id}`}
                     className="block rounded-lg border-l-4 bg-card p-2 shadow-sm transition hover:bg-muted/40"
-                    style={{ borderLeftColor: s.salle?.couleur ?? "#1A5FD4" }}
+                    style={{ borderLeftColor: s.salle?.couleur ?? "#2C53C0" }}
                   >
                     <p className="text-sm font-medium leading-tight">{s.formation.titre}</p>
                     {s.horaires && <p className="text-xs text-muted-foreground">{s.horaires}</p>}

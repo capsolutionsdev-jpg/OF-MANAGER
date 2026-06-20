@@ -4,11 +4,19 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { authConfig } from "@/auth.config";
+import { checkLimit, clientIp } from "@/lib/rate-limit";
 
 const credentialsSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
 });
+
+// Fenêtre anti-brute-force / credential-stuffing. Limiteur en mémoire (par
+// instance) : protection de base ; pour une limite partagée et robuste en
+// serverless, brancher Upstash Ratelimit (Redis) — cf. lib/rate-limit.ts.
+const LOGIN_WINDOW_MS = 5 * 60_000;
+const MAX_PER_EMAIL = 8; // tentatives par compte ciblé / 5 min
+const MAX_PER_IP = 20; // tentatives par IP (toutes adresses confondues) / 5 min
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
@@ -18,11 +26,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         email: { label: "Email", type: "email" },
         password: { label: "Mot de passe", type: "password" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, request) {
         const parsed = credentialsSchema.safeParse(credentials);
         if (!parsed.success) return null;
 
         const { email, password } = parsed.data;
+
+        // Anti-brute-force : on plafonne les tentatives par compte ET par IP.
+        const ip = request instanceof Request ? clientIp(request) : "unknown";
+        const [byEmail, byIp] = await Promise.all([
+          checkLimit(`login-id:${email.toLowerCase()}`, { limit: MAX_PER_EMAIL, windowMs: LOGIN_WINDOW_MS }),
+          checkLimit(`login-ip:${ip}`, { limit: MAX_PER_IP, windowMs: LOGIN_WINDOW_MS }),
+        ]);
+        if (!byEmail.ok || !byIp.ok) {
+          // Trop de tentatives → on refuse sans révéler la cause (anti-énumération).
+          return null;
+        }
+
         const user = await prisma.user.findUnique({
           where: { email },
           include: { organisme: { select: { fonctionnalites: true } } },
