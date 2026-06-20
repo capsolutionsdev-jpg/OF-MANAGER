@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus, Users } from "lucide-react";
+import { Plus, Users, Download } from "lucide-react";
 import { getTenantDb } from "@/lib/tenant";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
@@ -57,6 +57,12 @@ export default async function CandidatsPage() {
         title="Candidats"
         subtitle={`${candidats.length} candidat${candidats.length > 1 ? "s" : ""} enregistré${candidats.length > 1 ? "s" : ""}`}
       >
+        {candidats.length > 0 && (
+          <Button variant="outline" render={<a href="/candidats/export" download />}>
+            <Download className="mr-2 h-4 w-4" />
+            Exporter (CSV)
+          </Button>
+        )}
         <Button render={<Link href="/candidats/nouveau" />}>
           <Plus className="mr-2 h-4 w-4" />
           Nouveau candidat

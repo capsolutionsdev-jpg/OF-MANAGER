@@ -1,4 +1,4 @@
-import { BarChart3, TrendingUp, Euro, FileText, Users } from "lucide-react";
+import { BarChart3, TrendingUp, Euro, FileText, Users, Download } from "lucide-react";
 import { getTenantDb } from "@/lib/tenant";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
@@ -112,7 +112,23 @@ export default async function RapportsPage() {
       <PageHeader
         title="Rapports analytiques"
         subtitle="Vue consolidée : conversion, prévisionnel, acquisition et revenus."
-      />
+      >
+        <div className="flex flex-wrap gap-2">
+          {[
+            { href: "/candidats/export", label: "Candidats" },
+            { href: "/sessions/export", label: "Sessions" },
+            { href: "/comptabilite/export", label: "Factures" },
+          ].map((x) => (
+            <a
+              key={x.href}
+              href={x.href}
+              className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm font-medium hover:bg-muted"
+            >
+              <Download className="h-4 w-4" /> {x.label}
+            </a>
+          ))}
+        </div>
+      </PageHeader>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Kpi label="Taux de conversion" value={`${tauxConversion}%`} sub={`${gagnes} gagné(s) / ${perdus} perdu(s)`} icon={TrendingUp} />
