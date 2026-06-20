@@ -1,6 +1,7 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
+import { randomUUID } from "crypto";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { authConfig } from "@/auth.config";
@@ -52,6 +53,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const valid = await bcrypt.compare(password, user.passwordHash);
         if (!valid) return null;
 
+        // Session unique : on enregistre l'identifiant de CETTE connexion sur le
+        // compte. Toute connexion ultérieure (autre appareil) le remplacera, ce
+        // qui déconnecte l'appareil précédent à sa prochaine navigation.
+        const sid = randomUUID();
+        await prisma.user.update({ where: { id: user.id }, data: { activeSessionId: sid } });
+
         return {
           id: user.id,
           name: user.name,
@@ -60,6 +67,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           permissions: user.permissions ?? [],
           organismeId: user.organismeId ?? null,
           fonctionnalites: user.organisme?.fonctionnalites ?? [],
+          sid,
         };
       },
     }),

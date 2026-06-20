@@ -4,6 +4,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Clock, AlertTriangle } from "lucide-react";
 import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
 import { AppTopNav } from "@/components/app-topnav";
 import { buildNav } from "@/lib/navigation";
 import { getBranding, getCurrentOrganisme } from "@/lib/org";
@@ -34,6 +35,18 @@ export default async function AppLayout({
 }) {
   const session = await auth();
   if (!session?.user) redirect("/login");
+
+  // Session unique : ce compte n'est utilisable que sur un seul appareil à la
+  // fois. Si une connexion plus récente existe ailleurs (activeSessionId différent),
+  // on déconnecte cet appareil. Idem si le compte a été désactivé entre-temps.
+  const account = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { activeSessionId: true, isActive: true },
+  });
+  if (!account?.isActive) redirect("/deconnexion");
+  if (account.activeSessionId && account.activeSessionId !== session.user.sid) {
+    redirect("/deconnexion?reason=autre-appareil");
+  }
 
   // Marque du tenant : couleur principale injectée comme variable CSS
   // (les composants `bg-primary` / `text-primary` la reprennent), nom + logo

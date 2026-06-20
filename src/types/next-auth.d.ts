@@ -7,6 +7,7 @@ declare module "next-auth" {
     permissions?: string[];
     organismeId?: string | null;
     fonctionnalites?: string[];
+    sid?: string | null;
   }
   interface Session {
     user: {
@@ -15,6 +16,7 @@ declare module "next-auth" {
       permissions: string[];
       organismeId: string | null;
       fonctionnalites: string[];
+      sid: string | null;
     } & DefaultSession["user"];
   }
 }
@@ -26,5 +28,6 @@ declare module "next-auth/jwt" {
     permissions: string[];
     organismeId: string | null;
     fonctionnalites: string[];
+    sid: string | null;
   }
 }

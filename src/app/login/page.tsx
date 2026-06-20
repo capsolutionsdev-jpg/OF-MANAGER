@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import type { CSSProperties } from "react";
 import Image from "next/image";
-import { ShieldCheck, FileSignature, GraduationCap } from "lucide-react";
+import { ShieldCheck, FileSignature, GraduationCap, MonitorSmartphone } from "lucide-react";
 import { LoginForm } from "./login-form";
 import { getPublicBranding } from "@/lib/tenant-host";
 import { designVars, getDesign } from "@/lib/themes";
@@ -36,7 +36,12 @@ const points = [
   },
 ];
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ reason?: string }>;
+}) {
+  const { reason } = await searchParams;
   const brand = await getPublicBranding();
   const design = getDesign(brand.design);
   const isDark = design?.mode === "dark";
@@ -131,6 +136,16 @@ export default async function LoginPage() {
             </div>
             {brand.logoUrl && <h1 className="text-lg font-bold">{brand.nom}</h1>}
           </div>
+
+          {reason === "autre-appareil" && (
+            <div className="mb-4 flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5 text-sm text-amber-800">
+              <MonitorSmartphone className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>
+                Vous avez été déconnecté car ce compte vient d&apos;être utilisé sur un autre
+                appareil. Un compte ne peut être actif que sur un seul appareil à la fois.
+              </span>
+            </div>
+          )}
 
           <Card>
             <CardHeader>

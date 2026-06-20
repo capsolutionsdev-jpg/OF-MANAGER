@@ -114,6 +114,7 @@ export const authConfig = {
         token.permissions = (user as { permissions?: string[] }).permissions ?? [];
         token.organismeId = (user as { organismeId?: string | null }).organismeId ?? null;
         token.fonctionnalites = (user as { fonctionnalites?: string[] }).fonctionnalites ?? [];
+        token.sid = (user as { sid?: string | null }).sid ?? null;
       }
       return token;
     },
@@ -124,6 +125,7 @@ export const authConfig = {
         session.user.permissions = (token.permissions as string[] | undefined) ?? [];
         session.user.organismeId = (token.organismeId as string | null | undefined) ?? null;
         session.user.fonctionnalites = (token.fonctionnalites as string[] | undefined) ?? [];
+        session.user.sid = (token.sid as string | null | undefined) ?? null;
       }
       return session;
     },

@@ -385,6 +385,10 @@ model User {
   permissions  String[] @default([])
   // Centre de notifications : date de dernière consultation (badge « non lus »).
   notificationsSeenAt DateTime?
+  // Session unique : identifiant de la dernière connexion active. Toute connexion
+  // sur un autre appareil le remplace → l'ancien appareil est déconnecté
+  // (empêche le partage d'un compte = facturation par siège respectée).
+  activeSessionId String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
