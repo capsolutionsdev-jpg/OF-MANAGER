@@ -7,7 +7,11 @@ export type CsvColumn<T> = {
 };
 
 function esc(v: unknown): string {
-  const s = v == null ? "" : String(v);
+  let s = v == null ? "" : String(v);
+  // Anti-injection de formule (CSV/Excel/Sheets) : une cellule commençant par
+  // = + - @ (ou tabulation / retour chariot) peut être exécutée à l'ouverture.
+  // On la neutralise en la préfixant d'une apostrophe (affichée comme texte).
+  if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
   return /[";\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 

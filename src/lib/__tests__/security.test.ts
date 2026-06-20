@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { detectFileType, isRasterImage } from "@/lib/blob";
 import { rateLimit, checkLimit } from "@/lib/rate-limit";
+import { toCsv } from "@/lib/export-csv";
 
 // Entêtes (magic bytes) de fichiers réels.
 const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
@@ -70,5 +71,22 @@ describe("rateLimit() — anti-brute-force", () => {
     expect((await checkLimit(key, opts)).ok).toBe(true);
     expect((await checkLimit(key, opts)).ok).toBe(true);
     expect((await checkLimit(key, opts)).ok).toBe(false);
+  });
+});
+
+describe("toCsv() — anti-injection de formule", () => {
+  const cols = [{ header: "Nom", value: (r: { nom: string }) => r.nom }];
+  it("neutralise les cellules commençant par = + - @", () => {
+    const csv = toCsv(
+      [{ nom: "=SUM(A1:A2)" }, { nom: "+33600000000" }, { nom: "@cmd" }, { nom: "-2+3" }],
+      cols,
+    );
+    expect(csv).toContain("'=SUM(A1:A2)");
+    expect(csv).toContain("'+33600000000");
+    expect(csv).toContain("'@cmd");
+    expect(csv).toContain("'-2+3");
+  });
+  it("laisse les valeurs normales intactes", () => {
+    expect(toCsv([{ nom: "Dupont" }], cols)).toContain("\r\nDupont");
   });
 });
