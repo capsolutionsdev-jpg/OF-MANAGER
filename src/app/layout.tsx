@@ -1,17 +1,45 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import {
+  Geist_Mono,
+  Inter,
+  Plus_Jakarta_Sans,
+  Sora,
+  Manrope,
+  DM_Sans,
+  Archivo,
+  Space_Grotesk,
+  Fraunces,
+  Bricolage_Grotesque,
+} from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+// Polices auto-hébergées via next/font (zéro <link> externe, zéro CLS).
+// Chaque police expose une variable CSS consommée par lib/themes.ts (designs
+// par tenant) et globals.css (thème par défaut « Sable & Cobalt »).
+const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+const inter = Inter({ variable: "--font-inter", subsets: ["latin"], display: "swap" });
+const jakarta = Plus_Jakarta_Sans({ variable: "--font-plus-jakarta", subsets: ["latin"], display: "swap" });
+const sora = Sora({ variable: "--font-sora", subsets: ["latin"], display: "swap" });
+const manrope = Manrope({ variable: "--font-manrope", subsets: ["latin"], display: "swap" });
+const dmSans = DM_Sans({ variable: "--font-dm-sans", subsets: ["latin"], display: "swap" });
+const archivo = Archivo({ variable: "--font-archivo", subsets: ["latin"], display: "swap" });
+const spaceGrotesk = Space_Grotesk({ variable: "--font-space-grotesk", subsets: ["latin"], display: "swap" });
+const fraunces = Fraunces({ variable: "--font-fraunces", subsets: ["latin"], display: "swap" });
+const bricolage = Bricolage_Grotesque({ variable: "--font-bricolage", subsets: ["latin"], display: "swap" });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+const fontVars = [
+  geistMono.variable,
+  inter.variable,
+  jakarta.variable,
+  sora.variable,
+  manrope.variable,
+  dmSans.variable,
+  archivo.variable,
+  spaceGrotesk.variable,
+  fraunces.variable,
+  bricolage.variable,
+].join(" ");
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://ofmanager.fr"),
@@ -34,19 +62,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="fr"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <head>
-        {/* Polices des designs proposables aux organismes (cf. lib/themes.ts). */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Archivo:wght@500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap"
-          rel="stylesheet"
-        />
-      </head>
+    <html lang="fr" className={`${fontVars} h-full antialiased`}>
       <body className="min-h-full">
         {children}
         <Toaster richColors position="top-right" />
