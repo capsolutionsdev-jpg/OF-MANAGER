@@ -53,17 +53,18 @@ export type Design = {
   vars: Record<string, string>;
 };
 
+// Familles référencées via les variables CSS générées par next/font (cf. layout).
 const SANS = {
-  sora: "'Sora', system-ui, sans-serif",
-  jakarta: "'Plus Jakarta Sans', system-ui, sans-serif",
-  inter: "'Inter', system-ui, sans-serif",
-  manrope: "'Manrope', system-ui, sans-serif",
-  dm: "'DM Sans', system-ui, sans-serif",
-  archivo: "'Archivo', system-ui, sans-serif",
-  space: "'Space Grotesk', system-ui, sans-serif",
+  sora: "var(--font-sora), system-ui, sans-serif",
+  jakarta: "var(--font-plus-jakarta), system-ui, sans-serif",
+  inter: "var(--font-inter), system-ui, sans-serif",
+  manrope: "var(--font-manrope), system-ui, sans-serif",
+  dm: "var(--font-dm-sans), system-ui, sans-serif",
+  archivo: "var(--font-archivo), system-ui, sans-serif",
+  space: "var(--font-space-grotesk), system-ui, sans-serif",
 };
-const SERIF = "'Fraunces', Georgia, serif";
-const BRICOLAGE = "'Bricolage Grotesque', system-ui, sans-serif";
+const SERIF = "var(--font-fraunces), Georgia, serif";
+const BRICOLAGE = "var(--font-bricolage), system-ui, sans-serif";
 
 export const DESIGNS: Design[] = [
   {

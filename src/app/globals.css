@@ -97,8 +97,8 @@
   --success: #10a074;
   --success-tint: #e5f6ef;
   --ink: #221f19;
-  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
-  --font-heading: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
+  --font-heading: var(--font-plus-jakarta), system-ui, sans-serif;
 }
 
 .dark {
