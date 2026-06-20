@@ -43,7 +43,11 @@ export async function updatePlanTarifs(
     // Composition : cases cochées de la matrice + support toujours inclus.
     const feats = FEATURE_KEYS.filter((fk) => formData.get(`feat_${key}_${fk}`) === "on");
     const fonctionnalites = Array.from(new Set([...feats, SUPPORT_KEY]));
-    return { key, nom, prix, tagline, supportLevel, fonctionnalites };
+    // Comptes inclus : vide ou 0 = illimité (stocké 0).
+    const cRaw = String(formData.get(`comptes_${key}`) ?? "").trim();
+    const cNum = Number(cRaw);
+    const comptesInclus = cRaw === "" ? 0 : (Number.isFinite(cNum) && cNum >= 0 ? Math.floor(cNum) : 0);
+    return { key, nom, prix, tagline, supportLevel, fonctionnalites, comptesInclus };
   });
 
   const invalid = parsed.find((p) => p.prix === null || !p.nom || !p.tagline || !p.supportLevel);
@@ -59,6 +63,7 @@ export async function updatePlanTarifs(
         tagline: p.tagline,
         supportLevel: p.supportLevel,
         fonctionnalites: p.fonctionnalites,
+        comptesInclus: p.comptesInclus,
         populaire: p.key === populaire,
       };
       return prisma.planTarif.upsert({

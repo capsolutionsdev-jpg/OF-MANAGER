@@ -38,23 +38,27 @@ export type Plan = {
   tagline: string;
   features: string[];
   supportLevel: string;
+  maxComptes: number | null; // comptes back-office inclus ; null = illimité
 };
+
+// Prix d'un compte back-office supplémentaire au-delà de l'inclus (€ HT / mois).
+export const EXTRA_SEAT_PRICE_EUR = 20;
 
 export const PLANS: Record<FormuleKey, Plan> = {
   BASIQUE: {
     key: "BASIQUE", name: "Basique", price: 79, color: "#64748b",
     tagline: "L'essentiel pour démarrer, conformité incluse",
-    features: BASIQUE_FEATURES, supportLevel: "Support e-mail (48 h)",
+    features: BASIQUE_FEATURES, supportLevel: "Support e-mail (48 h)", maxComptes: 3,
   },
   MEDIUM: {
     key: "MEDIUM", name: "Medium", price: 149, color: "#2C53C0",
     tagline: "Gestion complète + modules de productivité",
-    features: MEDIUM_FEATURES, supportLevel: "Support e-mail (24 h)",
+    features: MEDIUM_FEATURES, supportLevel: "Support e-mail (24 h)", maxComptes: 5,
   },
   COMPLET: {
     key: "COMPLET", name: "Complet", price: 249, color: "#7C3AED",
     tagline: "Toute la plateforme, IA & marque blanche",
-    features: COMPLET_FEATURES, supportLevel: "Support prioritaire",
+    features: COMPLET_FEATURES, supportLevel: "Support prioritaire", maxComptes: null,
   },
 };
 

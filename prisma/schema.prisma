@@ -1721,6 +1721,7 @@ model PlanTarif {
   prix            Int // € / mois (HT)
   tagline         String
   supportLevel    String
+  comptesInclus   Int?              // comptes back-office inclus ; 0 = illimité ; null = défaut code
   fonctionnalites String[]          @default([]) // composition (clés) ; vide = bundle par défaut
   populaire       Boolean           @default(false) // badge « le plus choisi »
   updatedAt       DateTime          @updatedAt

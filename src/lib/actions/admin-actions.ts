@@ -5,8 +5,8 @@ import bcrypt from "bcryptjs";
 import { Role } from "@prisma/client";
 import { auth } from "@/auth";
 import { getTenantDb } from "@/lib/tenant";
-import { getCurrentOrganisme } from "@/lib/org";
 import { SECTION_KEYS } from "@/lib/permissions";
+import { getSeatInfo, EXTRA_SEAT_PRICE_EUR } from "@/lib/seats";
 
 async function requireAdmin() {
   const session = await auth();
@@ -28,8 +28,9 @@ export async function createCollaborateur(
   formData: FormData,
 ): Promise<AdminState> {
   const db = await getTenantDb();
+  let me;
   try {
-    await requireAdmin();
+    me = await requireAdmin();
   } catch {
     return { error: "Non autorisé." };
   }
@@ -47,12 +48,15 @@ export async function createCollaborateur(
   const exists = await db.user.findUnique({ where: { email } });
   if (exists) return { error: "Un compte existe déjà avec cet e-mail." };
 
-  // Limite d'utilisateurs de la formule (si définie par l'éditeur).
-  const org = await getCurrentOrganisme();
-  if (org?.maxUtilisateurs != null) {
-    const count = await db.user.count();
-    if (count >= org.maxUtilisateurs) {
-      return { error: `Limite d'utilisateurs atteinte (${org.maxUtilisateurs}). Contactez OFManager pour augmenter votre forfait.` };
+  // Limite de sièges back-office (comptes ADMIN/RESPONSABLE/ASSISTANT) selon la
+  // formule. Un override manuel de l'éditeur (sièges payants) prime. Les
+  // formateurs et apprenants ne comptent pas comme sièges facturés.
+  if (me.organismeId) {
+    const seat = await getSeatInfo(me.organismeId);
+    if (!seat.canAdd) {
+      return {
+        error: `Limite de ${seat.limit} compte(s) back-office atteinte pour votre formule. Compte supplémentaire : ${EXTRA_SEAT_PRICE_EUR} € HT/mois — contactez OFManager pour augmenter votre forfait.`,
+      };
     }
   }
 

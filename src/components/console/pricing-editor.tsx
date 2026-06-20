@@ -4,7 +4,7 @@ import { useActionState, useState } from "react";
 import { AlertCircle, CheckCircle2, Save, Star, Lock } from "lucide-react";
 import { updatePlanTarifs, type PricingState } from "@/lib/actions/pricing-actions";
 import type { ResolvedPlan } from "@/lib/pricing";
-import type { FormuleKey } from "@/lib/plans";
+import { EXTRA_SEAT_PRICE_EUR, type FormuleKey } from "@/lib/plans";
 import { FEATURES, FEATURE_GROUPS, type Feature } from "@/lib/features";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -121,6 +121,23 @@ export function PricingEditor({
               <div className="space-y-1.5">
                 <Label htmlFor={`support_${p.key}`}>Niveau de support</Label>
                 <Input id={`support_${p.key}`} name={`support_${p.key}`} defaultValue={p.supportLevel} required />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor={`comptes_${p.key}`}>Comptes back-office inclus</Label>
+                <Input
+                  id={`comptes_${p.key}`}
+                  name={`comptes_${p.key}`}
+                  type="number"
+                  min={0}
+                  step={1}
+                  defaultValue={p.maxComptes ?? 0}
+                  placeholder="0 = illimité"
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  {p.maxComptes == null ? "Illimité" : `${p.maxComptes} compte(s)`} · 0 = illimité ·
+                  compte supplémentaire {EXTRA_SEAT_PRICE_EUR} € HT/mois
+                </p>
               </div>
             </CardContent>
           </Card>

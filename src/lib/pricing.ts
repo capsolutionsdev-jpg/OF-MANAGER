@@ -24,7 +24,7 @@ export async function getResolvedPlans(): Promise<{
 }> {
   type Row = {
     formule: string; nom: string | null; prix: number; tagline: string;
-    supportLevel: string; fonctionnalites: string[]; populaire: boolean;
+    supportLevel: string; fonctionnalites: string[]; comptesInclus: number | null; populaire: boolean;
   };
   let overrides: Row[] = [];
   try {
@@ -48,6 +48,10 @@ export async function getResolvedPlans(): Promise<{
       supportLevel: o?.supportLevel ?? PLANS[key].supportLevel,
       // composition éditée si présente, sinon bundle par défaut du code
       features: o?.fonctionnalites?.length ? o.fonctionnalites : PLANS[key].features,
+      // comptes inclus : 0 = illimité (null), valeur éditée sinon défaut code
+      maxComptes: o && o.comptesInclus != null
+        ? (o.comptesInclus === 0 ? null : o.comptesInclus)
+        : PLANS[key].maxComptes,
       populaire,
     };
   }
