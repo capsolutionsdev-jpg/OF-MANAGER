@@ -157,6 +157,30 @@
   }
 }
 
+/* Peaufinage : sélection de texte et barres de défilement à la couleur de
+   marque (reprend var(--primary)/--foreground → s'adapte à chaque skin). */
+::selection {
+  background: color-mix(in oklab, var(--primary) 24%, transparent);
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, var(--foreground) 22%, transparent) transparent;
+}
+::-webkit-scrollbar {
+  width: 11px;
+  height: 11px;
+}
+::-webkit-scrollbar-thumb {
+  background: color-mix(in oklab, var(--foreground) 20%, transparent);
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in oklab, var(--foreground) 34%, transparent);
+  background-clip: padding-box;
+}
+
 /* ============================================================
    DESIGNS (peaux par organisme) — effets de surface.
    La couleur/mode/arrondi/police viennent des variables CSS
@@ -181,19 +205,23 @@
     #070a14;
 }
 [data-design="aurora"] [data-slot="card"] {
-  background: color-mix(in oklab, var(--card) 70%, transparent);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid color-mix(in oklab, white 14%, transparent);
+  /* Verre plus opaque → meilleure lisibilité du texte sur le fond maillé ;
+     blur allégé → moins coûteux au rendu. */
+  background: color-mix(in oklab, var(--card) 86%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid color-mix(in oklab, white 16%, transparent);
   box-shadow: 0 22px 60px -26px rgba(0, 0, 0, 0.6);
 }
 [data-design="aurora"] header {
   background: color-mix(in oklab, var(--card) 68%, transparent);
 }
 
-/* Néumorphisme — reliefs extrudés, champs en creux */
+/* Néumorphisme — reliefs extrudés, champs en creux.
+   Harmonisation a11y : fin filet pour délimiter les cartes, et focus VISIBLE
+   sur les champs (sans casser le style en creux). */
 [data-design="neumorphisme"] [data-slot="card"] {
-  border: none;
+  border: 1px solid rgba(120, 130, 150, 0.14);
   box-shadow: 7px 7px 16px #c4c8d0, -7px -7px 16px #ffffff;
 }
 [data-design="neumorphisme"] input,
@@ -201,6 +229,11 @@
 [data-design="neumorphisme"] select {
   box-shadow: inset 3px 3px 6px #c8ccd5, inset -3px -3px 6px #ffffff;
   border-color: transparent;
+}
+[data-design="neumorphisme"] :is(input, textarea, select):focus-visible {
+  box-shadow: inset 2px 2px 5px #c8ccd5, inset -2px -2px 5px #ffffff,
+    0 0 0 2px color-mix(in oklab, var(--primary) 55%, transparent);
+  outline: none;
 }
 
 /* Éditorial / Enterprise / Linear — filets nets, sans ombre */
@@ -229,9 +262,11 @@
   box-shadow: 0 1px 2px rgba(15, 27, 45, 0.04);
 }
 
-/* Mobile-first — fond dégradé doux, cartes très arrondies en relief */
+/* Mobile-first — fond dégradé doux, cartes très arrondies en relief.
+   (sans background-attachment: fixed → évite le jank et le bug de rendu iOS) */
 [data-design="mobile"] {
-  background: linear-gradient(160deg, #e8ecff, #f6f4ff) fixed;
+  background: linear-gradient(160deg, #e8ecff, #f6f4ff);
+  background-attachment: scroll;
 }
 [data-design="mobile"] [data-slot="card"] {
   border: none;
