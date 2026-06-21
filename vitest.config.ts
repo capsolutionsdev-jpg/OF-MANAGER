@@ -7,6 +7,10 @@ export default defineConfig({
     include: ["src/**/*.{test,spec}.ts"],
   },
   resolve: {
-    alias: { "@": path.resolve(__dirname, "src") },
+    alias: {
+      "@": path.resolve(__dirname, "src"),
+      // "server-only" lève une erreur hors RSC → stub vide en test.
+      "server-only": path.resolve(__dirname, "src/test/empty-module.ts"),
+    },
   },
 });
