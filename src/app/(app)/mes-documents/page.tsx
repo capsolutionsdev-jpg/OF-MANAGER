@@ -188,7 +188,7 @@ export default async function MesDocumentsPage() {
                     <Paperclip className="h-4 w-4 shrink-0 text-muted-foreground" />
                     <span className="flex-1">{p.label}</span>
                     <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${piecePill[p.statut]}`}>{pieceLabel[p.statut]}</span>
-                    <a href={p.url} target="_blank" rel="noopener noreferrer"
+                    <a href={`/api/public/piece/${p.id}`} target="_blank" rel="noopener noreferrer"
                       className="inline-flex items-center gap-1 text-primary hover:underline">
                       <FileDown className="h-3.5 w-3.5" /> {p.mimeType?.includes("pdf") ? "PDF" : "Voir"}
                     </a>

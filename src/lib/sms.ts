@@ -3,6 +3,7 @@
 // MODE DÉMO : le SMS est journalisé (statut « DEMO ») sans envoi réel.
 
 import { prisma } from "@/lib/prisma";
+import { decryptSecret } from "@/lib/crypto";
 
 type SmsSender = { name: string; apiKey: string | undefined };
 
@@ -25,7 +26,7 @@ async function resolveSmsSender(organismeId?: string | null): Promise<SmsSender>
   if (!o) return fallback;
   return {
     name: smsSenderName(o.emailExpediteurNom || o.nom || fallback.name),
-    apiKey: o.brevoApiKey || fallback.apiKey,
+    apiKey: decryptSecret(o.brevoApiKey) || fallback.apiKey,
   };
 }
 

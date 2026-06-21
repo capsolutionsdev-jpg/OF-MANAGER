@@ -1,11 +1,35 @@
 import type { NextConfig } from "next";
 
+// Content-Security-Policy. 'unsafe-inline' reste nécessaire (scripts de bootstrap
+// Next + styles inline de la charte tenant) ; 'unsafe-eval' uniquement en dev
+// (HMR). Durcit malgré tout : object-src none, base-uri/form-action self,
+// frame-ancestors self. Images : data:/blob:/https: (logos, photos, Vercel Blob).
+function contentSecurityPolicy(): string {
+  const dev = process.env.NODE_ENV !== "production";
+  const scriptSrc = `script-src 'self' 'unsafe-inline'${dev ? " 'unsafe-eval'" : ""}`;
+  return [
+    "default-src 'self'",
+    scriptSrc,
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob: https:",
+    "font-src 'self' data:",
+    "connect-src 'self' https:",
+    "frame-src 'self' https://js.stripe.com https://hooks.stripe.com",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'self'",
+  ].join("; ");
+}
+
 // En-têtes de sécurité appliqués à toutes les routes.
 const securityHeaders = [
+  { key: "Content-Security-Policy", value: contentSecurityPolicy() },
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
   { key: "X-Frame-Options", value: "SAMEORIGIN" },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  { key: "X-DNS-Prefetch-Control", value: "off" },
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), browsing-topics=()" },
 ];
 

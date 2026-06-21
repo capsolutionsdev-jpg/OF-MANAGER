@@ -129,7 +129,7 @@ export function DossierUpload({
                   <div key={p.id} className="mt-2">
                     <div className="flex items-center gap-2 rounded-md bg-muted/40 px-2 py-1 text-xs">
                       {isImg(p.mimeType) ? <ImagePlus className="h-3.5 w-3.5" /> : <FileText className="h-3.5 w-3.5" />}
-                      <a href={p.url} target="_blank" rel="noopener noreferrer" className="flex-1 truncate underline">
+                      <a href={`/api/public/piece/${p.id}?token=${encodeURIComponent(token)}`} target="_blank" rel="noopener noreferrer" className="flex-1 truncate underline">
                         {p.mimeType?.includes("pdf") ? "Voir le PDF" : "Voir l'image"}
                       </a>
                       <StatutPill statut={p.statut} />
@@ -184,7 +184,7 @@ export function DossierUpload({
           {autres.map((p) => (
             <div key={p.id} className="mb-1 flex items-center gap-2 rounded-md bg-muted/40 px-2 py-1 text-xs">
               {isImg(p.mimeType) ? <ImagePlus className="h-3.5 w-3.5" /> : <FileText className="h-3.5 w-3.5" />}
-              <a href={p.url} target="_blank" rel="noopener noreferrer" className="flex-1 truncate underline">{p.label}</a>
+              <a href={`/api/public/piece/${p.id}?token=${encodeURIComponent(token)}`} target="_blank" rel="noopener noreferrer" className="flex-1 truncate underline">{p.label}</a>
               <button type="button" onClick={() => remove(p.id, p.label)} className="text-muted-foreground hover:text-destructive" aria-label="Supprimer">
                 <Trash2 className="h-3.5 w-3.5" />
               </button>

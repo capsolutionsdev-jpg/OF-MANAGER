@@ -7,6 +7,7 @@
 // défaut, repli sur la configuration globale (variables d'environnement).
 
 import { prisma } from "@/lib/prisma";
+import { decryptSecret } from "@/lib/crypto";
 
 export function emailConfigured(): boolean {
   return Boolean(process.env.BREVO_API_KEY);
@@ -36,7 +37,7 @@ async function resolveSender(organismeId?: string | null): Promise<Sender> {
   return {
     name: o.emailExpediteurNom || o.nom || fallback.name,
     email: o.emailExpediteur || fallback.email,
-    apiKey: o.brevoApiKey || fallback.apiKey,
+    apiKey: decryptSecret(o.brevoApiKey) || fallback.apiKey,
   };
 }
 

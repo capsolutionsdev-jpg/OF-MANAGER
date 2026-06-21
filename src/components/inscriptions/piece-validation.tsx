@@ -51,7 +51,7 @@ export function PieceValidation({ pieces }: { pieces: AdminPiece[] }) {
           <li key={p.id} className="rounded-md border p-2">
             <div className="flex flex-wrap items-center gap-2 text-sm">
               {p.mimeType?.startsWith("image/") ? <ImageIcon className="h-4 w-4 text-muted-foreground" /> : <FileText className="h-4 w-4 text-muted-foreground" />}
-              <a href={p.url} target="_blank" rel="noopener noreferrer" className="flex-1 truncate text-primary hover:underline">{p.label}</a>
+              <a href={`/api/public/piece/${p.id}`} target="_blank" rel="noopener noreferrer" className="flex-1 truncate text-primary hover:underline">{p.label}</a>
               <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${PILL[p.statut]}`}>{LABEL[p.statut]}</span>
               <button type="button" disabled={pending} onClick={() => valide(p.id)}
                 className="inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-xs text-emerald-700 hover:bg-emerald-50">

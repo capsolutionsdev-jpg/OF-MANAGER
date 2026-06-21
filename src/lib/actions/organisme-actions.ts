@@ -9,6 +9,7 @@ import { FEATURE_KEYS, CORE_FEATURE_KEYS } from "@/lib/features";
 import { FORMULE_KEYS, type FormuleKey } from "@/lib/plans";
 import { resolveFeaturesForFormule } from "@/lib/pricing";
 import { uniqueSubdomain, toSubdomain, isValidSubdomain } from "@/lib/subdomain";
+import { encryptSecret } from "@/lib/crypto";
 
 export type ConsoleState = { ok?: boolean; error?: string; id?: string; sousDomaine?: string };
 
@@ -188,9 +189,9 @@ export async function updateOrganisme(
       sousDomaine: clean(formData.get("sousDomaine")),
       emailExpediteurNom: clean(formData.get("emailExpediteurNom")),
       emailExpediteur: clean(formData.get("emailExpediteur")),
-      ...(newBrevo ? { brevoApiKey: newBrevo } : {}),
-      ...(newAnthropic ? { anthropicApiKey: newAnthropic } : {}),
-      ...(newYousign ? { yousignApiKey: newYousign } : {}),
+      ...(newBrevo ? { brevoApiKey: encryptSecret(newBrevo) } : {}),
+      ...(newAnthropic ? { anthropicApiKey: encryptSecret(newAnthropic) } : {}),
+      ...(newYousign ? { yousignApiKey: encryptSecret(newYousign) } : {}),
       automationsConfig: automationsConfig as Prisma.InputJsonValue,
       maxSmsMois: readPositiveInt(formData.get("maxSmsMois")),
       logoUrl: clean(formData.get("logoUrl")),

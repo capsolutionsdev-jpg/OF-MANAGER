@@ -4,6 +4,7 @@
 
 import Anthropic from "@anthropic-ai/sdk";
 import { prisma } from "@/lib/prisma";
+import { decryptSecret } from "@/lib/crypto";
 
 const MODEL = "claude-opus-4-8";
 
@@ -18,7 +19,7 @@ async function resolveAiKey(organismeId?: string | null): Promise<string | undef
       where: { id: organismeId },
       select: { anthropicApiKey: true },
     });
-    if (o?.anthropicApiKey) return o.anthropicApiKey;
+    if (o?.anthropicApiKey) return decryptSecret(o.anthropicApiKey) ?? undefined;
   }
   return process.env.ANTHROPIC_API_KEY;
 }
