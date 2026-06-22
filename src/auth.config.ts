@@ -1,40 +1,8 @@
 import type { NextAuthConfig } from "next-auth";
 import type { Role } from "@prisma/client";
-
-// Rôles autorisés par section protégée (1er segment d'URL).
-// Doit rester aligné avec SECTION_ROLES de lib/permissions.ts (dupliqué ici car
-// ce fichier doit rester compatible edge/middleware, sans import lourd).
-const SECTION_ROLES: Record<string, Role[]> = {
-  crm: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
-  kanban: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
-  taches: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
-  notifications: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
-  "leads-multicanal": ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
-  scoring: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
-  sms: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
-  ia: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
-  rapports: ["ADMIN", "RESPONSABLE_FORMATION"],
-  "portail-client": ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
-  candidats: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
-  "clients-pro": ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
-  formations: ["ADMIN", "RESPONSABLE_FORMATION"],
-  sessions: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
-  planning: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
-  salles: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
-  elearning: ["ADMIN", "RESPONSABLE_FORMATION", "FORMATEUR"],
-  signatures: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
-  automatisations: ["ADMIN", "RESPONSABLE_FORMATION"],
-  formateurs: ["ADMIN", "RESPONSABLE_FORMATION"],
-  comptabilite: ["ADMIN", "RESPONSABLE_FORMATION"],
-  facturation: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
-  bpf: ["ADMIN", "RESPONSABLE_FORMATION"],
-  qualiopi: ["ADMIN", "RESPONSABLE_FORMATION"],
-  rgpd: ["ADMIN", "RESPONSABLE_FORMATION"],
-  support: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
-};
-// Rôles « personnel administratif » dont l'accès aux sections est en plus
-// filtré par les permissions cochées sur leur compte (collaborateurs).
-const STAFF_FILTRES: Role[] = ["RESPONSABLE_FORMATION", "ASSISTANT"];
+// Source UNIQUE de la matrice rôles↔sections (module sans dépendance runtime →
+// compatible edge/middleware). Fini la duplication (cf. audit ARC-02).
+import { SECTION_ROLES, STAFF_FILTRES } from "@/lib/section-roles";
 
 // Config partagée (compatible edge/middleware) — SANS accès base de données.
 // Les providers (Credentials + Prisma + bcrypt) sont ajoutés dans auth.ts (runtime Node).

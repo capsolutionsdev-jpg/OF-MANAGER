@@ -1,4 +1,9 @@
 import type { Role } from "@prisma/client";
+import { SECTION_ROLES, STAFF_FILTRES } from "@/lib/section-roles";
+
+// Source unique de la matrice rôles↔sections (cf. lib/section-roles). Réexport
+// pour préserver les imports existants `import { SECTION_ROLES } from "@/lib/permissions"`.
+export { SECTION_ROLES };
 
 // Sections de l'application qu'un gérant peut accorder à un collaborateur.
 // La « key » correspond au 1er segment d'URL (ex. /candidats → "candidats").
@@ -33,39 +38,6 @@ export const SECTIONS: { key: string; label: string }[] = [
 
 export const SECTION_KEYS = SECTIONS.map((s) => s.key);
 
-// Rôles autorisés à accéder à chaque section (1er segment d'URL).
-// SOURCE DE VÉRITÉ du périmètre par rôle, alignée avec navItems (lib/navigation.ts).
-// NB : ce tableau est dupliqué dans auth.config.ts (compatible edge/middleware,
-// sans import) — garder les deux strictement alignés.
-export const SECTION_ROLES: Record<string, Role[]> = {
-  crm: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
-  kanban: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
-  taches: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
-  notifications: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
-  "leads-multicanal": ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
-  scoring: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
-  sms: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
-  ia: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
-  rapports: ["ADMIN", "RESPONSABLE_FORMATION"],
-  "portail-client": ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
-  candidats: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
-  "clients-pro": ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
-  formations: ["ADMIN", "RESPONSABLE_FORMATION"],
-  sessions: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
-  planning: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
-  salles: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
-  elearning: ["ADMIN", "RESPONSABLE_FORMATION", "FORMATEUR"],
-  signatures: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
-  automatisations: ["ADMIN", "RESPONSABLE_FORMATION"],
-  formateurs: ["ADMIN", "RESPONSABLE_FORMATION"],
-  comptabilite: ["ADMIN", "RESPONSABLE_FORMATION"],
-  facturation: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
-  bpf: ["ADMIN", "RESPONSABLE_FORMATION"],
-  qualiopi: ["ADMIN", "RESPONSABLE_FORMATION"],
-  rgpd: ["ADMIN", "RESPONSABLE_FORMATION"],
-  support: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
-};
-
 /** Le rôle a-t-il le droit d'accéder à cette section (avant filtrage permission) ? */
 export function roleAllowedInSection(role: Role, sectionKey: string): boolean {
   const allowed = SECTION_ROLES[sectionKey];
@@ -73,9 +45,9 @@ export function roleAllowedInSection(role: Role, sectionKey: string): boolean {
   return !allowed || allowed.includes(role);
 }
 
-// Rôles « personnel administratif » soumis au filtrage par section.
-// ADMIN = accès total ; FORMATEUR / APPRENANT = périmètre propre (non filtré ici).
-const STAFF_ROLES: Role[] = ["RESPONSABLE_FORMATION", "ASSISTANT"];
+// Rôles « personnel administratif » soumis au filtrage par section (= STAFF_FILTRES,
+// source unique). ADMIN = accès total ; FORMATEUR / APPRENANT = périmètre propre.
+const STAFF_ROLES: Role[] = STAFF_FILTRES;
 
 /** Un compte staff (hors ADMIN) a-t-il accès à la section donnée ? */
 export function canAccessSection(

@@ -124,7 +124,8 @@ Score de priorité = **Sévérité (poids 3/2/1)** pondéré par **inverse de l'
 | 2026-06-23 | Phase 1 · Fiches 01→09 | Audit pluridisciplinaire complet rédigé (`01`→`09`) : ~52 constats sourcés (9 critiques, ~24 majeures, ~13 mineures). |
 | 2026-06-23 | Phase 1 · Synthèse | `10_synthese.md` : registre consolidé, Top 10 actions, feuille de route 3 phases, avis global, 8 propositions de fonctionnalités. **Audit terminé.** |
 | 2026-06-23 | Phase 2A · Lot 1 | Correctifs (branche `chore/audit-phase-2a`) : crons authentifiés (OPS-01/02, SEC-02) ; unicité multi-tenant références + indicateurs Qualiopi (DB-01, DB-02, QLP-01) ; numérotation devis fiabilisée (BCK-01). `tsc` 0, 62 tests, base Neon synchronisée. |
-| 2026-06-23 | Phase 2A · Lot 2 | `SECRETS_ENCRYPTION_KEY` obligatoire en prod (SEC-04/OPS-04) ; CI durcie (base Postgres éphémère → test d'isolation tenant exécuté + `next build`) (QA-01/02). SEC-01 constaté **déjà mitigé** par le proxy `/api/public/piece/[id]` (résiduel blob privé → Phase 3). RLS PostgreSQL (ARC-01/DB-03) **différé en Phase 3** (migration dédiée). |
+| 2026-06-23 | Phase 2A · Lot 2 | `SECRETS_ENCRYPTION_KEY` obligatoire en prod (SEC-04/OPS-04) ; CI durcie (base Postgres éphémère → test d'isolation tenant exécuté + `next build`) (QA-01/02). SEC-01 constaté **déjà mitigé** par le proxy `/api/public/piece/[id]` (résiduel blob privé → Phase 3). RLS PostgreSQL (ARC-01/DB-03) **différé en Phase 3** (migration dédiée). **Phase 2A clôturée.** |
+| 2026-06-23 | Phase 2B (code) | TVA exonération OF dans les devis (MOA-02/BCK-04) ; devis accepté ≠ « payé » (BCK-02/MOA-03) ; **export de portabilité RGPD** (SEC-07) ; **source unique de la matrice rôles** `lib/section-roles.ts` (ARC-02, fin de la duplication). Constat : **aucun flux de création de facture** dans le code → MOA-01/04 (numérotation/immuabilité) **sans objet tant que la fonctionnalité n'existe pas**. `tsc` 0, 62 tests, build OK. |
 
 ---
 

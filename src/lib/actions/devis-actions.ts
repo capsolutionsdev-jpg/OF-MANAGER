@@ -15,7 +15,7 @@ const STATUTS = new Set(Object.values(FactureStatut) as string[]);
 
 /** Crée un devis (lignes, totaux HT/TVA/TTC, référence séquentielle par OF). */
 export async function createDevis(values: DevisFormValues): Promise<DevisResult> {
-  await requireSection("facturation");
+  const session = await requireSection("facturation");
   const db = await getTenantDb();
 
   const parsed = devisFormSchema.safeParse(values);
@@ -27,8 +27,16 @@ export async function createDevis(values: DevisFormValues): Promise<DevisResult>
     return { ok: false, error: "Indiquez une entreprise cliente ou un nom de client." };
   }
 
+  // TVA : un organisme exonéré (art. 261-4-4° du CGI) facture SANS TVA, quel que
+  // soit le taux saisi → on force 0 % (la mention légale s'affiche dans le document).
+  const org = await prisma.organisme.findUnique({
+    where: { id: session.user.organismeId! },
+    select: { assujettiTva: true },
+  });
+  const tva = org?.assujettiTva === false ? 0 : v.tva;
+
   const montantHT = v.lignes.reduce((s, l) => s + l.quantite * l.puHT, 0);
-  const montantTTC = montantHT * (1 + v.tva / 100);
+  const montantTTC = montantHT * (1 + tva / 100);
   const year = new Date().getFullYear();
 
   const baseData = {
@@ -38,7 +46,7 @@ export async function createDevis(values: DevisFormValues): Promise<DevisResult>
     objet: v.objet?.trim() || null,
     validUntil: v.validUntil ? new Date(v.validUntil) : null,
     montantHT,
-    tva: v.tva,
+    tva,
     montantTTC,
     lignesJson: v.lignes as unknown as Prisma.InputJsonValue,
     statut: FactureStatut.BROUILLON,
@@ -104,7 +112,10 @@ export async function acceptDevis(
       signataire: signataire.trim(),
       signatureUrl: signatureDataUrl,
       signatureIp: ip,
-      statut: FactureStatut.PAYEE,
+      // Un devis accepté n'est PAS payé : on garde « Envoyé » et l'acceptation est
+      // tracée par acceptedAt (le « payé » est réservé au cycle facture). Évite de
+      // gonfler l'encaissé dans les rapports (cf. BCK-02/MOA-03).
+      statut: FactureStatut.ENVOYEE,
     },
   });
   return { ok: true };
