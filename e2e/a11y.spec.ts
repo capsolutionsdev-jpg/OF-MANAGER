@@ -1,0 +1,31 @@
+import { test, expect } from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
+
+// Accessibilité : aucune violation de gravité « critique » sur les pages clés.
+// (les violations serious/moderate sont listées dans les logs pour le rapport.)
+function logViolations(label: string, violations: { id: string; impact?: string | null }[]) {
+  const summary = violations.map((v) => `${v.impact ?? "?"}:${v.id}`);
+  if (summary.length) console.log(`[a11y] ${label} →`, summary.join(", "));
+}
+
+test.describe("Accessibilité (axe-core)", () => {
+  test("page de connexion — aucune violation critique", async ({ page }) => {
+    await page.goto("/login");
+    const results = await new AxeBuilder({ page }).analyze();
+    logViolations("/login", results.violations);
+    const critical = results.violations.filter((v) => v.impact === "critical");
+    expect(critical, critical.map((v) => v.id).join(", ")).toHaveLength(0);
+  });
+
+  test("tableau de bord client — aucune violation critique", async ({ page }) => {
+    await page.goto("/login");
+    await page.fill("#email", "demo-secu@cap.fr");
+    await page.fill("#password", "CapSecu2026!");
+    await page.click('button[type="submit"]');
+    await page.waitForURL(/\/dashboard/, { timeout: 20_000 });
+    const results = await new AxeBuilder({ page }).analyze();
+    logViolations("/dashboard", results.violations);
+    const critical = results.violations.filter((v) => v.impact === "critical");
+    expect(critical, critical.map((v) => v.id).join(", ")).toHaveLength(0);
+  });
+});
