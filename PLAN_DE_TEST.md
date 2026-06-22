@@ -96,8 +96,36 @@ résultat attendu · **priorité** (P1/P2/P3). Nommage lisible
 **Livrables** : `PLAN_DE_TEST.md` (ce document), suites de tests par niveau,
 intégration CI, `RAPPORT_DE_TEST.md` (synthèse + bugs + Go/No-Go).
 
-## 9. Commande unique (cible)
+## 9. Commande unique
 ```
 npm run test        # unitaires + intégration (Vitest)
-npm run test:e2e    # Playwright (à ajouter)
+npm run test:e2e    # E2E + a11y + sécurité (Playwright)
 ```
+
+## 10. Activer les tests d'écriture / isolation (branche Neon de test)
+
+Les tests qui ÉCRIVENT en base (isolation multi-tenant, CRUD) sont **auto-ignorés**
+tant que `DATABASE_URL_TEST` n'est pas défini → ils ne touchent jamais la base de
+dev/prod. Pour les activer (≈ 2 min) :
+
+1. **Créer une branche Neon de test** (console Neon → *Branches* → *New branch*, ou
+   `neonctl branches create`). Copier sa chaîne de connexion.
+2. **Provisionner le schéma** sur la branche :
+   ```
+   DATABASE_URL_TEST="postgres://…branche-test…" npx prisma db push
+   ```
+3. **(optionnel) Seed** de 2 organismes + gérants + données :
+   ```
+   DATABASE_URL_TEST="postgres://…" node scripts/seed-test.cjs
+   ```
+   → `admin-a@test.local` / `admin-b@test.local` (mdp `Test1234!`).
+4. **Lancer les tests** : Vitest redirige Prisma vers cette base (cf.
+   `src/test/setup-db.ts`) et exécute alors l'isolation multi-tenant :
+   ```
+   DATABASE_URL_TEST="postgres://…" npm run test
+   ```
+
+Sous Windows PowerShell : `$env:DATABASE_URL_TEST="postgres://…"; npm run test`.
+
+> La branche Neon est jetable (`prisma migrate reset` / suppression libre) :
+> aucun risque pour la base principale.
