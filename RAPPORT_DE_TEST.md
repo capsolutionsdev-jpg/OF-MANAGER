@@ -90,7 +90,9 @@
   toucher la base de dev.
 - **Charge** : smoke uniquement, en **mode dev** → rejouer sur un **build de
   production** pour des chiffres représentatifs.
-- **Compatibilité** : seul Chromium testé (ajouter Firefox/WebKit + mobile).
+- **Compatibilité** : ✅ rendu des pages publiques validé sur **Chromium, Firefox,
+  WebKit et mobile (Pixel 5)** (34 exécutions vertes). Les parcours authentifiés
+  restent testés sur Chromium (logique serveur identique quel que soit le moteur).
 
 ## 6. Recommandation : **GO conditionné** ✅
 

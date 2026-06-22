@@ -14,7 +14,16 @@ export default defineConfig({
     baseURL: "http://localhost:3100",
     trace: "retain-on-failure",
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  projects: [
+    // Chromium : suite complète (smoke, auth, a11y, sécurité).
+    { name: "chromium", use: { ...devices["Desktop Chrome"] } },
+    // Compatibilité de RENDU : uniquement les tests @compat (pages publiques,
+    // sans connexion) → on évite de multiplier les logins (session unique +
+    // rate-limit) tout en couvrant Firefox, WebKit et mobile.
+    { name: "firefox", use: { ...devices["Desktop Firefox"] }, grep: /@compat/ },
+    { name: "webkit", use: { ...devices["Desktop Safari"] }, grep: /@compat/ },
+    { name: "mobile-chrome", use: { ...devices["Pixel 5"] }, grep: /@compat/ },
+  ],
   webServer: {
     command: "npm run dev",
     url: "http://localhost:3100/login",

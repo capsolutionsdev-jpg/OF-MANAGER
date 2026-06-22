@@ -17,7 +17,7 @@ function logViolations(
 }
 
 test.describe("Accessibilité (axe-core)", () => {
-  test("page de connexion — aucune violation critique", async ({ page }) => {
+  test("page de connexion — aucune violation critique @compat", async ({ page }) => {
     await page.goto("/login");
     const results = await new AxeBuilder({ page }).analyze();
     logViolations("/login", results.violations);
