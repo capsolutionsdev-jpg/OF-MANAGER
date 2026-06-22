@@ -91,8 +91,16 @@ export function buildVariables(
     session_reference: s.reference ?? "—",
     date_debut: d(s.dateDebut),
     date_fin: d(s.dateFin),
+    dates_session:
+      s.dateDebut.toDateString() === s.dateFin.toDateString()
+        ? `le ${d(s.dateDebut)}`
+        : `du ${d(s.dateDebut)} au ${d(s.dateFin)}`,
     horaires: s.horaires ?? "—",
     lieu: s.lieu ?? "—",
+    // Diplôme SSIAP détenu (attestation de recyclage / remise à niveau)
+    ssiap_niveau: c.ssiapNiveau ? String(c.ssiapNiveau) : "1",
+    ssiap_numero: c.ssiapDiplomeNumero ?? "—",
+    ssiap_date: d(c.ssiapDiplomeDate),
     // Divers
     date_jour: new Date().toLocaleDateString("fr-FR"),
   };

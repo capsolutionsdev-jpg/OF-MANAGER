@@ -22,6 +22,16 @@ export function toCsv<T>(rows: T[], columns: CsvColumn<T>[]): string {
   return head + "\r\n" + body;
 }
 
+/** Variante CSV à partir d'une matrice déjà aplatie (en-tête + lignes). */
+export function toCsvMatrix(
+  header: string[],
+  rows: (string | number | null)[][],
+): string {
+  const head = header.map(esc).join(";");
+  const body = rows.map((r) => r.map(esc).join(";")).join("\r\n");
+  return head + "\r\n" + body;
+}
+
 /** Réponse HTTP de téléchargement CSV (BOM pour ouverture directe dans Excel). */
 export function csvResponse(filename: string, csv: string): Response {
   return new Response("﻿" + csv, {

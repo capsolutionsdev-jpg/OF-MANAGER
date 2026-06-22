@@ -16,6 +16,7 @@ const fmt = (d: Date) => d.toLocaleDateString("fr-FR");
 
 type Counts = {
   convocations: number;
+  rappels: number;
   convocationsExamen: number;
   attestationsEntree: number;
   satisfactions: number;
@@ -33,6 +34,7 @@ export async function runAutomations(): Promise<Counts> {
   const base = appBaseUrl();
   const counts: Counts = {
     convocations: 0,
+    rappels: 0,
     convocationsExamen: 0,
     attestationsEntree: 0,
     satisfactions: 0,
@@ -151,6 +153,39 @@ ${org.representant} — ${org.name}`,
         data: { convocationSentAt: new Date() },
       });
       counts.convocations++;
+    }
+
+    // ── 1ter) RAPPEL J-1 (signé, 24h avant le début, pas déjà envoyé) ──
+    const rappelRule = auto("rappel", true);
+    const dans24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    if (
+      rappelRule.on &&
+      i.signedAt &&
+      !i.rappelSentAt &&
+      s.dateDebut >= now &&
+      s.dateDebut <= dans24h
+    ) {
+      const subject = `Rappel — votre formation « ${f.titre} » commence demain`;
+      const body = `Bonjour ${prenom},
+
+Petit rappel : votre formation « ${f.titre} » débute le ${fmt(s.dateDebut)}${s.horaires ? ` (${s.horaires})` : ""}${s.lieu ? `, à ${s.lieu}` : ""}.
+
+Merci de vous présenter à l'heure, muni(e) d'une pièce d'identité.
+
+À demain,
+${org.representant} — ${org.name}`;
+      await logAndSend({ to, subject, body, sessionId: s.id });
+      await maybeSms(
+        rappelRule.channel,
+        i.candidat.telephone,
+        rappelRule.body ||
+          `Rappel : « ${f.titre} » débute demain ${fmt(s.dateDebut)}${s.horaires ? ` (${s.horaires})` : ""}${s.lieu ? ` à ${s.lieu}` : ""}. ${org.name}`,
+      );
+      await prisma.inscription.update({
+        where: { id: i.id },
+        data: { rappelSentAt: new Date() },
+      });
+      counts.rappels++;
     }
 
     // ── 1bis) CONVOCATION À L'EXAMEN (signé, J-7 avant la fin, mail séparé + PDF) ──

@@ -73,6 +73,9 @@ export default async function ModifierCandidatPage({
             cnapsStatut: c.cnapsStatut ?? "",
             carteProNumero: c.carteProNumero ?? "",
             carteProValidite: c.carteProValidite ? c.carteProValidite.toISOString().slice(0, 10) : "",
+            ssiapNiveau: c.ssiapNiveau ? String(c.ssiapNiveau) : "",
+            ssiapDiplomeNumero: c.ssiapDiplomeNumero ?? "",
+            ssiapDiplomeDate: c.ssiapDiplomeDate ? c.ssiapDiplomeDate.toISOString().slice(0, 10) : "",
             situationHandicap: c.situationHandicap ?? false,
             besoinsAdaptation: c.besoinsAdaptation ?? "",
           }}

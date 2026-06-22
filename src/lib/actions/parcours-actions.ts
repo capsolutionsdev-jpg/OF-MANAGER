@@ -55,12 +55,20 @@ Pour finaliser votre dossier, merci de compléter vos informations et de signer 
 
 ${link}
 
-Ce lien vous est personnel. À l'issue, vous recevrez une copie de vos documents signés.
+Vous trouverez ci-joint le programme de la formation. Ce lien vous est personnel ; à l'issue, vous recevrez une copie de vos documents signés.
 
 Cordialement,
 ${org.representant} — ${org.name}`;
 
-  const res = await sendEmail({ to: insc.candidat.email, subject, body });
+  const progPdf = await buildSingleDocPdf(inscriptionId, "PROGRAMME");
+  const res = await sendEmail({
+    to: insc.candidat.email,
+    subject,
+    body,
+    attachments: progPdf
+      ? [{ name: "Programme-formation.pdf", content: toBase64(progPdf.data) }]
+      : undefined,
+  });
   await prisma.emailLog.create({
     data: {
       organismeId: insc.organismeId,
@@ -450,20 +458,22 @@ ${org.representant} — ${org.name}`;
 
 Bienvenue chez ${org.name} ! Nous avons le plaisir de vous confirmer votre inscription à la formation « ${s.formation.titre} », du ${f(s.dateDebut)} au ${f(s.dateFin)}${s.horaires ? ` (${s.horaires})` : ""}${s.lieu ? `, à ${s.lieu}` : ""}.
 
-Vous trouverez ci-joint votre convocation (PDF). Merci de vous présenter muni(e) d'une pièce d'identité.
+Vous trouverez ci-joint votre convocation et le programme de la formation (PDF). Merci de vous présenter muni(e) d'une pièce d'identité.
 
 Toute l'équipe vous souhaite une excellente formation.
 
 Cordialement,
 ${org.representant} — ${org.name}`;
     const convPdf = await buildSingleDocPdf(insc.id, "CONVOCATION");
+    const progPdf = await buildSingleDocPdf(insc.id, "PROGRAMME");
     const resConv = await sendEmail({
       to: insc.candidat.email,
       subject: subjectConv,
       body: bodyConv,
-      attachments: convPdf
-        ? [{ name: "Convocation.pdf", content: toBase64(convPdf.data) }]
-        : undefined,
+      attachments: [
+        ...(convPdf ? [{ name: "Convocation.pdf", content: toBase64(convPdf.data) }] : []),
+        ...(progPdf ? [{ name: "Programme-formation.pdf", content: toBase64(progPdf.data) }] : []),
+      ],
     });
     await prisma.emailLog.create({
       data: {

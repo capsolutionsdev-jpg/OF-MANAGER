@@ -37,36 +37,40 @@
 - **Performance (smoke-load)** : `/login`, 10 connexions / 10 s → 150 requêtes,
   **0 erreur**, ~14 req/s, latence p99 ≈ 756 ms *(mode dev, indicatif)*.
 
-## 3. Bugs détectés (par sévérité)
+## 3. Bugs détectés (par sévérité) — **tous corrigés**
 
-### 🟠 BUG-01 — Contraste de couleur insuffisant (tableau de bord) · **Majeur**
+### 🟠 BUG-01 — Contraste de couleur insuffisant (tableau de bord) · **Majeur** · ✅ CORRIGÉ
 - **Repro** : se connecter (client) → `/dashboard` → scan axe-core.
 - **Attendu** : contraste texte/fond conforme WCAG 2.1 AA (≥ 4.5:1).
-- **Obtenu** : violation axe `color-contrast` (gravité *serious*) sur certains
-  textes secondaires.
-- **Env** : Chromium, dashboard tenant.
-- **Correctif** : assombrir `--muted-foreground` / libellés secondaires sur les
-  surfaces concernées.
+- **Obtenu (avant)** : violation axe `color-contrast` (gravité *serious*) sur les
+  textes secondaires (`text-muted-foreground`).
+- **Cause** : `--muted-foreground` trop clair — défini par défaut dans
+  `globals.css` **et surchargé par chaque design** (`lib/themes.ts`). Le tenant
+  de test `demo-secu` utilise le design `enterprise` (#7a8597 ≈ 3,7:1).
+- **Correctif** : `--muted-foreground` assombri dans `:root` (#5c5344) **et** dans
+  les skins clairs fautifs (enterprise, mobile, editorial, humaniste).
+- **Vérif** : axe `/dashboard` → **0 violation** (color-contrast disparu).
 
-### 🟡 BUG-02 — Champs texte sans longueur maximale · **Mineur**
+### 🟡 BUG-02 — Champs texte sans longueur maximale · **Mineur** · ✅ CORRIGÉ
 - **Repro** : `candidatFormSchema.safeParse({ nom: "x".repeat(5000), … })`.
-- **Attendu** : rejet au-delà d'une borne raisonnable (ex. 200 car.).
-- **Obtenu** : accepté (aucune borne max) → risque d'abus / stockage.
-- **Correctif** : ajouter `.max(...)` aux validateurs (nom, prénom, adresse…).
+- **Correctif** : `.max(...)` ajouté aux validateurs `candidat.ts` et
+  `public-inscription.ts` (nom/prénom 120, e-mail 190, texte libre 500).
+- **Vérif** : test unitaire mis à jour (5000 car. → rejet ; 120 car. → accepté).
 
-### 🟡 BUG-03 — `<h1>` absent sur `/login` · **Mineur**
+### 🟡 BUG-03 — `<h1>` absent sur `/login` · **Mineur** · ✅ CORRIGÉ
 - **Repro** : axe sur `/login` → `page-has-heading-one` (moderate).
-- **Attendu** : un titre de niveau 1 par page (structure / lecteurs d'écran).
-- **Correctif** : ajouter un `<h1>` (visuellement ou en `sr-only`).
+- **Correctif** : `<h1 class="sr-only">Connexion à …</h1>` ajouté (le titre mobile
+  conditionnel passe en `<span>` pour conserver un seul `h1`).
+- **Vérif** : axe `/login` → **0 violation**.
 
-### 🟡 BUG-04 — Landmark non unique (tableau de bord) · **Mineur**
+### 🟡 BUG-04 — Landmark non unique (tableau de bord) · **Mineur** · ✅ CORRIGÉ
 - **Repro** : axe sur `/dashboard` → `landmark-unique` (moderate).
-- **Correctif** : différencier les régions (aria-label) dupliquées.
+- **Correctif** : `aria-label` distincts sur les `<nav>` (« Navigation
+  principale », « Liens légaux », « Navigation mobile »).
+- **Vérif** : axe `/dashboard` → **0 violation**.
 
-### ⚪ BUG-05 — `next/image` sans `sizes` (logo) · **Cosmétique**
-- **Repro** : console navigateur à l'affichage du logo.
-- **Obtenu** : avertissement de performance Next.
-- **Correctif** : ajouter `sizes` sur les `<Image fill>`.
+### ⚪ BUG-05 — `next/image` sans `sizes` (logo) · **Cosmétique** · ✅ CORRIGÉ
+- **Correctif** : `sizes="224px"` ajouté au `<Image fill>` du logo (`/login`).
 
 > **Aucune fuite inter-tenant, aucun contournement d'autorisation, aucune
 > injection SQL/XSS réussie** n'a été détecté.
@@ -92,7 +96,8 @@
 
 Le socle est sain : **0 bug bloquant ou critique**, sécurité et autorisations
 validées, logique métier critique couverte. Avant lancement public :
-1. Corriger **BUG-01** (contraste) et les mineurs **BUG-02/03/04**.
+1. ~~Corriger **BUG-01** (contraste) et les mineurs **BUG-02/03/04**.~~ ✅ **FAIT**
+   (BUG-01→05 corrigés ; axe `/login` et `/dashboard` = 0 violation ; 62 tests verts).
 2. Définir les env de prod : `SECRETS_ENCRYPTION_KEY`, `UPSTASH_*`, `STRIPE_*`.
 3. Provisionner la branche Neon de test et activer les tests d'écriture/isolation.
 4. Rejouer le load-test sur build de production.

@@ -5,9 +5,9 @@ import {
   Hourglass,
   AlertCircle,
   Receipt,
-  Download,
 } from "lucide-react";
 import { requireSection } from "@/lib/section-guard";
+import { ExportMenu } from "@/components/export-menu";
 import { getTenantDb } from "@/lib/tenant";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -277,12 +277,7 @@ export default async function ComptabilitePage({
             </Link>
           ))}
         </div>
-        <a
-          href="/comptabilite/export"
-          className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm font-medium hover:bg-muted"
-        >
-          <Download className="h-4 w-4" /> Exporter (CSV)
-        </a>
+        <ExportMenu href="/comptabilite/export" />
       </PageHeader>
 
       {/* Indicateurs clés */}

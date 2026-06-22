@@ -67,7 +67,7 @@
   --secondary: #efe9dd; /* surface sable soutenue */
   --secondary-foreground: #2a2620;
   --muted: #efe9dd;
-  --muted-foreground: #6b6256; /* taupe */
+  --muted-foreground: #5c5344; /* taupe assombri — contraste AA (>= 4.5:1) sur sable/blanc */
   --accent: #eceffa; /* teinte cobalt (survols) */
   --accent-foreground: #21429e;
   --destructive: #c2410c;

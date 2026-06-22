@@ -3,9 +3,17 @@ import AxeBuilder from "@axe-core/playwright";
 
 // Accessibilité : aucune violation de gravité « critique » sur les pages clés.
 // (les violations serious/moderate sont listées dans les logs pour le rapport.)
-function logViolations(label: string, violations: { id: string; impact?: string | null }[]) {
+function logViolations(
+  label: string,
+  violations: { id: string; impact?: string | null; nodes?: { target: unknown[] }[] }[],
+) {
   const summary = violations.map((v) => `${v.impact ?? "?"}:${v.id}`);
   if (summary.length) console.log(`[a11y] ${label} →`, summary.join(", "));
+  for (const v of violations) {
+    for (const n of v.nodes ?? []) {
+      console.log(`[a11y]   ${v.id} @ ${JSON.stringify(n.target)}`);
+    }
+  }
 }
 
 test.describe("Accessibilité (axe-core)", () => {

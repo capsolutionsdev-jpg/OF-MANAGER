@@ -140,7 +140,7 @@ export default async function AppLayout({
       <footer className="mt-8 border-t bg-card/40">
         <div className="mx-auto flex max-w-[1500px] flex-col gap-2 px-4 py-5 text-xs text-muted-foreground md:flex-row md:items-center md:justify-between md:px-6">
           <p>{legalLine || branding.nom}</p>
-          <nav className="flex flex-wrap items-center gap-x-4 gap-y-1">
+          <nav aria-label="Liens légaux" className="flex flex-wrap items-center gap-x-4 gap-y-1">
             <Link href="/mentions-legales" className="hover:text-foreground hover:underline">
               Mentions légales
             </Link>

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowLeft, Pencil, Users, ClipboardCheck, FileText, UserCog, CreditCard, Award, Download, CheckCircle2 } from "lucide-react";
 import { getTenantDb } from "@/lib/tenant";
 import { Button } from "@/components/ui/button";
+import { ExportMenu } from "@/components/export-menu";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -375,10 +376,13 @@ export default async function SessionDetailPage({
 
       {/* Participants */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex-row items-center justify-between space-y-0">
           <CardTitle className="flex items-center gap-2 text-base">
             <Users className="h-4 w-4" /> Participants ({s.inscriptions.length})
           </CardTitle>
+          {s.inscriptions.length > 0 && (
+            <ExportMenu href={`/sessions/${s.id}/candidats/export`} label="Exporter la liste" size="sm" />
+          )}
         </CardHeader>
         <CardContent className="space-y-6">
           {s.inscriptions.length === 0 ? (

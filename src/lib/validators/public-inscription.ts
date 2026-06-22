@@ -1,13 +1,14 @@
 import { z } from "zod";
 import { FinancementType } from "@prisma/client";
 
-const optionalText = z.string().trim().optional().or(z.literal(""));
+// Texte optionnel borné (anti-abus : pas de saisie démesurée côté public).
+const optionalText = z.string().trim().max(500, "Texte trop long").optional().or(z.literal(""));
 
 export const publicInscriptionSchema = z.object({
-  sessionId: z.string().trim().min(1, "Choisissez une session"),
-  nom: z.string().trim().min(1, "Le nom est requis"),
-  prenom: z.string().trim().min(1, "Le prénom est requis"),
-  email: z.string().trim().email("Email invalide"),
+  sessionId: z.string().trim().min(1, "Choisissez une session").max(50),
+  nom: z.string().trim().min(1, "Le nom est requis").max(120, "Nom trop long (120 max)"),
+  prenom: z.string().trim().min(1, "Le prénom est requis").max(120, "Prénom trop long (120 max)"),
+  email: z.string().trim().email("Email invalide").max(190, "Email trop long"),
   telephone: optionalText,
   dateNaissance: optionalText,
   ville: optionalText,

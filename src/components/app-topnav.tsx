@@ -99,7 +99,7 @@ export function AppTopNav({
         </Link>
 
         {/* Navigation (desktop) : liens directs + un menu par catégorie */}
-        <nav className="hidden flex-1 items-center gap-0.5 lg:flex">
+        <nav aria-label="Navigation principale" className="hidden flex-1 items-center gap-0.5 lg:flex">
           {standalone.map((it) => (
             <Link key={it.href} href={it.href} className={linkCls(isActive(it.href))}>
               {it.label}

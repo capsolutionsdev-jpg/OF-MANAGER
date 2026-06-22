@@ -40,9 +40,12 @@ describe("candidatFormSchema — valeurs aux limites", () => {
   it("accepte un e-mail à la frontière (a@b.co)", () => {
     expect(candidatFormSchema.safeParse({ ...valide, email: "a@b.co" }).success).toBe(true);
   });
-  it("DOCUMENTE l'absence de borne max sur le nom (5000 car. acceptés)", () => {
-    // Aucune longueur maximale n'est définie → à signaler comme amélioration mineure.
+  it("refuse un nom démesuré (borne max — BUG-02 corrigé)", () => {
+    // Une longueur maximale est désormais imposée (anti-abus / stockage).
     const r = candidatFormSchema.safeParse({ ...valide, nom: "x".repeat(5000) });
-    expect(r.success).toBe(true);
+    expect(r.success).toBe(false);
+  });
+  it("accepte un nom à la borne max (120 car.)", () => {
+    expect(candidatFormSchema.safeParse({ ...valide, nom: "x".repeat(120) }).success).toBe(true);
   });
 });

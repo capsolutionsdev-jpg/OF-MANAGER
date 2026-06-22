@@ -79,6 +79,9 @@ export function CandidatForm({
       cnapsStatut: "",
       carteProNumero: "",
       carteProValidite: "",
+      ssiapNiveau: "",
+      ssiapDiplomeNumero: "",
+      ssiapDiplomeDate: "",
       situationHandicap: false,
       besoinsAdaptation: "",
       ...defaultValues,
@@ -306,6 +309,31 @@ export function CandidatForm({
           <div className="grid gap-2">
             <Label htmlFor="carteProValidite">Validité carte pro</Label>
             <Input id="carteProValidite" type="date" {...register("carteProValidite")} />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Diplôme SSIAP (recyclage / remise à niveau)</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-2">
+            <Label htmlFor="ssiapNiveau">Niveau du diplôme</Label>
+            <select id="ssiapNiveau" className={selectClass} {...register("ssiapNiveau")}>
+              <option value="">— Non concerné —</option>
+              <option value="1">SSIAP 1</option>
+              <option value="2">SSIAP 2</option>
+              <option value="3">SSIAP 3</option>
+            </select>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="ssiapDiplomeNumero">N° du diplôme</Label>
+            <Input id="ssiapDiplomeNumero" placeholder="091-9119-1-2018-00246" {...register("ssiapDiplomeNumero")} />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="ssiapDiplomeDate">Date d&apos;obtention</Label>
+            <Input id="ssiapDiplomeDate" type="date" {...register("ssiapDiplomeDate")} />
           </div>
         </CardContent>
       </Card>

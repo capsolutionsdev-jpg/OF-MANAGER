@@ -21,6 +21,7 @@ export const AUTOMATION_VARS = [
 
 export const AUTOMATION_EVENTS: AutomationEvent[] = [
   { key: "convocation", label: "Convocation", quand: "Quelques jours avant le début (délai configurable)", defaultOn: true, smsable: true },
+  { key: "rappel", label: "Rappel J-1", quand: "24 h avant le début de la formation", defaultOn: true, smsable: true },
   { key: "convocation_examen", label: "Convocation à l'examen", quand: "Avant l'examen — formations à examen (TFP APS)", defaultOn: true, smsable: true },
   { key: "attestation_entree", label: "Attestation d'entrée", quand: "Le 1er jour de la session", defaultOn: true, smsable: false },
   { key: "positionnement", label: "Test de positionnement", quand: "Le 1er jour (lien en ligne)", defaultOn: true, smsable: true },

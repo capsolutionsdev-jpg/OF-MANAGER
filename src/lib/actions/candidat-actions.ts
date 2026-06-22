@@ -40,6 +40,10 @@ function toData(v: CandidatFormValues) {
     cnapsStatut: v.cnapsStatut ? v.cnapsStatut : null,
     carteProNumero: clean(v.carteProNumero),
     carteProValidite: v.carteProValidite ? new Date(v.carteProValidite) : null,
+    ssiapNiveau:
+      v.ssiapNiveau && /^[123]$/.test(v.ssiapNiveau.trim()) ? Number(v.ssiapNiveau.trim()) : null,
+    ssiapDiplomeNumero: clean(v.ssiapDiplomeNumero),
+    ssiapDiplomeDate: v.ssiapDiplomeDate ? new Date(v.ssiapDiplomeDate) : null,
     situationHandicap: !!v.situationHandicap,
     besoinsAdaptation: clean(v.besoinsAdaptation),
   };

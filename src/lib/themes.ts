@@ -149,7 +149,7 @@ export const DESIGNS: Design[] = [
       "--secondary": "#ece5d6",
       "--secondary-foreground": "#191712",
       "--muted": "#ece5d6",
-      "--muted-foreground": "#7a736a",
+      "--muted-foreground": "#5d564c", /* assombri — contraste AA */
       "--border": "#d6cfc1",
       "--input": "#d6cfc1",
       "--radius": "0.25rem",
@@ -230,7 +230,7 @@ export const DESIGNS: Design[] = [
       "--secondary": "#f3ede2",
       "--secondary-foreground": "#2d2820",
       "--muted": "#f3ede2",
-      "--muted-foreground": "#7c7468",
+      "--muted-foreground": "#5f594e", /* assombri — contraste AA */
       "--border": "#efe6d8",
       "--input": "#efe6d8",
       "--radius": "1.4rem",
@@ -257,7 +257,7 @@ export const DESIGNS: Design[] = [
       "--secondary": "#e7ecf2",
       "--secondary-foreground": "#1f2733",
       "--muted": "#f7f9fc",
-      "--muted-foreground": "#7a8597",
+      "--muted-foreground": "#59647a", /* assombri — contraste AA */
       "--border": "#d8dee7",
       "--input": "#d8dee7",
       "--radius": "0.4rem",
@@ -311,7 +311,7 @@ export const DESIGNS: Design[] = [
       "--secondary": "#e8ecff",
       "--secondary-foreground": "#1f1b3a",
       "--muted": "#eef0fb",
-      "--muted-foreground": "#7a7f95",
+      "--muted-foreground": "#5b6076", /* assombri — contraste AA */
       "--border": "#e3e3f4",
       "--input": "#e3e3f4",
       "--radius": "1.25rem",
