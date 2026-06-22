@@ -56,6 +56,9 @@ export default async function LoginPage({
       data-design={dataDesign}
       style={brandStyle}
     >
+      {/* Titre de page pour lecteurs d'écran (structure / a11y) */}
+      <h1 className="sr-only">Connexion à {brand.nom}</h1>
+
       {/* Panneau de marque (encre chaude) — visible en grand écran */}
       <div
         className="relative hidden flex-col justify-between overflow-hidden p-10 text-white lg:flex"
@@ -129,12 +132,13 @@ export default async function LoginPage({
                   src="/ofmanager-logo.png"
                   alt={brand.nom}
                   fill
+                  sizes="224px"
                   className="object-contain"
                   priority
                 />
               )}
             </div>
-            {brand.logoUrl && <h1 className="text-lg font-bold">{brand.nom}</h1>}
+            {brand.logoUrl && <span className="text-lg font-bold">{brand.nom}</span>}
           </div>
 
           {reason === "autre-appareil" && (

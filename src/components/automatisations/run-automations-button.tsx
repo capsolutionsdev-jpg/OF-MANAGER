@@ -21,6 +21,7 @@ export function RunAutomationsButton() {
       const c = res.counts;
       const total =
         c.convocations +
+        c.rappels +
         c.attestationsEntree +
         c.satisfactions +
         c.docsFin +
@@ -31,6 +32,7 @@ export function RunAutomationsButton() {
       } else {
         const parts = [
           c.convocations && `${c.convocations} convocation(s)`,
+          c.rappels && `${c.rappels} rappel(s) J-1`,
           c.attestationsEntree && `${c.attestationsEntree} attestation(s) d'entrée`,
           c.satisfactions && `${c.satisfactions} enquête(s) satisfaction`,
           c.docsFin && `${c.docsFin} docs de fin`,

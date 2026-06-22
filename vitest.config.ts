@@ -5,6 +5,8 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["src/**/*.{test,spec}.ts"],
+    // Redirige Prisma vers la base de test (DATABASE_URL_TEST) avant tout import.
+    setupFiles: ["./src/test/setup-db.ts"],
   },
   resolve: {
     alias: {

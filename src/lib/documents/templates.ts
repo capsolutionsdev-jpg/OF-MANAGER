@@ -368,6 +368,38 @@ export const DOCUMENTS: Record<string, { label: string; html: string }> = {
     ),
   },
 
+  ATTESTATION_RECYCLAGE: {
+    label: "Attestation de recyclage SSIAP",
+    html: wrap(
+      "Recyclage du Diplôme d'Agent de Service de Sécurité Incendie et d'Assistance à Personnes SSIAP{{ssiap_niveau}}",
+      `<p>Vu le diplôme de SSIAP{{ssiap_niveau}} N° {{ssiap_numero}}, obtenu le {{ssiap_date}},
+      M. <strong>{{nom_complet}}</strong>, né(e) le {{date_naissance}} à {{lieu_naissance}} ({{pays_naissance}}),
+      a recyclé son diplôme d'agent des services de sécurité incendie et d'assistance à personnes,
+      {{dates_session}}, tel que défini dans l'arrêté du 02 mai 2005 modifié, relatif aux missions,
+      à l'emploi et à la qualification du personnel permanent des Services de sécurité incendie des
+      Établissements Recevant du Public et des Immeubles de Grande Hauteur.</p>
+      <p class="mt">Délivrée à M. <strong>{{nom_complet}}</strong>, la présente attestation de recyclage.</p>
+      <p class="mt">Fait à {{organisme_ville}}, le {{date_jour}}.</p>
+      <div class="org-stamp-block"><div class="sig-label">{{organisme_representant}} — Directeur d'établissement</div>${stamp}</div>`,
+    ),
+  },
+
+  ATTESTATION_REMISE_NIVEAU: {
+    label: "Attestation de remise à niveau SSIAP",
+    html: wrap(
+      "Remise à niveau du Diplôme d'Agent de Service de Sécurité Incendie et d'Assistance à Personnes SSIAP{{ssiap_niveau}}",
+      `<p>Vu le diplôme de SSIAP{{ssiap_niveau}} N° {{ssiap_numero}}, obtenu le {{ssiap_date}},
+      M. <strong>{{nom_complet}}</strong>, né(e) le {{date_naissance}} à {{lieu_naissance}} ({{pays_naissance}}),
+      a effectué une remise à niveau de son diplôme d'agent des services de sécurité incendie et
+      d'assistance à personnes, {{dates_session}}, tel que défini dans l'arrêté du 02 mai 2005 modifié,
+      relatif aux missions, à l'emploi et à la qualification du personnel permanent des Services de
+      sécurité incendie des Établissements Recevant du Public et des Immeubles de Grande Hauteur.</p>
+      <p class="mt">Délivrée à M. <strong>{{nom_complet}}</strong>, la présente attestation de remise à niveau.</p>
+      <p class="mt">Fait à {{organisme_ville}}, le {{date_jour}}.</p>
+      <div class="org-stamp-block"><div class="sig-label">{{organisme_representant}} — Directeur d'établissement</div>${stamp}</div>`,
+    ),
+  },
+
   CERTIFICAT_REALISATION: {
     label: "Certificat de réalisation",
     html: wrap(
@@ -798,6 +830,8 @@ export const DOCUMENT_MENU = [
   "REMISE_SUPPORTS",
   "ATTESTATION_FIN",
   "ATTESTATION_REUSSITE",
+  "ATTESTATION_RECYCLAGE",
+  "ATTESTATION_REMISE_NIVEAU",
   "CERTIFICAT_REALISATION",
   "SATISFACTION_STAGIAIRE",
   "SATISFACTION_ENTREPRISE",

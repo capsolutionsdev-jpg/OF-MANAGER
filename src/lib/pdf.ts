@@ -32,16 +32,22 @@ const PDF_OPTS = {
   margin: { top: "12mm", bottom: "12mm", left: "12mm", right: "12mm" },
 };
 
+export type PdfOptions = { landscape?: boolean };
+
 /** Rend plusieurs documents HTML en PDF dans une seule session de navigateur. */
-export async function htmlToPdfMany(htmls: string[]): Promise<Uint8Array[]> {
+export async function htmlToPdfMany(
+  htmls: string[],
+  opts: PdfOptions = {},
+): Promise<Uint8Array[]> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const browser: any = await launchBrowser();
   try {
+    const pdfOpts = { ...PDF_OPTS, landscape: !!opts.landscape };
     const out: Uint8Array[] = [];
     for (const html of htmls) {
       const page = await browser.newPage();
       await page.setContent(html, { waitUntil: "networkidle0" });
-      out.push(new Uint8Array(await page.pdf(PDF_OPTS)));
+      out.push(new Uint8Array(await page.pdf(pdfOpts)));
       await page.close();
     }
     return out;
@@ -51,6 +57,6 @@ export async function htmlToPdfMany(htmls: string[]): Promise<Uint8Array[]> {
 }
 
 /** Rend un seul document HTML en PDF. */
-export async function htmlToPdf(html: string): Promise<Uint8Array> {
-  return (await htmlToPdfMany([html]))[0];
+export async function htmlToPdf(html: string, opts: PdfOptions = {}): Promise<Uint8Array> {
+  return (await htmlToPdfMany([html], opts))[0];
 }

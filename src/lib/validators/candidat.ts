@@ -1,13 +1,14 @@
 import { z } from "zod";
 import { FinancementType, CandidatStatut, CnapsStatut } from "@prisma/client";
 
-const optionalText = z.string().trim().optional().or(z.literal(""));
+// Texte optionnel borné (anti-abus : pas de saisie démesurée).
+const optionalText = z.string().trim().max(500, "Texte trop long").optional().or(z.literal(""));
 
 export const candidatFormSchema = z.object({
   // Informations personnelles
-  nom: z.string().trim().min(1, "Le nom est requis"),
-  prenom: z.string().trim().min(1, "Le prénom est requis"),
-  email: z.string().trim().email("Email invalide"),
+  nom: z.string().trim().min(1, "Le nom est requis").max(120, "Nom trop long (120 max)"),
+  prenom: z.string().trim().min(1, "Le prénom est requis").max(120, "Prénom trop long (120 max)"),
+  email: z.string().trim().email("Email invalide").max(190, "Email trop long"),
   telephone: optionalText,
   dateNaissance: optionalText, // chaîne "AAAA-MM-JJ" issue de l'input date
   lieuNaissance: optionalText,
@@ -33,6 +34,10 @@ export const candidatFormSchema = z.object({
   cnapsStatut: z.nativeEnum(CnapsStatut).or(z.literal("")).optional(),
   carteProNumero: optionalText,
   carteProValidite: optionalText, // chaîne "AAAA-MM-JJ"
+  // Sécurité incendie : diplôme SSIAP détenu (recyclage / remise à niveau)
+  ssiapNiveau: optionalText, // "1" | "2" | "3" (converti en Int côté serveur)
+  ssiapDiplomeNumero: optionalText,
+  ssiapDiplomeDate: optionalText, // chaîne "AAAA-MM-JJ"
   // Accessibilité (Qualiopi ind. 26)
   situationHandicap: z.boolean().optional(),
   besoinsAdaptation: optionalText,

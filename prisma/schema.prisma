@@ -467,6 +467,11 @@ model Candidat {
   carteProNumero   String?      // n° de carte professionnelle (si déjà titulaire)
   carteProValidite DateTime?    // date de fin de validité de la carte pro
 
+  // ── Sécurité incendie : diplôme SSIAP détenu (recyclage / remise à niveau) ──
+  ssiapNiveau         Int?      // niveau du diplôme SSIAP détenu (1, 2 ou 3)
+  ssiapDiplomeNumero  String?   // n° du diplôme SSIAP (figure sur l'attestation de recyclage)
+  ssiapDiplomeDate    DateTime? // date d'obtention du diplôme SSIAP
+
   // ── Accessibilité (Qualiopi ind. 26) + RGPD ──
   situationHandicap Boolean   @default(false) // situation de handicap déclarée
   besoinsAdaptation String?   @db.Text // adaptations pédagogiques nécessaires
@@ -773,6 +778,8 @@ model Inscription {
   signatureDataUrl    String?   @db.Text // image PNG de la signature manuscrite (dessinée)
   docsCopieSentAt     DateTime? // copie des docs signés envoyée au candidat
   convocationSentAt   DateTime? // convocation envoyée
+  rappelSentAt        DateTime? // e-mail de rappel J-1 envoyé (24h avant le début)
+  attestationReussiteSentAt DateTime? // attestation de réussite envoyée (après « certifié »)
   attestationEntreeSentAt DateTime? // attestation d'entrée envoyée (J1)
   satisfactionToken   String?   @unique // lien enquête de satisfaction
   satisfactionSentAt  DateTime? // enquête de satisfaction envoyée (fin)

@@ -6,6 +6,7 @@ import {
   InscriptionStatut,
   PaiementStatut,
   CertificationResultat,
+  EmailStatut,
 } from "@prisma/client";
 import { getTenantDb } from "@/lib/tenant";
 import { auth } from "@/auth";
@@ -14,9 +15,10 @@ import {
   type InscriptionFormValues,
 } from "@/lib/validators/inscription";
 import { startParcours } from "@/lib/actions/parcours-actions";
-import { sendEmail } from "@/lib/email";
+import { sendEmail, toBase64 } from "@/lib/email";
 import { orgConfigFor } from "@/lib/org-identity";
 import { generateToken, appBaseUrl } from "@/lib/token";
+import { buildSingleDocPdf } from "@/lib/documents/build-pdf";
 
 export type ActionResult =
   | { ok: true; inscriptionId: string }
@@ -128,7 +130,13 @@ export async function setCertification(
 
   const insc = await db.inscription.findUnique({
     where: { id: inscriptionId },
-    select: { sessionId: true },
+    select: {
+      sessionId: true,
+      organismeId: true,
+      attestationReussiteSentAt: true,
+      candidat: { select: { prenom: true, email: true } },
+      session: { select: { formation: { select: { titre: true } } } },
+    },
   });
   if (!insc) return { ok: false, error: "Inscription introuvable." };
 
@@ -148,6 +156,45 @@ export async function setCertification(
       entityId: inscriptionId,
     },
   });
+
+  // Certifié → attestation de réussite + félicitations (une seule fois).
+  if (resultat === "CERTIFIE" && !insc.attestationReussiteSentAt) {
+    const org = await orgConfigFor(insc.organismeId);
+    const titre = insc.session.formation.titre;
+    const subject = `Félicitations — vous avez obtenu « ${titre} »`;
+    const body = `Bonjour ${insc.candidat.prenom},
+
+Toutes nos félicitations ! Vous avez satisfait aux épreuves d'évaluation et obtenu la certification « ${titre} ».
+
+Vous trouverez ci-joint votre attestation de réussite (PDF).
+
+Votre diplôme officiel vous sera transmis dès sa réception par nos services : nous vous enverrons un e-mail à ce moment-là pour organiser sa remise.
+
+Encore bravo, et à bientôt,
+${org.representant} — ${org.name}`;
+    const pdf = await buildSingleDocPdf(inscriptionId, "ATTESTATION_REUSSITE");
+    const res = await sendEmail({
+      to: insc.candidat.email,
+      subject,
+      body,
+      attachments: pdf ? [{ name: "Attestation-reussite.pdf", content: toBase64(pdf.data) }] : undefined,
+      organismeId: insc.organismeId,
+    });
+    await db.emailLog.create({
+      data: {
+        destinataire: insc.candidat.email,
+        sujet: subject,
+        corps: body,
+        statut: res.sent ? EmailStatut.ENVOYE : EmailStatut.EN_ATTENTE,
+        sentAt: res.sent ? new Date() : null,
+        sessionId: insc.sessionId,
+      },
+    });
+    await db.inscription.update({
+      where: { id: inscriptionId },
+      data: { attestationReussiteSentAt: new Date() },
+    });
+  }
 
   revalidatePath(`/sessions/${insc.sessionId}`);
   revalidatePath("/bpf");

@@ -1,5 +1,6 @@
-import { BarChart3, TrendingUp, Euro, FileText, Users, Download } from "lucide-react";
+import { BarChart3, TrendingUp, Euro, FileText, Users } from "lucide-react";
 import { getTenantDb } from "@/lib/tenant";
+import { ExportMenu } from "@/components/export-menu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { CRM_STAGE_ORDER, CRM_STAGE_LABELS } from "@/lib/validators/crm";
@@ -114,19 +115,10 @@ export default async function RapportsPage() {
         subtitle="Vue consolidée : conversion, prévisionnel, acquisition et revenus."
       >
         <div className="flex flex-wrap gap-2">
-          {[
-            { href: "/candidats/export", label: "Candidats" },
-            { href: "/sessions/export", label: "Sessions" },
-            { href: "/comptabilite/export", label: "Factures" },
-          ].map((x) => (
-            <a
-              key={x.href}
-              href={x.href}
-              className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm font-medium hover:bg-muted"
-            >
-              <Download className="h-4 w-4" /> {x.label}
-            </a>
-          ))}
+          <ExportMenu href="/candidats/export" label="Candidats" />
+          <ExportMenu href="/sessions/export" label="Sessions" />
+          <ExportMenu href="/comptabilite/export" label="Factures" />
+          <ExportMenu href="/rapports/pedagogique" label="Pédagogique" />
         </div>
       </PageHeader>
 

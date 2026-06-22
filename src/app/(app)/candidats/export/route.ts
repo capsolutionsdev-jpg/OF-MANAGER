@@ -1,13 +1,13 @@
 import { getTenantDb } from "@/lib/tenant";
 import { auth } from "@/auth";
-import { toCsv, csvResponse, dateStamp } from "@/lib/export-csv";
+import { exportResponse, buildSheet } from "@/lib/export";
 
 export const runtime = "nodejs";
 
 const STAFF = ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"];
 
-// Export CSV de tous les candidats de l'organisme (Excel FR).
-export async function GET() {
+// Export de tous les candidats de l'organisme (CSV / Excel / PDF).
+export async function GET(req: Request) {
   const session = await auth();
   if (!session?.user || !STAFF.includes(session.user.role as string)) {
     return new Response("Non autorisé", { status: 401 });
@@ -18,12 +18,13 @@ export async function GET() {
     include: { formationSouhaitee: { select: { titre: true } } },
   });
 
-  const csv = toCsv(rows, [
+  const sheet = buildSheet("Candidats", rows, [
     { header: "Nom", value: (r) => r.nom },
     { header: "Prénom", value: (r) => r.prenom },
     { header: "E-mail", value: (r) => r.email },
     { header: "Téléphone", value: (r) => r.telephone },
     { header: "Ville", value: (r) => r.ville },
+    { header: "Code postal", value: (r) => r.codePostal },
     { header: "Statut", value: (r) => r.statut },
     { header: "Étape CRM", value: (r) => r.crmStage },
     { header: "Formation souhaitée", value: (r) => r.formationSouhaitee?.titre },
@@ -32,5 +33,5 @@ export async function GET() {
     { header: "Créé le", value: (r) => r.createdAt.toLocaleDateString("fr-FR") },
   ]);
 
-  return csvResponse(`candidats-${dateStamp()}.csv`, csv);
+  return exportResponse({ req, basename: "candidats", title: "Liste des candidats", sheets: [sheet] });
 }

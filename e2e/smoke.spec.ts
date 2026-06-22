@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 // Smoke : l'application démarre et les pages publiques répondent (lecture seule).
-test.describe("Smoke — démarrage & pages publiques", () => {
+test.describe("Smoke — démarrage & pages publiques @compat", () => {
   test("la vitrine / charge", async ({ page }) => {
     await page.goto("/");
     await expect(page).toHaveTitle(/OFManager/i);

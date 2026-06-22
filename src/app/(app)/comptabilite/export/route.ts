@@ -1,6 +1,6 @@
 import { getTenantDb } from "@/lib/tenant";
 import { auth } from "@/auth";
-import { toCsv, csvResponse, dateStamp } from "@/lib/export-csv";
+import { exportResponse, buildSheet } from "@/lib/export";
 
 export const runtime = "nodejs";
 
@@ -8,8 +8,8 @@ const STAFF = ["ADMIN", "RESPONSABLE_FORMATION"];
 const fdate = (d: Date | null | undefined) => (d ? d.toLocaleDateString("fr-FR") : "");
 const eur = (d: { toString(): string }) => Number(d).toFixed(2).replace(".", ",");
 
-// Export CSV des factures de l'organisme (compta / Excel FR).
-export async function GET() {
+// Export comptable de l'organisme (CSV / Excel / PDF).
+export async function GET(req: Request) {
   const session = await auth();
   if (!session?.user || !STAFF.includes(session.user.role as string)) {
     return new Response("Non autorisé", { status: 401 });
@@ -20,7 +20,7 @@ export async function GET() {
     include: { entreprise: { select: { raisonSociale: true } } },
   });
 
-  const csv = toCsv(rows, [
+  const sheet = buildSheet("Factures", rows, [
     { header: "Référence", value: (r) => r.reference },
     { header: "Client", value: (r) => r.entreprise?.raisonSociale ?? "Particulier" },
     { header: "Émise le", value: (r) => fdate(r.dateEmission) },
@@ -31,5 +31,5 @@ export async function GET() {
     { header: "Payée le", value: (r) => fdate(r.datePaiement) },
   ]);
 
-  return csvResponse(`factures-${dateStamp()}.csv`, csv);
+  return exportResponse({ req, basename: "factures", title: "Export comptable — factures", sheets: [sheet] });
 }
