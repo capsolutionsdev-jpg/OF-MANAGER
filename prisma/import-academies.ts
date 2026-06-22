@@ -9,6 +9,9 @@ import { pathToFileURL } from "node:url";
 
 const prisma = new PrismaClient();
 
+// Organisme cible de l'import (formations cloisonnées par organisme).
+let ORG_ID = "";
+
 const ACADEMY_BY_PREFIX: Record<string, Academy> = {
   DIG: Academy.DIGITAL,
   SAF: Academy.SAFETY,
@@ -90,9 +93,9 @@ async function importAcademy(
     };
 
     await prisma.formation.upsert({
-      where: { reference },
+      where: { organismeId_reference: { organismeId: ORG_ID, reference } },
       update: data,
-      create: { reference, ...data },
+      create: { organismeId: ORG_ID, reference, ...data },
     });
     count++;
   }
@@ -103,6 +106,9 @@ async function importAcademy(
 
 async function main() {
   console.log("📥 Import des formations des académies…");
+  const org = await prisma.organisme.findFirst({ select: { id: true } });
+  if (!org) throw new Error("Aucun organisme en base : créez-en un avant l'import.");
+  ORG_ID = org.id;
   let total = 0;
   total += await importAcademy("formations.ts", "formations", "DIG", Modalite.MIXTE);
   total += await importAcademy(

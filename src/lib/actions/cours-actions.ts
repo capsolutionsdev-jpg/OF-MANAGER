@@ -21,7 +21,8 @@ async function uniqueSlug(base: string, ignoreId?: string): Promise<string> {
   let slug = root;
   let n = 1;
   while (true) {
-    const existing = await db.cours.findUnique({ where: { slug } });
+    // slug désormais unique PAR organisme → findFirst (cloisonné par scopedPrisma).
+    const existing = await db.cours.findFirst({ where: { slug } });
     if (!existing || existing.id === ignoreId) return slug;
     n += 1;
     slug = `${root}-${n}`;

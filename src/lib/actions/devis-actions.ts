@@ -29,30 +29,37 @@ export async function createDevis(values: DevisFormValues): Promise<DevisResult>
 
   const montantHT = v.lignes.reduce((s, l) => s + l.quantite * l.puHT, 0);
   const montantTTC = montantHT * (1 + v.tva / 100);
-
-  // Référence séquentielle par organisme : DEV-AAAA-NNNN
   const year = new Date().getFullYear();
-  const count = await db.devis.count({ where: { reference: { startsWith: `DEV-${year}-` } } });
-  const reference = `DEV-${year}-${String(count + 1).padStart(4, "0")}`;
 
-  const d = await db.devis.create({
-    data: {
-      reference,
-      entrepriseId: v.entrepriseId || null,
-      clientNom: v.clientNom?.trim() || null,
-      clientEmail: v.clientEmail?.trim() || null,
-      objet: v.objet?.trim() || null,
-      validUntil: v.validUntil ? new Date(v.validUntil) : null,
-      montantHT,
-      tva: v.tva,
-      montantTTC,
-      lignesJson: v.lignes as unknown as Prisma.InputJsonValue,
-      statut: FactureStatut.BROUILLON,
-    },
-  });
+  const baseData = {
+    entrepriseId: v.entrepriseId || null,
+    clientNom: v.clientNom?.trim() || null,
+    clientEmail: v.clientEmail?.trim() || null,
+    objet: v.objet?.trim() || null,
+    validUntil: v.validUntil ? new Date(v.validUntil) : null,
+    montantHT,
+    tva: v.tva,
+    montantTTC,
+    lignesJson: v.lignes as unknown as Prisma.InputJsonValue,
+    statut: FactureStatut.BROUILLON,
+  };
 
-  revalidatePath("/devis");
-  return { ok: true, id: d.id };
+  // Numérotation séquentielle par organisme : DEV-AAAA-NNNN. Le comptage n'est
+  // pas atomique → on retente sur collision d'unicité (P2002) en cas de créations
+  // concurrentes, garanti par @@unique([organismeId, reference]).
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const count = await db.devis.count({ where: { reference: { startsWith: `DEV-${year}-` } } });
+    const reference = `DEV-${year}-${String(count + 1 + attempt).padStart(4, "0")}`;
+    try {
+      const d = await db.devis.create({ data: { reference, ...baseData } });
+      revalidatePath("/devis");
+      return { ok: true, id: d.id };
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") continue;
+      throw e;
+    }
+  }
+  return { ok: false, error: "Impossible d'attribuer un numéro de devis, réessayez." };
 }
 
 /** Génère le lien d'acceptation/signature en ligne du devis (statut → Envoyé). */

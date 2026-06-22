@@ -1,20 +1,15 @@
 import { prisma } from "@/lib/prisma";
 import { TRIAL_DAYS } from "@/lib/trial";
+import { assertCronAuthorized } from "@/lib/cron-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 // Tâche planifiée : passe en SUSPENDU les organismes encore en ESSAI dont la
-// période d'essai (createdAt + TRIAL_DAYS) est dépassée. Protégée par CRON_SECRET.
+// période d'essai (createdAt + TRIAL_DAYS) est dépassée. Protégée par CRON_SECRET (obligatoire).
 export async function GET(req: Request) {
-  const secret = process.env.CRON_SECRET;
-  if (secret) {
-    const auth = req.headers.get("authorization");
-    const qsSecret = new URL(req.url).searchParams.get("secret");
-    if (auth !== `Bearer ${secret}` && qsSecret !== secret) {
-      return new Response("Non autorisé", { status: 401 });
-    }
-  }
+  const denied = assertCronAuthorized(req);
+  if (denied) return denied;
 
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - TRIAL_DAYS);
