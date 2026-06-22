@@ -122,7 +122,9 @@ Score de priorité = **Sévérité (poids 3/2/1)** pondéré par **inverse de l'
 | 2026-06-22 | Livrable 1 | Plan de suivi rédigé. **En attente du feu vert pour lancer la Phase 1 (audit complet, Livrable 2).** |
 | 2026-06-23 | Re-validation | Dépôt ré-exploré : stack, schéma (~80 modèles), modules, tests (11 unit Vitest + 5 specs Playwright) et CI (`lint`+`tsc`+`vitest`, sans `build` ni e2e) confirmés. Plan inchangé, toujours valide. **En attente du feu vert.** |
 | 2026-06-23 | Phase 1 · Fiches 01→09 | Audit pluridisciplinaire complet rédigé (`01`→`09`) : ~52 constats sourcés (9 critiques, ~24 majeures, ~13 mineures). |
-| 2026-06-23 | Phase 1 · Synthèse | `10_synthese.md` : registre consolidé, Top 10 actions, feuille de route 3 phases, avis global, 8 propositions de fonctionnalités. **Audit terminé — en attente de décision pour la Phase 2 (corrections), item par item.** |
+| 2026-06-23 | Phase 1 · Synthèse | `10_synthese.md` : registre consolidé, Top 10 actions, feuille de route 3 phases, avis global, 8 propositions de fonctionnalités. **Audit terminé.** |
+| 2026-06-23 | Phase 2A · Lot 1 | Correctifs (branche `chore/audit-phase-2a`) : crons authentifiés (OPS-01/02, SEC-02) ; unicité multi-tenant références + indicateurs Qualiopi (DB-01, DB-02, QLP-01) ; numérotation devis fiabilisée (BCK-01). `tsc` 0, 62 tests, base Neon synchronisée. |
+| 2026-06-23 | Phase 2A · Lot 2 | `SECRETS_ENCRYPTION_KEY` obligatoire en prod (SEC-04/OPS-04) ; CI durcie (base Postgres éphémère → test d'isolation tenant exécuté + `next build`) (QA-01/02). SEC-01 constaté **déjà mitigé** par le proxy `/api/public/piece/[id]` (résiduel blob privé → Phase 3). RLS PostgreSQL (ARC-01/DB-03) **différé en Phase 3** (migration dédiée). |
 
 ---
 

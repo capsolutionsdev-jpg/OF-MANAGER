@@ -8,8 +8,29 @@ on:
 
 jobs:
   checks:
-    name: Lint • Typecheck • Tests
+    name: Lint • Typecheck • Tests • Build
     runs-on: ubuntu-latest
+
+    # Base PostgreSQL éphémère pour les tests d'intégration (isolation multi-tenant).
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: testdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/testdb"
+      DIRECT_URL: "postgresql://postgres:postgres@localhost:5432/testdb"
+
     steps:
       - uses: actions/checkout@v4
 
@@ -22,13 +43,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Le client Prisma est requis pour la compilation TypeScript.
-      # Une URL factice suffit : aucune connexion à la base n'est faite ici.
       - name: Generate Prisma client
         run: npx prisma generate
-        env:
-          DATABASE_URL: "postgresql://user:pass@localhost:5432/db?schema=public"
-          DIRECT_URL: "postgresql://user:pass@localhost:5432/db?schema=public"
+
+      # Applique le schéma sur la base de test → permet d'exécuter le test
+      # d'isolation multi-tenant (sinon auto-ignoré). Base éphémère = sans risque.
+      - name: Prepare test database (schema)
+        run: npx prisma db push --skip-generate --accept-data-loss
 
       - name: Lint
         run: npm run lint --if-present
@@ -36,5 +57,13 @@ jobs:
       - name: Typecheck
         run: npx tsc --noEmit
 
-      - name: Tests
+      # DATABASE_URL_TEST active les tests d'intégration (isolation tenant) :
+      # cf. src/test/setup-db.ts (redirige Prisma) et tenant-isolation.test.ts.
+      - name: Tests (incl. isolation multi-tenant)
         run: npm test --if-present
+        env:
+          DATABASE_URL_TEST: "postgresql://postgres:postgres@localhost:5432/testdb"
+
+      # Garantit qu'un build de production cassé ne passe pas la CI (cf. QA-02).
+      - name: Build
+        run: npm run build

@@ -16,12 +16,21 @@ function key(): Buffer | null {
   return createHash("sha256").update(k).digest(); // 32 octets
 }
 
-/** Chiffre un secret. Renvoie la valeur telle quelle si aucune clé configurée. */
+/** Chiffre un secret. Refuse le stockage en clair en production (clé obligatoire). */
 export function encryptSecret(plain: string | null | undefined): string | null {
   if (plain == null || plain === "") return plain ?? null;
   if (plain.startsWith(PREFIX)) return plain; // déjà chiffré
   const k = key();
-  if (!k) return plain; // pas de clé → clair (dev)
+  if (!k) {
+    // En PRODUCTION, on refuse de stocker un secret en clair : la clé est
+    // obligatoire (cf. SEC-04 / OPS-04). En dev, on tolère le clair.
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(
+        "SECRETS_ENCRYPTION_KEY manquante : stockage d'un secret tenant en clair refusé en production.",
+      );
+    }
+    return plain; // dev → clair toléré
+  }
   const iv = randomBytes(12);
   const cipher = createCipheriv("aes-256-gcm", k, iv);
   const ct = Buffer.concat([cipher.update(plain, "utf8"), cipher.final()]);
