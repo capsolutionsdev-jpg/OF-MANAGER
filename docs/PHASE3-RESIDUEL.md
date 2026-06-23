@@ -76,6 +76,28 @@ par transaction, mesuré sur `test-rls` (table `Candidat`, 41 lignes / 1 org = 2
    migrations/console. **Les étapes 1→5 doivent être livrées d'un bloc** (sinon
    l'app ne voit plus rien). Tester sur `test-rls` avant la prod.
 
+### ✅ CODE LIVRÉ (inerte tant que `RLS_ENABLED` ≠ true)
+- `lib/tenant.ts` : `scopedPrisma` **transactionnel** (pose `app.org` par requête) +
+  helper **`bypassPrisma()`** (pose `'BYPASS'`). Gatés par `RLS_ENABLED` → **zéro
+  impact** sur la prod actuelle. Validé sur `test-rls` : test d'isolation 5/5 en
+  flag OFF **et** flag ON.
+- `docs/rls-setup.sql` : DDL généré (rôle + policies sur les **49 tables tenant**).
+
+### Checklist d'ACTIVATION (rollout coordonné, un seul créneau)
+1. Neon : créer le rôle `app_rls` (LOGIN, NOBYPASSRLS) + grants (cf. en-tête du SQL).
+2. Appliquer `docs/rls-setup.sql` (policies sur les 49 tables).
+3. **Câbler `bypassPrisma()`** à la place de `prisma` brut dans les accès tenant
+   NON cloisonnés par session (sinon ils renverront vide) :
+   `actions/parcours-actions`, `dossier-actions`, `compte-rendu-actions`,
+   `contrat-formateur-actions`, `emargement-signature-actions`, `apprenant-actions`,
+   `public-inscription-actions`, `devis-actions` (acceptDevis), `console-stats`,
+   pages `console/*`, `lib/rgpd-retention`, `lib/notifications`, crons.
+   *(login = table `User`, hors RLS → inchangé.)*
+4. Vercel : `RLS_ENABLED=true` + `DATABASE_URL` = rôle `app_rls` (owner gardé pour
+   migrations/console). Redeploy.
+5. Vérifier : connexion, un flux public par token, la console — puis le test
+   d'isolation sous RLS.
+
 ---
 
 ## Lot B — Extraction du god-model `Inscription` (ARC-03) · prérequis P1
