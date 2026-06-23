@@ -11,7 +11,9 @@ export const CRITERES: Record<number, string> = {
   7: "Critère 7 — Recueil et prise en compte des appréciations et réclamations",
 };
 
-// Les 32 indicateurs du RNQ (libellés synthétiques).
+// Les 32 indicateurs du RNQ — numérotation RNQ 2024 (critère 4 : 17-20,
+// critère 5 : 21-22, critère 6 : 23-29). Libellés synthétiques : à valider contre
+// le texte officiel du certificateur (cf. audit QLP-02).
 export const INDICATEURS: { numero: number; critere: number; libelle: string }[] = [
   { numero: 1, critere: 1, libelle: "Diffusion d'une information accessible, détaillée et vérifiable sur les prestations proposées." },
   { numero: 2, critere: 1, libelle: "Diffusion d'indicateurs de résultats adaptés à la nature des prestations et des publics." },
@@ -33,15 +35,15 @@ export const INDICATEURS: { numero: number; critere: number; libelle: string }[]
   { numero: 18, critere: 4, libelle: "Mise à disposition de ressources pédagogiques et appropriation par les bénéficiaires." },
   { numero: 19, critere: 4, libelle: "Mobilisation des personnels pour l'accompagnement socio-professionnel (apprentissage)." },
   { numero: 20, critere: 4, libelle: "Information sur les aides (financières, mobilité, hébergement, restauration…) (apprentissage)." },
-  { numero: 21, critere: 4, libelle: "Compétences des formateurs et intervenants requises et entretenues." },
+  { numero: 21, critere: 5, libelle: "Compétences des formateurs et intervenants requises et entretenues." },
   { numero: 22, critere: 5, libelle: "Gestion des compétences de l'équipe : recrutement, intégration, développement." },
-  { numero: 23, critere: 5, libelle: "Personnels dédiés à l'accompagnement et au suivi (apprentissage)." },
-  { numero: 24, critere: 6, libelle: "Veille légale et réglementaire du champ de la formation et mise en œuvre." },
-  { numero: 25, critere: 6, libelle: "Veille sur les évolutions des compétences, des métiers et des emplois du secteur." },
-  { numero: 26, critere: 6, libelle: "Veille sur les innovations pédagogiques et technologiques et mise en œuvre." },
-  { numero: 27, critere: 6, libelle: "Mobilisation d'un réseau de partenaires socio-économiques." },
-  { numero: 28, critere: 6, libelle: "Actions favorisant l'insertion ou la poursuite (apprentissage)." },
-  { numero: 29, critere: 6, libelle: "Mise en œuvre de modalités d'accueil et d'accompagnement des personnes en situation de handicap." },
+  { numero: 23, critere: 6, libelle: "Veille légale et réglementaire du champ de la formation et mise en œuvre." },
+  { numero: 24, critere: 6, libelle: "Veille sur les évolutions des compétences, des métiers et des emplois du secteur." },
+  { numero: 25, critere: 6, libelle: "Veille sur les innovations pédagogiques et technologiques et mise en œuvre." },
+  { numero: 26, critere: 6, libelle: "Mise en œuvre de modalités d'accueil et d'accompagnement des personnes en situation de handicap." },
+  { numero: 27, critere: 6, libelle: "Mobilisation d'un réseau de partenaires socio-économiques (et de la sous-traitance / co-traitance)." },
+  { numero: 28, critere: 6, libelle: "Actions favorisant l'insertion ou la poursuite d'études (apprentissage)." },
+  { numero: 29, critere: 6, libelle: "Suivi du devenir professionnel des bénéficiaires à l'issue de la prestation." },
   { numero: 30, critere: 7, libelle: "Recueil des appréciations des parties prenantes (bénéficiaires, entreprises, financeurs, formateurs)." },
   { numero: 31, critere: 7, libelle: "Traitement des réclamations, des difficultés et des aléas rencontrés." },
   { numero: 32, critere: 7, libelle: "Mise en œuvre de mesures d'amélioration continue à partir des retours et dysfonctionnements." },

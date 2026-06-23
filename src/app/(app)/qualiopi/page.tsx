@@ -26,7 +26,7 @@ export default async function QualiopiPage() {
 
   // On déduit le critère depuis le numéro de l'indicateur (RNQ).
   const critereDeNumero = (n: number) =>
-    n <= 3 ? 1 : n <= 8 ? 2 : n <= 16 ? 3 : n <= 21 ? 4 : n <= 23 ? 5 : n <= 29 ? 6 : 7;
+    n <= 3 ? 1 : n <= 8 ? 2 : n <= 16 ? 3 : n <= 20 ? 4 : n <= 22 ? 5 : n <= 29 ? 6 : 7;
   const groupes = new Map<number, typeof indicateurs>();
   for (const ind of indicateurs) {
     const c = critereDeNumero(ind.numero);
