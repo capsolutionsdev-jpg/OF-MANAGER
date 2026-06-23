@@ -51,6 +51,31 @@ session. La RLS exige donc, AVANT tout :
 `scopedPrisma`), à planifier ; ce n'est pas un patch applicatif. La protection
 actuelle (scopedPrisma + test d'isolation en CI) reste la garantie de premier niveau.
 
+### ✅ Conception VALIDÉE sur la branche de test (2026-06-23)
+Avec un rôle **`app_rls` NOBYPASSRLS** + politique + `set_config('app.org', …, true)`
+par transaction, mesuré sur `test-rls` (table `Candidat`, 41 lignes / 1 org = 29) :
+| Contexte | Résultat | Attendu |
+|---|---|---|
+| sans variable de session | **0** | 0 (bloqué) ✅ |
+| `app.org = <orgId>` | **29** | tenant seul ✅ |
+| `app.org = 'BYPASS'` | **41** | tout (console/flux publics) ✅ |
+
+**Implémentation prod (rollout COORDONNÉ — tout doit basculer ensemble) :**
+1. **Neon (console)** : `CREATE ROLE app_rls LOGIN PASSWORD '…' NOBYPASSRLS;` +
+   `GRANT USAGE ON SCHEMA public` + `GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES`
+   + `ALTER DEFAULT PRIVILEGES … GRANT … TO app_rls;`
+2. **Policies** : sur les ~48 tables portant `organismeId`, `ENABLE`+`FORCE ROW
+   LEVEL SECURITY` + policy `USING (organismeId = current_setting('app.org',true)
+   OR current_setting('app.org',true) = 'BYPASS')`.
+3. **`scopedPrisma`** : envelopper chaque opération dans une transaction qui pose
+   d'abord `set_config('app.org', organismeId, true)`.
+4. **Chemins `prisma` brut** (login = table User, hors RLS, OK ; **flux publics par
+   token** parcours/dossier ; **console cross-tenant** ; **crons**) : poser
+   `set_config('app.org','BYPASS', true)` → helper `bypassPrisma`.
+5. **Bascule** : `DATABASE_URL` (app) → rôle `app_rls` ; le owner reste pour
+   migrations/console. **Les étapes 1→5 doivent être livrées d'un bloc** (sinon
+   l'app ne voit plus rien). Tester sur `test-rls` avant la prod.
+
 ---
 
 ## Lot B — Extraction du god-model `Inscription` (ARC-03) · prérequis P1
