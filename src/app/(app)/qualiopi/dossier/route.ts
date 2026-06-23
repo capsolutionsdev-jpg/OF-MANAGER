@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 const STAFF = ["ADMIN", "RESPONSABLE_FORMATION"];
 
 const critereDeNumero = (n: number) =>
-  n <= 3 ? 1 : n <= 8 ? 2 : n <= 16 ? 3 : n <= 21 ? 4 : n <= 23 ? 5 : n <= 29 ? 6 : 7;
+  n <= 3 ? 1 : n <= 8 ? 2 : n <= 16 ? 3 : n <= 20 ? 4 : n <= 22 ? 5 : n <= 29 ? 6 : 7;
 
 const fdate = (d: Date | null | undefined) => (d ? d.toISOString().slice(0, 10) : "");
 
