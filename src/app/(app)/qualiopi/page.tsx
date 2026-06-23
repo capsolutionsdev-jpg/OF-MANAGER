@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ShieldCheck, MessageSquareWarning, Newspaper, Handshake } from "lucide-react";
+import { ShieldCheck, MessageSquareWarning, Newspaper, Handshake, FolderArchive } from "lucide-react";
 import { getTenantDb } from "@/lib/tenant";
 import { Button } from "@/components/ui/button";
 import {
@@ -53,6 +53,11 @@ export default async function QualiopiPage() {
           <Button variant="outline" size="sm" render={<Link href="/qualiopi/partenaires" />}>
             <Handshake className="mr-1.5 h-4 w-4" /> Partenaires
           </Button>
+          {total > 0 && (
+            <Button size="sm" render={<a href="/qualiopi/dossier" />}>
+              <FolderArchive className="mr-1.5 h-4 w-4" /> Exporter le dossier d&apos;audit
+            </Button>
+          )}
         </div>
       </div>
 
