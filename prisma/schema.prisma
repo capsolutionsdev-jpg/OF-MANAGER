@@ -862,7 +862,9 @@ model DocumentGenere {
 
   // Cibles possibles
   inscriptionId String?
-  inscription   Inscription? @relation(fields: [inscriptionId], references: [id])
+  // Document généré = pièce régénérable → suit l'inscription (cascade). Les données
+  // comptables (Facture/Convention/Contrat) restent en Restrict (cf. DB-05).
+  inscription   Inscription? @relation(fields: [inscriptionId], references: [id], onDelete: Cascade)
   sessionId     String?
   session       Session?     @relation(fields: [sessionId], references: [id])
   apprenantId   String?
@@ -1397,7 +1399,8 @@ model SignatureRequest {
   documentGenereId String?
   documentGenere   DocumentGenere?   @relation(fields: [documentGenereId], references: [id])
   inscriptionId    String?
-  inscription      Inscription?      @relation(fields: [inscriptionId], references: [id])
+  // Demande de signature = technique → suit l'inscription (cascade). Cf. DB-05.
+  inscription      Inscription?      @relation(fields: [inscriptionId], references: [id], onDelete: Cascade)
   statut           SignatureStatut   @default(EN_ATTENTE)
   signataires      Json? // [{nom,email,role}]
   externalId       String?
