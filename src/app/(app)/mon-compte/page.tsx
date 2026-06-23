@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck, KeyRound } from "lucide-react";
 import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
 import { roleLabels } from "@/lib/navigation";
 import {
   Card,
@@ -10,15 +11,18 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ChangePasswordForm } from "./change-password-form";
+import { TwoFactorSettings } from "@/components/account/two-factor-settings";
 
 export const dynamic = "force-dynamic";
 
 export default async function MonComptePage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
-  // Le gérant gère son compte depuis la page Administration (plus complète).
-  if (session.user.role === "ADMIN") redirect("/administration");
   const user = session.user;
+  const dbUser = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { totpEnabled: true },
+  });
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -62,6 +66,23 @@ export default async function MonComptePage() {
         </CardHeader>
         <CardContent>
           <ChangePasswordForm />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <KeyRound className="h-4 w-4 text-primary" />
+            Double authentification (2FA)
+          </CardTitle>
+          <CardDescription>
+            Ajoutez une seconde vérification à la connexion via une application
+            d&apos;authentification (TOTP). Fortement recommandé pour les comptes à
+            privilèges.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <TwoFactorSettings enabled={dbUser?.totpEnabled ?? false} />
         </CardContent>
       </Card>
     </div>

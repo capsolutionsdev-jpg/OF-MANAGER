@@ -6,10 +6,13 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { authConfig } from "@/auth.config";
 import { checkLimit, clientIp } from "@/lib/rate-limit";
+import { decryptSecret } from "@/lib/crypto";
+import { verifyTotp } from "@/lib/totp";
 
 const credentialsSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
+  code: z.string().optional(), // code 2FA (TOTP), requis si le compte l'a activé
 });
 
 // Fenêtre anti-brute-force / credential-stuffing. Limiteur en mémoire (par
@@ -52,6 +55,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const valid = await bcrypt.compare(password, user.passwordHash);
         if (!valid) return null;
+
+        // Double authentification : si activée, un code TOTP valide est exigé.
+        if (user.totpEnabled) {
+          const secret = decryptSecret(user.totpSecret);
+          if (!secret || !verifyTotp(secret, parsed.data.code ?? "")) return null;
+        }
 
         // Session unique : on enregistre l'identifiant de CETTE connexion sur le
         // compte. Toute connexion ultérieure (autre appareil) le remplacera, ce

@@ -389,6 +389,10 @@ model User {
   // sur un autre appareil le remplace → l'ancien appareil est déconnecté
   // (empêche le partage d'un compte = facturation par siège respectée).
   activeSessionId String?
+  // Double authentification (TOTP) — secret chiffré au repos (lib/crypto).
+  // Optionnelle : tant que totpEnabled = false, la connexion est inchangée.
+  totpSecret   String?
+  totpEnabled  Boolean  @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
