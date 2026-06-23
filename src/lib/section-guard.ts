@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
 import { canAccessSection, roleAllowedInSection } from "@/lib/permissions";
 
 /**
@@ -20,14 +21,36 @@ import { canAccessSection, roleAllowedInSection } from "@/lib/permissions";
  */
 export async function requireSection(section: string) {
   const session = await auth();
-  const role = session?.user?.role;
-  const permissions = session?.user?.permissions ?? [];
+  if (!session?.user?.id) redirect("/login");
+
+  // Revalidation LIVE depuis la base : on ne se fie PAS au seul JWT (rôle,
+  // permissions et fonctionnalités y sont figés à la connexion). Un changement
+  // côté éditeur — retrait d'une permission/feature, désactivation du compte —
+  // prend ainsi effet immédiatement (cf. audit ARC-04).
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: {
+      isActive: true,
+      role: true,
+      permissions: true,
+      organisme: { select: { fonctionnalites: true } },
+    },
+  });
+  if (!user || !user.isActive) redirect("/login");
+
+  const { role, permissions } = user;
   if (
-    !role ||
     !roleAllowedInSection(role, section) ||
     !canAccessSection(role, permissions, section)
   ) {
     redirect("/dashboard");
   }
+
+  // Fonctionnalité désactivée pour l'organisme (liste vide = tout activé).
+  const fonctionnalites = user.organisme?.fonctionnalites ?? [];
+  if (fonctionnalites.length > 0 && !fonctionnalites.includes(section)) {
+    redirect("/dashboard");
+  }
+
   return session;
 }

@@ -4,15 +4,19 @@ import { INDICATEURS } from "../src/lib/qualiopi-indicateurs";
 const prisma = new PrismaClient();
 
 async function main() {
+  // Indicateurs cloisonnés par organisme : on cible le 1er organisme en base.
+  const org = await prisma.organisme.findFirst({ select: { id: true } });
+  if (!org) throw new Error("Aucun organisme en base : créez-en un avant ce script.");
+  const organismeId = org.id;
   for (const ind of INDICATEURS) {
     await prisma.qualiopiIndicateur.upsert({
-      where: { numero: ind.numero },
+      where: { organismeId_numero: { organismeId, numero: ind.numero } },
       update: { libelle: ind.libelle },
-      create: { numero: ind.numero, libelle: ind.libelle, statut: QualiopiStatut.EN_COURS },
+      create: { organismeId, numero: ind.numero, libelle: ind.libelle, statut: QualiopiStatut.EN_COURS },
     });
   }
   await prisma.qualiopiIndicateur.updateMany({
-    where: { numero: { in: [1, 2, 4, 5, 9] } },
+    where: { organismeId, numero: { in: [1, 2, 4, 5, 9] } },
     data: { statut: QualiopiStatut.CONFORME },
   });
 

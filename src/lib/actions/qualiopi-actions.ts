@@ -2,18 +2,19 @@
 
 import { revalidatePath } from "next/cache";
 import { QualiopiStatut } from "@prisma/client";
-import { getTenantDb } from "@/lib/tenant";
+import { getTenantDb, requireTenant } from "@/lib/tenant";
 import { auth } from "@/auth";
 import { INDICATEURS } from "@/lib/qualiopi-indicateurs";
 
 export async function initialiserIndicateurs() {
-  const db = await getTenantDb();
   const session = await auth();
   if (!session?.user) return;
+  // Indicateurs cloisonnés par organisme → unicité composite (organisme, numéro).
+  const { organismeId, db } = await requireTenant();
 
   for (const ind of INDICATEURS) {
     await db.qualiopiIndicateur.upsert({
-      where: { numero: ind.numero },
+      where: { organismeId_numero: { organismeId, numero: ind.numero } },
       update: { libelle: ind.libelle },
       create: {
         numero: ind.numero,

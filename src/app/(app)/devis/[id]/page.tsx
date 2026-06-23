@@ -6,10 +6,9 @@ import { getTenantDb } from "@/lib/tenant";
 import { getCurrentOrganisme } from "@/lib/org";
 import { hasFeature } from "@/lib/features";
 import { orgConfigFor } from "@/lib/org-identity";
-import { Button } from "@/components/ui/button";
 import { PrintButton } from "@/components/documents/print-button";
 import { CopyAcceptLink } from "@/components/devis/copy-accept-link";
-import { setDevisStatut, requestDevisSignature } from "@/lib/actions/devis-actions";
+import { DevisStatutButtons, GenerateSignatureLinkButton } from "@/components/devis/devis-status-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -47,8 +46,8 @@ export default async function DevisDetailPage({
 
   const statutActions: { statut: string; label: string }[] = [
     { statut: "ENVOYEE", label: "Marquer envoyé" },
-    { statut: "PAYEE", label: "Marquer accepté" },
-    { statut: "ANNULEE", label: "Marquer refusé" },
+    { statut: "PAYEE", label: "Marquer payé" },
+    { statut: "ANNULEE", label: "Marquer annulé" },
   ];
 
   return (
@@ -58,13 +57,7 @@ export default async function DevisDetailPage({
           <ArrowLeft className="h-4 w-4" /> Retour aux devis
         </Link>
         <div className="flex flex-wrap items-center gap-2">
-          {statutActions.map((a) => (
-            <form key={a.statut} action={setDevisStatut}>
-              <input type="hidden" name="id" value={d.id} />
-              <input type="hidden" name="statut" value={a.statut} />
-              <Button type="submit" size="sm" variant="outline">{a.label}</Button>
-            </form>
-          ))}
+          <DevisStatutButtons id={d.id} actions={statutActions} />
           <PrintButton />
         </div>
       </div>
@@ -101,12 +94,7 @@ export default async function DevisDetailPage({
                   <p className="text-sm text-muted-foreground">
                     Générez un lien sécurisé permettant au client de signer ce devis à distance.
                   </p>
-                  <form action={requestDevisSignature}>
-                    <input type="hidden" name="id" value={d.id} />
-                    <Button type="submit" size="sm">
-                      <FileSignature className="mr-2 h-4 w-4" /> Générer le lien de signature
-                    </Button>
-                  </form>
+                  <GenerateSignatureLinkButton id={d.id} />
                 </>
               )}
             </div>

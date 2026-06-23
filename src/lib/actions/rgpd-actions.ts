@@ -35,6 +35,49 @@ export async function processDataRequest(formData: FormData) {
   revalidatePath("/rgpd");
 }
 
+// Droit à la portabilité (RGPD art. 20) : export structuré, lisible et
+// réutilisable des données personnelles d'une personne (par e-mail), cloisonné
+// à l'organisme. Renvoie un JSON prêt à télécharger côté client.
+export async function exportDonneesPersonne(
+  email: string,
+): Promise<{ ok: boolean; error?: string; filename?: string; json?: string }> {
+  const db = await getTenantDb();
+  const session = await auth();
+  if (!session?.user) return { ok: false, error: "Non autorisé." };
+
+  const e = email.trim().toLowerCase();
+  if (!e) return { ok: false, error: "Indiquez un e-mail." };
+
+  const candidats = await db.candidat.findMany({
+    where: { email: { equals: e, mode: "insensitive" } },
+    include: {
+      inscriptions: {
+        include: { session: { include: { formation: { select: { titre: true } } } } },
+      },
+      pieces: { select: { label: true, categorie: true, statut: true, createdAt: true } },
+      consentements: true,
+      interactionsCandidat: { select: { type: true, date: true, sujet: true } },
+    },
+  });
+  if (candidats.length === 0) return { ok: false, error: "Aucune donnée pour cet e-mail." };
+
+  await db.auditLog.create({
+    data: {
+      userId: session.user.id,
+      action: "EXPORT_RGPD",
+      entityType: "Candidat",
+      entityId: candidats[0].id,
+    },
+  });
+
+  const payload = { exporteLe: new Date().toISOString(), sujet: e, candidats };
+  return {
+    ok: true,
+    filename: `export-rgpd-${e.replace(/[^a-z0-9]/gi, "_")}.json`,
+    json: JSON.stringify(payload, null, 2),
+  };
+}
+
 // Anonymisation (droit à l'effacement) : on conserve les enregistrements liés
 // (obligations Qualiopi/comptables) mais on efface les données personnelles.
 export async function anonymiseCandidat(formData: FormData) {
