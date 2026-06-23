@@ -39,6 +39,19 @@ export function LoginForm() {
         />
       </div>
 
+      <div className="space-y-2">
+        <Label htmlFor="code">Code 2FA <span className="text-muted-foreground">(si activé)</span></Label>
+        <Input
+          id="code"
+          name="code"
+          inputMode="numeric"
+          autoComplete="one-time-code"
+          placeholder="123456"
+          pattern="[0-9]*"
+          maxLength={6}
+        />
+      </div>
+
       {errorMessage && (
         <div className="flex items-center gap-2 rounded-md bg-destructive/10 p-3 text-sm text-destructive">
           <AlertCircle className="h-4 w-4 shrink-0" />
