@@ -57,6 +57,11 @@ export async function POST(req: Request) {
   }
 
   try {
+    // Idempotence (BCK-05) : signature vérifiée ci-dessus + handlers idempotents
+    // par construction (updateMany posant des valeurs ABSOLUES — statut, ids,
+    // formule, date de fin — sans compteur ni insertion). Un rejeu Stripe du même
+    // event ré-applique les mêmes valeurs → aucun effet de bord. (Si un handler à
+    // effet incrémental est ajouté un jour, dédupliquer alors sur event.id.)
     switch (event.type) {
       case "checkout.session.completed": {
         const s = event.data.object as Stripe.Checkout.Session;
