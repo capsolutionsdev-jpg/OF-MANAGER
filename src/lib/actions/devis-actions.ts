@@ -8,6 +8,7 @@ import { getTenantDb } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { generateToken } from "@/lib/token";
 import { devisFormSchema, type DevisFormValues } from "@/lib/validators/devis";
+import { type ActionResult, toActionError } from "@/lib/action-result";
 
 export type DevisResult = { ok: true; id: string } | { ok: false; error: string };
 
@@ -71,19 +72,24 @@ export async function createDevis(values: DevisFormValues): Promise<DevisResult>
 }
 
 /** Génère le lien d'acceptation/signature en ligne du devis (statut → Envoyé). */
-export async function requestDevisSignature(formData: FormData) {
-  await requireSection("facturation");
-  const db = await getTenantDb();
-  const id = String(formData.get("id"));
-  const d = await db.devis.findUnique({ where: { id }, select: { acceptToken: true } });
-  if (!d) return;
-  const token = d.acceptToken ?? generateToken();
-  await db.devis.update({
-    where: { id },
-    data: { acceptToken: token, statut: FactureStatut.ENVOYEE },
-  });
-  revalidatePath(`/devis/${id}`);
-  revalidatePath("/devis");
+export async function requestDevisSignature(formData: FormData): Promise<ActionResult> {
+  try {
+    await requireSection("facturation");
+    const db = await getTenantDb();
+    const id = String(formData.get("id"));
+    const d = await db.devis.findUnique({ where: { id }, select: { acceptToken: true } });
+    if (!d) return { ok: false, error: "Devis introuvable." };
+    const token = d.acceptToken ?? generateToken();
+    await db.devis.update({
+      where: { id },
+      data: { acceptToken: token, statut: FactureStatut.ENVOYEE },
+    });
+    revalidatePath(`/devis/${id}`);
+    revalidatePath("/devis");
+    return { ok: true };
+  } catch (e) {
+    return toActionError(e); // plus d'échec muet : journalisé + message (BCK-03)
+  }
 }
 
 /** Acceptation publique du devis (bon pour accord signé). Par lien tokenisé. */
@@ -121,14 +127,19 @@ export async function acceptDevis(
   return { ok: true };
 }
 
-/** Change le statut d'un devis (Envoyé / Payé(accepté) / Annulé(refusé)). */
-export async function setDevisStatut(formData: FormData) {
-  await requireSection("facturation");
-  const db = await getTenantDb();
-  const id = String(formData.get("id"));
-  const raw = String(formData.get("statut"));
-  if (!STATUTS.has(raw)) return;
-  await db.devis.update({ where: { id }, data: { statut: raw as FactureStatut } });
-  revalidatePath("/devis");
-  revalidatePath(`/devis/${id}`);
+/** Change le statut d'un devis (Brouillon / Envoyé / Payé / Annulé…). */
+export async function setDevisStatut(formData: FormData): Promise<ActionResult> {
+  try {
+    await requireSection("facturation");
+    const db = await getTenantDb();
+    const id = String(formData.get("id"));
+    const raw = String(formData.get("statut"));
+    if (!STATUTS.has(raw)) return { ok: false, error: "Statut invalide." };
+    await db.devis.update({ where: { id }, data: { statut: raw as FactureStatut } });
+    revalidatePath("/devis");
+    revalidatePath(`/devis/${id}`);
+    return { ok: true };
+  } catch (e) {
+    return toActionError(e);
+  }
 }

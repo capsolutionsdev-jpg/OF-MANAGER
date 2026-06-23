@@ -25,15 +25,26 @@ test.describe("Accessibilité (axe-core)", () => {
     expect(critical, critical.map((v) => v.id).join(", ")).toHaveLength(0);
   });
 
-  test("tableau de bord client — aucune violation critique", async ({ page }) => {
+  test("écrans authentifiés denses — aucune violation critique", async ({ page }) => {
+    // Une seule connexion (anti rate-limit / session unique), puis on balaie les
+    // écrans les plus denses du back-office (cf. audit FRT-04).
     await page.goto("/login");
     await page.fill("#email", "demo-secu@cap.fr");
     await page.fill("#password", "CapSecu2026!");
     await page.click('button[type="submit"]');
     await page.waitForURL(/\/dashboard/, { timeout: 20_000 });
-    const results = await new AxeBuilder({ page }).analyze();
-    logViolations("/dashboard", results.violations);
-    const critical = results.violations.filter((v) => v.impact === "critical");
-    expect(critical, critical.map((v) => v.id).join(", ")).toHaveLength(0);
+
+    const paths = ["/dashboard", "/candidats", "/crm", "/sessions", "/devis", "/qualiopi"];
+    const critical: string[] = [];
+    for (const path of paths) {
+      await page.goto(path);
+      await page.waitForLoadState("networkidle");
+      const results = await new AxeBuilder({ page }).analyze();
+      logViolations(path, results.violations);
+      for (const v of results.violations.filter((x) => x.impact === "critical")) {
+        critical.push(`${path}:${v.id}`);
+      }
+    }
+    expect(critical, critical.join(", ")).toHaveLength(0);
   });
 });
