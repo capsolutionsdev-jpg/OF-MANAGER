@@ -4,6 +4,7 @@ import { OrganismeStatut, FormuleAbonnement } from "@prisma/client";
 import { getStripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 import { FORMULE_KEYS } from "@/lib/plans";
+import { fulfillCivicCheckout } from "@/lib/civique-api";
 
 export const runtime = "nodejs";
 // Webhook Stripe : corps brut requis pour vérifier la signature.
@@ -65,6 +66,16 @@ export async function POST(req: Request) {
     switch (event.type) {
       case "checkout.session.completed": {
         const s = event.data.object as Stripe.Checkout.Session;
+        // Paiement d'une prépa civique en ligne (site vitrine) : création du
+        // compte candidat + provision de l'accès + enregistrement du paiement.
+        if (s.metadata?.type === "civique") {
+          await fulfillCivicCheckout({
+            sessionId: s.id,
+            amountTotal: s.amount_total,
+            metadata: s.metadata,
+          });
+          break;
+        }
         await updateOrg(s.metadata?.organismeId, s.customer, {
           statut: OrganismeStatut.ACTIF,
           stripeSubscriptionId: typeof s.subscription === "string" ? s.subscription : undefined,

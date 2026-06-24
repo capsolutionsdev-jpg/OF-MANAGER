@@ -24,6 +24,7 @@ import { resendParcoursAction } from "@/lib/actions/parcours-actions";
 import { DossierChecklist } from "@/components/inscriptions/dossier-checklist";
 import { PieceValidation } from "@/components/inscriptions/piece-validation";
 import { CandidatAccessPanel } from "@/components/candidats/candidat-access-panel";
+import { CivicAccessButton } from "@/components/candidats/civic-access-button";
 import { RecordPaymentDialog } from "@/components/comptabilite/record-payment-dialog";
 import { SendProspectLinkButton } from "@/components/crm/send-prospect-link-button";
 import { CrmPanel } from "@/components/crm/crm-panel";
@@ -198,6 +199,10 @@ export default async function CandidatDetailPage({
               candidatId={candidat.id}
               hasAccount={!!candidat.apprenant?.userId}
               email={candidat.email}
+            />
+            <CivicAccessButton
+              candidatId={candidat.id}
+              hasToken={!!candidat.civicToken}
             />
           </CardContent>
         </Card>

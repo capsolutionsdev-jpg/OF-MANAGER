@@ -497,6 +497,16 @@ model Candidat {
   consentements Consentement[]
   conversations Conversation[]
 
+  // ── E-learning examen civique (préparation en ligne, site vitrine) ──
+  // Le jeton est PROVISIONNÉ par la plateforme : c'est elle qui crée les
+  // comptes candidats. Le vitrine s'authentifie avec (email + civicToken).
+  civicToken       String?           @unique
+  civicAssessments CivicAssessment[]
+  civicProgress    CivicProgress[]
+  civicWeaknesses  CivicWeakness[]
+  civicMockExams   CivicMockExam[]
+  civicPaiements   CivicPaiement[]
+
   createdById String?
   createdBy   User?    @relation("CandidatCreePar", fields: [createdById], references: [id])
   createdAt   DateTime @default(now())
@@ -1751,4 +1761,139 @@ model PlanTarif {
   fonctionnalites String[]          @default([]) // composition (clés) ; vide = bundle par défaut
   populaire       Boolean           @default(false) // badge « le plus choisi »
   updatedAt       DateTime          @updatedAt
+}
+
+// =============================================================
+//  MODULE — E-LEARNING EXAMEN CIVIQUE (préparation en ligne)
+//  Tables consommées par le site vitrine (adaptive learning).
+//  Les comptes candidats sont créés par la plateforme (civicToken).
+// =============================================================
+
+enum CivicMention {
+  CSP
+  CR
+  NATURALISATION
+}
+
+enum CivicPath {
+  EXPERT
+  STANDARD
+  RENFORCE
+  ACCOMPAGNEMENT
+}
+
+enum CivicModuleStatut {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+}
+
+/// Positionnement (= candidate_assessment) : double score + parcours.
+model CivicAssessment {
+  id              String       @id @default(cuid())
+  organismeId     String? // tenant (multi-OF)
+  candidatId      String
+  candidat        Candidat     @relation(fields: [candidatId], references: [id], onDelete: Cascade)
+  mention         CivicMention
+  languageScore   Int // 0-100
+  civicsScore     Int // 0-100
+  langNiveau      String // A2-, A2, B1, B2
+  recommendedPath CivicPath
+  date            DateTime     @default(now())
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@unique([candidatId, mention])
+  @@index([organismeId])
+}
+
+/// Progression d'un module (= candidate_progress).
+model CivicProgress {
+  id             String            @id @default(cuid())
+  organismeId    String? // tenant (multi-OF)
+  candidatId     String
+  candidat       Candidat          @relation(fields: [candidatId], references: [id], onDelete: Cascade)
+  moduleId       String // `${mention}:${theme}` ex. "csp:T1"
+  startDate      DateTime          @default(now())
+  endDate        DateTime?
+  score          Int               @default(0) // dernier score %
+  attempts       Int               @default(0)
+  timeSpent      Int               @default(0) // secondes cumulées
+  completionRate Int               @default(0) // 0-100
+  statut         CivicModuleStatut @default(IN_PROGRESS)
+  updatedAt      DateTime          @updatedAt
+
+  @@unique([candidatId, moduleId])
+  @@index([organismeId])
+  @@index([candidatId])
+}
+
+/// Faiblesse par thème/sous-thème (= candidate_weakness).
+model CivicWeakness {
+  id           String   @id @default(cuid())
+  organismeId  String? // tenant (multi-OF)
+  candidatId   String
+  candidat     Candidat @relation(fields: [candidatId], references: [id], onDelete: Cascade)
+  theme        String // T1..T5
+  sousTheme    String
+  errorCount   Int      @default(0)
+  lastSeen     DateTime @default(now())
+  masteryLevel Int      @default(0) // 0-100
+
+  @@unique([candidatId, theme, sousTheme])
+  @@index([organismeId])
+  @@index([candidatId])
+}
+
+/// Examen blanc (= candidate_mock_exam).
+model CivicMockExam {
+  id                 String       @id @default(cuid())
+  organismeId        String? // tenant (multi-OF)
+  candidatId         String
+  candidat           Candidat     @relation(fields: [candidatId], references: [id], onDelete: Cascade)
+  mention            CivicMention
+  score              Int // %
+  total              Int
+  bonnes             Int
+  successProbability Int // 0-100
+  date               DateTime     @default(now())
+  createdAt          DateTime     @default(now())
+
+  @@index([organismeId])
+  @@index([candidatId])
+}
+
+/// Tarif de la prépa civique en ligne — éditable par l'admin, par mention.
+/// La remise (promo) s'applique au prix ; les codes promo Stripe restent
+/// possibles en plus (allow_promotion_codes au Checkout).
+model CivicTarif {
+  id          String       @id @default(cuid())
+  organismeId String? // tenant (multi-OF)
+  mention     CivicMention
+  prixCents   Int // prix TTC en centimes (ex. 14900 = 149 €)
+  devise      String       @default("eur")
+  remisePct   Int          @default(0) // remise % (0-100)
+  actif       Boolean      @default(true)
+  updatedAt   DateTime     @updatedAt
+
+  @@unique([organismeId, mention])
+  @@index([organismeId])
+}
+
+/// Paiement d'une prépa civique en ligne (Stripe Checkout), SANS Inscription
+/// (formation 100 % en ligne, en continu). Sert au suivi et à la compta.
+model CivicPaiement {
+  id              String       @id @default(cuid())
+  organismeId     String? // tenant (multi-OF)
+  candidatId      String
+  candidat        Candidat     @relation(fields: [candidatId], references: [id], onDelete: Cascade)
+  mention         CivicMention
+  montantCents    Int
+  devise          String       @default("eur")
+  stripeSessionId String       @unique
+  statut          String       @default("paye")
+  date            DateTime     @default(now())
+
+  @@index([organismeId])
+  @@index([candidatId])
 }

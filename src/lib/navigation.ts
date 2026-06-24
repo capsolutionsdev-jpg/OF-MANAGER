@@ -225,6 +225,13 @@ export const navItems: NavItem[] = [
     permission: "elearning",
   },
   {
+    label: "Examen civique",
+    href: "/examen-civique",
+    icon: GraduationCap,
+    roles: ["ADMIN", "RESPONSABLE_FORMATION"],
+    permission: "elearning",
+  },
+  {
     label: "Signatures",
     href: "/signatures",
     icon: PenLine,
@@ -299,7 +306,7 @@ const GROUP_BY_HREF: Record<string, string> = {
   "/scoring": "Commercial", "/portail-client": "Commercial",
   "/candidats": "Formation", "/clients-pro": "Formation", "/formations": "Formation",
   "/sessions": "Formation", "/planning": "Formation", "/salles": "Formation",
-  "/elearning": "Formation", "/formateurs": "Formation",
+  "/elearning": "Formation", "/examen-civique": "Formation", "/formateurs": "Formation",
   "/sms": "Communication", "/ia": "Communication", "/signatures": "Communication",
   "/automatisations": "Communication",
   "/comptabilite": "Finance", "/devis": "Finance", "/bpf": "Finance", "/rapports": "Finance",
