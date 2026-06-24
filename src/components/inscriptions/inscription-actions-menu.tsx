@@ -10,6 +10,7 @@ import {
   XCircle,
   Trash2,
   FileText,
+  Send,
 } from "lucide-react";
 import { InscriptionStatut } from "@prisma/client";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ import {
   setInscriptionStatut,
   deleteInscriptionAction,
 } from "@/lib/actions/inscription-actions";
+import { relanceParcours } from "@/lib/actions/parcours-actions";
 
 export function InscriptionActionsMenu({
   inscriptionId,
@@ -48,6 +50,22 @@ export function InscriptionActionsMenu({
         return;
       }
       toast.success(label);
+      router.refresh();
+    });
+  }
+
+  function envoyerLien() {
+    startTransition(async () => {
+      const res = await relanceParcours(inscriptionId);
+      if (!res.ok) {
+        toast.error(res.error ?? "Envoi impossible.");
+        return;
+      }
+      toast.success(
+        res.demo
+          ? "Lien généré (mode démo : e-mail non envoyé — configurez Brevo)."
+          : "Lien d'inscription envoyé au candidat par e-mail.",
+      );
       router.refresh();
     });
   }
@@ -119,6 +137,10 @@ export function InscriptionActionsMenu({
           </DropdownMenuItem>
         )}
         <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={envoyerLien}>
+          <Send className="mr-2 h-4 w-4 text-primary" />
+          Envoyer le lien (compléter + signer)
+        </DropdownMenuItem>
         <DropdownMenuItem
           render={<a href={`/documents/${inscriptionId}/pdf`} target="_blank" />}
         >
