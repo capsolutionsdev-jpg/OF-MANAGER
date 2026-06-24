@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { CivicMention } from "@prisma/client";
+import { CivicMention, OrganismeStatut } from "@prisma/client";
 import { getStripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 import { civicCors } from "@/lib/civique-api";
@@ -49,8 +49,22 @@ export async function POST(req: Request) {
   if (!mention) return NextResponse.json({ error: "Mention inconnue." }, { status: 400, headers: civicCors });
   if (!email.includes("@")) return NextResponse.json({ error: "E-mail invalide." }, { status: 400, headers: civicCors });
 
-  // Organisme cible (vitrine mono-marque) : env, sinon corps.
-  const organismeId = process.env.CIVIC_ORGANISME_ID ?? body.organismeId ?? null;
+  // Organisme cible (vitrine mono-marque) : env, sinon corps, sinon
+  // auto-détection (organisme actif le plus ancien = l'OF principal).
+  let organismeId = process.env.CIVIC_ORGANISME_ID ?? body.organismeId ?? null;
+  if (!organismeId) {
+    const org =
+      (await prisma.organisme.findFirst({
+        where: { statut: OrganismeStatut.ACTIF },
+        orderBy: { createdAt: "asc" },
+        select: { id: true },
+      })) ??
+      (await prisma.organisme.findFirst({
+        orderBy: { createdAt: "asc" },
+        select: { id: true },
+      }));
+    organismeId = org?.id ?? null;
+  }
   if (!organismeId) {
     return NextResponse.json({ error: "Organisme non configuré." }, { status: 503, headers: civicCors });
   }
