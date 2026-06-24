@@ -228,11 +228,48 @@ function FileBtn({ id, accept, busy, onFile, icon, text }: {
   );
 }
 
-/** Caméra plein écran pour photographier un document (cadre rectangulaire, JPEG). */
+/** Analyse de qualité d'une image (netteté + luminosité + résolution) sur un
+ * canvas. Heuristique : variance du Laplacien (flou) + luminance moyenne. */
+function assessQuality(canvas: HTMLCanvasElement): { ok: boolean; reason: string | null } {
+  if (canvas.width < 800 || canvas.height < 600)
+    return { ok: false, reason: "Résolution trop faible — rapprochez-vous du document." };
+  const w = 360;
+  const h = Math.max(1, Math.round((canvas.height * w) / canvas.width));
+  const tmp = document.createElement("canvas");
+  tmp.width = w; tmp.height = h;
+  const tctx = tmp.getContext("2d");
+  if (!tctx) return { ok: true, reason: null };
+  tctx.drawImage(canvas, 0, 0, w, h);
+  const { data } = tctx.getImageData(0, 0, w, h);
+  const gray = new Float64Array(w * h);
+  let sum = 0;
+  for (let i = 0, p = 0; i < data.length; i += 4, p++) {
+    const g = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+    gray[p] = g; sum += g;
+  }
+  const brightness = sum / (w * h);
+  // Variance du Laplacien (mesure de netteté).
+  let ls = 0, lss = 0, n = 0;
+  for (let y = 1; y < h - 1; y++)
+    for (let x = 1; x < w - 1; x++) {
+      const i = y * w + x;
+      const lap = 4 * gray[i] - gray[i - 1] - gray[i + 1] - gray[i - w] - gray[i + w];
+      ls += lap; lss += lap * lap; n++;
+    }
+  const variance = n ? lss / n - (ls / n) * (ls / n) : 0;
+  if (brightness < 45) return { ok: false, reason: "Photo trop sombre — éclairez le document." };
+  if (brightness > 242) return { ok: false, reason: "Reflets / surexposition — évitez le flash direct." };
+  if (variance < 70) return { ok: false, reason: "Photo floue — tenez l'appareil stable et refaites." };
+  return { ok: true, reason: null };
+}
+
+/** Caméra plein écran : cadrage → photo → APERÇU avec contrôle qualité (refaire
+ * si illisible) → validation. */
 function DocCamera({ onCapture, onCancel }: { onCapture: (file: File) => void; onCancel: () => void }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [ready, setReady] = useState(false);
+  const [shot, setShot] = useState<{ url: string; file: File; ok: boolean; reason: string | null } | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -246,13 +283,13 @@ function DocCamera({ onCapture, onCancel }: { onCapture: (file: File) => void; o
 
   useEffect(() => {
     const v = videoRef.current;
-    if (!v || !stream) return;
+    if (!v || !stream || shot) return;
     v.srcObject = stream;
     const onReady = () => { v.play().catch(() => {}); setReady(true); };
     v.addEventListener("loadedmetadata", onReady);
     if (v.readyState >= 1) onReady();
     return () => v.removeEventListener("loadedmetadata", onReady);
-  }, [stream]);
+  }, [stream, shot]);
 
   useEffect(() => () => stream?.getTracks().forEach((t) => t.stop()), [stream]);
 
@@ -265,12 +302,49 @@ function DocCamera({ onCapture, onCancel }: { onCapture: (file: File) => void; o
     canvas.width = Math.round(v.videoWidth * scale);
     canvas.height = Math.round(v.videoHeight * scale);
     canvas.getContext("2d")!.drawImage(v, 0, 0, canvas.width, canvas.height);
+    const quality = assessQuality(canvas);
     canvas.toBlob((blob) => {
       if (!blob) return;
-      onCapture(new File([blob], `document-${Date.now()}.jpg`, { type: "image/jpeg" }));
+      const file = new File([blob], `document-${Date.now()}.jpg`, { type: "image/jpeg" });
+      setShot({ url: URL.createObjectURL(blob), file, ok: quality.ok, reason: quality.reason });
     }, "image/jpeg", 0.85);
   }
 
+  function retake() {
+    if (shot) URL.revokeObjectURL(shot.url);
+    setShot(null);
+  }
+
+  // ── Écran d'aperçu + verdict qualité ──
+  if (shot) {
+    return (
+      <div className="fixed inset-0 z-[100] flex flex-col bg-black">
+        <div className="relative flex-1 overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={shot.url} alt="Aperçu du document" className="absolute inset-0 h-full w-full object-contain" />
+          <div className={`absolute inset-x-0 top-0 p-3 text-center text-sm font-medium ${shot.ok ? "bg-emerald-600/90 text-white" : "bg-red-600/90 text-white"}`}>
+            {shot.ok ? "✓ Image nette et lisible" : `⚠ ${shot.reason}`}
+          </div>
+        </div>
+        <div className="flex items-center justify-center gap-4 bg-black/90 px-4 py-6">
+          <Button type="button" variant="outline" onClick={retake} className="bg-white/10 text-white hover:bg-white/20">
+            <Camera className="mr-2 h-4 w-4" /> Reprendre
+          </Button>
+          {shot.ok ? (
+            <Button type="button" onClick={() => onCapture(shot.file)}>
+              <CheckCircle2 className="mr-2 h-4 w-4" /> Utiliser cette photo
+            </Button>
+          ) : (
+            <Button type="button" variant="secondary" onClick={() => onCapture(shot.file)}>
+              Utiliser quand même
+            </Button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Écran caméra live ──
   return (
     <div className="fixed inset-0 z-[100] flex flex-col bg-black">
       <button type="button" onClick={onCancel} aria-label="Fermer"
@@ -280,7 +354,7 @@ function DocCamera({ onCapture, onCancel }: { onCapture: (file: File) => void; o
       <div className="relative flex-1 overflow-hidden">
         <video ref={videoRef} playsInline autoPlay muted className="absolute inset-0 h-full w-full object-contain" />
         {!ready && <div className="absolute inset-0 flex items-center justify-center text-sm text-white/80">Démarrage de la caméra…</div>}
-        <p className="absolute inset-x-0 top-6 text-center text-sm font-medium text-white drop-shadow">Cadrez le document, puis prenez la photo</p>
+        <p className="absolute inset-x-0 top-6 text-center text-sm font-medium text-white drop-shadow">Cadrez le document à plat, bien éclairé, puis prenez la photo</p>
       </div>
       <div className="flex items-center justify-center gap-8 bg-black/90 py-6">
         <button type="button" onClick={onCancel} className="text-sm font-medium text-white/70 hover:text-white">Annuler</button>
