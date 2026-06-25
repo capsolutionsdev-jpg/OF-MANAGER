@@ -28,6 +28,7 @@ import {
   PieChart,
   KeyRound,
   LifeBuoy,
+  Calculator,
   type LucideIcon,
 } from "lucide-react";
 
@@ -109,6 +110,13 @@ export const navItems: NavItem[] = [
     label: "CRM",
     href: "/crm",
     icon: Target,
+    roles: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
+    permission: "crm",
+  },
+  {
+    label: "Simulateur financement",
+    href: "/simulateur-financement",
+    icon: Calculator,
     roles: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
     permission: "crm",
   },
@@ -301,7 +309,7 @@ export const navItems: NavItem[] = [
 // restent des liens directs. Les entrées « __footer » sortent de la barre et
 // vont dans le pied de page (avec les mentions légales).
 const GROUP_BY_HREF: Record<string, string> = {
-  "/crm": "Commercial", "/kanban": "Commercial", "/taches": "Commercial",
+  "/crm": "Commercial", "/simulateur-financement": "Commercial", "/kanban": "Commercial", "/taches": "Commercial",
   "/notifications": "Commercial", "/leads-multicanal": "Commercial",
   "/scoring": "Commercial", "/portail-client": "Commercial",
   "/candidats": "Formation", "/clients-pro": "Formation", "/formations": "Formation",

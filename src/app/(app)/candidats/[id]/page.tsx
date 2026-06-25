@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Pencil, History, CalendarDays, FileDown, Trash2, Target, MessageSquare } from "lucide-react";
+import { ArrowLeft, Pencil, History, CalendarDays, FileDown, Trash2, Target, MessageSquare, Calculator } from "lucide-react";
 import { auth } from "@/auth";
 import { canAccessSection, roleAllowedInSection } from "@/lib/permissions";
 import { getTenantDb } from "@/lib/tenant";
@@ -147,6 +147,16 @@ export default async function CandidatDetailPage({
             ) : null}
           </div>
           <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              render={
+                <Link
+                  href={`/simulateur-financement?prenom=${encodeURIComponent(candidat.prenom)}&nom=${encodeURIComponent(candidat.nom)}`}
+                />
+              }
+            >
+              <Calculator className="mr-2 h-4 w-4" /> Simuler le financement
+            </Button>
             {candidat.statut !== "INSCRIT" && (
               <SendProspectLinkButton
                 candidatId={candidat.id}
