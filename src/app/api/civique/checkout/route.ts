@@ -36,7 +36,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Paiement non configuré." }, { status: 503, headers: civicCors });
   }
 
-  let body: { mention?: string; prenom?: string; email?: string; organismeId?: string };
+  let body: {
+    mention?: string;
+    prenom?: string;
+    email?: string;
+    organismeId?: string;
+    consentRetractation?: boolean;
+  };
   try {
     body = (await req.json()) as typeof body;
   } catch {
@@ -95,7 +101,15 @@ export async function POST(req: Request) {
         },
       },
     ],
-    metadata: { type: "civique", mention, prenom, email, organismeId },
+    metadata: {
+      type: "civique",
+      mention,
+      prenom,
+      email,
+      organismeId,
+      consentRetractation: body.consentRetractation ? "true" : "false",
+      consentDate: new Date().toISOString(),
+    },
     success_url: `${VITRINE_BASE}/cap-language-academy/examen-civique/inscription/merci?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${VITRINE_BASE}/cap-language-academy/examen-civique/inscription?annule=1`,
   });

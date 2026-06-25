@@ -205,6 +205,10 @@ export function SimulateurFinancement({
             </Card>
           );
         })}
+        <p className="rounded-md bg-amber-500/10 px-3 py-2 text-[12px] text-amber-700">
+          ⚠️ Montants, plafonds et critères <strong>indicatifs</strong> — ils évoluent chaque année.
+          À confirmer auprès du financeur (OPCO, FAF, France Travail…) avant tout engagement.
+        </p>
       </div>
     </div>
   );

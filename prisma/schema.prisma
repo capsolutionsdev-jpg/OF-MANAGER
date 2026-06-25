@@ -1893,6 +1893,8 @@ model CivicPaiement {
   stripeSessionId String       @unique
   statut          String       @default("paye")
   date            DateTime     @default(now())
+  /// Horodatage de l'envoi de l'e-mail (code d'accès + reçu) — garantit l'envoi unique.
+  emailSentAt     DateTime?
 
   @@index([organismeId])
   @@index([candidatId])

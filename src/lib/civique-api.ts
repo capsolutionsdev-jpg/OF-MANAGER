@@ -10,6 +10,14 @@
 import { randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { CivicMention, CivicModuleStatut, CivicPath, Prisma } from "@prisma/client";
+import { sendEmail } from "@/lib/email";
+
+const VITRINE_BASE = process.env.VITRINE_URL ?? "https://capacademy.fr";
+const MENTION_NOM_LISIBLE: Record<CivicMention, string> = {
+  CSP: "Carte de séjour pluriannuelle (CSP)",
+  CR: "Carte de résident (CR)",
+  NATURALISATION: "Naturalisation",
+};
 
 // ---------- CORS (le vitrine est sur un autre domaine) ----------
 export const civicCors: Record<string, string> = {
@@ -301,7 +309,7 @@ export async function fulfillCivicCheckout(args: {
   }
 
   // Paiement (idempotent sur la session Stripe).
-  await prisma.civicPaiement.upsert({
+  const paiement = await prisma.civicPaiement.upsert({
     where: { stripeSessionId: args.sessionId },
     create: {
       organismeId,
@@ -312,6 +320,32 @@ export async function fulfillCivicCheckout(args: {
     },
     update: {},
   });
+
+  // E-mail (code d'accès + reçu) — ENVOI UNIQUE garanti par un claim atomique :
+  // le webhook ET la page de succès appellent ce fulfillment plusieurs fois.
+  const claim = await prisma.civicPaiement.updateMany({
+    where: { id: paiement.id, emailSentAt: null },
+    data: { emailSentAt: new Date() },
+  });
+  if (claim.count === 1) {
+    const euros = ((args.amountTotal ?? 0) / 100).toLocaleString("fr-FR", {
+      minimumFractionDigits: 2,
+    });
+    await sendEmail({
+      to: candidat.email,
+      organismeId,
+      subject: "Votre accès à la préparation à l'examen civique",
+      body:
+        `Bonjour ${candidat.prenom || ""},\n\n` +
+        `Merci pour votre inscription à la préparation à l'examen civique — ${MENTION_NOM_LISIBLE[mention]}.\n` +
+        `Votre paiement de ${euros} € est confirmé (reçu également disponible sur votre tableau de bord Stripe).\n\n` +
+        `VOTRE CODE D'ACCÈS : ${token}\n\n` +
+        `Pour démarrer votre parcours, connectez-vous avec votre e-mail (${candidat.email}) et ce code, ` +
+        `onglet « Code d'accès » :\n${VITRINE_BASE}/cap-language-academy/examen-civique/connexion\n\n` +
+        `Conservez ce code précieusement : il vous permet de retrouver votre progression sur tous vos appareils.\n\n` +
+        `À bientôt,\nL'équipe CAP Compétences`,
+    });
+  }
 
   return {
     candidatId: candidat.id,
