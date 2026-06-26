@@ -75,9 +75,18 @@ export async function getCandidatFromToken(req: Request): Promise<CivicCandidat 
   if (!token) return null;
   const c = await prisma.candidat.findUnique({
     where: { civicToken: token },
-    select: { id: true, prenom: true, email: true, organismeId: true, civicAccessUntil: true },
+    select: {
+      id: true,
+      prenom: true,
+      email: true,
+      organismeId: true,
+      civicAccessUntil: true,
+      civicAccessStatut: true,
+    },
   });
   if (!c) return null;
+  // Compte suspendu ou désactivé depuis le back-office → accès refusé.
+  if (c.civicAccessStatut !== "ACTIF") return null;
   // Compte désactivé après la date de fin d'accès (≈ 30 jours).
   if (c.civicAccessUntil && c.civicAccessUntil.getTime() < Date.now()) return null;
   return { id: c.id, prenom: c.prenom, email: c.email, organismeId: c.organismeId };
@@ -89,13 +98,24 @@ export function civicAccessUntil(): Date {
   return new Date(Date.now() + CIVIC_ACCESS_DAYS * 24 * 60 * 60 * 1000);
 }
 
-/** Mentions (formations) auxquelles le candidat a souscrit (payées) — minuscule. */
+/** Mentions (formations) accessibles au candidat — minuscule.
+ *  Union des mentions accordées au compte (`civicMentions`, création manuelle)
+ *  et des mentions payées (`CivicPaiement`, en ligne ou physique). */
 export async function entitledMentions(candidatId: string): Promise<string[]> {
-  const ps = await prisma.civicPaiement.findMany({
-    where: { candidatId },
-    select: { mention: true },
-  });
-  return [...new Set(ps.map((p) => MENTION_FROM_DB[p.mention]))];
+  const [cand, ps] = await Promise.all([
+    prisma.candidat.findUnique({
+      where: { id: candidatId },
+      select: { civicMentions: true },
+    }),
+    prisma.civicPaiement.findMany({
+      where: { candidatId, statut: "paye" },
+      select: { mention: true },
+    }),
+  ]);
+  const set = new Set<string>();
+  for (const m of cand?.civicMentions ?? []) set.add(MENTION_FROM_DB[m]);
+  for (const p of ps) set.add(MENTION_FROM_DB[p.mention]);
+  return [...set];
 }
 
 // ---------- Types de l'état échangé avec le vitrine ----------
@@ -322,11 +342,17 @@ export async function fulfillCivicCheckout(args: {
   }
 
   // Provision du code d'accès + (ré)ouverture de l'accès pour 30 jours.
+  // Le paiement (ré)active le compte et ajoute la mention payée à ses accès.
   let token = candidat.civicToken;
   if (!token) token = randomBytes(24).toString("base64url");
   await prisma.candidat.update({
     where: { id: candidat.id },
-    data: { civicToken: token, civicAccessUntil: civicAccessUntil() },
+    data: {
+      civicToken: token,
+      civicAccessUntil: civicAccessUntil(),
+      civicAccessStatut: "ACTIF",
+      civicMentions: { push: mention },
+    },
   });
 
   // Paiement (idempotent sur la session Stripe).

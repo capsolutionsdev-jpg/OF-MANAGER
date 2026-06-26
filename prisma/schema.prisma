@@ -503,6 +503,11 @@ model Candidat {
   civicToken       String?           @unique
   // Fin d'accès e-learning (compte désactivé après cette date — 30 j par défaut).
   civicAccessUntil DateTime?
+  // Statut administratif du compte e-learning (créé/géré depuis le back-office).
+  civicAccessStatut CivicAccessStatut @default(ACTIF)
+  // Mentions (formations) auxquelles le compte donne accès — alimenté à la
+  // création manuelle et à chaque paiement (en ligne ou physique).
+  civicMentions    CivicMention[]    @default([])
   civicAssessments CivicAssessment[]
   civicProgress    CivicProgress[]
   civicWeaknesses  CivicWeakness[]
@@ -1788,6 +1793,16 @@ enum CivicModuleStatut {
   NOT_STARTED
   IN_PROGRESS
   COMPLETED
+}
+
+/// Statut administratif du compte e-learning d'un candidat.
+///  ACTIF      = accès ouvert (dans la limite de civicAccessUntil)
+///  SUSPENDU   = accès bloqué temporairement (impayé, litige…)
+///  DESACTIVE  = accès clos (fin de prestation)
+enum CivicAccessStatut {
+  ACTIF
+  SUSPENDU
+  DESACTIVE
 }
 
 /// Positionnement (= candidate_assessment) : double score + parcours.
