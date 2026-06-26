@@ -10,7 +10,7 @@ import { prisma } from "@/lib/prisma";
 import { decryptSecret } from "@/lib/crypto";
 
 export function emailConfigured(): boolean {
-  return Boolean(process.env.BREVO_API_KEY);
+  return Boolean(process.env.RESEND_API_KEY || process.env.BREVO_API_KEY);
 }
 
 export type EmailAttachment = {
@@ -41,6 +41,39 @@ async function resolveSender(organismeId?: string | null): Promise<Sender> {
   };
 }
 
+/** Envoi via Resend (api.resend.com) — provider serverless, sans restriction IP. */
+async function sendViaResend(
+  params: { to: string; subject: string; body: string; attachments?: EmailAttachment[] },
+  sender: Sender,
+): Promise<{ sent: boolean }> {
+  const fromEmail = process.env.RESEND_SENDER || sender.email;
+  const payload: Record<string, unknown> = {
+    from: `${sender.name} <${fromEmail}>`,
+    to: [params.to],
+    subject: params.subject,
+    text: params.body,
+  };
+  if (params.attachments && params.attachments.length > 0) {
+    payload.attachments = params.attachments.map((a) => ({
+      filename: a.name,
+      content: a.content, // base64
+    }));
+  }
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+    return { sent: res.ok };
+  } catch {
+    return { sent: false };
+  }
+}
+
 export async function sendEmail(params: {
   to: string;
   subject: string;
@@ -50,6 +83,12 @@ export async function sendEmail(params: {
   organismeId?: string | null;
 }): Promise<{ sent: boolean }> {
   const sender = await resolveSender(params.organismeId);
+
+  // Priorité à Resend si configuré (recommandé sur Vercel : aucune restriction IP).
+  if (process.env.RESEND_API_KEY) {
+    return sendViaResend(params, sender);
+  }
+
   if (!sender.apiKey) {
     // Mode démo : pas d'envoi réel (l'e-mail est seulement journalisé).
     return { sent: false };
