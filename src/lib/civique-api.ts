@@ -75,9 +75,27 @@ export async function getCandidatFromToken(req: Request): Promise<CivicCandidat 
   if (!token) return null;
   const c = await prisma.candidat.findUnique({
     where: { civicToken: token },
-    select: { id: true, prenom: true, email: true, organismeId: true },
+    select: { id: true, prenom: true, email: true, organismeId: true, civicAccessUntil: true },
   });
-  return c;
+  if (!c) return null;
+  // Compte désactivé après la date de fin d'accès (≈ 30 jours).
+  if (c.civicAccessUntil && c.civicAccessUntil.getTime() < Date.now()) return null;
+  return { id: c.id, prenom: c.prenom, email: c.email, organismeId: c.organismeId };
+}
+
+/** Durée d'accès e-learning accordée à chaque inscription (30 jours). */
+export const CIVIC_ACCESS_DAYS = 30;
+export function civicAccessUntil(): Date {
+  return new Date(Date.now() + CIVIC_ACCESS_DAYS * 24 * 60 * 60 * 1000);
+}
+
+/** Mentions (formations) auxquelles le candidat a souscrit (payées) — minuscule. */
+export async function entitledMentions(candidatId: string): Promise<string[]> {
+  const ps = await prisma.civicPaiement.findMany({
+    where: { candidatId },
+    select: { mention: true },
+  });
+  return [...new Set(ps.map((p) => MENTION_FROM_DB[p.mention]))];
 }
 
 // ---------- Types de l'état échangé avec le vitrine ----------
@@ -303,12 +321,13 @@ export async function fulfillCivicCheckout(args: {
     });
   }
 
-  // Provision du code d'accès si absent.
+  // Provision du code d'accès + (ré)ouverture de l'accès pour 30 jours.
   let token = candidat.civicToken;
-  if (!token) {
-    token = randomBytes(24).toString("base64url");
-    await prisma.candidat.update({ where: { id: candidat.id }, data: { civicToken: token } });
-  }
+  if (!token) token = randomBytes(24).toString("base64url");
+  await prisma.candidat.update({
+    where: { id: candidat.id },
+    data: { civicToken: token, civicAccessUntil: civicAccessUntil() },
+  });
 
   // Paiement (idempotent sur la session Stripe).
   const paiement = await prisma.civicPaiement.upsert({

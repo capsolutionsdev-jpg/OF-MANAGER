@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { randomBytes } from "crypto";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { civicAccessUntil } from "@/lib/civique-api";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -47,7 +48,10 @@ export async function POST(
   let token = candidat.civicToken;
   if (!token || regenerate) {
     token = randomBytes(24).toString("base64url");
-    await prisma.candidat.update({ where: { id }, data: { civicToken: token } });
+    await prisma.candidat.update({
+      where: { id },
+      data: { civicToken: token, civicAccessUntil: civicAccessUntil() },
+    });
   }
 
   return NextResponse.json({

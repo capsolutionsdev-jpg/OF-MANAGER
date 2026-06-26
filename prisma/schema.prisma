@@ -501,6 +501,8 @@ model Candidat {
   // Le jeton est PROVISIONNÉ par la plateforme : c'est elle qui crée les
   // comptes candidats. Le vitrine s'authentifie avec (email + civicToken).
   civicToken       String?           @unique
+  // Fin d'accès e-learning (compte désactivé après cette date — 30 j par défaut).
+  civicAccessUntil DateTime?
   civicAssessments CivicAssessment[]
   civicProgress    CivicProgress[]
   civicWeaknesses  CivicWeakness[]

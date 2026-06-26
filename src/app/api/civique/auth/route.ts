@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { civicCors, getCandidatFromToken } from "@/lib/civique-api";
+import { civicCors, entitledMentions, getCandidatFromToken } from "@/lib/civique-api";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,8 +23,10 @@ export async function POST(req: Request) {
   if (email && email !== candidat.email.toLowerCase()) {
     return NextResponse.json({ error: "E-mail non concordant" }, { status: 403, headers: civicCors });
   }
+  // Formations souscrites (le candidat n'accède qu'à celles-ci).
+  const mentions = await entitledMentions(candidat.id);
   return NextResponse.json(
-    { id: candidat.id, prenom: candidat.prenom, email: candidat.email },
+    { id: candidat.id, prenom: candidat.prenom, email: candidat.email, mentions },
     { headers: civicCors },
   );
 }
