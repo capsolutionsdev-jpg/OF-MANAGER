@@ -286,7 +286,9 @@ export async function fulfillCivicCheckout(args: {
   const organismeId = meta.organismeId || null;
   const email = (meta.email || "").toLowerCase();
   const prenom = meta.prenom || "";
-  const mention = MENTION_TO_DB[meta.mention];
+  // La métadonnée peut contenir la mention en minuscule (clé vitrine) ou en
+  // majuscule (valeur de l'enum déjà mappée par le checkout) → on normalise.
+  const mention = MENTION_TO_DB[(meta.mention ?? "").toLowerCase()];
   if (!organismeId || !email || !mention) return null;
 
   // Candidat : retrouvé par (organisme, e-mail) ou créé.
