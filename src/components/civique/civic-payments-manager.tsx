@@ -11,6 +11,9 @@ import {
   Ban,
   CreditCard,
   Banknote,
+  Search,
+  Store,
+  Wallet,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -45,6 +48,7 @@ import {
   recordCivicPayment,
   refundCivicPayment,
   cancelCivicPayment,
+  enrollAndPayCivic,
 } from "@/lib/actions/civique-actions";
 
 export type CivicPaymentRow = {
@@ -94,7 +98,17 @@ export function CivicPaymentsManager({
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [guichetOpen, setGuichetOpen] = useState(false);
+  const [query, setQuery] = useState("");
   const [isPending, startTransition] = useTransition();
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return payments;
+    return payments.filter((p) =>
+      `${p.eleve} ${p.email} ${p.factureNumero ?? ""}`.toLowerCase().includes(q),
+    );
+  }, [payments, query]);
 
   const stats = useMemo(() => {
     let encaisse = 0;
@@ -109,7 +123,8 @@ export function CivicPaymentsManager({
       if (new Date(p.date) >= m0) moisCa += p.montantCents;
       parMethode[p.methode] = (parMethode[p.methode] ?? 0) + p.montantCents;
     }
-    return { encaisse, moisCa, count: payments.filter((p) => p.statut === "paye").length, parMethode };
+    const count = payments.filter((p) => p.statut === "paye").length;
+    return { encaisse, moisCa, count, panier: count ? Math.round(encaisse / count) : 0, parMethode };
   }, [payments]);
 
   function runAction(p: Promise<{ ok: boolean; error?: string }>, okMsg: string) {
@@ -128,8 +143,24 @@ export function CivicPaymentsManager({
         <Kpi icon={Banknote} label="CA encaissé" value={eur(stats.encaisse)} />
         <Kpi icon={CreditCard} label="CA ce mois" value={eur(stats.moisCa)} />
         <Kpi icon={FileText} label="Paiements" value={String(stats.count)} />
-        <div className="flex items-center justify-end gap-2">
+        <Kpi icon={Wallet} label="Panier moyen" value={eur(stats.panier)} />
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="relative min-w-52 flex-1">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Rechercher (élève, e-mail, n° facture)…"
+            className={inputCx + " pl-8"}
+          />
+        </div>
+        <div className="flex items-center gap-2">
           <ExportMenu href="/examen-civique/export/comptable" label="Compta" size="sm" />
+          <Button size="sm" variant="outline" onClick={() => setGuichetOpen(true)}>
+            <Store className="mr-1.5 h-4 w-4" /> Inscription guichet
+          </Button>
           <Button size="sm" onClick={() => setOpen(true)}>
             <Plus className="mr-1.5 h-4 w-4" /> Paiement
           </Button>
@@ -151,14 +182,14 @@ export function CivicPaymentsManager({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {payments.length === 0 ? (
+            {filtered.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} className="py-8 text-center text-sm text-muted-foreground">
                   Aucun paiement enregistré. Les paiements en ligne (Stripe) et physiques apparaîtront ici.
                 </TableCell>
               </TableRow>
             ) : (
-              payments.map((p) => (
+              filtered.map((p) => (
                 <TableRow key={p.id}>
                   <TableCell className="text-sm">{fmtDate(p.date)}</TableCell>
                   <TableCell>
@@ -224,6 +255,7 @@ export function CivicPaymentsManager({
         tarifs={tarifs}
         onDone={() => router.refresh()}
       />
+      <GuichetDialog open={guichetOpen} onOpenChange={setGuichetOpen} tarifs={tarifs} onDone={() => router.refresh()} />
       {isPending && <p className="text-xs text-muted-foreground">Traitement…</p>}
     </div>
   );
@@ -368,6 +400,160 @@ function RecordPaymentDialog({
             <DialogFooter>
               <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>Annuler</Button>
               <Button onClick={submit} disabled={isPending}>{isPending ? "Enregistrement…" : "Enregistrer"}</Button>
+            </DialogFooter>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function GuichetDialog({
+  open,
+  onOpenChange,
+  tarifs,
+  onDone,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  tarifs: Record<string, number>;
+  onDone: () => void;
+}) {
+  const [isPending, startTransition] = useTransition();
+  const today = new Date().toISOString().slice(0, 10);
+  const blank = {
+    nom: "",
+    prenom: "",
+    email: "",
+    telephone: "",
+    mention: "CSP",
+    montantEuros: tarifs.CSP ?? 149,
+    methode: "CB_TPE",
+    date: today,
+    dureeJours: 30,
+    notes: "",
+    envoyerEmail: true,
+  };
+  const [form, setForm] = useState(blank);
+  const [done, setDone] = useState<{ code: string; numero: string | null } | null>(null);
+
+  function pickMention(mention: string) {
+    setForm((f) => ({ ...f, mention, montantEuros: tarifs[mention] ?? f.montantEuros }));
+  }
+  function close() {
+    setDone(null);
+    setForm(blank);
+    onOpenChange(false);
+  }
+  function submit() {
+    startTransition(async () => {
+      const r = await enrollAndPayCivic({
+        nom: form.nom,
+        prenom: form.prenom,
+        email: form.email,
+        telephone: form.telephone,
+        mention: form.mention as "CSP" | "CR" | "NATURALISATION",
+        dureeJours: Number(form.dureeJours),
+        envoyerEmail: form.envoyerEmail,
+        montantEuros: Number(form.montantEuros),
+        methode: form.methode as "CB_TPE" | "ESPECES" | "CHEQUE" | "VIREMENT" | "STRIPE",
+        date: new Date(form.date).toISOString(),
+        notes: form.notes,
+      });
+      if (r.ok) {
+        setDone({ code: r.code, numero: r.factureNumero });
+        toast.success("Inscription enregistrée.");
+        onDone();
+      } else toast.error(r.error);
+    });
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { if (!v) close(); else onOpenChange(v); }}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Inscription au guichet</DialogTitle>
+          <DialogDescription>Crée le compte, encaisse le paiement et génère la facture en une étape.</DialogDescription>
+        </DialogHeader>
+
+        {done ? (
+          <div className="space-y-3">
+            <div className="rounded-lg border bg-emerald-50 p-4 text-sm text-emerald-900">
+              <p className="font-medium">Inscription enregistrée ✓{done.numero ? ` — facture ${done.numero}` : ""}</p>
+              <p className="mt-1">Code d'accès :</p>
+              <code className="mt-1 block break-all rounded bg-white px-2 py-1 font-mono text-xs">{done.code}</code>
+            </div>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => navigator.clipboard.writeText(done.code).then(() => toast.success("Code copié."))}>
+                Copier le code
+              </Button>
+              <Button onClick={close}>Terminer</Button>
+            </DialogFooter>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="g-prenom">Prénom</Label>
+                <Input id="g-prenom" value={form.prenom} onChange={(e) => setForm({ ...form, prenom: e.target.value })} />
+              </div>
+              <div>
+                <Label htmlFor="g-nom">Nom</Label>
+                <Input id="g-nom" value={form.nom} onChange={(e) => setForm({ ...form, nom: e.target.value })} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="g-email">E-mail</Label>
+                <Input id="g-email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+              </div>
+              <div>
+                <Label htmlFor="g-tel">Téléphone</Label>
+                <Input id="g-tel" value={form.telephone} onChange={(e) => setForm({ ...form, telephone: e.target.value })} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="g-mention">Formation</Label>
+                <select id="g-mention" value={form.mention} onChange={(e) => pickMention(e.target.value)} className={inputCx}>
+                  <option value="CSP">Carte de séjour (CSP)</option>
+                  <option value="CR">Carte de résident (CR)</option>
+                  <option value="NATURALISATION">Naturalisation</option>
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="g-montant">Montant (€)</Label>
+                <Input id="g-montant" type="number" min={0} value={form.montantEuros}
+                  onChange={(e) => setForm({ ...form, montantEuros: Number(e.target.value) })} />
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="col-span-1">
+                <Label htmlFor="g-methode">Paiement</Label>
+                <select id="g-methode" value={form.methode} onChange={(e) => setForm({ ...form, methode: e.target.value })} className={inputCx}>
+                  <option value="CB_TPE">CB (TPE)</option>
+                  <option value="ESPECES">Espèces</option>
+                  <option value="CHEQUE">Chèque</option>
+                  <option value="VIREMENT">Virement</option>
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="g-date">Date</Label>
+                <Input id="g-date" type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
+              </div>
+              <div>
+                <Label htmlFor="g-duree">Accès (j)</Label>
+                <Input id="g-duree" type="number" min={1} max={365} value={form.dureeJours}
+                  onChange={(e) => setForm({ ...form, dureeJours: Number(e.target.value) })} />
+              </div>
+            </div>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={form.envoyerEmail} onChange={(e) => setForm({ ...form, envoyerEmail: e.target.checked })} />
+              Envoyer le code d'accès par e-mail
+            </label>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>Annuler</Button>
+              <Button onClick={submit} disabled={isPending}>{isPending ? "Enregistrement…" : "Inscrire & encaisser"}</Button>
             </DialogFooter>
           </div>
         )}

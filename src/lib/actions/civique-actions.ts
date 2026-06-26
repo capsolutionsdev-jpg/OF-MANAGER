@@ -347,3 +347,105 @@ export async function cancelCivicPayment(paiementId: string): Promise<ActionResu
   revalidatePath("/examen-civique");
   return { ok: true };
 }
+
+export type EnrollAndPayInput = CreateCivicStudentInput & {
+  montantEuros: number;
+  methode: CivicPaiementMethode;
+  date?: string;
+  notes?: string;
+};
+
+/**
+ * Inscription « au guichet » en une étape : crée (ou réutilise) le compte élève,
+ * ouvre l'accès, enregistre le paiement physique et génère la facture. Idéal pour
+ * un client qui paie sur place (CB au TPE, espèces, chèque).
+ */
+export async function enrollAndPayCivic(
+  input: EnrollAndPayInput,
+): Promise<ActionResult<{ code: string; candidatId: string; factureNumero: string | null }>> {
+  const { organismeId, userId } = await requireStaff();
+  const nom = (input.nom ?? "").trim();
+  const prenom = (input.prenom ?? "").trim();
+  const email = (input.email ?? "").trim().toLowerCase();
+  const telephone = (input.telephone ?? "").trim() || null;
+  const mention = input.mention;
+  const methode = input.methode;
+  const dureeJours = Math.min(Math.max(Number(input.dureeJours ?? 30), 1), 365);
+  const montantCents = Math.round(Math.max(0, Number(input.montantEuros ?? 0)) * 100);
+
+  if (!prenom || !nom) return { ok: false, error: "Nom et prénom requis." };
+  if (!email.includes("@")) return { ok: false, error: "Adresse e-mail invalide." };
+  if (!Object.values(CivicMention).includes(mention)) return { ok: false, error: "Mention invalide." };
+  if (!Object.values(CivicPaiementMethode).includes(methode)) {
+    return { ok: false, error: "Mode de paiement invalide." };
+  }
+  if (montantCents <= 0) return { ok: false, error: "Montant invalide." };
+
+  const existing = await prisma.candidat.findFirst({
+    where: { organismeId, email },
+    select: { id: true, civicToken: true, civicMentions: true },
+  });
+  const code = existing?.civicToken ?? genCivicToken();
+  const mentions = new Set<CivicMention>(existing?.civicMentions ?? []);
+  mentions.add(mention);
+
+  const accountData = {
+    nom,
+    prenom,
+    telephone: telephone ?? undefined,
+    civicToken: code,
+    civicAccessUntil: accessUntil(dureeJours),
+    civicAccessStatut: "ACTIF" as const,
+    civicMentions: { set: [...mentions] },
+  };
+
+  let candidatId: string;
+  if (existing) {
+    await prisma.candidat.update({ where: { id: existing.id }, data: accountData });
+    candidatId = existing.id;
+  } else {
+    const created = await prisma.candidat.create({
+      data: {
+        organismeId,
+        email,
+        sourceConnaissance: "Inscription au guichet (back-office)",
+        createdById: userId,
+        ...accountData,
+      },
+      select: { id: true },
+    });
+    candidatId = created.id;
+  }
+
+  const paiement = await prisma.civicPaiement.create({
+    data: {
+      organismeId,
+      candidatId,
+      mention,
+      montantCents,
+      methode,
+      statut: "paye",
+      date: input.date ? new Date(input.date) : new Date(),
+      encaissePar: userId,
+      notes: (input.notes ?? "").trim() || null,
+    },
+    select: { id: true },
+  });
+
+  await ensureCivicFactureFor(paiement.id).catch(() => {});
+  const facture = await prisma.civicFacture.findUnique({
+    where: { paiementId: paiement.id },
+    select: { numero: true },
+  });
+
+  if (input.envoyerEmail) {
+    try {
+      await sendCivicAccessEmail({ organismeId, email, prenom, code, mention });
+    } catch {
+      /* best-effort */
+    }
+  }
+
+  revalidatePath("/examen-civique");
+  return { ok: true, code, candidatId, factureNumero: facture?.numero ?? null };
+}

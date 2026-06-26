@@ -13,6 +13,7 @@ import {
   XCircle,
   CalendarPlus,
   RefreshCw,
+  Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -151,6 +152,13 @@ export function CivicStudentsManager({ students }: { students: CivicStudentRow[]
     return c;
   }, [students]);
 
+  const expiringSoon = useMemo(() => {
+    const limit = Date.now() + 7 * 24 * 60 * 60 * 1000;
+    return students.filter(
+      (s) => s.statut === "ACTIF" && !s.expired && s.accessUntil && new Date(s.accessUntil).getTime() < limit,
+    );
+  }, [students]);
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -167,6 +175,26 @@ export function CivicStudentsManager({ students }: { students: CivicStudentRow[]
           </Button>
         </div>
       </div>
+
+      {expiringSoon.length > 0 && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+          <div className="flex items-center gap-2 text-sm font-medium text-amber-900">
+            <Clock className="h-4 w-4" /> {expiringSoon.length} accès expire(nt) dans les 7 jours
+          </div>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {expiringSoon.slice(0, 8).map((s) => (
+              <button
+                key={s.id}
+                onClick={() => runAction(extendCivicAccess(s.id, 30), `Accès de ${s.prenom} prolongé de 30 jours.`)}
+                className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-white px-2.5 py-1 text-xs text-amber-900 hover:bg-amber-100"
+                title="Prolonger de 30 jours"
+              >
+                <CalendarPlus className="h-3 w-3" /> {s.prenom} {s.nom} ({fmtDate(s.accessUntil)})
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative flex-1 min-w-52">
