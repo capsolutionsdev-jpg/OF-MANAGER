@@ -513,6 +513,7 @@ model Candidat {
   civicWeaknesses  CivicWeakness[]
   civicMockExams   CivicMockExam[]
   civicPaiements   CivicPaiement[]
+  civicFactures    CivicFacture[]
 
   createdById String?
   createdBy   User?    @relation("CandidatCreePar", fields: [createdById], references: [id])
@@ -1899,20 +1900,64 @@ model CivicTarif {
 
 /// Paiement d'une prépa civique en ligne (Stripe Checkout), SANS Inscription
 /// (formation 100 % en ligne, en continu). Sert au suivi et à la compta.
+/// Mode de règlement d'un paiement civique.
+enum CivicPaiementMethode {
+  STRIPE // carte bancaire en ligne (Stripe Checkout)
+  CB_TPE // carte bancaire au terminal physique
+  ESPECES // espèces
+  CHEQUE // chèque
+  VIREMENT // virement bancaire
+}
+
 model CivicPaiement {
-  id              String       @id @default(cuid())
+  id              String               @id @default(cuid())
   organismeId     String? // tenant (multi-OF)
   candidatId      String
-  candidat        Candidat     @relation(fields: [candidatId], references: [id], onDelete: Cascade)
+  candidat        Candidat             @relation(fields: [candidatId], references: [id], onDelete: Cascade)
   mention         CivicMention
   montantCents    Int
-  devise          String       @default("eur")
-  stripeSessionId String       @unique
-  statut          String       @default("paye")
-  date            DateTime     @default(now())
+  devise          String               @default("eur")
+  methode         CivicPaiementMethode @default(STRIPE)
+  /// Présent uniquement pour les paiements en ligne (Stripe). Null si physique.
+  stripeSessionId String?              @unique
+  statut          String               @default("paye") // paye | en_attente | rembourse | annule
+  date            DateTime             @default(now())
+  /// Utilisateur ayant encaissé un paiement physique (back-office).
+  encaissePar     String?
+  notes           String?
   /// Horodatage de l'envoi de l'e-mail (code d'accès + reçu) — garantit l'envoi unique.
   emailSentAt     DateTime?
+  facture         CivicFacture?
 
+  @@index([organismeId])
+  @@index([candidatId])
+}
+
+/// Facture numérotée émise pour un paiement civique (en ligne ou physique).
+/// TVA gérée (par défaut 0 % — formation exonérée art. 261-4-4° du CGI).
+model CivicFacture {
+  id              String               @id @default(cuid())
+  organismeId     String? // tenant (multi-OF)
+  numero          String // ex. CIV-2026-0001
+  candidatId      String
+  candidat        Candidat             @relation(fields: [candidatId], references: [id], onDelete: Cascade)
+  paiementId      String?              @unique
+  paiement        CivicPaiement?       @relation(fields: [paiementId], references: [id], onDelete: SetNull)
+  mention         CivicMention
+  clientNom       String
+  clientEmail     String?
+  clientAdresse   String?
+  montantHtCents  Int
+  tvaPct          Int                  @default(0)
+  tvaCents        Int                  @default(0)
+  montantTtcCents Int
+  methode         CivicPaiementMethode
+  exonereTva      Boolean              @default(true)
+  date            DateTime             @default(now())
+  emisePar        String?
+  createdAt       DateTime             @default(now())
+
+  @@unique([organismeId, numero])
   @@index([organismeId])
   @@index([candidatId])
 }

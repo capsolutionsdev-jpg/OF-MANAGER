@@ -118,6 +118,70 @@ export async function entitledMentions(candidatId: string): Promise<string[]> {
   return [...set];
 }
 
+// ---------- Facturation ----------
+/** Prochain numéro de facture civique, format CIV-AAAA-NNNN (par organisme/an). */
+export async function nextFactureNumero(organismeId: string): Promise<string> {
+  const prefix = `CIV-${new Date().getFullYear()}-`;
+  const count = await prisma.civicFacture.count({
+    where: { organismeId, numero: { startsWith: prefix } },
+  });
+  return `${prefix}${String(count + 1).padStart(4, "0")}`;
+}
+
+/** Crée la facture numérotée d'un paiement s'il n'en a pas déjà une (idempotent).
+ *  TVA 0 % par défaut (formation exonérée art. 261-4-4° du CGI). */
+export async function ensureCivicFactureFor(paiementId: string): Promise<void> {
+  const existing = await prisma.civicFacture.findUnique({ where: { paiementId } });
+  if (existing) return;
+  const p = await prisma.civicPaiement.findUnique({
+    where: { id: paiementId },
+    select: {
+      id: true,
+      organismeId: true,
+      candidatId: true,
+      mention: true,
+      montantCents: true,
+      methode: true,
+      statut: true,
+      candidat: {
+        select: { nom: true, prenom: true, email: true, adresse: true, ville: true, codePostal: true },
+      },
+    },
+  });
+  if (!p || p.statut !== "paye") return;
+  const clientNom = `${p.candidat.prenom} ${p.candidat.nom}`.trim() || p.candidat.email;
+  const clientAdresse =
+    [p.candidat.adresse, [p.candidat.codePostal, p.candidat.ville].filter(Boolean).join(" ")]
+      .filter(Boolean)
+      .join(", ") || null;
+  const data = {
+    organismeId: p.organismeId,
+    candidatId: p.candidatId,
+    paiementId: p.id,
+    mention: p.mention,
+    clientNom,
+    clientEmail: p.candidat.email,
+    clientAdresse,
+    montantHtCents: p.montantCents,
+    tvaPct: 0,
+    tvaCents: 0,
+    montantTtcCents: p.montantCents,
+    methode: p.methode,
+    exonereTva: true,
+  };
+  // Retry léger sur collision de numéro (concurrence faible).
+  for (let i = 0; i < 3; i++) {
+    try {
+      await prisma.civicFacture.create({
+        data: { ...data, numero: await nextFactureNumero(p.organismeId ?? "") },
+      });
+      return;
+    } catch {
+      if (i === 2) throw new Error("Numérotation facture impossible.");
+    }
+  }
+}
+
 // ---------- Types de l'état échangé avec le vitrine ----------
 type Asmt = {
   languageScore: number;
@@ -363,10 +427,14 @@ export async function fulfillCivicCheckout(args: {
       candidatId: candidat.id,
       mention,
       montantCents: args.amountTotal ?? 0,
+      methode: "STRIPE",
       stripeSessionId: args.sessionId,
     },
     update: {},
   });
+
+  // Facture numérotée (best-effort, idempotente sur le paiement).
+  await ensureCivicFactureFor(paiement.id).catch(() => {});
 
   // E-mail (code d'accès + reçu) — ENVOI UNIQUE garanti par un claim atomique :
   // le webhook ET la page de succès appellent ce fulfillment plusieurs fois.

@@ -2,10 +2,11 @@
 
 import { randomBytes } from "crypto";
 import { revalidatePath } from "next/cache";
-import { CivicMention, CivicAccessStatut } from "@prisma/client";
+import { CivicMention, CivicAccessStatut, CivicPaiementMethode } from "@prisma/client";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { sendEmail } from "@/lib/email";
+import { ensureCivicFactureFor } from "@/lib/civique-api";
 
 const STAFF = ["SUPERADMIN", "ADMIN", "RESPONSABLE_FORMATION"];
 
@@ -244,4 +245,105 @@ export async function regenerateCivicCode(
   if (res.count === 0) return { ok: false, error: "Compte introuvable." };
   revalidatePath("/examen-civique");
   return { ok: true, code };
+}
+
+// ───────────────────────── Paiements & facturation ─────────────────────────
+
+export type RecordPaymentInput = {
+  candidatId: string;
+  mention: CivicMention;
+  montantEuros: number;
+  methode: CivicPaiementMethode;
+  date?: string; // ISO (défaut : maintenant)
+  notes?: string;
+  prolongeJours?: number; // ouverture/prolongation d'accès (défaut 30)
+};
+
+/**
+ * Enregistre un paiement physique (CB au TPE, espèces, chèque, virement) pour un
+ * élève existant : crée le paiement, (ré)ouvre l'accès à la mention payée, et
+ * génère la facture numérotée. Renvoie le numéro de facture.
+ */
+export async function recordCivicPayment(
+  input: RecordPaymentInput,
+): Promise<ActionResult<{ paiementId: string; factureNumero: string | null }>> {
+  const { organismeId, userId } = await requireStaff();
+  const mention = input.mention;
+  const methode = input.methode;
+  const montantCents = Math.round(Math.max(0, Number(input.montantEuros ?? 0)) * 100);
+  const jours = Math.min(Math.max(Number(input.prolongeJours ?? 30), 1), 365);
+
+  if (!Object.values(CivicMention).includes(mention)) return { ok: false, error: "Mention invalide." };
+  if (!Object.values(CivicPaiementMethode).includes(methode)) {
+    return { ok: false, error: "Mode de paiement invalide." };
+  }
+  if (montantCents <= 0) return { ok: false, error: "Montant invalide." };
+
+  const candidat = await prisma.candidat.findFirst({
+    where: { id: input.candidatId, organismeId },
+    select: { id: true, civicToken: true, civicMentions: true },
+  });
+  if (!candidat) return { ok: false, error: "Élève introuvable." };
+
+  const mentions = new Set<CivicMention>(candidat.civicMentions ?? []);
+  mentions.add(mention);
+
+  const paiement = await prisma.civicPaiement.create({
+    data: {
+      organismeId,
+      candidatId: candidat.id,
+      mention,
+      montantCents,
+      methode,
+      statut: "paye",
+      date: input.date ? new Date(input.date) : new Date(),
+      encaissePar: userId,
+      notes: (input.notes ?? "").trim() || null,
+    },
+    select: { id: true },
+  });
+
+  // (Ré)ouverture de l'accès + code si absent.
+  await prisma.candidat.update({
+    where: { id: candidat.id },
+    data: {
+      civicToken: candidat.civicToken ?? genCivicToken(),
+      civicAccessUntil: accessUntil(jours),
+      civicAccessStatut: "ACTIF",
+      civicMentions: { set: [...mentions] },
+    },
+  });
+
+  await ensureCivicFactureFor(paiement.id).catch(() => {});
+  const facture = await prisma.civicFacture.findUnique({
+    where: { paiementId: paiement.id },
+    select: { numero: true },
+  });
+
+  revalidatePath("/examen-civique");
+  return { ok: true, paiementId: paiement.id, factureNumero: facture?.numero ?? null };
+}
+
+/** Marque un paiement comme remboursé (la facture reste, un avoir peut être émis). */
+export async function refundCivicPayment(paiementId: string): Promise<ActionResult> {
+  const { organismeId } = await requireStaff();
+  const res = await prisma.civicPaiement.updateMany({
+    where: { id: paiementId, organismeId },
+    data: { statut: "rembourse" },
+  });
+  if (res.count === 0) return { ok: false, error: "Paiement introuvable." };
+  revalidatePath("/examen-civique");
+  return { ok: true };
+}
+
+/** Annule un paiement (erreur de saisie). */
+export async function cancelCivicPayment(paiementId: string): Promise<ActionResult> {
+  const { organismeId } = await requireStaff();
+  const res = await prisma.civicPaiement.updateMany({
+    where: { id: paiementId, organismeId },
+    data: { statut: "annule" },
+  });
+  if (res.count === 0) return { ok: false, error: "Paiement introuvable." };
+  revalidatePath("/examen-civique");
+  return { ok: true };
 }

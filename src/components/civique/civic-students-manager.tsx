@@ -41,6 +41,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ExportMenu } from "@/components/export-menu";
 import {
   createCivicStudent,
   setCivicAccessStatut,
@@ -159,9 +160,12 @@ export function CivicStudentsManager({ students }: { students: CivicStudentRow[]
           <span className="text-amber-700">{counts.suspendus} suspendu(s)</span>
           <span>{counts.expires} expiré(s)</span>
         </div>
-        <Button size="sm" onClick={() => setCreateOpen(true)}>
-          <UserPlus className="mr-1.5 h-4 w-4" /> Créer un compte
-        </Button>
+        <div className="flex items-center gap-2">
+          <ExportMenu href="/examen-civique/export/pedagogique" label="Exporter" size="sm" />
+          <Button size="sm" onClick={() => setCreateOpen(true)}>
+            <UserPlus className="mr-1.5 h-4 w-4" /> Créer un compte
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">

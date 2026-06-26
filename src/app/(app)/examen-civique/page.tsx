@@ -10,6 +10,11 @@ import {
   CivicStudentsManager,
   type CivicStudentRow,
 } from "@/components/civique/civic-students-manager";
+import {
+  CivicPaymentsManager,
+  type CivicPaymentRow,
+  type PayStudent,
+} from "@/components/civique/civic-payments-manager";
 
 const TARIF_DEFAUT: Record<string, number> = { CSP: 14900, CR: 17900, NATURALISATION: 19900 };
 
@@ -149,6 +154,43 @@ export default async function ExamenCiviqueBIPage() {
     };
   });
 
+  // ── Paiements & facturation ──
+  const paymentRows = await db.civicPaiement.findMany({
+    select: {
+      id: true,
+      date: true,
+      mention: true,
+      montantCents: true,
+      methode: true,
+      statut: true,
+      candidat: { select: { nom: true, prenom: true, email: true } },
+      facture: { select: { id: true, numero: true } },
+    },
+    orderBy: { date: "desc" },
+  });
+  const payments: CivicPaymentRow[] = paymentRows.map((p) => ({
+    id: p.id,
+    date: p.date.toISOString(),
+    eleve: `${p.candidat.prenom} ${p.candidat.nom}`.trim() || p.candidat.email,
+    email: p.candidat.email,
+    mention: p.mention,
+    montantCents: p.montantCents,
+    methode: p.methode,
+    statut: p.statut,
+    factureId: p.facture?.id ?? null,
+    factureNumero: p.facture?.numero ?? null,
+  }));
+  const payStudents: PayStudent[] = students.map((s) => ({
+    id: s.id,
+    label: `${s.prenom} ${s.nom} — ${s.email}`,
+    mention: s.mentions[0] ?? null,
+  }));
+  const tarifsEuros: Record<string, number> = {
+    CSP: (tarifMap.get("CSP")?.prixCents ?? TARIF_DEFAUT.CSP) / 100,
+    CR: (tarifMap.get("CR")?.prixCents ?? TARIF_DEFAUT.CR) / 100,
+    NATURALISATION: (tarifMap.get("NATURALISATION")?.prixCents ?? TARIF_DEFAUT.NATURALISATION) / 100,
+  };
+
   // ── Candidats distincts (BI) ──
   const candidatIds = new Set<string>();
   for (const a of assessments) candidatIds.add(a.candidatId);
@@ -240,6 +282,7 @@ export default async function ExamenCiviqueBIPage() {
       <Tabs defaultValue="eleves" className="space-y-6">
         <TabsList>
           <TabsTrigger value="eleves">Élèves &amp; comptes</TabsTrigger>
+          <TabsTrigger value="paiements">Paiements &amp; facturation</TabsTrigger>
           <TabsTrigger value="apercu">Vue d&apos;ensemble</TabsTrigger>
           <TabsTrigger value="tarifs">Tarifs</TabsTrigger>
         </TabsList>
@@ -247,6 +290,11 @@ export default async function ExamenCiviqueBIPage() {
         {/* ─────────── Élèves & comptes ─────────── */}
         <TabsContent value="eleves">
           <CivicStudentsManager students={students} />
+        </TabsContent>
+
+        {/* ─────────── Paiements & facturation ─────────── */}
+        <TabsContent value="paiements">
+          <CivicPaymentsManager payments={payments} students={payStudents} tarifs={tarifsEuros} />
         </TabsContent>
 
         {/* ─────────── Vue d'ensemble (BI) ─────────── */}
