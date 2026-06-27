@@ -33,9 +33,14 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   }
   const { id } = await params;
 
-  const f = await prisma.civicFacture.findFirst({ where: { id, organismeId } });
+  const f = await prisma.civicFacture.findFirst({
+    where: { id, organismeId },
+    include: { factureOrigine: { select: { numero: true } } },
+  });
   if (!f) return new Response("Facture introuvable", { status: 404 });
   const org = await prisma.organisme.findUnique({ where: { id: organismeId } });
+  const isAvoir = f.type === "AVOIR";
+  const docTitre = isAvoir ? "Avoir" : "Facture";
 
   const emetteur = [
     `<strong>${esc(org?.raisonSociale || org?.nom || "Organisme de formation")}</strong>`,
@@ -91,14 +96,16 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     .pill { display:inline-block; padding:2px 8px; border-radius:99px; background:#ecfdf5; color:#047857; font-weight:600; font-size:11px; }
   </style></head><body>
     <div class="top">
-      <div><h1>Facture</h1><div class="muted">N° ${esc(f.numero)}</div><div class="muted">Date : ${dateStr}</div></div>
+      <div><h1>${docTitre}</h1><div class="muted">N° ${esc(f.numero)}</div><div class="muted">Date : ${dateStr}</div>${
+        isAvoir && f.factureOrigine ? `<div class="muted">Se rapporte à la facture N° ${esc(f.factureOrigine.numero)}</div>` : ""
+      }</div>
       <div class="box">${emetteur}</div>
     </div>
 
     <div class="parties">
       <div class="box"><div class="lbl">Facturé à</div>${client}</div>
       <div class="box"><div class="lbl">Règlement</div>${esc(METHODE_LABEL[f.methode])}<br>
-        Statut : <span class="pill">${esc(f.paiementId ? "Payé" : "—")}</span></div>
+        Statut : <span class="pill">${esc(isAvoir ? "Remboursement" : f.paiementId ? "Payé" : "—")}</span></div>
     </div>
 
     <table>
@@ -124,7 +131,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   return new Response(Buffer.from(pdf), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `inline; filename="facture-${f.numero}.pdf"`,
+      "Content-Disposition": `inline; filename="${f.numero}.pdf"`,
     },
   });
 }

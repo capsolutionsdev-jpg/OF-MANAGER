@@ -168,18 +168,30 @@ export default async function ExamenCiviqueBIPage() {
     },
     orderBy: { date: "desc" },
   });
-  const payments: CivicPaymentRow[] = paymentRows.map((p) => ({
-    id: p.id,
-    date: p.date.toISOString(),
-    eleve: `${p.candidat.prenom} ${p.candidat.nom}`.trim() || p.candidat.email,
-    email: p.candidat.email,
-    mention: p.mention,
-    montantCents: p.montantCents,
-    methode: p.methode,
-    statut: p.statut,
-    factureId: p.facture?.id ?? null,
-    factureNumero: p.facture?.numero ?? null,
-  }));
+  const avoirs = await db.civicFacture.findMany({
+    where: { type: "AVOIR" },
+    select: { id: true, numero: true, factureOrigineId: true },
+  });
+  const avoirByOrigine = new Map(
+    avoirs.filter((a) => a.factureOrigineId).map((a) => [a.factureOrigineId as string, a]),
+  );
+  const payments: CivicPaymentRow[] = paymentRows.map((p) => {
+    const avoir = p.facture ? avoirByOrigine.get(p.facture.id) : undefined;
+    return {
+      id: p.id,
+      date: p.date.toISOString(),
+      eleve: `${p.candidat.prenom} ${p.candidat.nom}`.trim() || p.candidat.email,
+      email: p.candidat.email,
+      mention: p.mention,
+      montantCents: p.montantCents,
+      methode: p.methode,
+      statut: p.statut,
+      factureId: p.facture?.id ?? null,
+      factureNumero: p.facture?.numero ?? null,
+      avoirId: avoir?.id ?? null,
+      avoirNumero: avoir?.numero ?? null,
+    };
+  });
   const payStudents: PayStudent[] = students.map((s) => ({
     id: s.id,
     label: `${s.prenom} ${s.nom} — ${s.email}`,

@@ -119,13 +119,54 @@ export async function entitledMentions(candidatId: string): Promise<string[]> {
 }
 
 // ---------- Facturation ----------
-/** Prochain numéro de facture civique, format CIV-AAAA-NNNN (par organisme/an). */
-export async function nextFactureNumero(organismeId: string): Promise<string> {
-  const prefix = `CIV-${new Date().getFullYear()}-`;
+/** Prochain numéro de document, CIV-AAAA-NNNN (facture) ou AVOIR-AAAA-NNNN. */
+export async function nextFactureNumero(
+  organismeId: string,
+  kind: "FACTURE" | "AVOIR" = "FACTURE",
+): Promise<string> {
+  const prefix = `${kind === "AVOIR" ? "AVOIR" : "CIV"}-${new Date().getFullYear()}-`;
   const count = await prisma.civicFacture.count({
     where: { organismeId, numero: { startsWith: prefix } },
   });
   return `${prefix}${String(count + 1).padStart(4, "0")}`;
+}
+
+/** Émet un avoir (montants négatifs) pour le remboursement d'un paiement,
+ *  référençant la facture d'origine. Idempotent (un seul avoir par facture). */
+export async function createCivicAvoir(paiementId: string): Promise<void> {
+  const origine = await prisma.civicFacture.findUnique({ where: { paiementId } });
+  if (!origine || origine.type !== "FACTURE") return;
+  const already = await prisma.civicFacture.findFirst({
+    where: { factureOrigineId: origine.id, type: "AVOIR" },
+    select: { id: true },
+  });
+  if (already) return;
+  const data = {
+    organismeId: origine.organismeId,
+    type: "AVOIR" as const,
+    candidatId: origine.candidatId,
+    factureOrigineId: origine.id,
+    mention: origine.mention,
+    clientNom: origine.clientNom,
+    clientEmail: origine.clientEmail,
+    clientAdresse: origine.clientAdresse,
+    montantHtCents: -origine.montantHtCents,
+    tvaPct: origine.tvaPct,
+    tvaCents: -origine.tvaCents,
+    montantTtcCents: -origine.montantTtcCents,
+    methode: origine.methode,
+    exonereTva: origine.exonereTva,
+  };
+  for (let i = 0; i < 3; i++) {
+    try {
+      await prisma.civicFacture.create({
+        data: { ...data, numero: await nextFactureNumero(origine.organismeId ?? "", "AVOIR") },
+      });
+      return;
+    } catch {
+      if (i === 2) throw new Error("Numérotation avoir impossible.");
+    }
+  }
 }
 
 /** Crée la facture numérotée d'un paiement s'il n'en a pas déjà une (idempotent).

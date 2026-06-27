@@ -1934,15 +1934,28 @@ model CivicPaiement {
 }
 
 /// Facture numérotée émise pour un paiement civique (en ligne ou physique).
+/// Nature d'un document de facturation civique.
+enum CivicFactureType {
+  FACTURE
+  AVOIR
+}
+
 /// TVA gérée (par défaut 0 % — formation exonérée art. 261-4-4° du CGI).
+/// Un AVOIR (remboursement) porte des montants négatifs et référence la
+/// facture d'origine via `factureOrigineId`.
 model CivicFacture {
   id              String               @id @default(cuid())
   organismeId     String? // tenant (multi-OF)
-  numero          String // ex. CIV-2026-0001
+  type            CivicFactureType     @default(FACTURE)
+  numero          String // ex. CIV-2026-0001 (facture) ou AVOIR-2026-0001
   candidatId      String
   candidat        Candidat             @relation(fields: [candidatId], references: [id], onDelete: Cascade)
   paiementId      String?              @unique
   paiement        CivicPaiement?       @relation(fields: [paiementId], references: [id], onDelete: SetNull)
+  // Avoir → facture d'origine (auto-relation).
+  factureOrigineId String?
+  factureOrigine   CivicFacture?       @relation("CivicAvoir", fields: [factureOrigineId], references: [id])
+  avoirs           CivicFacture[]      @relation("CivicAvoir")
   mention         CivicMention
   clientNom       String
   clientEmail     String?
@@ -1960,4 +1973,5 @@ model CivicFacture {
   @@unique([organismeId, numero])
   @@index([organismeId])
   @@index([candidatId])
+  @@index([factureOrigineId])
 }

@@ -6,7 +6,7 @@ import { CivicMention, CivicAccessStatut, CivicPaiementMethode } from "@prisma/c
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { sendEmail } from "@/lib/email";
-import { ensureCivicFactureFor } from "@/lib/civique-api";
+import { ensureCivicFactureFor, createCivicAvoir } from "@/lib/civique-api";
 
 const STAFF = ["SUPERADMIN", "ADMIN", "RESPONSABLE_FORMATION"];
 
@@ -324,7 +324,7 @@ export async function recordCivicPayment(
   return { ok: true, paiementId: paiement.id, factureNumero: facture?.numero ?? null };
 }
 
-/** Marque un paiement comme remboursé (la facture reste, un avoir peut être émis). */
+/** Marque un paiement comme remboursé et émet un avoir (facture négative). */
 export async function refundCivicPayment(paiementId: string): Promise<ActionResult> {
   const { organismeId } = await requireStaff();
   const res = await prisma.civicPaiement.updateMany({
@@ -332,6 +332,7 @@ export async function refundCivicPayment(paiementId: string): Promise<ActionResu
     data: { statut: "rembourse" },
   });
   if (res.count === 0) return { ok: false, error: "Paiement introuvable." };
+  await createCivicAvoir(paiementId).catch(() => {});
   revalidatePath("/examen-civique");
   return { ok: true };
 }

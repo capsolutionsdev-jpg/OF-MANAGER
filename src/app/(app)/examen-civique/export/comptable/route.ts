@@ -43,7 +43,8 @@ export async function GET(req: Request) {
   });
 
   const sheet = buildSheet("Factures civiques", factures, [
-    { header: "N° facture", value: (f) => f.numero },
+    { header: "Type", value: (f) => (f.type === "AVOIR" ? "Avoir" : "Facture") },
+    { header: "N° pièce", value: (f) => f.numero },
     { header: "Date", value: (f) => fdate(f.date) },
     { header: "Client", value: (f) => f.clientNom },
     { header: "E-mail", value: (f) => f.clientEmail ?? "" },

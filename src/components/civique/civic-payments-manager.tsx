@@ -62,6 +62,8 @@ export type CivicPaymentRow = {
   statut: string;
   factureId: string | null;
   factureNumero: string | null;
+  avoirId: string | null;
+  avoirNumero: string | null;
 };
 export type PayStudent = { id: string; label: string; mention: string | null };
 
@@ -214,6 +216,16 @@ export function CivicPaymentsManager({
                       </a>
                     ) : (
                       <span className="text-muted-foreground">—</span>
+                    )}
+                    {p.avoirId && (
+                      <a
+                        href={`/examen-civique/facture/${p.avoirId}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-0.5 flex items-center gap-1 text-xs text-amber-700 hover:underline"
+                      >
+                        <Undo2 className="h-3 w-3" /> {p.avoirNumero}
+                      </a>
                     )}
                   </TableCell>
                   <TableCell>
