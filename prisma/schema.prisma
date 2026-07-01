@@ -2025,3 +2025,47 @@ model DepenseCentre {
   @@index([organismeId])
   @@index([date])
 }
+
+// =============================================================
+//  VALIDATIONS — délégation du droit de valider (maker-checker léger)
+//  Un collaborateur ayant la section "validations" peut valider/refuser
+//  des demandes ; le NOM du validateur est tracé (dénormalisé).
+// =============================================================
+
+enum ValidationType {
+  DOSSIER // dossier / pièces d'un candidat
+  INSCRIPTION // inscription à valider
+  TACHE_CANDIDAT // tâche réalisée par le candidat (ou avec lui)
+  PAIEMENT // paiement encaissé
+  DEPENSE // dépense saisie
+  AUTRE
+}
+
+enum ValidationStatut {
+  EN_ATTENTE
+  VALIDE
+  REFUSE
+}
+
+/// Demande de validation soumise par un collaborateur, à valider par un autre.
+model ValidationDemande {
+  id          String           @id @default(cuid())
+  organismeId String? // tenant (multi-OF)
+  type        ValidationType
+  titre       String
+  description String?
+  lienHref    String? // lien vers l'objet concerné (fiche candidat, inscription…)
+  candidatId  String?
+  statut      ValidationStatut @default(EN_ATTENTE)
+  createdById String? // demandeur
+  createdByNom String? // demandeur (dénormalisé, affichage)
+  valideParId String? // validateur
+  valideParNom String? // NOM du collaborateur qui a validé (traçabilité)
+  motifRefus  String?
+  createdAt   DateTime         @default(now())
+  decidedAt   DateTime?
+
+  @@index([organismeId])
+  @@index([statut])
+  @@index([candidatId])
+}

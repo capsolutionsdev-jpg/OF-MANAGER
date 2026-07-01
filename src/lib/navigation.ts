@@ -136,6 +136,13 @@ export const navItems: NavItem[] = [
     permission: "taches",
   },
   {
+    label: "Validations",
+    href: "/validations",
+    icon: ShieldCheck,
+    roles: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
+    permission: "validations",
+  },
+  {
     label: "Notifications",
     href: "/notifications",
     icon: BellRing,
@@ -317,7 +324,7 @@ export const navItems: NavItem[] = [
 // restent des liens directs. Les entrées « __footer » sortent de la barre et
 // vont dans le pied de page (avec les mentions légales).
 const GROUP_BY_HREF: Record<string, string> = {
-  "/crm": "Commercial", "/simulateur-financement": "Commercial", "/kanban": "Commercial", "/taches": "Commercial",
+  "/crm": "Commercial", "/simulateur-financement": "Commercial", "/kanban": "Commercial", "/taches": "Commercial", "/validations": "Commercial",
   "/notifications": "Commercial", "/leads-multicanal": "Commercial",
   "/scoring": "Commercial", "/portail-client": "Commercial",
   "/candidats": "Formation", "/clients-pro": "Formation", "/formations": "Formation",

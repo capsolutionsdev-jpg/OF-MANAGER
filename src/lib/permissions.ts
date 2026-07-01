@@ -34,6 +34,7 @@ export const SECTIONS: { key: string; label: string }[] = [
   { key: "qualiopi", label: "Qualiopi" },
   { key: "rgpd", label: "RGPD" },
   { key: "support", label: "Support technique" },
+  { key: "validations", label: "Validations (donner la main)" },
 ];
 
 export const SECTION_KEYS = SECTIONS.map((s) => s.key);
