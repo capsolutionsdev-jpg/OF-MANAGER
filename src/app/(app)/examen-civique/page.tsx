@@ -313,7 +313,7 @@ export default async function ExamenCiviqueBIPage() {
         <TabsContent value="apercu" className="space-y-6">
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
             {kpis.map((k) => (
-              <Card key={k.label}>
+              <Card key={k.label} className="transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
                 <CardContent className="pt-5">
                   <k.icon className="h-5 w-5 text-muted-foreground" />
                   <p className="mt-2 text-2xl font-bold">{k.value}</p>

@@ -61,15 +61,25 @@ export function FinanceRecap({ rows }: { rows: RecapRow[] }) {
             <div className="overflow-x-auto">
               <svg viewBox={`0 0 ${width} ${chartH + padTop + padBottom}`} width="100%" style={{ maxWidth: width, minWidth: 320 }} role="img"
                 aria-label="Graphique en barres du chiffre d'affaires et des charges par mois">
+                <style>{`
+                  .fin-bar{transform-box:fill-box;transform-origin:bottom;animation:finGrow .6s cubic-bezier(.2,.8,.2,1) both;transition:opacity .15s}
+                  .fin-group:hover .fin-bar{opacity:.8}
+                  .fin-group{cursor:default}
+                  @keyframes finGrow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+                `}</style>
                 <line x1="0" y1={chartH + padTop} x2={width} y2={chartH + padTop} stroke="#e5e7eb" />
                 {chrono.map((r, i) => {
                   const gx = 20 + i * groupW;
                   const caH = h(r.caCents);
                   const chH = h(r.chargesCents);
+                  const bal = r.caCents - r.chargesCents;
                   return (
-                    <g key={r.mois}>
-                      <rect x={gx} y={padTop + chartH - caH} width={barW / 2 + 2} height={caH} rx="2" fill="#10b981" />
-                      <rect x={gx + barW / 2 + 3} y={padTop + chartH - chH} width={barW / 2 + 2} height={chH} rx="2" fill="#f43f5e" />
+                    <g key={r.mois} className="fin-group">
+                      <title>{`${r.label} — CA ${euro(r.caCents)} · Charges ${euro(r.chargesCents)} · Balance ${euro(bal)}`}</title>
+                      <rect x={gx} y={padTop + chartH - caH} width={barW / 2 + 2} height={caH} rx="2" fill="#10b981"
+                        className="fin-bar" style={{ animationDelay: `${i * 45}ms` }} />
+                      <rect x={gx + barW / 2 + 3} y={padTop + chartH - chH} width={barW / 2 + 2} height={chH} rx="2" fill="#f43f5e"
+                        className="fin-bar" style={{ animationDelay: `${i * 45 + 60}ms` }} />
                       <text x={gx + barW / 2} y={chartH + padTop + 16} textAnchor="middle" fontSize="10" fill="#6b7280">
                         {shortMonth(r.mois)}
                       </text>
@@ -101,7 +111,7 @@ export function FinanceRecap({ rows }: { rows: RecapRow[] }) {
                 <tr><td colSpan={4} className="p-6 text-center text-muted-foreground">Aucune donnée.</td></tr>
               ) : (
                 rows.map((r) => (
-                  <tr key={r.mois} className="border-b last:border-0">
+                  <tr key={r.mois} className="border-b last:border-0 transition-colors hover:bg-muted/40">
                     <td className="p-3 capitalize">{r.label}</td>
                     <td className="p-3 text-right text-emerald-700">{euro(r.caCents)}</td>
                     <td className="p-3 text-right text-rose-700">{euro(r.chargesCents)}</td>
@@ -133,7 +143,7 @@ export function FinanceRecap({ rows }: { rows: RecapRow[] }) {
               </thead>
               <tbody>
                 {annees.map(([y, e]) => (
-                  <tr key={y} className="border-b last:border-0">
+                  <tr key={y} className="border-b last:border-0 transition-colors hover:bg-muted/40">
                     <td className="p-3 font-medium">{y}</td>
                     <td className="p-3 text-right text-emerald-700">{euro(e.ca)}</td>
                     <td className="p-3 text-right text-rose-700">{euro(e.charges)}</td>

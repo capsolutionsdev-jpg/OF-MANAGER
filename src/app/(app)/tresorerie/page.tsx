@@ -159,7 +159,7 @@ function Kpi({ icon: Icon, label, value, tone }: {
   tone: "pos" | "neg";
 }) {
   return (
-    <Card>
+    <Card className="transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
       <CardContent className="pt-5">
         <Icon className="h-5 w-5 text-muted-foreground" />
         <p className={`mt-2 text-2xl font-bold ${tone === "pos" ? "text-emerald-700" : "text-rose-700"}`}>{value}</p>
