@@ -16,6 +16,7 @@ import {
   GraduationCap,
   Building2,
   Wallet,
+  Scale,
   CalendarRange,
   DoorOpen,
   FileText,
@@ -268,6 +269,13 @@ export const navItems: NavItem[] = [
     permission: "comptabilite",
   },
   {
+    label: "Trésorerie & bilan",
+    href: "/tresorerie",
+    icon: Scale,
+    roles: ["ADMIN", "RESPONSABLE_FORMATION"],
+    permission: "comptabilite",
+  },
+  {
     label: "Devis",
     href: "/devis",
     icon: FileText,
@@ -317,7 +325,7 @@ const GROUP_BY_HREF: Record<string, string> = {
   "/elearning": "Formation", "/examen-civique": "Formation", "/formateurs": "Formation",
   "/sms": "Communication", "/ia": "Communication", "/signatures": "Communication",
   "/automatisations": "Communication",
-  "/comptabilite": "Finance", "/devis": "Finance", "/bpf": "Finance", "/rapports": "Finance",
+  "/comptabilite": "Finance", "/tresorerie": "Finance", "/devis": "Finance", "/bpf": "Finance", "/rapports": "Finance",
   "/qualiopi": "Qualité",
   "/rgpd": "__footer", "/support": "__footer",
 };

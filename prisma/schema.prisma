@@ -1975,3 +1975,53 @@ model CivicFacture {
   @@index([candidatId])
   @@index([factureOrigineId])
 }
+
+// =============================================================
+//  SUIVI FINANCIER DU CENTRE — dépenses & charges (toutes activités)
+//  Sert au bilan mensuel/annuel : balance CA (facturé) − dépenses.
+// =============================================================
+
+/// Catégorie de dépense/charge du centre de formation.
+enum DepenseCategorie {
+  LOYER
+  ELECTRICITE
+  TELEPHONIE
+  FORMATEUR
+  JURY_EXAMEN
+  VISITE_SITE
+  JURY_SSIAP
+  DIPLOME
+  ADS // campagnes publicitaires
+  FOURNITURE_BUREAU
+  FRAIS_EXAMEN_VTC
+  FOURNITURE_ALIMENTAIRE
+  CARBURANT
+  AUTRE // libellé libre dans `categorieAutre`
+}
+
+/// État de règlement d'une dépense.
+enum DepenseStatut {
+  PAYE
+  EN_ATTENTE
+}
+
+/// Une dépense/charge du centre (loyer, formateur, ADS, carburant…).
+model DepenseCentre {
+  id             String           @id @default(cuid())
+  organismeId    String? // tenant (multi-OF)
+  date           DateTime         @default(now()) // date de la dépense (mois de rattachement)
+  categorie      DepenseCategorie
+  categorieAutre String? // précision si categorie = AUTRE
+  libelle        String? // description libre
+  montantCents   Int
+  devise         String           @default("eur")
+  numeroPiece    String? // n° de facture ou de reçu
+  statut         DepenseStatut    @default(PAYE)
+  notes          String?
+  createdById    String? // utilisateur ayant saisi la dépense
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@index([organismeId])
+  @@index([date])
+}
