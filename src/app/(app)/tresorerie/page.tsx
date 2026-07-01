@@ -1,4 +1,4 @@
-import { Wallet, Banknote, TrendingDown, Scale } from "lucide-react";
+import { Banknote, TrendingDown, Scale } from "lucide-react";
 import { requireSection } from "@/lib/section-guard";
 import { getTenantDb } from "@/lib/tenant";
 import { Card, CardContent } from "@/components/ui/card";
