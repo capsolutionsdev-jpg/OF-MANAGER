@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/table";
 import { emailConfigured } from "@/lib/email";
 import { RelanceButton } from "@/components/signatures/relance-button";
+import { SignedOnSiteButton } from "@/components/signatures/signed-on-site-button";
 
 export const dynamic = "force-dynamic";
 
@@ -135,7 +136,10 @@ export default async function SignaturesPage() {
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      <RelanceButton inscriptionId={i.id} />
+                      <div className="flex flex-wrap justify-end gap-1.5">
+                        <RelanceButton inscriptionId={i.id} />
+                        <SignedOnSiteButton inscriptionId={i.id} />
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
