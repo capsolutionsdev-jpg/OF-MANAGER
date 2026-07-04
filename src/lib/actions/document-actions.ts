@@ -86,7 +86,75 @@ export async function sendDocumentToCandidate(
 }
 
 /**
+ * Envoie PLUSIEURS documents (sélection) au candidat, en un seul e-mail avec
+ * autant de pièces jointes PDF. Chaque document est généré via buildSingleDocPdf.
+ */
+export async function sendDocumentsToCandidate(
+  inscriptionId: string,
+  types: string[],
+  messagePerso?: string,
+): Promise<{ ok: true; count: number } | { ok: false; error: string }> {
+  const organismeId = await staffOrg();
+  const chosen = (types ?? []).filter((t) => DOCUMENTS[t]);
+  if (chosen.length === 0) return { ok: false, error: "Sélectionnez au moins un document." };
+
+  const insc = await prisma.inscription.findFirst({
+    where: { id: inscriptionId, organismeId },
+    select: {
+      id: true,
+      organismeId: true,
+      sessionId: true,
+      candidat: { select: { email: true, prenom: true } },
+      session: { select: { formation: { select: { titre: true } } } },
+    },
+  });
+  if (!insc) return { ok: false, error: "Inscription introuvable." };
+  if (!insc.candidat.email || !insc.candidat.email.includes("@")) {
+    return { ok: false, error: "Le candidat n'a pas d'adresse e-mail valide." };
+  }
+
+  const attachments: { name: string; content: string }[] = [];
+  const labels: string[] = [];
+  for (const type of chosen) {
+    const pdf = await buildSingleDocPdf(inscriptionId, type);
+    if (pdf) {
+      attachments.push({ name: pdf.filename || `${type}.pdf`, content: toBase64(pdf.data) });
+      labels.push(DOCUMENTS[type].label);
+    }
+  }
+  if (attachments.length === 0) return { ok: false, error: "Aucun document n'a pu être généré." };
+
+  const org = await orgConfigFor(insc.organismeId);
+  const titre = insc.session.formation.titre;
+  const subject =
+    attachments.length === 1 ? `${labels[0]} — ${titre}` : `Vos documents — ${titre}`;
+  const liste = labels.map((l) => `• ${l}`).join("\n");
+  const body =
+    `Bonjour ${insc.candidat.prenom},\n\n` +
+    `Vous trouverez ci-joint ${attachments.length > 1 ? "les documents suivants" : "le document suivant"} :\n${liste}` +
+    (messagePerso && messagePerso.trim() ? `\n\n${messagePerso.trim()}` : "") +
+    `\n\nCordialement,\n${org.representant} — ${org.name}`;
+
+  const res = await sendEmail({ to: insc.candidat.email, subject, body, attachments, organismeId });
+  await prisma.emailLog.create({
+    data: {
+      organismeId,
+      destinataire: insc.candidat.email,
+      sujet: subject,
+      corps: body,
+      statut: res.sent ? EmailStatut.ENVOYE : EmailStatut.EN_ATTENTE,
+      sentAt: res.sent ? new Date() : null,
+      sessionId: insc.sessionId,
+    },
+  });
+  revalidatePath(`/sessions/${insc.sessionId}`);
+  if (!res.sent) return { ok: false, error: "L'e-mail n'a pas pu être envoyé (vérifiez la configuration e-mail)." };
+  return { ok: true, count: attachments.length };
+}
+
+/**
  * Marque manuellement le parcours de signature d'une inscription comme
+ * « signé sur place » (documents signés physiquement au centre) — action
  * « signé sur place » (documents signés physiquement au centre) — action
  * manuelle équivalente à la signature électronique.
  */

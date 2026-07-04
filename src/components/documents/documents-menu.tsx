@@ -23,25 +23,31 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DOCUMENT_MENU } from "@/lib/documents/templates";
-import { sendDocumentToCandidate } from "@/lib/actions/document-actions";
-
-const inputCx =
-  "h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
+import { sendDocumentsToCandidate } from "@/lib/actions/document-actions";
 
 export function DocumentsMenu({ inscriptionId }: { inscriptionId: string }) {
   const [sendOpen, setSendOpen] = useState(false);
-  const [type, setType] = useState(DOCUMENT_MENU[0]?.type ?? "");
+  const [selected, setSelected] = useState<string[]>([]);
   const [message, setMessage] = useState("");
   const [isPending, startTransition] = useTransition();
 
+  const allTypes = DOCUMENT_MENU.map((d) => d.type);
+  const toutCoche = selected.length === allTypes.length && allTypes.length > 0;
+  function toggle(type: string) {
+    setSelected((cur) => (cur.includes(type) ? cur.filter((t) => t !== type) : [...cur, type]));
+  }
+
   function envoyer() {
-    if (!type) return;
+    if (selected.length === 0) return;
     startTransition(async () => {
-      const r = await sendDocumentToCandidate(inscriptionId, type, message);
+      const r = await sendDocumentsToCandidate(inscriptionId, selected, message);
       if (r.ok) {
-        toast.success("Document envoyé au candidat.");
+        toast.success(
+          r.count > 1 ? `${r.count} documents envoyés au candidat.` : "Document envoyé au candidat.",
+        );
         setSendOpen(false);
         setMessage("");
+        setSelected([]);
       } else toast.error(r.error);
     });
   }
@@ -54,7 +60,7 @@ export function DocumentsMenu({ inscriptionId }: { inscriptionId: string }) {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem onClick={() => setSendOpen(true)}>
-            <Send className="mr-2 h-4 w-4" /> Envoyer un document au candidat…
+            <Send className="mr-2 h-4 w-4" /> Envoyer des documents au candidat…
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem render={<a href={`/documents/${inscriptionId}/zip`} download />}>
@@ -76,27 +82,45 @@ export function DocumentsMenu({ inscriptionId }: { inscriptionId: string }) {
       <Dialog open={sendOpen} onOpenChange={setSendOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Envoyer un document au candidat</DialogTitle>
-            <DialogDescription>Choisissez le document ; il sera envoyé en PDF par e-mail.</DialogDescription>
+            <DialogTitle>Envoyer des documents au candidat</DialogTitle>
+            <DialogDescription>
+              Cochez un ou plusieurs documents ; ils seront envoyés en PDF par e-mail.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <div>
-              <Label htmlFor="doc-type">Document</Label>
-              <select id="doc-type" value={type} onChange={(e) => setType(e.target.value)} className={inputCx}>
+              <div className="mb-1.5 flex items-center justify-between">
+                <Label>Documents ({selected.length} sélectionné{selected.length > 1 ? "s" : ""})</Label>
+                <button
+                  type="button"
+                  onClick={() => setSelected(toutCoche ? [] : allTypes)}
+                  className="text-xs font-medium text-primary hover:underline"
+                >
+                  {toutCoche ? "Tout décocher" : "Tout sélectionner"}
+                </button>
+              </div>
+              <div className="max-h-56 space-y-1 overflow-y-auto rounded-md border p-2">
                 {DOCUMENT_MENU.map((d) => (
-                  <option key={d.type} value={d.type}>{d.label}</option>
+                  <label key={d.type} className="flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-sm hover:bg-muted/50">
+                    <input
+                      type="checkbox"
+                      checked={selected.includes(d.type)}
+                      onChange={() => toggle(d.type)}
+                    />
+                    {d.label}
+                  </label>
                 ))}
-              </select>
+              </div>
             </div>
             <div>
               <Label htmlFor="doc-msg">Message (facultatif)</Label>
-              <Textarea id="doc-msg" value={message} onChange={(e) => setMessage(e.target.value)} rows={3}
+              <Textarea id="doc-msg" value={message} onChange={(e) => setMessage(e.target.value)} rows={2}
                 placeholder="Message ajouté au corps de l'e-mail…" />
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setSendOpen(false)} disabled={isPending}>Annuler</Button>
-              <Button onClick={envoyer} disabled={isPending || !type}>
-                {isPending ? "Envoi…" : "Envoyer"}
+              <Button onClick={envoyer} disabled={isPending || selected.length === 0}>
+                {isPending ? "Envoi…" : selected.length > 1 ? `Envoyer (${selected.length})` : "Envoyer"}
               </Button>
             </DialogFooter>
           </div>
