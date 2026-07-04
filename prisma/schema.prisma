@@ -796,6 +796,8 @@ model Inscription {
   // Traçabilité : pour chaque pièce validée, qui l'a validée et quand.
   // Forme : { "<piece>": { "nom": "<collaborateur>", "date": "<ISO>" } }
   piecesValideePar Json?
+  // Collaborateur ayant validé la signature « sur place » (traçabilité).
+  signedParNom String?
 
   // ── Parcours automatisé V2 (lien public + jalons) ──
   accessToken         String?   @unique // lien unique candidat (formulaire + signature)

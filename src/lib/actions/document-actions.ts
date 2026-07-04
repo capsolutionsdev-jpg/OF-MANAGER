@@ -160,18 +160,22 @@ export async function sendDocumentsToCandidate(
  */
 export async function markInscriptionSignedOnSite(inscriptionId: string): Promise<Result> {
   const organismeId = await staffOrg();
+  const session = await auth();
+  const nom = session?.user?.name || session?.user?.email || "Collaborateur";
   const insc = await prisma.inscription.findFirst({
     where: { id: inscriptionId, organismeId },
-    select: { id: true, formCompletedAt: true },
+    select: { id: true, formCompletedAt: true, sessionId: true },
   });
   if (!insc) return { ok: false, error: "Inscription introuvable." };
   await prisma.inscription.update({
     where: { id: inscriptionId },
     data: {
       signedAt: new Date(),
+      signedParNom: nom,
       formCompletedAt: insc.formCompletedAt ?? new Date(),
     },
   });
   revalidatePath("/signatures");
+  revalidatePath(`/sessions/${insc.sessionId}`);
   return { ok: true };
 }

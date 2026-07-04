@@ -26,6 +26,7 @@ import { setResultatsDeclares } from "@/lib/actions/session-actions";
 import { FINANCEMENT_LABELS } from "@/lib/validators/candidat";
 import { EnrollForm } from "@/components/inscriptions/enroll-form";
 import { InscriptionQuickActions } from "@/components/inscriptions/inscription-quick-actions";
+import { SessionGardeFou } from "@/components/sessions/session-garde-fou";
 import { InscriptionActionsMenu } from "@/components/inscriptions/inscription-actions-menu";
 import { PaiementEditor } from "@/components/inscriptions/paiement-editor";
 import { CertificationSelect } from "@/components/inscriptions/certification-select";
@@ -81,6 +82,27 @@ export default async function SessionDetailPage({
   });
 
   const fmt = (d: Date) => d.toLocaleDateString("fr-FR");
+
+  // ── Garde-fou : ce qu'il reste à compléter pour la session ──
+  const pa = s.formation.piecesAttendues;
+  const gfDossier: string[] = [];
+  const gfSign: string[] = [];
+  const gfConv: string[] = [];
+  const gfPos: string[] = [];
+  for (const i of s.inscriptions) {
+    if (i.statut === "ANNULEE") continue;
+    const nom = `${i.candidat.prenom} ${i.candidat.nom}`.trim();
+    if (pa.length > 0 && pa.some((p) => !i.piecesRecues.includes(p))) gfDossier.push(nom);
+    if (!i.signedAt) gfSign.push(nom);
+    if (!i.convocationSentAt) gfConv.push(nom);
+    if (!i.positionnementCompletedAt) gfPos.push(nom);
+  }
+  const gardeFouGroups = [
+    { key: "dossier", label: "Dossiers incomplets", noms: gfDossier },
+    { key: "signature", label: "Documents non signés", noms: gfSign },
+    { key: "convocation", label: "Convocations à envoyer", noms: gfConv },
+    { key: "positionnement", label: "Positionnements non faits", noms: gfPos },
+  ];
 
   return (
     <div className="space-y-6">
@@ -153,6 +175,8 @@ export default async function SessionDetailPage({
           </dl>
         </CardContent>
       </Card>
+
+      <SessionGardeFou groups={gardeFouGroups} />
 
       {/* Formateur(s) */}
       <Card>
@@ -329,7 +353,7 @@ export default async function SessionDetailPage({
                       </span>
                       {i.signedAt ? (
                         <Badge className="bg-emerald-500/10 text-emerald-700">
-                          dossier signé
+                          dossier signé{i.signedParNom ? ` · par ${i.signedParNom}` : ""}
                         </Badge>
                       ) : (
                         <Badge variant="secondary">non signé</Badge>
@@ -499,7 +523,12 @@ export default async function SessionDetailPage({
                             <Award className="h-3.5 w-3.5" /> Grille
                           </a>
                         )}
-                        <InscriptionQuickActions inscriptionId={i.id} />
+                        <InscriptionQuickActions
+                          inscriptionId={i.id}
+                          piecesAttendues={s.formation.piecesAttendues}
+                          piecesRecues={i.piecesRecues}
+                          validePar={(i.piecesValideePar as Record<string, { nom: string; date: string }> | null) ?? undefined}
+                        />
                         <InscriptionActionsMenu
                           inscriptionId={i.id}
                           sessionId={s.id}
