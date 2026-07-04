@@ -418,6 +418,7 @@ export default async function CandidatDetailPage({
                       inscriptionId={i.id}
                       piecesAttendues={i.session.formation.piecesAttendues}
                       piecesRecues={i.piecesRecues}
+                      validePar={(i.piecesValideePar as Record<string, { nom: string; date: string }> | null) ?? undefined}
                     />
                     {idx === 0 && <PieceValidation pieces={candidat.pieces} />}
                   </div>

@@ -1,23 +1,38 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { CheckCircle2, Circle, Send, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { togglePieceRecue, relancerDossier } from "@/lib/actions/inscription-actions";
 import { Badge } from "@/components/ui/badge";
 
+type ValidInfo = { nom: string; date: string };
+
 export function DossierChecklist({
   inscriptionId,
   piecesAttendues,
   piecesRecues,
+  validePar,
 }: {
   inscriptionId: string;
   piecesAttendues: string[];
   piecesRecues: string[];
+  /** Traçabilité : pièce → { nom du collaborateur, date ISO }. */
+  validePar?: Record<string, ValidInfo>;
 }) {
+  const router = useRouter();
   const [recues, setRecues] = useState<Set<string>>(new Set(piecesRecues));
   const [isPending, startTransition] = useTransition();
   const [relancing, startRelance] = useTransition();
+
+  const fmtDate = (iso: string) => {
+    try {
+      return new Date(iso).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "2-digit" });
+    } catch {
+      return "";
+    }
+  };
 
   function relancer() {
     startRelance(async () => {
@@ -54,6 +69,9 @@ export function DossierChecklist({
         if (willReceive) revert.delete(piece);
         else revert.add(piece);
         setRecues(revert);
+      } else {
+        // rafraîchit pour afficher/mettre à jour « validé par … »
+        router.refresh();
       }
     });
   }
@@ -90,21 +108,27 @@ export function DossierChecklist({
       <ul className="space-y-1">
         {piecesAttendues.map((piece) => {
           const ok = recues.has(piece);
+          const info = ok ? validePar?.[piece] : undefined;
           return (
             <li key={piece}>
               <button
                 type="button"
                 onClick={() => toggle(piece)}
                 disabled={isPending}
-                className="flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-left text-sm transition hover:bg-muted disabled:opacity-60"
+                className="flex w-full items-start gap-2 rounded-md px-1.5 py-1 text-left text-sm transition hover:bg-muted disabled:opacity-60"
               >
                 {ok ? (
-                  <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
                 ) : (
-                  <Circle className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <Circle className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                 )}
-                <span className={ok ? "text-foreground" : "text-muted-foreground"}>
-                  {piece}
+                <span className="flex-1">
+                  <span className={ok ? "text-foreground" : "text-muted-foreground"}>{piece}</span>
+                  {info && (
+                    <span className="mt-0.5 block text-[11px] text-emerald-700">
+                      ✓ validé par {info.nom}{info.date ? ` · ${fmtDate(info.date)}` : ""}
+                    </span>
+                  )}
                 </span>
               </button>
             </li>

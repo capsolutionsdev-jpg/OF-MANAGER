@@ -341,24 +341,34 @@ export async function togglePieceRecue(
 ): Promise<{ ok: boolean }> {
   const session = await auth();
   if (!session?.user) return { ok: false };
+  const nom = session.user.name || session.user.email || "Collaborateur";
   const db = await getTenantDb();
 
   const insc = await db.inscription.findUnique({
     where: { id: inscriptionId },
-    select: { piecesRecues: true, candidatId: true },
+    select: { piecesRecues: true, piecesValideePar: true, candidatId: true, sessionId: true },
   });
   if (!insc) return { ok: false };
 
   const set = new Set(insc.piecesRecues);
-  if (recue) set.add(piece);
-  else set.delete(piece);
+  const traca: Record<string, { nom: string; date: string }> = {
+    ...((insc.piecesValideePar as Record<string, { nom: string; date: string }> | null) ?? {}),
+  };
+  if (recue) {
+    set.add(piece);
+    traca[piece] = { nom, date: new Date().toISOString() };
+  } else {
+    set.delete(piece);
+    delete traca[piece];
+  }
 
   await db.inscription.update({
     where: { id: inscriptionId },
-    data: { piecesRecues: [...set] },
+    data: { piecesRecues: [...set], piecesValideePar: traca },
   });
 
   revalidatePath(`/candidats/${insc.candidatId}`);
+  revalidatePath(`/sessions/${insc.sessionId}`);
   return { ok: true };
 }
 

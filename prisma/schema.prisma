@@ -793,6 +793,9 @@ model Inscription {
   // Suivi du dossier administratif (V2) — pièces marquées « reçues »
   // (la liste attendue provient de Formation.piecesAttendues)
   piecesRecues String[]
+  // Traçabilité : pour chaque pièce validée, qui l'a validée et quand.
+  // Forme : { "<piece>": { "nom": "<collaborateur>", "date": "<ISO>" } }
+  piecesValideePar Json?
 
   // ── Parcours automatisé V2 (lien public + jalons) ──
   accessToken         String?   @unique // lien unique candidat (formulaire + signature)

@@ -624,6 +624,7 @@ export default async function SessionDetailPage({
                     inscriptionId={i.id}
                     piecesAttendues={s.formation.piecesAttendues}
                     piecesRecues={i.piecesRecues}
+                    validePar={(i.piecesValideePar as Record<string, { nom: string; date: string }> | null) ?? undefined}
                   />
                 </div>
               );
