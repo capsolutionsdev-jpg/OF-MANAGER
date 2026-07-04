@@ -25,8 +25,7 @@ import { INSCRIPTION_STATUT_LABELS } from "@/lib/validators/inscription";
 import { setResultatsDeclares } from "@/lib/actions/session-actions";
 import { FINANCEMENT_LABELS } from "@/lib/validators/candidat";
 import { EnrollForm } from "@/components/inscriptions/enroll-form";
-import { DocumentsMenu } from "@/components/documents/documents-menu";
-import { ManualSendMenu } from "@/components/inscriptions/manual-send-menu";
+import { InscriptionQuickActions } from "@/components/inscriptions/inscription-quick-actions";
 import { InscriptionActionsMenu } from "@/components/inscriptions/inscription-actions-menu";
 import { PaiementEditor } from "@/components/inscriptions/paiement-editor";
 import { CertificationSelect } from "@/components/inscriptions/certification-select";
@@ -500,8 +499,7 @@ export default async function SessionDetailPage({
                             <Award className="h-3.5 w-3.5" /> Grille
                           </a>
                         )}
-                        <DocumentsMenu inscriptionId={i.id} />
-                        <ManualSendMenu inscriptionId={i.id} />
+                        <InscriptionQuickActions inscriptionId={i.id} />
                         <InscriptionActionsMenu
                           inscriptionId={i.id}
                           sessionId={s.id}
