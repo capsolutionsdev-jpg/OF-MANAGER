@@ -13,7 +13,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { sendAutomationEventNow, MANUAL_EVENTS, type ManualEvent } from "@/lib/actions/manual-send-actions";
+import { sendAutomationEventNow } from "@/lib/actions/manual-send-actions";
+import { MANUAL_EVENTS, type ManualEvent } from "@/lib/manual-events";
 
 /** Menu « Envoyer manuellement » un automatisme pour une inscription précise. */
 export function ManualSendMenu({ inscriptionId }: { inscriptionId: string }) {

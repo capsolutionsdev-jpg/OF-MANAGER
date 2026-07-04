@@ -7,6 +7,7 @@ import { sendEmail, toBase64 } from "@/lib/email";
 import { orgConfigFor } from "@/lib/org-identity";
 import { generateToken, appBaseUrl } from "@/lib/token";
 import { buildSingleDocPdf } from "@/lib/documents/build-pdf";
+import type { ManualEvent } from "@/lib/manual-events";
 
 const STAFF = ["SUPERADMIN", "ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"];
 type Result = { ok: true } | { ok: false; error: string };
@@ -49,21 +50,6 @@ async function logAndSend(opts: {
   });
   return res.sent;
 }
-
-export type ManualEvent =
-  | "convocation"
-  | "attestation_entree"
-  | "docs_fin"
-  | "positionnement"
-  | "satisfaction";
-
-export const MANUAL_EVENTS: { key: ManualEvent; label: string }[] = [
-  { key: "convocation", label: "Convocation" },
-  { key: "attestation_entree", label: "Attestation d'entrée (PDF)" },
-  { key: "docs_fin", label: "Documents de fin (attestation PDF)" },
-  { key: "positionnement", label: "Test de positionnement (lien)" },
-  { key: "satisfaction", label: "Enquête de satisfaction (lien)" },
-];
 
 /**
  * Déclenche MANUELLEMENT un envoi du parcours pour UNE inscription (indépendamment
