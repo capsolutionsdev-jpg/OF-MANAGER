@@ -26,6 +26,7 @@ import { setResultatsDeclares } from "@/lib/actions/session-actions";
 import { FINANCEMENT_LABELS } from "@/lib/validators/candidat";
 import { EnrollForm } from "@/components/inscriptions/enroll-form";
 import { DocumentsMenu } from "@/components/documents/documents-menu";
+import { ManualSendMenu } from "@/components/inscriptions/manual-send-menu";
 import { InscriptionActionsMenu } from "@/components/inscriptions/inscription-actions-menu";
 import { PaiementEditor } from "@/components/inscriptions/paiement-editor";
 import { CertificationSelect } from "@/components/inscriptions/certification-select";
@@ -500,6 +501,7 @@ export default async function SessionDetailPage({
                           </a>
                         )}
                         <DocumentsMenu inscriptionId={i.id} />
+                        <ManualSendMenu inscriptionId={i.id} />
                         <InscriptionActionsMenu
                           inscriptionId={i.id}
                           sessionId={s.id}
