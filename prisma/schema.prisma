@@ -798,6 +798,9 @@ model Inscription {
   piecesValideePar Json?
   // Collaborateur ayant validé la signature « sur place » (traçabilité).
   signedParNom String?
+  // Validation « signé sur place » document par document (traçabilité).
+  // Forme : { "<docType>": { "nom": "<collaborateur>", "date": "<ISO>" } }
+  docsSignes Json?
 
   // ── Parcours automatisé V2 (lien public + jalons) ──
   accessToken         String?   @unique // lien unique candidat (formulaire + signature)

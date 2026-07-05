@@ -8,6 +8,7 @@ import { sendEmail, toBase64 } from "@/lib/email";
 import { buildSingleDocPdf } from "@/lib/documents/build-pdf";
 import { DOCUMENTS } from "@/lib/documents/templates";
 import { orgConfigFor } from "@/lib/org-identity";
+import { SIGNABLE_DOCS } from "@/lib/signable-docs";
 
 const STAFF = ["SUPERADMIN", "ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"];
 type Result = { ok: true } | { ok: false; error: string };
@@ -177,5 +178,47 @@ export async function markInscriptionSignedOnSite(inscriptionId: string): Promis
   });
   revalidatePath("/signatures");
   revalidatePath(`/sessions/${insc.sessionId}`);
+  return { ok: true };
+}
+
+/**
+ * Valide (ou dévalide) « signé sur place » UN document précis, avec traçabilité
+ * du collaborateur. Quand tous les documents signables sont validés, le dossier
+ * est marqué signé.
+ */
+export async function toggleDocSigne(
+  inscriptionId: string,
+  docType: string,
+  signe: boolean,
+): Promise<Result> {
+  const organismeId = await staffOrg();
+  const session = await auth();
+  const nom = session?.user?.name || session?.user?.email || "Collaborateur";
+  if (!SIGNABLE_DOCS.some((d) => d.type === docType)) return { ok: false, error: "Document inconnu." };
+
+  const insc = await prisma.inscription.findFirst({
+    where: { id: inscriptionId, organismeId },
+    select: { id: true, docsSignes: true, signedAt: true, formCompletedAt: true, sessionId: true, candidatId: true },
+  });
+  if (!insc) return { ok: false, error: "Inscription introuvable." };
+
+  const map: Record<string, { nom: string; date: string }> = {
+    ...((insc.docsSignes as Record<string, { nom: string; date: string }> | null) ?? {}),
+  };
+  if (signe) map[docType] = { nom, date: new Date().toISOString() };
+  else delete map[docType];
+
+  const data: Record<string, unknown> = { docsSignes: map };
+  // Tous les documents signables validés → dossier signé (traçabilité conservée).
+  const tousSignes = SIGNABLE_DOCS.every((d) => map[d.type]);
+  if (tousSignes && !insc.signedAt) {
+    data.signedAt = new Date();
+    data.signedParNom = nom;
+    data.formCompletedAt = insc.formCompletedAt ?? new Date();
+  }
+
+  await prisma.inscription.update({ where: { id: inscriptionId }, data });
+  revalidatePath(`/sessions/${insc.sessionId}`);
+  revalidatePath(`/candidats/${insc.candidatId}`);
   return { ok: true };
 }

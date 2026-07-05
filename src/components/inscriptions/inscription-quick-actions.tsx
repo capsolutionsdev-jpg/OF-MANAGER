@@ -14,25 +14,21 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DOCUMENT_MENU } from "@/lib/documents/templates";
 import { MANUAL_EVENTS, type ManualEvent } from "@/lib/manual-events";
-import { sendDocumentsToCandidate, markInscriptionSignedOnSite } from "@/lib/actions/document-actions";
+import { sendDocumentsToCandidate } from "@/lib/actions/document-actions";
 import { sendAutomationEventNow } from "@/lib/actions/manual-send-actions";
-import { DossierChecklist } from "@/components/inscriptions/dossier-checklist";
+import { DocsSignesChecklist } from "@/components/inscriptions/docs-signes-checklist";
 
 /**
  * Bouton « Actions » qui ouvre un panneau latéral (petite page) : voir & envoyer
- * des documents, déclencher un envoi manuel, valider les pièces une par une, et
- * « signé sur place ».
+ * des documents, déclencher un envoi manuel, et valider les documents « signés
+ * sur place » un par un (avec traçabilité du collaborateur).
  */
 export function InscriptionQuickActions({
   inscriptionId,
-  piecesAttendues = [],
-  piecesRecues = [],
-  validePar,
+  docsSignes,
 }: {
   inscriptionId: string;
-  piecesAttendues?: string[];
-  piecesRecues?: string[];
-  validePar?: Record<string, { nom: string; date: string }>;
+  docsSignes?: Record<string, { nom: string; date: string }>;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -133,29 +129,14 @@ export function InscriptionQuickActions({
             </div>
           </section>
 
-          {/* ── Validation ── */}
+          {/* ── Validation : documents signés sur place, un par un ── */}
           <section>
             <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold">
-              <CheckCircle2 className="h-4 w-4 text-emerald-600" /> Validation
+              <CheckCircle2 className="h-4 w-4 text-emerald-600" /> Validation — documents signés sur place
             </h3>
-            {piecesAttendues.length > 0 && (
-              <div className="mb-3 rounded-lg border p-3">
-                <p className="mb-1.5 text-xs font-medium text-muted-foreground">
-                  Pièces du dossier — cochez au fur et à mesure (le validateur est enregistré)
-                </p>
-                <DossierChecklist
-                  inscriptionId={inscriptionId}
-                  piecesAttendues={piecesAttendues}
-                  piecesRecues={piecesRecues}
-                  validePar={validePar}
-                />
-              </div>
-            )}
-            <Button variant="outline" className="w-full justify-start" disabled={isPending}
-              onClick={() => run("signe", markInscriptionSignedOnSite(inscriptionId), "Marqué signé sur place.")}>
-              {busy === "signe" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4 text-emerald-600" />}
-              Signé sur place
-            </Button>
+            <div className="rounded-lg border p-3">
+              <DocsSignesChecklist inscriptionId={inscriptionId} docsSignes={docsSignes} />
+            </div>
           </section>
         </div>
       </SheetContent>

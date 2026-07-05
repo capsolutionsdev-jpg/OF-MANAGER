@@ -550,9 +550,7 @@ export default async function SessionDetailPage({
                         )}
                         <InscriptionQuickActions
                           inscriptionId={i.id}
-                          piecesAttendues={s.formation.piecesAttendues}
-                          piecesRecues={i.piecesRecues}
-                          validePar={(i.piecesValideePar as Record<string, { nom: string; date: string }> | null) ?? undefined}
+                          docsSignes={(i.docsSignes as Record<string, { nom: string; date: string }> | null) ?? undefined}
                         />
                         <InscriptionActionsMenu
                           inscriptionId={i.id}
