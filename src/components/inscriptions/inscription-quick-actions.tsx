@@ -25,9 +25,11 @@ import { DocsSignesChecklist } from "@/components/inscriptions/docs-signes-check
  */
 export function InscriptionQuickActions({
   inscriptionId,
+  sessionId,
   docsSignes,
 }: {
   inscriptionId: string;
+  sessionId?: string;
   docsSignes?: Record<string, { nom: string; date: string }>;
 }) {
   const router = useRouter();
@@ -135,7 +137,7 @@ export function InscriptionQuickActions({
               <CheckCircle2 className="h-4 w-4 text-emerald-600" /> Validation — documents signés sur place
             </h3>
             <div className="rounded-lg border p-3">
-              <DocsSignesChecklist inscriptionId={inscriptionId} docsSignes={docsSignes} />
+              <DocsSignesChecklist inscriptionId={inscriptionId} sessionId={sessionId} docsSignes={docsSignes} />
             </div>
           </section>
         </div>

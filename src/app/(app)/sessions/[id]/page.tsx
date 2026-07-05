@@ -550,6 +550,7 @@ export default async function SessionDetailPage({
                         )}
                         <InscriptionQuickActions
                           inscriptionId={i.id}
+                          sessionId={s.id}
                           docsSignes={(i.docsSignes as Record<string, { nom: string; date: string }> | null) ?? undefined}
                         />
                         <InscriptionActionsMenu

@@ -194,7 +194,7 @@ export async function toggleDocSigne(
   const organismeId = await staffOrg();
   const session = await auth();
   const nom = session?.user?.name || session?.user?.email || "Collaborateur";
-  if (!SIGNABLE_DOCS.some((d) => d.type === docType)) return { ok: false, error: "Document inconnu." };
+  if (!docType.trim()) return { ok: false, error: "Document inconnu." };
 
   const insc = await prisma.inscription.findFirst({
     where: { id: inscriptionId, organismeId },
