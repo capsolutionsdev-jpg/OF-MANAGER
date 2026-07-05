@@ -27,6 +27,7 @@ import { FINANCEMENT_LABELS } from "@/lib/validators/candidat";
 import { EnrollForm } from "@/components/inscriptions/enroll-form";
 import { InscriptionQuickActions } from "@/components/inscriptions/inscription-quick-actions";
 import { SessionGardeFou } from "@/components/sessions/session-garde-fou";
+import { SessionClotureBar } from "@/components/sessions/session-cloture-bar";
 import { InscriptionActionsMenu } from "@/components/inscriptions/inscription-actions-menu";
 import { PaiementEditor } from "@/components/inscriptions/paiement-editor";
 import { CertificationSelect } from "@/components/inscriptions/certification-select";
@@ -103,6 +104,8 @@ export default async function SessionDetailPage({
     { key: "convocation", label: "Convocations à envoyer", noms: gfConv },
     { key: "positionnement", label: "Positionnements non faits", noms: gfPos },
   ];
+  const canArchive = gfDossier.length === 0 && gfSign.length === 0;
+  const dejaArchivee = s.statut === "TERMINEE";
 
   return (
     <div className="space-y-6">
@@ -176,7 +179,12 @@ export default async function SessionDetailPage({
         </CardContent>
       </Card>
 
-      <SessionGardeFou groups={gardeFouGroups} />
+      <div className="space-y-2">
+        <SessionGardeFou groups={gardeFouGroups} />
+        <div className="flex justify-end">
+          <SessionClotureBar sessionId={s.id} canArchive={canArchive} dejaArchivee={dejaArchivee} />
+        </div>
+      </div>
 
       {/* Formateur(s) */}
       <Card>
@@ -367,6 +375,23 @@ export default async function SessionDetailPage({
                           satisfaction envoyée
                         </Badge>
                       ) : null}
+                      {/* Tâches à faire pour ce candidat */}
+                      {s.formation.piecesAttendues.length > 0 &&
+                        s.formation.piecesAttendues.some((p) => !i.piecesRecues.includes(p)) && (
+                          <Badge variant="outline" className="border-amber-300 text-amber-700">
+                            ⚠ Dossier à compléter
+                          </Badge>
+                        )}
+                      {!i.convocationSentAt && (
+                        <Badge variant="outline" className="border-amber-300 text-amber-700">
+                          ⚠ Convocation à envoyer
+                        </Badge>
+                      )}
+                      {!i.positionnementCompletedAt && (
+                        <Badge variant="outline" className="border-amber-300 text-amber-700">
+                          ⚠ Positionnement
+                        </Badge>
+                      )}
                     </span>
                     <span className="flex flex-wrap items-center gap-3">
                       <a
