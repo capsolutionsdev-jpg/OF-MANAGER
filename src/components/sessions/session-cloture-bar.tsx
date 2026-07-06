@@ -3,9 +3,11 @@
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Archive, BellRing, Loader2, Lock } from "lucide-react";
+import Link from "next/link";
+import { Archive, BellRing, Loader2, Lock, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { archiverSession, notifierCollaborateurs } from "@/lib/actions/session-guard-actions";
+import { notifierCollaborateurs } from "@/lib/actions/session-guard-actions";
+import { archiveSessionValidated } from "@/lib/actions/session-validation-actions";
 
 export function SessionClotureBar({
   sessionId,
@@ -22,7 +24,8 @@ export function SessionClotureBar({
 
   function archiver() {
     startArchive(async () => {
-      const r = await archiverSession(sessionId);
+      // L'archivage s'appuie exclusivement sur le service de validation.
+      const r = await archiveSessionValidated(sessionId);
       if (r.ok) { toast.success("Session archivée (clôturée)."); router.refresh(); }
       else toast.error(r.error);
     });
@@ -37,6 +40,9 @@ export function SessionClotureBar({
 
   return (
     <div className="flex flex-wrap items-center gap-2">
+      <Button size="sm" variant="outline" render={<Link href={`/sessions/${sessionId}/validation`} />}>
+        <ShieldCheck className="mr-1.5 h-3.5 w-3.5" /> Validation
+      </Button>
       <Button size="sm" variant="outline" onClick={notifier} disabled={notifying}>
         {notifying ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <BellRing className="mr-1.5 h-3.5 w-3.5" />}
         Rappeler les collaborateurs
@@ -50,7 +56,7 @@ export function SessionClotureBar({
           size="sm"
           onClick={archiver}
           disabled={archiving || !canArchive}
-          title={canArchive ? "Clôturer et archiver la session" : "Impossible : dossiers incomplets ou non signés"}
+          title={canArchive ? "Clôturer et archiver la session" : "Impossible : validation incomplète (voir l'onglet Validation)"}
         >
           {archiving ? (
             <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />

@@ -646,6 +646,11 @@ model Session {
   nbPlaces    Int           @default(10)
   statut      SessionStatut @default(PLANIFIEE)
   isArchived  Boolean       @default(false)
+  archivedAt  DateTime? // clôture/archivage (validation Qualiopi complète)
+  archivedBy  String? // collaborateur ayant archivé
+  // Marques de validation manuelle (doc session/formateur confirmé sur place).
+  // Clé = itemKey de la config de validation → { nom, userId, date, comment }.
+  validationJson Json?
 
   // Salle (gestion des salles / planning)
   salleId     String?

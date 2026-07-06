@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Pencil, Users, ClipboardCheck, FileText, UserCog, CreditCard, Award, Download, CheckCircle2 } from "lucide-react";
 import { getTenantDb } from "@/lib/tenant";
+import { getSessionValidation } from "@/lib/validation/service";
+import { SessionTabs } from "@/components/sessions/session-tabs";
 import { Button } from "@/components/ui/button";
 import { ExportMenu } from "@/components/export-menu";
 import { Badge } from "@/components/ui/badge";
@@ -104,8 +106,10 @@ export default async function SessionDetailPage({
     { key: "convocation", label: "Convocations à envoyer", noms: gfConv },
     { key: "positionnement", label: "Positionnements non faits", noms: gfPos },
   ];
-  const canArchive = gfDossier.length === 0 && gfSign.length === 0;
-  const dejaArchivee = s.statut === "TERMINEE";
+  // Archivage : la source de vérité est le service de validation (Qualiopi).
+  const vstate = await getSessionValidation(id);
+  const canArchive = !!vstate?.isValidated;
+  const dejaArchivee = !!vstate?.isArchived || s.isArchived;
 
   return (
     <div className="space-y-6">
@@ -153,6 +157,12 @@ export default async function SessionDetailPage({
           </div>
         </div>
       </div>
+
+      <SessionTabs
+        sessionId={s.id}
+        active="details"
+        validationBadge={vstate ? { percentage: vstate.percentage, ok: vstate.isValidated } : undefined}
+      />
 
       <Card>
         <CardHeader>
