@@ -563,14 +563,25 @@ async function provisionElearning(inscriptionId: string) {
     });
   }
 
+  // Rôles privilégiés : NE JAMAIS les rétrograder en APPRENANT si la même
+  // adresse e-mail signe un parcours (un admin/formateur peut aussi être inscrit
+  // à une formation). On ne fait que rattacher le dossier apprenant.
+  const PRIVILEGED_ROLES = ["SUPERADMIN", "ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT", "FORMATEUR"];
+
   // Compte de connexion
   let motDePasse: string | null = null;
   if (!apprenant.userId) {
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
+      const keepRole = PRIVILEGED_ROLES.includes(existing.role);
       await prisma.user.update({
         where: { id: existing.id },
-        data: { role: "APPRENANT", isActive: true, organismeId: existing.organismeId ?? insc.organismeId },
+        data: {
+          // On conserve le rôle privilégié ; sinon on donne l'accès apprenant.
+          ...(keepRole ? {} : { role: "APPRENANT" }),
+          isActive: true,
+          organismeId: existing.organismeId ?? insc.organismeId,
+        },
       });
       await prisma.apprenant.update({
         where: { id: apprenant.id },
