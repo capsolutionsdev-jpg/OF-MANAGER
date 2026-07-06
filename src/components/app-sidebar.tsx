@@ -37,7 +37,7 @@ function NavLinks({
             href={item.href}
             onClick={onNavigate}
             className={cn(
-              "group/nav flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
+              "group/nav flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 hover:translate-x-0.5",
               dark
                 ? active
                   ? "bg-white text-[#221F19] shadow-sm"

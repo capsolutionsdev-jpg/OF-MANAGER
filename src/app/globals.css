@@ -300,3 +300,120 @@
     transition: none;
   }
 }
+/* ============================================================
+   DYNAMIQUE DE L'APPLICATION (design system animé)
+   Micro-interactions & entrées de page — CSS pur, zéro lib.
+   Toutes désactivées si l'utilisateur préfère réduire le mouvement.
+   ============================================================ */
+
+@keyframes app-fade-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes app-pop-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes app-bar-grow {
+  from { width: 0; }
+}
+@keyframes app-gauge-draw {
+  from { stroke-dasharray: 0 999; }
+}
+@keyframes app-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+/* Entrée de page (appliquée par app/(app)/template.tsx à chaque navigation) */
+.page-enter {
+  animation: app-fade-up 0.35s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+/* Entrée en cascade : posez .stagger sur un conteneur (grille de cartes…)
+   → chaque enfant direct apparaît l'un après l'autre. */
+.stagger > * {
+  animation: app-fade-up 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.stagger > *:nth-child(1) { animation-delay: 0.03s; }
+.stagger > *:nth-child(2) { animation-delay: 0.09s; }
+.stagger > *:nth-child(3) { animation-delay: 0.15s; }
+.stagger > *:nth-child(4) { animation-delay: 0.21s; }
+.stagger > *:nth-child(5) { animation-delay: 0.27s; }
+.stagger > *:nth-child(6) { animation-delay: 0.33s; }
+.stagger > *:nth-child(7) { animation-delay: 0.39s; }
+.stagger > *:nth-child(8) { animation-delay: 0.45s; }
+.stagger > *:nth-child(n + 9) { animation-delay: 0.5s; }
+
+/* Carte interactive : léger soulèvement au survol */
+.hover-lift {
+  transition: transform 0.2s cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow 0.2s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px -10px rgba(16, 24, 40, 0.18);
+}
+
+/* Barres de progression qui se remplissent à l'arrivée */
+.bar-anim {
+  animation: app-bar-grow 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation-delay: 0.15s;
+}
+
+/* Jauge circulaire qui se dessine */
+.gauge-anim {
+  animation: app-gauge-draw 1s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation-delay: 0.1s;
+}
+
+/* Accent dégradé sous les titres de page */
+.title-accent {
+  position: relative;
+  display: inline-block;
+}
+.title-accent::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -6px;
+  height: 3px;
+  width: 42px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--primary), color-mix(in oklab, var(--primary) 35%, transparent));
+  transform-origin: left;
+  animation: app-accent-grow 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) 0.15s both;
+}
+@keyframes app-accent-grow {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+/* Squelette de chargement (réutilisable) */
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--muted) 70%, transparent) 25%,
+    color-mix(in oklab, var(--muted) 40%, transparent) 37%,
+    color-mix(in oklab, var(--muted) 70%, transparent) 63%
+  );
+  background-size: 200% 100%;
+  animation: app-shimmer 1.4s ease infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-enter,
+  .stagger > *,
+  .bar-anim,
+  .gauge-anim,
+  .title-accent::after,
+  .skeleton-shimmer {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+  }
+  .hover-lift,
+  .hover-lift:hover {
+    transform: none;
+    transition: none;
+  }
+}

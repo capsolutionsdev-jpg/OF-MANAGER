@@ -210,7 +210,7 @@ export function ValidationBoard({ state }: { state: ValidationState }) {
         </div>
         <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
           <div
-            className={`h-full rounded-full transition-all ${state.isValidated ? "bg-emerald-500" : "bg-primary"}`}
+            className={`bar-anim h-full rounded-full transition-all ${state.isValidated ? "bg-emerald-500" : "bg-primary"}`}
             style={{ width: `${state.percentage}%` }}
           />
         </div>

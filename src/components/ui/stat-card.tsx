@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { AnimatedNumber } from "@/components/ui/animated-number";
 import { cn } from "@/lib/utils";
 
 type Tint = "blue" | "emerald" | "amber" | "violet" | "rose";
@@ -12,7 +13,8 @@ const TINTS: Record<Tint, string> = {
   rose: "bg-rose-50 text-rose-600 dark:bg-rose-500/15 dark:text-rose-400",
 };
 
-/** Carte d'indicateur clé (design system) : libellé, grand chiffre, micro-tendance. */
+/** Carte d'indicateur clé (design system) : libellé, grand chiffre animé,
+ * micro-tendance. Se soulève légèrement au survol ; l'icône réagit. */
 export function StatCard({
   label,
   value,
@@ -20,6 +22,7 @@ export function StatCard({
   trend,
   trendUp,
   tint = "blue",
+  className,
 }: {
   label: string;
   value: number | string;
@@ -27,17 +30,25 @@ export function StatCard({
   trend?: string;
   trendUp?: boolean;
   tint?: Tint;
+  className?: string;
 }) {
   return (
-    <Card>
+    <Card className={cn("hover-lift group/stat", className)}>
       <CardContent className="p-5">
         <div className="flex items-start justify-between">
           <span className="text-sm font-medium text-muted-foreground">{label}</span>
-          <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-lg", TINTS[tint])}>
+          <span
+            className={cn(
+              "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-transform duration-200 group-hover/stat:scale-110 group-hover/stat:-rotate-3",
+              TINTS[tint],
+            )}
+          >
             <Icon className="h-5 w-5" />
           </span>
         </div>
-        <div className="mt-3 text-3xl font-bold leading-none tracking-tight">{value}</div>
+        <div className="mt-3 text-3xl font-bold leading-none tracking-tight">
+          {typeof value === "number" ? <AnimatedNumber value={value} /> : value}
+        </div>
         {trend && (
           <div
             className={cn(

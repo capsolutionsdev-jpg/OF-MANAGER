@@ -36,7 +36,7 @@ function Bar({ label, value, max, color }: { label: string; value: number; max: 
         <span className="font-medium">{value}</span>
       </div>
       <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-        <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
+        <div className={`bar-anim h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
       </div>
     </div>
   );
@@ -51,7 +51,7 @@ function Gauge({ pct }: { pct: number }) {
       <circle cx="60" cy="60" r={r} fill="none" className="stroke-muted" strokeWidth="12" />
       <circle
         cx="60" cy="60" r={r} fill="none"
-        className="stroke-primary" strokeWidth="12" strokeLinecap="round"
+        className="gauge-anim stroke-primary" strokeWidth="12" strokeLinecap="round"
         strokeDasharray={`${filled} ${c}`} transform="rotate(-90 60 60)"
       />
       <text x="60" y="58" textAnchor="middle" className="fill-foreground" fontSize="24" fontWeight="600">{pct}%</text>
@@ -217,7 +217,7 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
+        <div className="stagger grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
           {kpis.map((s) => (
             <StatCard key={s.label} label={s.label} value={s.value} icon={s.icon} tint={s.tint} />
           ))}
