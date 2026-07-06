@@ -417,3 +417,36 @@
     transition: none;
   }
 }
+
+/* Cascade sur les LIGNES de tableau : posez .stagger-rows sur le tableau
+   (ou un parent) → chaque ligne apparaît l'une après l'autre. */
+.stagger-rows tbody tr {
+  animation: app-fade-up 0.4s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.stagger-rows tbody tr:nth-child(1) { animation-delay: 0.02s; }
+.stagger-rows tbody tr:nth-child(2) { animation-delay: 0.06s; }
+.stagger-rows tbody tr:nth-child(3) { animation-delay: 0.1s; }
+.stagger-rows tbody tr:nth-child(4) { animation-delay: 0.14s; }
+.stagger-rows tbody tr:nth-child(5) { animation-delay: 0.18s; }
+.stagger-rows tbody tr:nth-child(6) { animation-delay: 0.22s; }
+.stagger-rows tbody tr:nth-child(7) { animation-delay: 0.26s; }
+.stagger-rows tbody tr:nth-child(8) { animation-delay: 0.3s; }
+.stagger-rows tbody tr:nth-child(n + 9) { animation-delay: 0.34s; }
+
+/* Illustration des états vides : léger flottement */
+@keyframes app-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.empty-float {
+  animation: app-float 3.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stagger-rows tbody tr,
+  .empty-float {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+  }
+}

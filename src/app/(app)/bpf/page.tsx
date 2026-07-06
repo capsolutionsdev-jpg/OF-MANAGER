@@ -33,7 +33,7 @@ function Kpi({
   sub?: string;
 }) {
   return (
-    <Card>
+    <Card className="hover-lift">
       <CardContent className="flex items-center gap-3 p-4">
         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
           <Icon className="h-5 w-5" />
@@ -212,7 +212,7 @@ export default async function BpfPage({
       {/* En-tête + sélecteur d'année */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
+          <h1 className="title-accent flex items-center gap-2 text-2xl font-bold tracking-tight">
             <BarChart3 className="h-6 w-6" /> Bilan Pédagogique &amp; Financier
           </h1>
           <p className="text-sm text-muted-foreground">
@@ -246,7 +246,7 @@ export default async function BpfPage({
       ) : (
         <>
           {/* KPI globaux */}
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <div className="stagger grid grid-cols-2 gap-4 lg:grid-cols-4">
             <Kpi
               icon={GraduationCap}
               label="Sessions"

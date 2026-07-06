@@ -19,6 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { NavLinks, Brand } from "@/components/app-sidebar";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { roleLabels } from "@/lib/navigation";
 import { doSignOut } from "@/lib/actions/auth-actions";
 
@@ -65,6 +66,8 @@ export function AppHeader({ user }: { user: HeaderUser }) {
         )}
       </div>
 
+      <div className="flex items-center gap-1">
+      <ThemeToggle />
       <DropdownMenu>
         <DropdownMenuTrigger
           render={
@@ -113,6 +116,7 @@ export function AppHeader({ user }: { user: HeaderUser }) {
           </form>
         </DropdownMenuContent>
       </DropdownMenu>
+      </div>
     </header>
   );
 }

@@ -19,6 +19,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { PageHeader } from "@/components/ui/page-header";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   MODALITE_LABELS,
   ACADEMY_LABELS,
@@ -89,13 +90,13 @@ export default async function SessionsPage() {
 
       {sessions.length === 0 ? (
         <Card>
-          <div className="flex flex-col items-center gap-2 p-12 text-center">
-            <CalendarDays className="h-8 w-8 text-muted-foreground" />
-            <p className="font-medium">Aucune session programmée</p>
-            <p className="text-sm text-muted-foreground">
-              Planifiez votre première session de formation.
-            </p>
-          </div>
+          <EmptyState
+            icon={CalendarDays}
+            title="Aucune session programmée"
+            description="Planifiez votre première session de formation : dates, salle, formateur et inscriptions se gèrent ensuite depuis sa fiche."
+            actionLabel="Planifier une session"
+            actionHref="/sessions/nouvelle"
+          />
         </Card>
       ) : (
         ETATS.map((et) => {
@@ -134,7 +135,7 @@ export default async function SessionsPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-0">
-                    <Table>
+                    <Table className="stagger-rows">
                       <TableHeader>
                         <TableRow>
                           <TableHead>Formation</TableHead>

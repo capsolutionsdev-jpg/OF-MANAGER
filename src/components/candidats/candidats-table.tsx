@@ -137,7 +137,7 @@ export function CandidatsTable({
         </div>
       ) : (
         <div className="rounded-lg border">
-          <Table>
+          <Table className="stagger-rows">
             <TableHeader>
               <TableRow>
                 <TableHead>Nom</TableHead>

@@ -62,7 +62,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr" className={`${fontVars} h-full antialiased`}>
+    <html lang="fr" className={`${fontVars} h-full antialiased`} suppressHydrationWarning>
+      <head>
+        {/* Applique le thème mémorisé AVANT le premier rendu (aucun flash).
+            Par défaut : mode clair ; sombre uniquement si choisi par l'utilisateur. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{if(localStorage.getItem("theme")==="dark")document.documentElement.classList.add("dark")}catch(e){}`,
+          }}
+        />
+      </head>
       <body className="min-h-full">
         {children}
         <Toaster richColors position="top-right" />

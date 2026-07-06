@@ -4,6 +4,7 @@ import { getTenantDb } from "@/lib/tenant";
 import { Button } from "@/components/ui/button";
 import { ExportMenu } from "@/components/export-menu";
 import { PageHeader } from "@/components/ui/page-header";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Card } from "@/components/ui/card";
 import {
   CandidatsTable,
@@ -67,13 +68,13 @@ export default async function CandidatsPage() {
 
       {candidats.length === 0 ? (
         <Card>
-          <div className="flex flex-col items-center gap-2 p-12 text-center">
-            <Users className="h-8 w-8 text-muted-foreground" />
-            <p className="font-medium">Aucun candidat pour le moment</p>
-            <p className="text-sm text-muted-foreground">
-              Commencez par créer votre premier candidat.
-            </p>
-          </div>
+          <EmptyState
+            icon={Users}
+            title="Aucun candidat pour le moment"
+            description="Créez votre premier candidat : son dossier, ses pièces et ses inscriptions se gèrent ensuite depuis sa fiche."
+            actionLabel="Créer un candidat"
+            actionHref="/candidats/nouveau"
+          />
         </Card>
       ) : (
         <CandidatsTable candidats={rows} sessions={sessionOptions} />

@@ -3,6 +3,7 @@ import { Plus, BookOpen } from "lucide-react";
 import { getTenantDb } from "@/lib/tenant";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -61,13 +62,13 @@ export default async function FormationsPage() {
 
       {formations.length === 0 ? (
         <Card>
-          <div className="flex flex-col items-center gap-2 p-12 text-center">
-            <BookOpen className="h-8 w-8 text-muted-foreground" />
-            <p className="font-medium">Aucune formation au catalogue</p>
-            <p className="text-sm text-muted-foreground">
-              Créez votre première formation.
-            </p>
-          </div>
+          <EmptyState
+            icon={BookOpen}
+            title="Aucune formation au catalogue"
+            description="Créez votre première formation : programme, tarif, pièces attendues et documents se génèrent ensuite automatiquement."
+            actionLabel="Créer une formation"
+            actionHref="/formations/nouvelle"
+          />
         </Card>
       ) : (
         <div className="space-y-6">
@@ -80,7 +81,7 @@ export default async function FormationsPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
-                <Table>
+                <Table className="stagger-rows">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Titre</TableHead>
