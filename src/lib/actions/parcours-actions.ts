@@ -180,6 +180,29 @@ export async function submitParcoursForm(
   return { ok: true };
 }
 
+/**
+ * Étape « lire les documents contractuels » : le candidat déclare avoir consulté
+ * ses documents (convention, programme, règlement…) avant de pouvoir signer.
+ * Enregistre l'horodatage (traçabilité Qualiopi). Public, via le lien tokenisé.
+ */
+export async function markDocsLus(
+  token: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const insc = await prisma.inscription.findUnique({
+    where: { accessToken: token },
+    select: { id: true, formCompletedAt: true, docsLusAt: true },
+  });
+  if (!insc) return { ok: false, error: "Lien invalide ou expiré." };
+  if (!insc.formCompletedAt)
+    return { ok: false, error: "Complétez d'abord vos informations." };
+  if (insc.docsLusAt) return { ok: true }; // déjà consulté
+  await prisma.inscription.update({
+    where: { id: insc.id },
+    data: { docsLusAt: new Date() },
+  });
+  return { ok: true };
+}
+
 /** Soumission publique de l'enquête de satisfaction (via le token dédié). */
 export async function submitSatisfaction(
   token: string,

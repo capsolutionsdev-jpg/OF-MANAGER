@@ -805,6 +805,7 @@ model Inscription {
   // ── Parcours automatisé V2 (lien public + jalons) ──
   accessToken         String?   @unique // lien unique candidat (formulaire + signature)
   formCompletedAt     DateTime? // le candidat a rempli son formulaire
+  docsLusAt           DateTime? // le candidat a consulté les documents contractuels
   signedAt            DateTime? // documents signés électroniquement (interne)
   signatureIp         String?
   signatureDataUrl    String?   @db.Text // image PNG de la signature manuscrite (dessinée)

@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { CheckCircle2, Circle, FileSignature, FolderUp } from "lucide-react";
+import { CheckCircle2, Circle, FileSignature, FolderUp, BookOpenCheck } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { orgConfigFor } from "@/lib/org-identity";
 import {
@@ -9,9 +9,21 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ParcoursForm } from "@/components/parcours/parcours-form";
+import { DocsLire } from "@/components/parcours/docs-lire";
+import { SignBox } from "@/components/parcours/sign-box";
 import { DossierUpload } from "@/components/parcours/dossier-upload";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
+
+// Documents contractuels que le candidat doit consulter avant de signer.
+const DOCS_CONTRACTUELS = [
+  "Fiche d'inscription",
+  "Contrat de formation",
+  "Convention de formation",
+  "Programme de la formation",
+  "Règlement intérieur",
+];
 
 function Step({
   done,
@@ -60,16 +72,21 @@ export default async function ParcoursPage({
 
   const c = insc.candidat;
   const formDone = !!insc.formCompletedAt;
+  const docsLus = !!insc.docsLusAt;
   const signed = !!insc.signedAt;
   const fmt = (d: Date) => d.toLocaleDateString("fr-FR");
 
-  // Dossier administratif : pièces attendues (par formation) + déjà déposées.
+  // Étape 4 — dossier administratif : pièces attendues (par formation) + déposées.
   const piecesAttendues = insc.session.formation.piecesAttendues ?? [];
   const pieces = await prisma.pieceJointe.findMany({
     where: { candidatId: insc.candidatId },
     orderBy: { createdAt: "desc" },
     select: { id: true, label: true, categorie: true, url: true, mimeType: true, statut: true, motifRefus: true },
   });
+  const piecesCompletes =
+    piecesAttendues.length === 0 ||
+    piecesAttendues.every((p) => insc.piecesRecues.includes(p));
+  const toutFinalise = signed && piecesCompletes;
 
   return (
     <main className="min-h-screen bg-muted/40 px-4 py-10">
@@ -82,30 +99,25 @@ export default async function ParcoursPage({
             alt={org.name}
             className="mb-3 h-12 w-auto object-contain"
           />
-          <h1 className="text-xl font-bold">
-            Finalisez votre inscription
-          </h1>
+          <h1 className="text-xl font-bold">Finalisez votre inscription</h1>
           <p className="text-sm text-muted-foreground">
             {insc.session.formation.titre} — du {fmt(insc.session.dateDebut)} au{" "}
             {fmt(insc.session.dateFin)}
           </p>
         </div>
 
-        {/* Progression */}
+        {/* Progression — 4 étapes */}
         <Card>
-          <CardContent className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 py-4">
+          <CardContent className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 py-4">
             <Step done={formDone} current={!formDone} label="1. Mes informations" />
-            <Step
-              done={signed}
-              current={formDone && !signed}
-              label="2. Signature des documents"
-            />
-            <Step done={false} current={signed} label="3. Réception des documents" />
+            <Step done={docsLus} current={formDone && !docsLus} label="2. Lire les documents" />
+            <Step done={signed} current={docsLus && !signed} label="3. Signature" />
+            <Step done={toutFinalise} current={signed && !toutFinalise} label="4. Pièces du dossier" />
           </CardContent>
         </Card>
 
-        {/* Étape courante */}
-        {!formDone ? (
+        {/* ── Étape 1 : informations ── */}
+        {!formDone && (
           <Card>
             <CardHeader>
               <CardTitle className="text-base">
@@ -130,7 +142,25 @@ export default async function ParcoursPage({
               />
             </CardContent>
           </Card>
-        ) : !signed ? (
+        )}
+
+        {/* ── Étape 2 : lire les documents contractuels ── */}
+        {formDone && !docsLus && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <BookOpenCheck className="h-5 w-5 text-primary" /> Lire vos
+                documents contractuels
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <DocsLire token={token} documents={DOCS_CONTRACTUELS} />
+            </CardContent>
+          </Card>
+        )}
+
+        {/* ── Étape 3 : signature ── */}
+        {formDone && docsLus && !signed && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
@@ -140,41 +170,40 @@ export default async function ParcoursPage({
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                Merci ! Vos informations sont enregistrées. Dernière étape :
-                relisez et signez électroniquement vos documents (fiche
-                d&apos;inscription, convention, règlement intérieur).
+                Vous avez consulté vos documents. Signez-les électroniquement
+                ci-dessous ; une copie signée vous sera envoyée par e-mail.
               </p>
-              <a
-                href={`/signer/${token}`}
-                className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/80"
-              >
-                <FileSignature className="h-4 w-4" />
-                Lire et signer mes documents
-              </a>
-            </CardContent>
-          </Card>
-        ) : (
-          <Card>
-            <CardContent className="space-y-2 py-8 text-center">
-              <CheckCircle2 className="mx-auto h-10 w-10 text-emerald-600" />
-              <p className="font-medium">Tout est finalisé, merci !</p>
-              <p className="text-sm text-muted-foreground">
-                Vos documents signés vous ont été envoyés par e-mail. Vous
-                recevrez prochainement votre convocation.
-              </p>
+              <SignBox token={token} defaultName={`${c.prenom} ${c.nom}`} />
             </CardContent>
           </Card>
         )}
 
-        {/* Dossier administratif — dépôt des pièces (adapté à la formation) */}
-        {!signed && (
+        {/* ── Étape 4 : envoi des pièces du dossier administratif ── */}
+        {signed && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
-                <FolderUp className="h-5 w-5 text-primary" /> Mon dossier administratif
+                <FolderUp className="h-5 w-5 text-primary" /> Envoyer les pièces
+                de votre dossier
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
+              {toutFinalise ? (
+                <div className="space-y-2 rounded-lg bg-emerald-500/10 p-4 text-center">
+                  <CheckCircle2 className="mx-auto h-8 w-8 text-emerald-600" />
+                  <p className="font-medium">Tout est finalisé, merci !</p>
+                  <p className="text-sm text-muted-foreground">
+                    Vos documents signés vous ont été envoyés par e-mail. Vous
+                    pouvez ajouter ou remplacer une pièce ci-dessous si besoin.
+                  </p>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Vos documents sont signés. Dernière étape : transmettez les
+                  pièces justificatives demandées ci-dessous. Pour chacune,
+                  choisissez un fichier ou prenez-la en photo — une par une.
+                </p>
+              )}
               <DossierUpload
                 token={token}
                 piecesAttendues={piecesAttendues}
