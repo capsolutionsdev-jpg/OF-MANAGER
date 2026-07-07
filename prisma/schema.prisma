@@ -597,6 +597,11 @@ model Formation {
   // La formation est sanctionnée par un examen → convocation d'examen pertinente
   // (sinon : pas de convocation d'examen, ex. SST / MAC SST / MAC APS).
   examen Boolean @default(false)
+  // Formation diplômante (titre/diplôme) → active le suivi de diplômes.
+  diplomante Boolean @default(false)
+  // Examen soumis à un jury → active la gestion de jury + nb de jurés attendus.
+  soumisJury Boolean @default(false)
+  nbJury     Int?
   // Grille de certification officielle INRS à pré-remplir (doc réglementaire) :
   // "SST" ou "MAC_SST" (cf. public/inrs/). Vide = pas de grille INRS.
   grilleInrs String?
@@ -680,6 +685,7 @@ model Session {
   emailLogs    EmailLog[]
   emargementSignatures EmargementSignature[]
   facturesFormateur FactureFormateur[]
+  juryAffectations JuryAffectation[]
 
   createdById String?
   createdBy   User?    @relation("SessionCreeePar", fields: [createdById], references: [id])
@@ -2096,4 +2102,91 @@ model NumeroSequence {
   updatedAt   DateTime @updatedAt
 
   @@unique([organismeId, cle])
+}
+
+// =============================================================
+//  MODULE DIPLÔMES — suivi & attestation de remise (formations diplômantes)
+// =============================================================
+
+enum DiplomeStatut {
+  ENVOYE_CERTIFICATEUR // diplôme envoyé au certificateur
+  RECU                 // diplôme reçu par l'OF
+  REMIS                // diplôme remis au candidat (→ attestation de remise)
+}
+
+/// Diplôme d'un candidat pour une session. Les coordonnées peuvent être
+/// récupérées depuis l'inscrit (inscriptionId) ou saisies manuellement.
+model Diplome {
+  id            String   @id @default(cuid())
+  organismeId   String? // tenant
+  inscriptionId String? // rattachement à l'inscrit (source des coordonnées)
+  sessionId     String? // pour le suivi par session
+  formationId   String? // pour le suivi par formation
+  nom           String
+  prenom        String
+  dateNaissance DateTime?
+  lieuNaissance String?
+  numeroDiplome String?
+  statut        DiplomeStatut @default(ENVOYE_CERTIFICATEUR)
+  envoyeCertificateurAt DateTime?
+  recuAt        DateTime?
+  remisAt       DateTime?
+  remiseParNom  String? // collaborateur ayant remis le diplôme
+  createdById   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([organismeId])
+  @@index([sessionId])
+  @@index([formationId])
+  @@index([inscriptionId])
+}
+
+// =============================================================
+//  MODULE JURY — annuaire, affectation par session, défraiement
+// =============================================================
+
+/// Membre de jury (annuaire de l'organisme).
+model Jury {
+  id          String   @id @default(cuid())
+  organismeId String? // tenant
+  nom         String
+  prenom      String
+  email       String?
+  telephone   String?
+  qualite     String? // fonction / titre (ex. "Formateur expert SSIAP 3")
+  actif       Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  affectations JuryAffectation[]
+
+  @@index([organismeId])
+}
+
+enum JuryPaiementStatut {
+  A_PAYER
+  PAYE
+}
+
+/// Affectation d'un juré à une session : prix (défraiement) personnalisé,
+/// suivi du paiement et de l'envoi de la note de défraiement.
+model JuryAffectation {
+  id          String  @id @default(cuid())
+  organismeId String? // tenant
+  sessionId   String
+  session     Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  juryId      String
+  jury        Jury    @relation(fields: [juryId], references: [id], onDelete: Cascade)
+  prixCents   Int     @default(0) // montant du défraiement (personnalisé)
+  natureExamen String? // nature de l'examen (figure sur la note)
+  statut      JuryPaiementStatut @default(A_PAYER)
+  payeAt      DateTime?
+  defraiementSentAt DateTime? // note de défraiement envoyée au juré
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([sessionId, juryId])
+  @@index([organismeId])
+  @@index([sessionId])
 }

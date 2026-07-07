@@ -26,6 +26,11 @@ export const formationFormSchema = z.object({
   examen: z.boolean().optional(),
   // Grille de certification officielle INRS à pré-remplir ("SST" / "MAC_SST").
   grilleInrs: z.string().optional(),
+  // Formation diplômante (→ suivi de diplômes + attestation de remise).
+  diplomante: z.boolean().optional(),
+  // Examen soumis à un jury (→ gestion de jury) + nombre de jurés attendus.
+  soumisJury: z.boolean().optional(),
+  nbJury: z.string().optional(),
 });
 
 export type FormationFormValues = z.infer<typeof formationFormSchema>;

@@ -49,6 +49,7 @@ export function FormationForm({
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<FormationFormValues>({
     resolver: zodResolver(formationFormSchema),
@@ -72,6 +73,9 @@ export function FormationForm({
       piecesAttendues: "",
       examen: false,
       grilleInrs: "",
+      diplomante: false,
+      soumisJury: false,
+      nbJury: "",
       ...defaultValues,
     },
   });
@@ -231,6 +235,35 @@ export function FormationForm({
                 (génère une convocation d&apos;examen ; à décocher pour SST / MAC SST / MAC APS)
               </span>
             </label>
+          </div>
+          <div className="sm:col-span-2">
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" className="h-4 w-4 rounded border" {...register("diplomante")} />
+              Formation diplômante{" "}
+              <span className="font-normal text-muted-foreground">
+                (active le suivi des diplômes et l&apos;attestation de remise)
+              </span>
+            </label>
+          </div>
+          <div className="sm:col-span-2">
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" className="h-4 w-4 rounded border" {...register("soumisJury")} />
+              Examen soumis à un jury{" "}
+              <span className="font-normal text-muted-foreground">
+                (active la gestion de jury à la déclaration de session)
+              </span>
+            </label>
+            {watch("soumisJury") && (
+              <div className="mt-2 flex items-center gap-2">
+                <label className="text-sm">Nombre de jurés attendus :</label>
+                <input
+                  type="number"
+                  min={0}
+                  className="h-9 w-24 rounded-md border bg-transparent px-3 text-sm"
+                  {...register("nbJury")}
+                />
+              </div>
+            )}
           </div>
           <div className="sm:col-span-2">
             <label className="mb-1 block text-sm font-medium">

@@ -30,6 +30,8 @@ import {
   KeyRound,
   LifeBuoy,
   Calculator,
+  Award,
+  Gavel,
   type LucideIcon,
 } from "lucide-react";
 
@@ -254,6 +256,22 @@ export const navItems: NavItem[] = [
     permission: "elearning",
     // Module réservé à CAP Compétences : masqué pour les autres organismes.
     feature: "examen-civique",
+  },
+  {
+    label: "Diplômes",
+    href: "/diplomes",
+    icon: Award,
+    roles: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
+    permission: "suivi-pedagogique",
+    feature: "diplomes",
+  },
+  {
+    label: "Jurys",
+    href: "/jurys",
+    icon: Gavel,
+    roles: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
+    permission: "suivi-pedagogique",
+    feature: "jurys",
   },
   {
     label: "Signatures",

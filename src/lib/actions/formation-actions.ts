@@ -46,6 +46,9 @@ function toData(v: FormationFormValues) {
     piecesAttendues: toLines(v.piecesAttendues),
     examen: Boolean(v.examen),
     grilleInrs: clean(v.grilleInrs),
+    diplomante: Boolean(v.diplomante),
+    soumisJury: Boolean(v.soumisJury),
+    nbJury: v.soumisJury && v.nbJury ? Number(v.nbJury) : null,
   };
 }
 
@@ -170,6 +173,9 @@ export async function duplicateFormationAction(formData: FormData) {
       piecesAttendues: src.piecesAttendues,
       examen: src.examen,
       grilleInrs: src.grilleInrs,
+      diplomante: src.diplomante,
+      soumisJury: src.soumisJury,
+      nbJury: src.nbJury,
       version: src.version + 1,
       parentId: src.id,
     },
