@@ -21,8 +21,8 @@ export async function createApprenantAccount(
   const db = await getTenantDb();
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Non autorisé." };
-  if (!password || password.length < 6)
-    return { ok: false, error: "Mot de passe : 6 caractères minimum." };
+  if (!password || password.length < 8)
+    return { ok: false, error: "Mot de passe : 8 caractères minimum." };
 
   const candidat = await db.candidat.findUnique({
     where: { id: candidatId },
@@ -155,7 +155,7 @@ export async function createCandidatWithAccount(
   const password = String(formData.get("password") ?? "");
   if (!prenom || !nom) return { error: "Nom et prénom requis." };
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { error: "E-mail invalide." };
-  if (password.length < 6) return { error: "Mot de passe : 6 caractères minimum." };
+  if (password.length < 8) return { error: "Mot de passe : 8 caractères minimum." };
 
   const db = await getTenantDb();
   const candidat = await db.candidat.create({

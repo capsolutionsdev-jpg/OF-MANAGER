@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { randomUUID } from "crypto";
 import bcrypt from "bcryptjs";
 import { Role } from "@prisma/client";
 import { auth } from "@/auth";
@@ -88,6 +89,10 @@ export async function updateCollaborateur(formData: FormData) {
       ...(name ? { name } : {}),
       role: roleRaw === "RESPONSABLE_FORMATION" ? Role.RESPONSABLE_FORMATION : Role.ASSISTANT,
       permissions: lirePermissions(formData),
+      // Rôle/permissions modifiés → on invalide la session active du compte
+      // pour que les nouveaux droits prennent effet immédiatement (le token JWT
+      // sera rejeté à la prochaine navigation, forçant une reconnexion).
+      activeSessionId: randomUUID(),
     },
   });
   revalidatePath("/administration");
@@ -102,7 +107,9 @@ export async function resetCollaborateurPassword(formData: FormData) {
   if (!id || password.length < 8) return;
   await db.user.update({
     where: { id },
-    data: { passwordHash: await bcrypt.hash(password, 10) },
+    // Mot de passe réinitialisé → on invalide la session active (le compte
+    // devra se reconnecter avec le nouveau mot de passe).
+    data: { passwordHash: await bcrypt.hash(password, 10), activeSessionId: randomUUID() },
   });
   revalidatePath("/administration");
 }
@@ -115,7 +122,12 @@ export async function toggleCollaborateurActive(formData: FormData) {
   if (!id || id === me.id) return; // pas soi-même
   const u = await db.user.findUnique({ where: { id }, select: { isActive: true } });
   if (!u) return;
-  await db.user.update({ where: { id }, data: { isActive: !u.isActive } });
+  // Bascule d'activation → on régénère l'identifiant de session : une
+  // désactivation déconnecte immédiatement le compte à sa prochaine navigation.
+  await db.user.update({
+    where: { id },
+    data: { isActive: !u.isActive, activeSessionId: randomUUID() },
+  });
   revalidatePath("/administration");
 }
 

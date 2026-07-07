@@ -201,7 +201,7 @@ export async function createFormateurWithAccount(
   const password = String(formData.get("password") ?? "");
   if (!prenom || !nom) return { error: "Nom et prénom requis." };
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { error: "E-mail invalide." };
-  if (password.length < 6) return { error: "Mot de passe : 6 caractères minimum." };
+  if (password.length < 8) return { error: "Mot de passe : 8 caractères minimum." };
 
   const db = await getTenantDb();
   const tarifRaw = String(formData.get("tarifJournalier") ?? "").replace(",", ".").trim();
@@ -232,8 +232,8 @@ export async function createFormateurAccess(
   const session = await auth();
   if (!session?.user || !STAFF.includes(session.user.role as string))
     return { ok: false, error: "Non autorisé." };
-  if (!password || password.length < 6)
-    return { ok: false, error: "Mot de passe : 6 caractères minimum." };
+  if (!password || password.length < 8)
+    return { ok: false, error: "Mot de passe : 8 caractères minimum." };
   const db = await getTenantDb();
 
   const formateur = await db.formateur.findUnique({
