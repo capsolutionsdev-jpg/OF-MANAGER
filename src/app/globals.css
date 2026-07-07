@@ -450,3 +450,18 @@
     transform: none;
   }
 }
+
+/* ============================================================
+   Accessibilité (RGAA/WCAG) — focus clavier visible.
+   Garantit un indicateur de focus net sur les éléments interactifs
+   au clavier (Tab), sans gêner la navigation à la souris (:focus-visible).
+   ============================================================ */
+a:focus-visible,
+button:focus-visible,
+[role="button"]:focus-visible,
+summary:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
