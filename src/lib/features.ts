@@ -39,6 +39,7 @@ export const FEATURES: Feature[] = [
   { key: "rapports", label: "Rapports analytiques", description: "Conversion, CA prévisionnel, délais", group: "Modules avancés" },
   { key: "scoring", label: "Scoring & segmentation des prospects", description: "Score d'engagement, tags dynamiques", group: "Modules avancés" },
   { key: "ia", label: "Assistant IA", description: "Rédaction/relance e-mails, résumé, qualification des leads", group: "Modules avancés" },
+  { key: "examen-civique", label: "Examen civique (naturalisation)", description: "Préparation & suivi de l'examen civique — spécifique à CAP Compétences", group: "Modules avancés" },
 
   // ── Support (inclus dans toutes les formules) ──
   { key: "support", label: "Support technique", description: "Le client contacte l'éditeur depuis sa plateforme (incidents, renseignements)", group: "Support" },

@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { htmlToPdf } from "@/lib/pdf";
+import { hasExamenCivique } from "@/lib/civique-guard";
 import type { CivicMention, CivicPaiementMethode } from "@prisma/client";
 
 export const runtime = "nodejs";
@@ -30,6 +31,10 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const organismeId = session?.user?.organismeId;
   if (!session?.user || !STAFF.includes(session.user.role as string) || !organismeId) {
     return new Response("Non autorisé", { status: 401 });
+  }
+  // Module réservé à CAP Compétences (SUPERADMIN exempté pour le support).
+  if (session.user.role !== "SUPERADMIN" && !(await hasExamenCivique())) {
+    return new Response("Module non activé pour cet organisme", { status: 403 });
   }
   const { id } = await params;
 

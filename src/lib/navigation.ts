@@ -41,6 +41,10 @@ export type NavItem = {
   // Section pour le filtrage des collaborateurs (clé de lib/permissions).
   // Absent = visible pour tous les rôles autorisés (ex. tableau de bord).
   permission?: string;
+  // Flag d'organisme STRICT : l'item n'apparaît QUE si l'organisme a
+  // explicitement cette fonctionnalité (contrairement à `permission` où une
+  // liste vide = tout activé). Sert aux modules réservés à un tenant.
+  feature?: string;
 };
 
 /**
@@ -59,7 +63,9 @@ export function visibleNavItems(
       (!item.permission || canAccessSection(role, permissions, item.permission)) &&
       (!item.permission ||
         fonctionnalites.length === 0 ||
-        fonctionnalites.includes(item.permission)),
+        fonctionnalites.includes(item.permission)) &&
+      // Flag STRICT (module réservé) : doit être explicitement présent.
+      (!item.feature || fonctionnalites.includes(item.feature)),
   );
 }
 
@@ -246,6 +252,8 @@ export const navItems: NavItem[] = [
     icon: GraduationCap,
     roles: ["ADMIN", "RESPONSABLE_FORMATION"],
     permission: "elearning",
+    // Module réservé à CAP Compétences : masqué pour les autres organismes.
+    feature: "examen-civique",
   },
   {
     label: "Signatures",

@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { getTenantDb } from "@/lib/tenant";
 import { exportResponse } from "@/lib/export";
 import { buildSheet } from "@/lib/export-xlsx";
+import { hasExamenCivique } from "@/lib/civique-guard";
 import type { CivicMention } from "@prisma/client";
 
 export const runtime = "nodejs";
@@ -25,6 +26,9 @@ export async function GET(req: Request) {
   const session = await auth();
   if (!session?.user || !STAFF.includes(session.user.role as string)) {
     return new Response("Non autorisé", { status: 401 });
+  }
+  if (session.user.role !== "SUPERADMIN" && !(await hasExamenCivique())) {
+    return new Response("Module non activé pour cet organisme", { status: 403 });
   }
   const db = await getTenantDb();
   const now = Date.now();
