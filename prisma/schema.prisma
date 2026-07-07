@@ -2180,6 +2180,7 @@ model JuryAffectation {
   jury        Jury    @relation(fields: [juryId], references: [id], onDelete: Cascade)
   prixCents   Int     @default(0) // montant du défraiement (personnalisé)
   natureExamen String? // nature de l'examen (figure sur la note)
+  dateExamen  DateTime? // date de l'examen (sinon repli sur la session)
   statut      JuryPaiementStatut @default(A_PAYER)
   payeAt      DateTime?
   defraiementSentAt DateTime? // note de défraiement envoyée au juré

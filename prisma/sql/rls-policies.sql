@@ -1,7 +1,7 @@
 -- ============================================================
 -- RLS (Row Level Security) — isolation multi-tenant OFManager
 -- GÉNÉRÉ par scripts/gen-rls-sql.mjs — NE PAS ÉDITER À LA MAIN.
--- 60 tables tenant. Colonne de cloisonnement : "organismeId".
+-- 63 tables tenant. Colonne de cloisonnement : "organismeId".
 --
 -- Inerte tant que l'application se connecte avec le rôle PROPRIÉTAIRE des tables
 -- (le propriétaire bypasse la RLS). Enforcement réel = rôle non-owner `app_rls`
@@ -176,6 +176,13 @@ CREATE POLICY tenant_isolation ON "Devis"
   USING ("organismeId" = current_setting('app.org', true))
   WITH CHECK ("organismeId" = current_setting('app.org', true));
 
+-- Diplome
+ALTER TABLE "Diplome" ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS tenant_isolation ON "Diplome";
+CREATE POLICY tenant_isolation ON "Diplome"
+  USING ("organismeId" = current_setting('app.org', true))
+  WITH CHECK ("organismeId" = current_setting('app.org', true));
+
 -- Disponibilite
 ALTER TABLE "Disponibilite" ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS tenant_isolation ON "Disponibilite";
@@ -264,6 +271,20 @@ CREATE POLICY tenant_isolation ON "Formation"
 ALTER TABLE "Inscription" ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS tenant_isolation ON "Inscription";
 CREATE POLICY tenant_isolation ON "Inscription"
+  USING ("organismeId" = current_setting('app.org', true))
+  WITH CHECK ("organismeId" = current_setting('app.org', true));
+
+-- Jury
+ALTER TABLE "Jury" ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS tenant_isolation ON "Jury";
+CREATE POLICY tenant_isolation ON "Jury"
+  USING ("organismeId" = current_setting('app.org', true))
+  WITH CHECK ("organismeId" = current_setting('app.org', true));
+
+-- JuryAffectation
+ALTER TABLE "JuryAffectation" ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS tenant_isolation ON "JuryAffectation";
+CREATE POLICY tenant_isolation ON "JuryAffectation"
   USING ("organismeId" = current_setting('app.org', true))
   WITH CHECK ("organismeId" = current_setting('app.org', true));
 
