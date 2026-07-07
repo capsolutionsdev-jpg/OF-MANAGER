@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ShieldCheck, UserPlus, Users, Building2, UserCog, GraduationCap, ChevronRight, CreditCard } from "lucide-react";
+import { ShieldCheck, UserPlus, Users, Building2, UserCog, GraduationCap, ChevronRight, CreditCard, Download } from "lucide-react";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { orgConfigFor } from "@/lib/org-identity";
@@ -170,6 +170,28 @@ export default async function AdministrationPage() {
         </CardHeader>
         <CardContent>
           <ChangePasswordForm />
+        </CardContent>
+      </Card>
+
+      {/* Réversibilité — export complet des données de l'organisme */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Download className="h-4 w-4 text-primary" /> Export de mes données
+          </CardTitle>
+          <CardDescription>
+            Réversibilité : téléchargez l&apos;intégralité des données de votre
+            organisme (candidats, sessions, inscriptions, facturation…) au format
+            ouvert JSON. Vos données vous appartiennent.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <a
+            href="/administration/export"
+            className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            <Download className="h-4 w-4" /> Exporter toutes mes données (JSON)
+          </a>
         </CardContent>
       </Card>
     </div>
