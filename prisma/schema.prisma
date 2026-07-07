@@ -2083,3 +2083,17 @@ model ValidationDemande {
   @@index([statut])
   @@index([candidatId])
 }
+
+/// Compteur séquentiel ATOMIQUE par organisme (numérotation factures/devis
+/// anti-trou et anti-doublon). `cle` = ex. "DEV-2026", "CIV-2026", "AVOIR-2026".
+/// L'incrément se fait via `update { valeur: { increment: 1 } }` (atomique DB) ;
+/// la ligne est auto-amorcée depuis le max historique lors de sa 1re création.
+model NumeroSequence {
+  id          String   @id @default(cuid())
+  organismeId String
+  cle         String
+  valeur      Int      @default(0)
+  updatedAt   DateTime @updatedAt
+
+  @@unique([organismeId, cle])
+}

@@ -7,6 +7,7 @@ import { requireSection } from "@/lib/section-guard";
 import { getTenantDb } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { generateToken } from "@/lib/token";
+import { nextRef, maxSuffix } from "@/lib/numerotation";
 import { devisFormSchema, type DevisFormValues } from "@/lib/validators/devis";
 import { type ActionResult, toActionError } from "@/lib/action-result";
 
@@ -53,22 +54,20 @@ export async function createDevis(values: DevisFormValues): Promise<DevisResult>
     statut: FactureStatut.BROUILLON,
   };
 
-  // Numérotation séquentielle par organisme : DEV-AAAA-NNNN. Le comptage n'est
-  // pas atomique → on retente sur collision d'unicité (P2002) en cas de créations
-  // concurrentes, garanti par @@unique([organismeId, reference]).
-  for (let attempt = 0; attempt < 5; attempt++) {
-    const count = await db.devis.count({ where: { reference: { startsWith: `DEV-${year}-` } } });
-    const reference = `DEV-${year}-${String(count + 1 + attempt).padStart(4, "0")}`;
-    try {
-      const d = await db.devis.create({ data: { reference, ...baseData } });
-      revalidatePath("/devis");
-      return { ok: true, id: d.id };
-    } catch (e) {
-      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") continue;
-      throw e;
-    }
-  }
-  return { ok: false, error: "Impossible d'attribuer un numéro de devis, réessayez." };
+  // Numérotation séquentielle ATOMIQUE par organisme : DEV-AAAA-NNNN
+  // (compteur NumeroSequence, auto-amorcé depuis l'historique). Anti-doublon /
+  // anti-trou même en cas de créations concurrentes.
+  const organismeId = session.user.organismeId!;
+  const reference = await nextRef(organismeId, "DEV", async () => {
+    const rows = await db.devis.findMany({
+      where: { reference: { startsWith: `DEV-${year}-` } },
+      select: { reference: true },
+    });
+    return maxSuffix(rows.map((r) => r.reference));
+  });
+  const d = await db.devis.create({ data: { reference, ...baseData } });
+  revalidatePath("/devis");
+  return { ok: true, id: d.id };
 }
 
 /** Génère le lien d'acceptation/signature en ligne du devis (statut → Envoyé). */

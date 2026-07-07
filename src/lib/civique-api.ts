@@ -10,6 +10,7 @@
 import { randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { CivicMention, CivicModuleStatut, CivicPath, Prisma } from "@prisma/client";
+import { nextRef, maxSuffix } from "@/lib/numerotation";
 import { sendEmail } from "@/lib/email";
 
 const VITRINE_BASE = process.env.VITRINE_URL ?? "https://capacademy.fr";
@@ -119,16 +120,22 @@ export async function entitledMentions(candidatId: string): Promise<string[]> {
 }
 
 // ---------- Facturation ----------
-/** Prochain numéro de document, CIV-AAAA-NNNN (facture) ou AVOIR-AAAA-NNNN. */
+/** Prochain numéro de document, CIV-AAAA-NNNN (facture) ou AVOIR-AAAA-NNNN.
+ * Numérotation ATOMIQUE (compteur NumeroSequence), auto-amorcée depuis
+ * l'historique → anti-doublon / anti-trou même en cas d'émissions concurrentes. */
 export async function nextFactureNumero(
   organismeId: string,
   kind: "FACTURE" | "AVOIR" = "FACTURE",
 ): Promise<string> {
-  const prefix = `${kind === "AVOIR" ? "AVOIR" : "CIV"}-${new Date().getFullYear()}-`;
-  const count = await prisma.civicFacture.count({
-    where: { organismeId, numero: { startsWith: prefix } },
+  const base = kind === "AVOIR" ? "AVOIR" : "CIV";
+  const year = new Date().getFullYear();
+  return nextRef(organismeId, base, async () => {
+    const rows = await prisma.civicFacture.findMany({
+      where: { organismeId, numero: { startsWith: `${base}-${year}-` } },
+      select: { numero: true },
+    });
+    return maxSuffix(rows.map((r) => r.numero));
   });
-  return `${prefix}${String(count + 1).padStart(4, "0")}`;
 }
 
 /** Émet un avoir (montants négatifs) pour le remboursement d'un paiement,
