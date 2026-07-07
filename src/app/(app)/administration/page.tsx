@@ -57,13 +57,22 @@ export default async function AdministrationPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
-      <div>
-        <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
-          <ShieldCheck className="h-6 w-6 text-primary" /> Administration
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Votre profil, votre mot de passe, et la création des comptes.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
+            <ShieldCheck className="h-6 w-6 text-primary" /> Administration
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Votre profil, votre mot de passe, et la création des comptes.
+          </p>
+        </div>
+        <a
+          href="/administration/export"
+          className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium hover:bg-muted"
+          title="Exporter toutes les données de votre organisme (réversibilité, format JSON ouvert)"
+        >
+          <Download className="h-4 w-4" /> Exporter mes données
+        </a>
       </div>
 
       {/* Créer un compte — chaque type sur sa page */}

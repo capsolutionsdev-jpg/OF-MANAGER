@@ -500,6 +500,7 @@ ${org.representant} — ${org.name}`;
     });
     await prisma.emailLog.create({
       data: {
+        organismeId: insc.organismeId,
         destinataire: insc.candidat.email,
         sujet: subjectConv,
         corps: bodyConv,
