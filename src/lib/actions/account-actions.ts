@@ -59,8 +59,54 @@ export async function changePassword(
   const passwordHash = await bcrypt.hash(parsed.data.next, 10);
   await db.user.update({
     where: { id: user.id },
-    data: { passwordHash },
+    data: { passwordHash, mustChangePassword: false },
   });
 
+  return { ok: true };
+}
+
+const forceSchema = z
+  .object({
+    next: z
+      .string()
+      .min(8, "Le mot de passe doit faire au moins 8 caractères.")
+      .regex(/[A-Za-z]/, "Le mot de passe doit contenir au moins une lettre.")
+      .regex(/[0-9]/, "Le mot de passe doit contenir au moins un chiffre."),
+    confirm: z.string().min(1, "Confirmation requise."),
+  })
+  .refine((d) => d.next === d.confirm, {
+    message: "La confirmation ne correspond pas.",
+    path: ["confirm"],
+  });
+
+/**
+ * Changement de mot de passe FORCÉ à la première connexion (compte candidat créé
+ * avec un mot de passe provisoire). Ne redemande pas le mot de passe temporaire
+ * (l'utilisateur est déjà authentifié) et lève l'indicateur `mustChangePassword`.
+ */
+export async function forceChangePassword(
+  _prev: ChangePasswordState | undefined,
+  formData: FormData,
+): Promise<ChangePasswordState> {
+  const db = await getTenantDb();
+  const session = await auth();
+  if (!session?.user?.id) return { error: "Session expirée. Reconnectez-vous." };
+
+  const parsed = forceSchema.safeParse({
+    next: String(formData.get("next") ?? ""),
+    confirm: String(formData.get("confirm") ?? ""),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Champs invalides." };
+
+  const user = await db.user.findUnique({ where: { id: session.user.id } });
+  if (!user) return { error: "Compte introuvable." };
+  if (await bcrypt.compare(parsed.data.next, user.passwordHash)) {
+    return { error: "Choisissez un mot de passe différent du mot de passe provisoire." };
+  }
+
+  await db.user.update({
+    where: { id: user.id },
+    data: { passwordHash: await bcrypt.hash(parsed.data.next, 10), mustChangePassword: false },
+  });
   return { ok: true };
 }

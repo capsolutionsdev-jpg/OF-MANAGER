@@ -597,6 +597,8 @@ async function provisionElearning(inscriptionId: string) {
           role: "APPRENANT",
           organismeId: insc.organismeId,
           passwordHash: await bcrypt.hash(motDePasse, 10),
+          // Mot de passe provisoire → changement forcé à la 1re connexion.
+          mustChangePassword: true,
         },
       });
       await prisma.apprenant.update({
@@ -606,28 +608,28 @@ async function provisionElearning(inscriptionId: string) {
     }
   }
 
-  // E-mail d'accès uniquement s'il y a des cours à suivre
-  if (cours.length === 0) return;
-
+  // E-mail de BIENVENUE — envoyé systématiquement (accès à l'espace candidat),
+  // qu'il y ait des cours en ligne ou non.
   const loginUrl = `${appBaseUrl()}/login`;
-  const listeCours = cours.map((c) => `• ${c.titre}`).join("\n");
+  const listeCours = cours.length
+    ? `\nVos cours en ligne :\n${cours.map((c) => `• ${c.titre}`).join("\n")}\n`
+    : "";
   const ident = motDePasse
-    ? `Identifiant : ${email}\nMot de passe provisoire : ${motDePasse}\n(Vous pourrez le modifier après connexion.)`
+    ? `Identifiant : ${email}\nMot de passe provisoire : ${motDePasse}\n(Il vous sera demandé de le modifier à votre première connexion.)`
     : `Connectez-vous avec votre adresse e-mail (${email}) et votre mot de passe habituel.`;
-  const subject = `Votre accès à l'espace e-learning — ${org.name}`;
+  const subject = `Bienvenue dans votre espace candidat — ${org.name}`;
   const body = `Bonjour ${insc.candidat.prenom},
 
-Votre espace e-learning est prêt ! Vous pouvez dès maintenant accéder à vos cours en ligne :
+Bienvenue ! Votre espace candidat est prêt. Vous pourrez y suivre vos formations, consulter et signer vos documents, déposer vos pièces justificatives et échanger avec nous.
+
+Connectez-vous ici :
 ${loginUrl}
 
 ${ident}
-
-Vos cours :
 ${listeCours}
+À votre première connexion, vous choisirez votre propre mot de passe.
 
-Une fois connecté(e), cliquez sur « Mes cours ».
-
-Bonne formation,
+À bientôt,
 ${org.representant} — ${org.name}`;
 
   const res = await sendEmail({ to: email, subject, body });

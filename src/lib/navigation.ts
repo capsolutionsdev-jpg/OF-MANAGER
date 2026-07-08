@@ -77,7 +77,7 @@ export const navItems: NavItem[] = [
     label: "Tableau de bord",
     href: "/dashboard",
     icon: LayoutDashboard,
-    roles: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT", "FORMATEUR", "APPRENANT"],
+    roles: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT", "FORMATEUR"],
   },
   {
     label: "Mes cours",

@@ -41,12 +41,14 @@ export default async function AppLayout({
   // on déconnecte cet appareil. Idem si le compte a été désactivé entre-temps.
   const account = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { activeSessionId: true, isActive: true },
+    select: { activeSessionId: true, isActive: true, mustChangePassword: true },
   });
   if (!account?.isActive) redirect("/deconnexion");
   if (account.activeSessionId && account.activeSessionId !== session.user.sid) {
     redirect("/deconnexion?reason=autre-appareil");
   }
+  // Première connexion (mot de passe provisoire) → changement obligatoire.
+  if (account.mustChangePassword) redirect("/bienvenue");
 
   // Marque du tenant : couleur principale injectée comme variable CSS
   // (les composants `bg-primary` / `text-primary` la reprennent), nom + logo
