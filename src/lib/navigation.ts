@@ -356,6 +356,7 @@ const GROUP_BY_HREF: Record<string, string> = {
   "/candidats": "Formation", "/clients-pro": "Formation", "/formations": "Formation",
   "/sessions": "Formation", "/planning": "Formation", "/salles": "Formation",
   "/elearning": "Formation", "/examen-civique": "Formation", "/formateurs": "Formation",
+  "/diplomes": "Formation", "/jurys": "Formation",
   "/sms": "Communication", "/ia": "Communication", "/signatures": "Communication",
   "/automatisations": "Communication",
   "/comptabilite": "Finance", "/tresorerie": "Finance", "/devis": "Finance", "/bpf": "Finance", "/rapports": "Finance",

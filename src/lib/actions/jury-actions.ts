@@ -30,6 +30,7 @@ const eurosToCents = (v: string | number | undefined) => {
 // ── Annuaire des jurés ──
 export async function createJury(input: {
   nom: string; prenom: string; email?: string; telephone?: string; qualite?: string;
+  formationsValidables?: string[];
 }): Promise<Result> {
   await guard();
   if (!input.nom.trim() || !input.prenom.trim()) return { ok: false, error: "Nom et prénom requis." };
@@ -39,10 +40,24 @@ export async function createJury(input: {
       nom: input.nom.trim(), prenom: input.prenom.trim(),
       email: input.email?.trim() || null, telephone: input.telephone?.trim() || null,
       qualite: input.qualite?.trim() || null,
+      formationsValidables: (input.formationsValidables ?? []).filter(Boolean),
     },
   });
   revalidatePath("/jurys");
   return { ok: true, id: j.id };
+}
+
+/** Met à jour les formations qu'un juré peut valider. */
+export async function setJuryFormations(id: string, formationIds: string[]): Promise<Result> {
+  await guard();
+  const db = await getTenantDb();
+  const r = await db.jury.updateMany({
+    where: { id },
+    data: { formationsValidables: { set: (formationIds ?? []).filter(Boolean) } },
+  });
+  if (r.count === 0) return { ok: false, error: "Juré introuvable." };
+  revalidatePath("/jurys");
+  return { ok: true };
 }
 
 export async function toggleJuryActif(id: string): Promise<Result> {
@@ -103,7 +118,7 @@ export async function setAffectationPrix(id: string, prixEuros: string): Promise
 }
 
 export async function setAffectationStatut(id: string, statut: JuryPaiementStatut): Promise<Result> {
-  await guard();
+  const { organismeId } = await guard();
   const db = await getTenantDb();
   const r = await db.juryAffectation.updateMany({
     where: { id },
@@ -111,6 +126,20 @@ export async function setAffectationStatut(id: string, statut: JuryPaiementStatu
   });
   if (r.count === 0) return { ok: false, error: "Affectation introuvable." };
   revalidatePath("/jurys");
+
+  // Passage à « Payé » → envoi AUTOMATIQUE de la note de défraiement au juré
+  // (best-effort : n'échoue pas le changement de statut si l'e-mail est absent
+  // ou indisponible ; l'envoi manuel reste possible).
+  if (statut === "PAYE") {
+    try {
+      const sent = await deliverDefraiement(id, organismeId);
+      return sent.ok
+        ? { ok: true }
+        : { ok: true }; // statut OK même si l'e-mail n'a pas pu partir
+    } catch {
+      return { ok: true };
+    }
+  }
   return { ok: true };
 }
 
@@ -124,11 +153,11 @@ export async function removeAffectation(id: string): Promise<Result> {
 }
 
 /**
- * Génère la note de défraiement et l'envoie IMMÉDIATEMENT par e-mail au juré
- * (PDF en pièce jointe). Trace l'envoi (defraiementSentAt) + journal e-mail.
+ * Cœur d'envoi de la note de défraiement (PDF joint) au juré, avec journal
+ * e-mail + horodatage `defraiementSentAt`. Suppose l'autorisation déjà vérifiée.
+ * Réutilisé par l'envoi manuel ET l'envoi automatique au passage « Payé ».
  */
-export async function sendDefraiement(affectationId: string): Promise<Result> {
-  const { organismeId } = await guard();
+async function deliverDefraiement(affectationId: string, organismeId: string): Promise<Result> {
   const pdf = await buildDefraiementPdf(affectationId);
   if (!pdf) return { ok: false, error: "Affectation introuvable." };
   if (!pdf.juryEmail || !pdf.juryEmail.includes("@"))
@@ -165,4 +194,13 @@ export async function sendDefraiement(affectationId: string): Promise<Result> {
   revalidatePath("/jurys");
   if (!res.sent) return { ok: false, error: "L'e-mail n'a pas pu être envoyé (vérifiez la configuration e-mail)." };
   return { ok: true };
+}
+
+/**
+ * Génère la note de défraiement et l'envoie IMMÉDIATEMENT par e-mail au juré
+ * (envoi manuel depuis l'interface).
+ */
+export async function sendDefraiement(affectationId: string): Promise<Result> {
+  const { organismeId } = await guard();
+  return deliverDefraiement(affectationId, organismeId);
 }

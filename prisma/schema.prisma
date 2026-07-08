@@ -2155,6 +2155,8 @@ model Jury {
   email       String?
   telephone   String?
   qualite     String? // fonction / titre (ex. "Formateur expert SSIAP 3")
+  // Formations que ce juré peut valider (liste d'identifiants Formation).
+  formationsValidables String[]
   actif       Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

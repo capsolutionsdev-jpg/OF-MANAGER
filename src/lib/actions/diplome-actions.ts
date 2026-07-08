@@ -64,6 +64,8 @@ export async function createDiplomeManuel(input: {
   await guard();
   if (!input.nom.trim() || !input.prenom.trim())
     return { ok: false, error: "Nom et prénom requis." };
+  if (!input.formationId?.trim())
+    return { ok: false, error: "Précisez la formation du diplôme." };
   const db = await getTenantDb();
   const d = await db.diplome.create({
     data: {
@@ -73,7 +75,7 @@ export async function createDiplomeManuel(input: {
       lieuNaissance: input.lieuNaissance?.trim() || null,
       numeroDiplome: input.numeroDiplome?.trim() || null,
       sessionId: input.sessionId || null,
-      formationId: input.formationId || null,
+      formationId: input.formationId.trim(),
       statut: "ENVOYE_CERTIFICATEUR",
       envoyeCertificateurAt: new Date(),
     },

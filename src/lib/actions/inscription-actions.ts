@@ -19,6 +19,7 @@ import { sendEmail, toBase64 } from "@/lib/email";
 import { orgConfigFor } from "@/lib/org-identity";
 import { generateToken, appBaseUrl } from "@/lib/token";
 import { buildSingleDocPdf } from "@/lib/documents/build-pdf";
+import { hasStrictFeature } from "@/lib/feature-guard";
 
 export type ActionResult =
   | { ok: true; inscriptionId: string }
@@ -134,8 +135,13 @@ export async function setCertification(
       sessionId: true,
       organismeId: true,
       attestationReussiteSentAt: true,
-      candidat: { select: { prenom: true, email: true } },
-      session: { select: { formation: { select: { titre: true } } } },
+      candidat: { select: { prenom: true, nom: true, dateNaissance: true, lieuNaissance: true, email: true } },
+      session: {
+        select: {
+          formationId: true,
+          formation: { select: { titre: true, diplomante: true } },
+        },
+      },
     },
   });
   if (!insc) return { ok: false, error: "Inscription introuvable." };
@@ -147,6 +153,36 @@ export async function setCertification(
       certificationDate: resultat === "NON_EVALUE" ? null : new Date(),
     },
   });
+
+  // Certifié + formation diplômante + module actif → on GÉNÈRE automatiquement le
+  // diplôme (coordonnées récupérées de l'inscrit) ; seul le n° reste à saisir.
+  // Idempotent (un diplôme par inscription). Best-effort : ne bloque pas la
+  // certification si le module est absent.
+  if (resultat === "CERTIFIE" && insc.session.formation.diplomante) {
+    try {
+      if (await hasStrictFeature("diplomes")) {
+        const existe = await db.diplome.findFirst({ where: { inscriptionId } });
+        if (!existe) {
+          await db.diplome.create({
+            data: {
+              inscriptionId,
+              sessionId: insc.sessionId,
+              formationId: insc.session.formationId,
+              nom: insc.candidat.nom,
+              prenom: insc.candidat.prenom,
+              dateNaissance: insc.candidat.dateNaissance,
+              lieuNaissance: insc.candidat.lieuNaissance ?? null,
+              statut: "ENVOYE_CERTIFICATEUR",
+              envoyeCertificateurAt: new Date(),
+            },
+          });
+          revalidatePath("/diplomes");
+        }
+      }
+    } catch (e) {
+      console.error("[auto-diplome]", e);
+    }
+  }
 
   await db.auditLog.create({
     data: {

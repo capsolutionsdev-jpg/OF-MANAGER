@@ -69,7 +69,7 @@ export default async function DiplomesPage() {
           </p>
         </div>
       ) : (
-        <DiplomesManager diplomes={rows} sessions={sessionOptions} />
+        <DiplomesManager diplomes={rows} sessions={sessionOptions} formations={formations} />
       )}
     </div>
   );

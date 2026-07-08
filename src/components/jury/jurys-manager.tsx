@@ -13,20 +13,24 @@ import {
   setAffectationStatut, removeAffectation, sendDefraiement,
 } from "@/lib/actions/jury-actions";
 
-type Jure = { id: string; nom: string; prenom: string; email: string | null; telephone: string | null; qualite: string | null; actif: boolean };
+type Jure = { id: string; nom: string; prenom: string; email: string | null; telephone: string | null; qualite: string | null; actif: boolean; formationsValidables: string[] };
 type SessionOpt = { id: string; label: string; nbJury: number | null; dateExamen: string };
+type FormationOpt = { id: string; titre: string };
 type Affect = {
   id: string; sessionId: string; sessionLabel: string; juryNom: string; juryEmail: string | null;
   juryQualite: string | null; prixEuros: string; natureExamen: string | null;
   statut: "A_PAYER" | "PAYE"; defraiementSent: boolean;
 };
 
-export function JurysManager({ jurys, sessions, affectations }: { jurys: Jure[]; sessions: SessionOpt[]; affectations: Affect[] }) {
+export function JurysManager({ jurys, sessions, affectations, formations }: { jurys: Jure[]; sessions: SessionOpt[]; affectations: Affect[]; formations: FormationOpt[] }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [busy, setBusy] = useState<string | null>(null);
 
-  const [nj, setNj] = useState({ nom: "", prenom: "", email: "", telephone: "", qualite: "" });
+  const titreFor = (id: string) => formations.find((f) => f.id === id)?.titre ?? id;
+  const [nj, setNj] = useState<{ nom: string; prenom: string; email: string; telephone: string; qualite: string; formationsValidables: string[] }>(
+    { nom: "", prenom: "", email: "", telephone: "", qualite: "", formationsValidables: [] },
+  );
   const [af, setAf] = useState({ sessionId: "", juryId: "", prixEuros: "", natureExamen: "", dateExamen: "" });
 
   function run(key: string, p: Promise<{ ok: boolean; error?: string }>, okMsg: string, after?: () => void) {
@@ -39,7 +43,10 @@ export function JurysManager({ jurys, sessions, affectations }: { jurys: Jure[];
 
   function addJure() {
     if (!nj.nom.trim() || !nj.prenom.trim()) { toast.error("Nom et prénom requis."); return; }
-    run("j", createJury(nj), "Juré ajouté.", () => setNj({ nom: "", prenom: "", email: "", telephone: "", qualite: "" }));
+    run("j", createJury(nj), "Juré ajouté.", () => setNj({ nom: "", prenom: "", email: "", telephone: "", qualite: "", formationsValidables: [] }));
+  }
+  function toggleNjFormation(id: string) {
+    setNj((c) => ({ ...c, formationsValidables: c.formationsValidables.includes(id) ? c.formationsValidables.filter((x) => x !== id) : [...c.formationsValidables, id] }));
   }
   function addAffect() {
     if (!af.sessionId || !af.juryId) { toast.error("Session et juré requis."); return; }
@@ -122,21 +129,43 @@ export function JurysManager({ jurys, sessions, affectations }: { jurys: Jure[];
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-6">
             <Input placeholder="Prénom" value={nj.prenom} onChange={(e) => setNj({ ...nj, prenom: e.target.value })} />
             <Input placeholder="Nom" value={nj.nom} onChange={(e) => setNj({ ...nj, nom: e.target.value })} />
-            <Input placeholder="E-mail" value={nj.email} onChange={(e) => setNj({ ...nj, email: e.target.value })} />
+            <Input placeholder="E-mail (note de défraiement)" value={nj.email} onChange={(e) => setNj({ ...nj, email: e.target.value })} />
             <Input placeholder="Téléphone" value={nj.telephone} onChange={(e) => setNj({ ...nj, telephone: e.target.value })} />
             <Input placeholder="Qualité / titre" value={nj.qualite} onChange={(e) => setNj({ ...nj, qualite: e.target.value })} />
             <Button onClick={addJure} disabled={isPending}>
               {busy === "j" ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <UserPlus className="mr-1.5 h-4 w-4" />} Ajouter
             </Button>
           </div>
+          {/* Formations que ce juré peut valider */}
+          {formations.length > 0 && (
+            <div className="mt-2">
+              <p className="mb-1 text-xs font-medium text-muted-foreground">Formations qu&apos;il peut valider :</p>
+              <div className="flex flex-wrap gap-1.5">
+                {formations.map((f) => {
+                  const on = nj.formationsValidables.includes(f.id);
+                  return (
+                    <button key={f.id} type="button" onClick={() => toggleNjFormation(f.id)}
+                      className={`rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${on ? "border-primary bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted"}`}>
+                      {on ? "✓ " : ""}{f.titre}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           {jurys.length > 0 && (
             <ul className="mt-3 divide-y rounded-md border">
               {jurys.map((j) => (
-                <li key={j.id} className="flex items-center justify-between px-3 py-2 text-sm">
-                  <span className={j.actif ? "" : "text-muted-foreground line-through"}>
-                    {j.prenom} {j.nom}{j.qualite ? ` — ${j.qualite}` : ""}{j.email ? ` · ${j.email}` : ""}
+                <li key={j.id} className="flex items-center justify-between gap-2 px-3 py-2 text-sm">
+                  <span className={j.actif ? "min-w-0" : "min-w-0 text-muted-foreground line-through"}>
+                    <span className="block truncate">{j.prenom} {j.nom}{j.qualite ? ` — ${j.qualite}` : ""}{j.email ? ` · ${j.email}` : ""}</span>
+                    {j.formationsValidables.length > 0 && (
+                      <span className="mt-0.5 block text-[11px] text-muted-foreground">
+                        Valide : {j.formationsValidables.map(titreFor).join(", ")}
+                      </span>
+                    )}
                   </span>
-                  <span className="flex items-center gap-2">
+                  <span className="flex shrink-0 items-center gap-2">
                     <button title={j.actif ? "Désactiver" : "Activer"} disabled={isPending}
                       onClick={() => run("tj" + j.id, toggleJuryActif(j.id), "Mis à jour.")}
                       className="text-muted-foreground hover:text-foreground"><Power className="h-4 w-4" /></button>
@@ -178,7 +207,8 @@ function AffectRow({
           <span className="text-sm text-muted-foreground">€</span>
         </span>
         <button type="button" disabled={isPending}
-          onClick={() => run("s" + a.id, setAffectationStatut(a.id, paye ? "A_PAYER" : "PAYE"), paye ? "Marqué à payer." : "Marqué payé.")}
+          onClick={() => run("s" + a.id, setAffectationStatut(a.id, paye ? "A_PAYER" : "PAYE"), paye ? "Marqué à payer." : (a.juryEmail ? "Payé — note de défraiement envoyée au juré." : "Payé (pas d'e-mail : note non envoyée)."))}
+          title={paye ? "Repasser à payer" : "Marquer payé → envoie la note de défraiement au juré"}
           className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${paye ? "bg-emerald-500/10 text-emerald-700" : "bg-amber-500/10 text-amber-700"}`}>
           <Check className="h-3 w-3" /> {paye ? "Payé" : "À payer"}
         </button>

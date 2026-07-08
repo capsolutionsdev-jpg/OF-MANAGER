@@ -23,6 +23,7 @@ type SessionOpt = {
   id: string; label: string; formationId: string; formationTitre: string;
   inscrits: { inscriptionId: string; nom: string; prenom: string; deja: boolean }[];
 };
+type FormationOpt = { id: string; titre: string };
 
 const STATUTS: { key: Statut; label: string }[] = [
   { key: "ENVOYE_CERTIFICATEUR", label: "Envoyé au certificateur" },
@@ -30,7 +31,7 @@ const STATUTS: { key: Statut; label: string }[] = [
   { key: "REMIS", label: "Remis" },
 ];
 
-export function DiplomesManager({ diplomes, sessions }: { diplomes: Row[]; sessions: SessionOpt[] }) {
+export function DiplomesManager({ diplomes, sessions, formations }: { diplomes: Row[]; sessions: SessionOpt[]; formations: FormationOpt[] }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [busy, setBusy] = useState<string | null>(null);
@@ -41,7 +42,7 @@ export function DiplomesManager({ diplomes, sessions }: { diplomes: Row[]; sessi
   const [inscriptionId, setInscriptionId] = useState("");
   const [numero, setNumero] = useState("");
   // Formulaire manuel
-  const [man, setMan] = useState({ nom: "", prenom: "", dateNaissance: "", lieuNaissance: "", numeroDiplome: "", sessionId: "" });
+  const [man, setMan] = useState({ nom: "", prenom: "", dateNaissance: "", lieuNaissance: "", numeroDiplome: "", sessionId: "", formationId: "" });
 
   const currentSession = sessions.find((s) => s.id === sessionId);
 
@@ -63,8 +64,9 @@ export function DiplomesManager({ diplomes, sessions }: { diplomes: Row[]; sessi
   }
   function addManuel() {
     if (!man.nom.trim() || !man.prenom.trim()) { toast.error("Nom et prénom requis."); return; }
+    if (!man.formationId) { toast.error("Précisez la formation du diplôme."); return; }
     run("add", createDiplomeManuel(man), "Diplôme enregistré.", () => {
-      setMan({ nom: "", prenom: "", dateNaissance: "", lieuNaissance: "", numeroDiplome: "", sessionId: "" });
+      setMan({ nom: "", prenom: "", dateNaissance: "", lieuNaissance: "", numeroDiplome: "", sessionId: "", formationId: "" });
       setMode(null);
     });
   }
@@ -123,10 +125,19 @@ export function DiplomesManager({ diplomes, sessions }: { diplomes: Row[]; sessi
           <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             <Input placeholder="Prénom" value={man.prenom} onChange={(e) => setMan({ ...man, prenom: e.target.value })} />
             <Input placeholder="Nom" value={man.nom} onChange={(e) => setMan({ ...man, nom: e.target.value })} />
+            {/* Formation OBLIGATOIRE en saisie manuelle */}
+            <select
+              className={`h-9 rounded-md border bg-transparent px-3 text-sm ${man.formationId ? "" : "border-amber-400"}`}
+              value={man.formationId}
+              onChange={(e) => setMan({ ...man, formationId: e.target.value })}
+            >
+              <option value="">— Formation (obligatoire) —</option>
+              {formations.map((f) => <option key={f.id} value={f.id}>{f.titre}</option>)}
+            </select>
             <select className="h-9 rounded-md border bg-transparent px-3 text-sm" value={man.sessionId}
-              onChange={(e) => { const s = sessions.find((x) => x.id === e.target.value); setMan({ ...man, sessionId: e.target.value }); void s; }}>
+              onChange={(e) => setMan({ ...man, sessionId: e.target.value })}>
               <option value="">— Session (facultatif) —</option>
-              {sessions.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
+              {sessions.filter((s) => !man.formationId || s.formationId === man.formationId).map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
             </select>
             <Input type="date" value={man.dateNaissance} onChange={(e) => setMan({ ...man, dateNaissance: e.target.value })} />
             <Input placeholder="Lieu de naissance" value={man.lieuNaissance} onChange={(e) => setMan({ ...man, lieuNaissance: e.target.value })} />

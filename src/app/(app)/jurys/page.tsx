@@ -8,12 +8,12 @@ export default async function JurysPage() {
   const db = await getTenantDb();
   const fmt = (d: Date) => d.toLocaleDateString("fr-FR");
 
-  const [jurys, sessions, affectations] = await Promise.all([
+  const [jurys, sessions, affectations, formations] = await Promise.all([
     db.jury.findMany({ orderBy: [{ nom: "asc" }, { prenom: "asc" }] }),
     db.session.findMany({
       where: { formation: { soumisJury: true } },
       orderBy: { dateDebut: "desc" },
-      include: { formation: { select: { titre: true, nbJury: true } } },
+      include: { formation: { select: { id: true, titre: true, nbJury: true } } },
     }),
     db.juryAffectation.findMany({
       orderBy: { createdAt: "desc" },
@@ -22,11 +22,12 @@ export default async function JurysPage() {
         session: { include: { formation: { select: { titre: true } } } },
       },
     }),
+    db.formation.findMany({ where: { soumisJury: true }, select: { id: true, titre: true }, orderBy: { titre: "asc" } }),
   ]);
 
   const juryOptions = jurys.map((j) => ({
     id: j.id, nom: j.nom, prenom: j.prenom, email: j.email, telephone: j.telephone,
-    qualite: j.qualite, actif: j.actif,
+    qualite: j.qualite, actif: j.actif, formationsValidables: j.formationsValidables,
   }));
 
   const sessionOptions = sessions.map((s) => ({
@@ -61,7 +62,7 @@ export default async function JurysPage() {
           pour activer l&apos;affectation des jurés à ses sessions.
         </div>
       ) : (
-        <JurysManager jurys={juryOptions} sessions={sessionOptions} affectations={rows} />
+        <JurysManager jurys={juryOptions} sessions={sessionOptions} affectations={rows} formations={formations} />
       )}
     </div>
   );
