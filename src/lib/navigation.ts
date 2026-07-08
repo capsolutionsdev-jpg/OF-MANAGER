@@ -34,6 +34,7 @@ import {
   Gavel,
   Library,
   UserCircle,
+  History,
   type LucideIcon,
 } from "lucide-react";
 
@@ -127,6 +128,18 @@ export const navItems: NavItem[] = [
     label: "Messagerie",
     href: "/messagerie",
     icon: MessageSquare,
+    roles: ["APPRENANT"],
+  },
+  {
+    label: "Notifications",
+    href: "/mes-notifications",
+    icon: BellRing,
+    roles: ["APPRENANT"],
+  },
+  {
+    label: "Historique",
+    href: "/historique",
+    icon: History,
     roles: ["APPRENANT"],
   },
   {
