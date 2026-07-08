@@ -19,6 +19,17 @@ export const sessionFormSchema = z
     statut: z.nativeEnum(SessionStatut),
     tarifFormateurJour: optionalText,
     formateurIds: z.array(z.string()).optional(),
+    // Jury(s) d'examen affecté(s) à la session (formations soumises à jury) :
+    // chaque juré avec son défraiement personnalisé et la nature de l'examen.
+    jurys: z
+      .array(
+        z.object({
+          juryId: z.string().min(1),
+          prixEuros: z.string().optional(),
+          natureExamen: z.string().optional(),
+        }),
+      )
+      .optional(),
   })
   .refine((d) => !d.dateDebut || !d.dateFin || d.dateFin >= d.dateDebut, {
     message: "La date de fin doit être postérieure ou égale au début.",

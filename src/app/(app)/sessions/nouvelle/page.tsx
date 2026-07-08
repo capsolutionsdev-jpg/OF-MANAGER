@@ -6,11 +6,11 @@ import { Card } from "@/components/ui/card";
 
 export default async function NouvelleSessionPage() {
   const db = await getTenantDb();
-  const [formations, formateurs, salles] = await Promise.all([
+  const [formations, formateurs, salles, jurys] = await Promise.all([
     db.formation.findMany({
       where: { isArchived: false },
       orderBy: { titre: "asc" },
-      select: { id: true, titre: true, reference: true },
+      select: { id: true, titre: true, reference: true, soumisJury: true, nbJury: true },
     }),
     db.formateur.findMany({
       orderBy: { nom: "asc" },
@@ -20,6 +20,11 @@ export default async function NouvelleSessionPage() {
       where: { actif: true },
       orderBy: { nom: "asc" },
       select: { id: true, nom: true },
+    }),
+    db.jury.findMany({
+      where: { actif: true },
+      orderBy: [{ nom: "asc" }, { prenom: "asc" }],
+      select: { id: true, nom: true, prenom: true, qualite: true, formationsValidables: true, actif: true },
     }),
   ]);
 
@@ -44,7 +49,7 @@ export default async function NouvelleSessionPage() {
             </Link>
           </Card>
         ) : (
-          <SessionForm formations={formations} formateurs={formateurs} salles={salles} />
+          <SessionForm formations={formations} formateurs={formateurs} salles={salles} jurys={jurys} />
         )}
       </div>
     </div>

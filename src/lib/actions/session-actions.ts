@@ -8,12 +8,59 @@ import {
   sessionFormSchema,
   type SessionFormValues,
 } from "@/lib/validators/session";
+import { hasStrictFeature } from "@/lib/feature-guard";
+import type { TenantDb } from "@/lib/tenant";
 
 export type ActionResult =
   | { ok: true; id: string }
   | { ok: false; error: string };
 
 const clean = (s?: string) => (s && s.trim() !== "" ? s.trim() : null);
+
+const eurosToCents = (v?: string) => {
+  const n = parseFloat(String(v ?? "").replace(",", "."));
+  return Number.isFinite(n) && n > 0 ? Math.round(n * 100) : 0;
+};
+
+/**
+ * Synchronise les jurés affectés à une session depuis le formulaire :
+ * ajoute les nouveaux, met à jour prix/nature des existants (en PRÉSERVANT le
+ * statut de paiement et l'envoi de la note), retire ceux décochés. Gardé par la
+ * fonctionnalité `jurys` (sinon no-op).
+ */
+async function syncJuryAffectations(
+  db: TenantDb,
+  sessionId: string,
+  jurys: NonNullable<SessionFormValues["jurys"]>,
+) {
+  if (!(await hasStrictFeature("jurys"))) return;
+  const wanted = (jurys ?? []).filter((j) => j.juryId);
+  const existing = await db.juryAffectation.findMany({
+    where: { sessionId },
+    select: { id: true, juryId: true },
+  });
+  const wantedIds = new Set(wanted.map((j) => j.juryId));
+
+  // Retire les affectations décochées.
+  const toRemove = existing.filter((e) => !wantedIds.has(e.juryId)).map((e) => e.id);
+  if (toRemove.length) await db.juryAffectation.deleteMany({ where: { id: { in: toRemove } } });
+
+  // Ajoute / met à jour.
+  for (const j of wanted) {
+    const ex = existing.find((e) => e.juryId === j.juryId);
+    const data = {
+      prixCents: eurosToCents(j.prixEuros),
+      natureExamen: clean(j.natureExamen),
+    };
+    if (ex) {
+      await db.juryAffectation.updateMany({ where: { id: ex.id }, data });
+    } else {
+      await db.juryAffectation.create({
+        data: { sessionId, juryId: j.juryId, ...data },
+      });
+    }
+  }
+}
 
 function toData(v: SessionFormValues) {
   const places =
@@ -58,6 +105,7 @@ export async function createSession(
         formateurs: { connect: ids.map((fid) => ({ id: fid })) },
       },
     });
+    await syncJuryAffectations(db, created.id, parsed.data.jurys ?? []);
     await db.auditLog.create({
       data: {
         userId: session.user.id,
@@ -67,6 +115,7 @@ export async function createSession(
       },
     });
     revalidatePath("/sessions");
+    revalidatePath("/jurys");
     return { ok: true, id: created.id };
   } catch (e) {
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
@@ -96,6 +145,7 @@ export async function updateSession(
         formateurs: { set: ids.map((fid) => ({ id: fid })) },
       },
     });
+    await syncJuryAffectations(db, id, parsed.data.jurys ?? []);
     await db.auditLog.create({
       data: {
         userId: session.user.id,
@@ -106,6 +156,7 @@ export async function updateSession(
     });
     revalidatePath("/sessions");
     revalidatePath(`/sessions/${id}`);
+    revalidatePath("/jurys");
     return { ok: true, id };
   } catch (e) {
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
