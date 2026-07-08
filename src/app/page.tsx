@@ -56,7 +56,7 @@ export default async function HomePage() {
   const session = await auth();
   if (session?.user) {
     const role = session.user.role as Role;
-    redirect(role === "SUPERADMIN" ? "/console" : role === "APPRENANT" ? "/mes-cours" : "/dashboard");
+    redirect(role === "SUPERADMIN" ? "/console" : role === "APPRENANT" ? "/mon-espace" : "/dashboard");
   }
 
   return (

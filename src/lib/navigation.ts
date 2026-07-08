@@ -32,6 +32,8 @@ import {
   Calculator,
   Award,
   Gavel,
+  Library,
+  UserCircle,
   type LucideIcon,
 } from "lucide-react";
 
@@ -80,6 +82,18 @@ export const navItems: NavItem[] = [
     roles: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT", "FORMATEUR"],
   },
   {
+    label: "Accueil",
+    href: "/mon-espace",
+    icon: LayoutDashboard,
+    roles: ["APPRENANT"],
+  },
+  {
+    label: "Mes formations",
+    href: "/mes-formations",
+    icon: BookOpen,
+    roles: ["APPRENANT"],
+  },
+  {
     label: "Mes cours",
     href: "/mes-cours",
     icon: GraduationCap,
@@ -95,6 +109,30 @@ export const navItems: NavItem[] = [
     label: "Mes émargements",
     href: "/mes-emargements",
     icon: PenLine,
+    roles: ["APPRENANT"],
+  },
+  {
+    label: "Mes certificats",
+    href: "/mes-certificats",
+    icon: Award,
+    roles: ["APPRENANT"],
+  },
+  {
+    label: "Catalogue",
+    href: "/catalogue",
+    icon: Library,
+    roles: ["APPRENANT"],
+  },
+  {
+    label: "Messagerie",
+    href: "/messagerie",
+    icon: MessageSquare,
+    roles: ["APPRENANT"],
+  },
+  {
+    label: "Mon profil",
+    href: "/mon-profil",
+    icon: UserCircle,
     roles: ["APPRENANT"],
   },
   {

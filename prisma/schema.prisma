@@ -485,6 +485,7 @@ model Candidat {
   anonymiseLe       DateTime? // horodatage de l'anonymisation RGPD (purge / effacement)
 
   interactionsCandidat CandidatInteraction[]
+  messagesPortail      CandidatMessage[]
 
   // ── Formulaire prospect public (lien envoyé par e-mail → fiche renseignée + signée) ──
   prospectToken          String?   @unique
@@ -2195,4 +2196,21 @@ model JuryAffectation {
   @@unique([sessionId, juryId])
   @@index([organismeId])
   @@index([sessionId])
+}
+
+/// Messagerie candidat ↔ organisme (portail candidat). Un fil par candidat.
+model CandidatMessage {
+  id            String   @id @default(cuid())
+  organismeId   String? // tenant
+  candidatId    String
+  candidat      Candidat @relation(fields: [candidatId], references: [id], onDelete: Cascade)
+  corps         String   @db.Text
+  deCandidat    Boolean  @default(true) // true = écrit par le candidat ; false = par l'OF
+  auteurNom     String?
+  luParOf       Boolean  @default(false) // message du candidat lu par l'OF
+  luParCandidat Boolean  @default(true)  // message de l'OF lu par le candidat
+  createdAt     DateTime @default(now())
+
+  @@index([candidatId])
+  @@index([organismeId])
 }

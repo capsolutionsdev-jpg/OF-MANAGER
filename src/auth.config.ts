@@ -48,14 +48,14 @@ export const authConfig = {
       }
 
       // Espace CANDIDAT : l'apprenant est confiné à son propre espace (jamais le
-      // tableau de bord ni les pages staff). Toute autre URL → /mes-cours.
+      // tableau de bord ni les pages staff). Toute autre URL → /mon-espace.
       if (role === "APPRENANT") {
-        const CANDIDAT_OK = [
-          "/mes-cours", "/mes-documents", "/mes-emargements", "/mes-certificats",
-          "/mon-compte", "/bienvenue", "/catalogue", "/messagerie", "/mon-profil",
-        ];
-        const ok = CANDIDAT_OK.some((p) => path === p || path.startsWith(`${p}/`));
-        return ok ? true : Response.redirect(new URL("/mes-cours", nextUrl));
+        const extras = ["/bienvenue", "/catalogue", "/messagerie", "/historique"];
+        const ok =
+          path.startsWith("/mes-") ||
+          path.startsWith("/mon-") ||
+          extras.some((p) => path === p || path.startsWith(`${p}/`));
+        return ok ? true : Response.redirect(new URL("/mon-espace", nextUrl));
       }
 
       // Administration (gestion des comptes) : réservée au gérant (ADMIN).

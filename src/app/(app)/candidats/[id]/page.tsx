@@ -29,6 +29,7 @@ import { RecordPaymentDialog } from "@/components/comptabilite/record-payment-di
 import { SendProspectLinkButton } from "@/components/crm/send-prospect-link-button";
 import { CrmPanel } from "@/components/crm/crm-panel";
 import { AddInteractionForm } from "@/components/crm/add-interaction-form";
+import { CandidatMessagerie } from "@/components/candidats/candidat-messagerie";
 import { Send } from "lucide-react";
 
 function Field({ label, value }: { label: string; value?: string | null }) {
@@ -103,6 +104,12 @@ export default async function CandidatDetailPage({
     orderBy: { createdAt: "desc" },
     take: 20,
     include: { user: true },
+  });
+
+  const messagesPortail = await db.candidatMessage.findMany({
+    where: { candidatId: id },
+    orderBy: { createdAt: "asc" },
+    select: { id: true, corps: true, deCandidat: true, auteurNom: true, createdAt: true },
   });
 
   const fmtDate = (d: Date | null) =>
@@ -329,6 +336,20 @@ export default async function CandidatDetailPage({
                 ))}
               </ul>
             )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <MessageSquare className="h-4 w-4" /> Messagerie du portail candidat
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CandidatMessagerie
+              candidatId={candidat.id}
+              messages={messagesPortail.map((m) => ({ ...m, createdAt: m.createdAt.toISOString() }))}
+            />
           </CardContent>
         </Card>
       </div>
