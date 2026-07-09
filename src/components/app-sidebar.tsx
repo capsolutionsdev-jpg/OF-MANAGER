@@ -43,7 +43,7 @@ function NavLinks({
                   ? "bg-white text-[#221F19] shadow-sm"
                   : "text-white/70 hover:bg-white/10 hover:text-white"
                 : active
-                  ? "bg-primary text-primary-foreground shadow-sm"
+                  ? "bg-sidebar-accent font-semibold text-sidebar-accent-foreground"
                   : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
             )}
           >
@@ -107,11 +107,11 @@ export function AppSidebar({
   fonctionnalites?: string[];
 }) {
   return (
-    <aside className="hidden w-64 shrink-0 flex-col bg-[#221F19] md:flex">
-      <Brand tone="dark" />
-      <NavLinks role={role} permissions={permissions} fonctionnalites={fonctionnalites} tone="dark" />
-      <div className="border-t border-white/10 p-4">
-        <p className="text-[11px] leading-relaxed text-white/40">
+    <aside className="hidden w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground md:flex">
+      <Brand tone="light" />
+      <NavLinks role={role} permissions={permissions} fonctionnalites={fonctionnalites} tone="light" />
+      <div className="border-t border-sidebar-border p-4">
+        <p className="text-[11px] leading-relaxed text-muted-foreground">
           CAP Compétences — Manager
         </p>
       </div>

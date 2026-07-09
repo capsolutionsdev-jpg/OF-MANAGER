@@ -20,6 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { NavLinks, Brand } from "@/components/app-sidebar";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { buildNav, roleLabels } from "@/lib/navigation";
 import type { NotificationsData } from "@/lib/notifications";
@@ -52,19 +53,16 @@ export function AppTopNav({
 
   const linkCls = (active: boolean) =>
     cn(
-      "rounded-md px-3 py-1.5 text-sm font-medium transition-colors whitespace-nowrap",
+      "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors whitespace-nowrap",
       active
-        ? "bg-secondary text-foreground"
+        ? "bg-accent text-accent-foreground"
         : "text-muted-foreground hover:bg-muted hover:text-foreground",
     );
 
   return (
     <header className="sticky top-0 z-30 border-b bg-card/85 backdrop-blur-md">
-      {/* Accent de marque : dégradé couleur principale → secondaire (var --brand-2) */}
-      <div
-        className="h-[3px] w-full"
-        style={{ background: "linear-gradient(90deg, var(--primary), var(--brand-2, var(--primary)))" }}
-      />
+      {/* Accent de marque : fin filet violet à plat (aplat, pas de dégradé) */}
+      <div className="h-[3px] w-full bg-primary" />
       <div className="mx-auto flex h-14 max-w-[1500px] items-center gap-3 px-3 md:px-5">
         {/* Burger mobile */}
         <Sheet>
@@ -139,6 +137,7 @@ export function AppTopNav({
           <Button variant="ghost" size="icon" className="text-muted-foreground" aria-label="Rechercher">
             <Search className="h-[18px] w-[18px]" />
           </Button>
+          <ThemeToggle />
           {notifications ? (
             <NotificationBell data={notifications} />
           ) : (
@@ -152,7 +151,7 @@ export function AppTopNav({
               render={<Button variant="ghost" className="flex items-center gap-2 px-1.5" />}
             >
               <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-[#221F19] text-xs font-semibold text-white">
+                <AvatarFallback className="bg-primary text-xs font-semibold text-primary-foreground">
                   {initials}
                 </AvatarFallback>
               </Avatar>

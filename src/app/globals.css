@@ -49,90 +49,101 @@
 }
 
 /* ─────────────────────────────────────────────────────────────
-   Direction « Sable & Cobalt » — thème PAR DÉFAUT.
-   Surfaces sable chaleureuses, encre, bleu cobalt posé, accents
-   ambre & émeraude. Pilote la console (surface éditeur) et la
-   plateforme client en design « defaut ». Les 10 skins par tenant
-   (cf. lib/themes.ts) surchargent ces valeurs et restent intacts.
+   Direction « Violet & flat » — thème PAR DÉFAUT (inspiration Digiforma).
+   Fond clair épuré à légère teinte violette, encre violet-noir, VIOLET
+   dominant en aplat (pas de dégradés), accents sémantiques francs
+   (émeraude / ambre / rose / sarcelle). Pilote la console (surface
+   éditeur) et la plateforme client en design « defaut ». La couleur
+   primaire est dérivée par tenant (lib/themes.ts themeVars) ; les 10
+   skins par tenant surchargent ces valeurs et restent intacts.
    ───────────────────────────────────────────────────────────── */
 :root {
-  --background: #f6f2eb; /* sable */
-  --foreground: #221f19; /* encre chaude */
+  --background: #f8f7fc; /* blanc à légère teinte violette */
+  --foreground: #1c1b2e; /* encre violet-noir */
   --card: #ffffff;
-  --card-foreground: #221f19;
+  --card-foreground: #1c1b2e;
   --popover: #ffffff;
-  --popover-foreground: #221f19;
-  --primary: #2c53c0; /* cobalt royal */
+  --popover-foreground: #1c1b2e;
+  --primary: #7c3aed; /* violet (aplat) */
   --primary-foreground: #ffffff;
-  --secondary: #efe9dd; /* surface sable soutenue */
-  --secondary-foreground: #2a2620;
-  --muted: #efe9dd;
-  --muted-foreground: #5c5344; /* taupe assombri — contraste AA (>= 4.5:1) sur sable/blanc */
-  --accent: #eceffa; /* teinte cobalt (survols) */
-  --accent-foreground: #21429e;
-  --destructive: #c2410c;
-  --border: #e7e0d3; /* filet chaud */
-  --input: #e7e0d3;
-  --ring: #2c53c0;
-  --chart-1: #2c53c0; /* cobalt */
-  --chart-2: #10a074; /* émeraude */
-  --chart-3: #de8a43; /* ambre */
-  --chart-4: #7c5cfc; /* violet */
-  --chart-5: #e06a4b; /* corail chaud */
-  --radius: 0.8rem;
-  --sidebar: #fbf8f2;
-  --sidebar-foreground: #221f19;
-  --sidebar-primary: #2c53c0;
+  --secondary: #f1eefa; /* surface violet-clair */
+  --secondary-foreground: #3a3550;
+  --muted: #f1eefa;
+  --muted-foreground: #6b6982; /* gris-violet — contraste AA (>= 4.5:1) sur blanc/#f8f7fc */
+  --accent: #f3effe; /* teinte violette (survols) */
+  --accent-foreground: #5b21b6;
+  --destructive: #d6335a;
+  --border: #eceaf4; /* filet gris-violet */
+  --input: #e0ddef;
+  --ring: #7c3aed;
+  --chart-1: #7c3aed; /* violet */
+  --chart-2: #0e9c9c; /* sarcelle */
+  --chart-3: #e08a00; /* ambre */
+  --chart-4: #e23670; /* rose */
+  --chart-5: #12a150; /* émeraude */
+  --radius: 0.85rem;
+  --sidebar: #fbfafe; /* sidebar claire */
+  --sidebar-foreground: #1c1b2e;
+  --sidebar-primary: #7c3aed;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #eceffa;
-  --sidebar-accent-foreground: #21429e;
-  --sidebar-border: #e7e0d3;
-  --sidebar-ring: #2c53c0;
+  --sidebar-accent: #f3effe; /* actif : violet tinté */
+  --sidebar-accent-foreground: #5b21b6;
+  --sidebar-border: #efedf8;
+  --sidebar-ring: #7c3aed;
   /* Tokens de marque réutilisables (vitrine + composants) */
-  --brand: #2c53c0;
-  --brand-strong: #21429e;
-  --brand-tint: #eceffa;
-  --amber: #de8a43;
-  --amber-tint: #fbf1e2;
-  --success: #10a074;
-  --success-tint: #e5f6ef;
-  --ink: #221f19;
+  --brand: #7c3aed;
+  --brand-strong: #6d28d9;
+  --brand-tint: #f3effe;
+  --amber: #e08a00;
+  --amber-tint: #fbf0da;
+  --success: #12a150;
+  --success-tint: #e6f6ec;
+  --ink: #1c1b2e;
   --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
   --font-heading: var(--font-plus-jakarta), system-ui, sans-serif;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: #17141f; /* violet-charbon */
+  --foreground: #eeebf8;
+  --card: #201c2e;
+  --card-foreground: #eeebf8;
+  --popover: #201c2e;
+  --popover-foreground: #eeebf8;
+  --primary: #8b5cf6; /* violet plus clair sur fond sombre */
+  --primary-foreground: #ffffff;
+  --secondary: #262138;
+  --secondary-foreground: #eeebf8;
+  --muted: #262138;
+  --muted-foreground: #a29fbc;
+  --accent: #2a2440;
+  --accent-foreground: #c4b0fb;
+  --destructive: #f26d8b;
+  --border: #2e2942;
+  --input: #3a3452;
+  --ring: #8b5cf6;
+  --chart-1: #a182f6;
+  --chart-2: #2dd4bf;
+  --chart-3: #f0b45c;
+  --chart-4: #f472a0;
+  --chart-5: #34d07f;
+  --sidebar: #1b1727;
+  --sidebar-foreground: #eeebf8;
+  --sidebar-primary: #8b5cf6;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #2a2440;
+  --sidebar-accent-foreground: #c4b0fb;
+  --sidebar-border: #2a2540;
+  --sidebar-ring: #8b5cf6;
+  --secondary-foreground: #eeebf8;
+  --brand: #8b5cf6;
+  --brand-strong: #a182f6;
+  --brand-tint: #2a2440;
+  --amber: #f0b45c;
+  --amber-tint: #2e2733;
+  --success: #34d07f;
+  --success-tint: #17291f;
+  --ink: #eeebf8;
 }
 
 @layer base {

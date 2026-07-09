@@ -21,7 +21,7 @@ export type Palette = {
   desc: string;
 };
 
-export const DEFAULT_THEME_COLOR = "#2C53C0";
+export const DEFAULT_THEME_COLOR = "#7C3AED";
 
 // Palettes de couleur (réutilisables par tous les designs).
 export const THEMES: Palette[] = [
