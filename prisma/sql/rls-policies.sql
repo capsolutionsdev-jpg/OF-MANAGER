@@ -1,7 +1,7 @@
 -- ============================================================
 -- RLS (Row Level Security) — isolation multi-tenant OFManager
 -- GÉNÉRÉ par scripts/gen-rls-sql.mjs — NE PAS ÉDITER À LA MAIN.
--- 63 tables tenant. Colonne de cloisonnement : "organismeId".
+-- 64 tables tenant. Colonne de cloisonnement : "organismeId".
 --
 -- Inerte tant que l'application se connecte avec le rôle PROPRIÉTAIRE des tables
 -- (le propriétaire bypasse la RLS). Enforcement réel = rôle non-owner `app_rls`
@@ -47,6 +47,13 @@ CREATE POLICY tenant_isolation ON "Candidat"
 ALTER TABLE "CandidatInteraction" ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS tenant_isolation ON "CandidatInteraction";
 CREATE POLICY tenant_isolation ON "CandidatInteraction"
+  USING ("organismeId" = current_setting('app.org', true))
+  WITH CHECK ("organismeId" = current_setting('app.org', true));
+
+-- CandidatMessage
+ALTER TABLE "CandidatMessage" ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS tenant_isolation ON "CandidatMessage";
+CREATE POLICY tenant_isolation ON "CandidatMessage"
   USING ("organismeId" = current_setting('app.org', true))
   WITH CHECK ("organismeId" = current_setting('app.org', true));
 
