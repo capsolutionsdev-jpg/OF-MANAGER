@@ -1,5 +1,22 @@
 # ARC-1 — Passage `organismeId NOT NULL` : constats & plan
 
+## ✅ Mise à jour — backfill effectué (2026-07)
+Les orphelins **dérivables** ont été rattachés à leur tenant (via leurs relations) :
+**11 lignes corrigées** — EmailLog (7, via `session`), AuditLog (4, via l'entité CRM), + la
+paire candidat/interaction dérivable. **Reste : 2 `User` SUPERADMIN (NULL légitime)** et
+**1 candidat orphelin** sans aucune inscription (donnée non rattachable → décision : suppression
+recommandée, ou attribution manuelle).
+
+**Exceptions assumées (rester nullable)** : `User` (SUPERADMIN), `AuditLog` (événements
+système/login), `EmailLog` (e-mails niveau éditeur/prospect) — ces trois tables ont des cas
+org-less légitimes ; leurs nuls résiduels ont été nettoyés mais la **colonne reste nullable**.
+
+**Reste à faire pour le `NOT NULL` de contrainte** : (1) trancher le candidat orphelin ;
+(2) appliquer `organismeId String` (NOT NULL) sur les tables métier hors exceptions +
+`GLOBAL_MODELS`, après vérification qu'aucun flux n'insère de nul (getTenantDb injecte toujours
+l'org ; risque résiduel sur d'éventuels `prisma.create` directs à auditer). Opération de contrainte
+= fenêtre contrôlée (non bâclée), la **donnée est désormais propre**.
+
 ## Résultat du scan (`node scripts/check-null-org.mjs`)
 
 60 tables tenant analysées. **15 lignes** avec `organismeId IS NULL` :
