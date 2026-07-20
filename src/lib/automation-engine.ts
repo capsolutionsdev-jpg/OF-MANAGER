@@ -306,6 +306,33 @@ ${org.representant} — ${org.name}`;
       });
     }
 
+    // ── 2quater) TEST DE FRANÇAIS (1er jour, lien en ligne) ──
+    if (auto("francais", true).on && !i.francaisSentAt && s.dateDebut <= now && s.dateFin >= now) {
+      const frToken = i.francaisToken ?? generateToken();
+      if (!i.francaisToken) {
+        await prisma.inscription.update({
+          where: { id: i.id },
+          data: { francaisToken: frToken },
+        });
+      }
+      const frSubject = `Test de français — ${f.titre}`;
+      const frBody = `Bonjour ${prenom},
+
+Dans le cadre de votre entrée en formation « ${f.titre} », merci de répondre à ce court test de français (une quinzaine de questions, environ 10 minutes) :
+
+${base}/francais/${frToken}
+
+Vos réponses, signées, seront conservées dans votre dossier de formation.
+
+Bonne formation,
+${org.representant} — ${org.name}`;
+      await logAndSend({ to, subject: frSubject, body: frBody, sessionId: s.id });
+      await prisma.inscription.update({
+        where: { id: i.id },
+        data: { francaisSentAt: new Date() },
+      });
+    }
+
     // ── 3) ENQUÊTE DE SATISFACTION (formation terminée, pas déjà envoyée) ──
     const satRule = auto("satisfaction", settings.satisfactionActive);
     if (satRule.on && !i.satisfactionSentAt && s.dateFin < now) {

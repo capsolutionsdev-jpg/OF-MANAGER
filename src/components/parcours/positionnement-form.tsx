@@ -8,12 +8,24 @@ import { Button } from "@/components/ui/button";
 import type { PositionnementQuestion } from "@/lib/positionnement";
 import { submitPositionnement } from "@/lib/actions/parcours-actions";
 
+type SubmitAction = (
+  token: string,
+  reponses: Record<string, string | string[]>,
+  signature?: string,
+) => Promise<{ ok: boolean; error?: string }>;
+
 export function PositionnementForm({
   token,
   questions,
+  action = submitPositionnement,
+  submitLabel = "Valider mon test de positionnement",
+  successLabel = "Test de positionnement enregistré, merci !",
 }: {
   token: string;
   questions: PositionnementQuestion[];
+  action?: SubmitAction;
+  submitLabel?: string;
+  successLabel?: string;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -95,9 +107,9 @@ export function PositionnementForm({
     }
     const signature = canvasRef.current?.toDataURL("image/png");
     startTransition(async () => {
-      const res = await submitPositionnement(token, reponses, signature);
+      const res = await action(token, reponses, signature);
       if (res.ok) {
-        toast.success("Test de positionnement enregistré, merci !");
+        toast.success(successLabel);
         router.refresh();
       } else {
         toast.error(res.error ?? "Une erreur est survenue.");
@@ -196,7 +208,7 @@ export function PositionnementForm({
       </div>
 
       <Button onClick={submit} disabled={isPending} className="w-full">
-        {isPending ? "Envoi…" : "Valider mon test de positionnement"}
+        {isPending ? "Envoi…" : submitLabel}
       </Button>
     </div>
   );

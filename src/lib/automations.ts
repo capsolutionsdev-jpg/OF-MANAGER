@@ -25,6 +25,7 @@ export const AUTOMATION_EVENTS: AutomationEvent[] = [
   { key: "convocation_examen", label: "Convocation à l'examen", quand: "Avant l'examen — formations à examen (TFP APS)", defaultOn: true, smsable: true },
   { key: "attestation_entree", label: "Attestation d'entrée", quand: "Le 1er jour de la session", defaultOn: true, smsable: false },
   { key: "positionnement", label: "Test de positionnement", quand: "Le 1er jour (lien en ligne)", defaultOn: true, smsable: true },
+  { key: "francais", label: "Test de français", quand: "Le 1er jour (lien en ligne)", defaultOn: true, smsable: true },
   { key: "satisfaction", label: "Enquête de satisfaction", quand: "À la fin de la formation", defaultOn: true, smsable: true },
   { key: "satisfaction_entreprise", label: "Satisfaction entreprise (B2B)", quand: "À la fin — clients pro", defaultOn: true, smsable: false },
   { key: "docs_fin", label: "Documents de fin (attestation + certificat)", quand: "À la fin de la formation", defaultOn: true, smsable: false },
