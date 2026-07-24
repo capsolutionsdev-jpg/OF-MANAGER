@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Globe, ExternalLink, Rocket, EyeOff, PauseCircle } from "lucide-react";
+import { Globe, ExternalLink, Rocket, EyeOff, PauseCircle, BarChart3 } from "lucide-react";
 import type { Academy } from "@prisma/client";
 import { getTenantDb } from "@/lib/tenant";
 import { PageHeader } from "@/components/ui/page-header";
@@ -84,6 +84,10 @@ export default async function SiteVitrinePage() {
         title="Site vitrine"
         subtitle="Pilotez ce qui s'affiche sur capacademy.fr : publication, tarif et durée de chaque formation. Les changements apparaissent sur le site public sous ~5 min."
       >
+        <Button variant="outline" render={<Link href="/site-vitrine/trafic" />}>
+          <BarChart3 className="mr-2 h-4 w-4" />
+          Trafic
+        </Button>
         <Button variant="outline" render={<a href={VITRINE_URL} target="_blank" rel="noopener noreferrer" />}>
           <Globe className="mr-2 h-4 w-4" />
           Voir le site

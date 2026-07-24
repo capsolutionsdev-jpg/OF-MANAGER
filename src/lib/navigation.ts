@@ -36,6 +36,7 @@ import {
   UserCircle,
   History,
   Globe,
+  Newspaper,
   type LucideIcon,
 } from "lucide-react";
 
@@ -278,6 +279,13 @@ export const navItems: NavItem[] = [
     icon: Globe,
     roles: ["ADMIN", "RESPONSABLE_FORMATION"],
     permission: "site-vitrine",
+  },
+  {
+    label: "Blog",
+    href: "/blog",
+    icon: Newspaper,
+    roles: ["ADMIN", "RESPONSABLE_FORMATION"],
+    permission: "blog",
   },
   {
     label: "Sessions",

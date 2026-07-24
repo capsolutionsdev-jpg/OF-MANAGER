@@ -22,6 +22,7 @@ export const SECTIONS: { key: string; label: string }[] = [
   { key: "clients-pro", label: "Clients pro" },
   { key: "formations", label: "Formations" },
   { key: "site-vitrine", label: "Site vitrine (publication)" },
+  { key: "blog", label: "Blog (articles du site)" },
   { key: "sessions", label: "Sessions & émargement" },
   { key: "planning", label: "Planning général" },
   { key: "salles", label: "Salles" },
