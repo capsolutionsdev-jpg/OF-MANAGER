@@ -12,6 +12,7 @@ import {
   type FormationFormValues,
   MODALITE_LABELS,
   ACADEMY_LABELS,
+  VITRINE_STATUT_LABELS,
 } from "@/lib/validators/formation";
 import {
   createFormation,
@@ -62,6 +63,13 @@ export function FormationForm({
       tarif: "",
       modalite: "MIXTE",
       academy: "",
+      vitrineStatut: "MASQUEE",
+      vitrineTagline: "",
+      vitrineDescription: "",
+      vitrineImageUrl: "",
+      vitrineCompetences: "",
+      vitrineValidite: "",
+      vitrineModalites: "",
       objectifs: "",
       programme: "",
       prerequis: "",
@@ -150,6 +158,21 @@ export function FormationForm({
             <Label htmlFor="tarif">Tarif (€ HT)</Label>
             <Input id="tarif" type="number" step="0.01" placeholder="1500" {...register("tarif")} />
           </div>
+          <div className="grid gap-2 sm:col-span-2">
+            <Label htmlFor="vitrineStatut">Site vitrine (capacademy.fr)</Label>
+            <select id="vitrineStatut" className={selectClass} {...register("vitrineStatut")}>
+              {Object.entries(VITRINE_STATUT_LABELS).map(([v, l]) => (
+                <option key={v} value={v}>
+                  {l}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-muted-foreground">
+              Pilote l&apos;affichage de cette formation sur le site public. « Publiée » la rend
+              visible (jointure par la <strong>référence</strong>) ; « Suspendue » la retire
+              temporairement.
+            </p>
+          </div>
         </CardContent>
       </Card>
 
@@ -184,6 +207,66 @@ export function FormationForm({
               <Textarea id="modalitesEvaluation" rows={2} {...register("modalitesEvaluation")} />
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Contenu du site vitrine (fiche publique)</CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 gap-4">
+          <div className="grid gap-2">
+            <Label htmlFor="vitrineTagline">Accroche</Label>
+            <Input
+              id="vitrineTagline"
+              placeholder="Phrase d'accroche affichée sous le titre"
+              {...register("vitrineTagline")}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="vitrineDescription">Description</Label>
+            <Textarea
+              id="vitrineDescription"
+              rows={3}
+              placeholder="Paragraphe de présentation en haut de la fiche"
+              {...register("vitrineDescription")}
+            />
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="grid gap-2">
+              <Label htmlFor="vitrineImageUrl">Image (URL)</Label>
+              <Input id="vitrineImageUrl" placeholder="https://…" {...register("vitrineImageUrl")} />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="vitrineValidite">Validité</Label>
+              <Input
+                id="vitrineValidite"
+                placeholder="ex. Carte professionnelle valable 5 ans"
+                {...register("vitrineValidite")}
+              />
+            </div>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="vitrineCompetences">
+              Compétences visées{" "}
+              <span className="font-normal text-muted-foreground">(une par ligne)</span>
+            </Label>
+            <Textarea id="vitrineCompetences" rows={4} {...register("vitrineCompetences")} />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="vitrineModalites">Modalités (pratiques)</Label>
+            <Textarea
+              id="vitrineModalites"
+              rows={2}
+              placeholder="ex. Formation en présentiel en centre agréé…"
+              {...register("vitrineModalites")}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Ces champs alimentent la fiche publique du site vitrine. Les objectifs, le programme, le
+            public visé, les prérequis, la durée, le tarif, la certification et l&apos;évaluation sont
+            repris des sections ci-dessus.
+          </p>
         </CardContent>
       </Card>
 

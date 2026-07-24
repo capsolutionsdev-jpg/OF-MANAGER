@@ -148,6 +148,17 @@ enum Academy {
   LANGUE
 }
 
+// Statut de publication d'une formation sur le SITE VITRINE (capacademy.fr).
+// Piloté depuis la console ; consommé par l'API publique /api/public/formations.
+//  - MASQUEE  : n'apparaît pas sur le vitrine (par défaut)
+//  - PUBLIEE  : visible et ouverte sur le vitrine
+//  - SUSPENDUE: temporairement retirée du vitrine (conservée en base)
+enum VitrineStatut {
+  MASQUEE
+  PUBLIEE
+  SUSPENDUE
+}
+
 enum FinancementType {
   CPF
   OPCO
@@ -586,6 +597,15 @@ model Formation {
   tarif               Decimal? @db.Decimal(10, 2)
   modalite            Modalite @default(MIXTE)
   academy             Academy?
+  // Publication sur le site vitrine (piloté depuis la console).
+  vitrineStatut       VitrineStatut @default(MASQUEE)
+  // Contenu de présentation pour le site vitrine (formations créées EN console).
+  vitrineTagline      String?
+  vitrineDescription  String?  @db.Text
+  vitrineImageUrl     String?  @db.Text
+  vitrineCompetences  String[] @default([])
+  vitrineValidite     String?
+  vitrineModalites    String?  @db.Text
   prerequis           String?  @db.Text
   publicVise          String?  @db.Text
   methodesPedagogiques String? @db.Text

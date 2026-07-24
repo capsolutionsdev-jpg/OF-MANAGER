@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { Modalite, Academy } from "@prisma/client";
+import { Modalite, Academy, VitrineStatut } from "@prisma/client";
 
 const optionalText = z.string().trim().optional().or(z.literal(""));
 
@@ -12,6 +12,15 @@ export const formationFormSchema = z.object({
   tarif: optionalText,
   modalite: z.nativeEnum(Modalite),
   academy: z.nativeEnum(Academy).or(z.literal("")).optional(),
+  // Publication sur le site vitrine (piloté depuis la console).
+  vitrineStatut: z.nativeEnum(VitrineStatut).optional(),
+  // Contenu de présentation vitrine (formations créées EN console).
+  vitrineTagline: optionalText,
+  vitrineDescription: optionalText,
+  vitrineImageUrl: optionalText,
+  vitrineCompetences: optionalText, // 1 compétence par ligne, converti côté serveur
+  vitrineValidite: optionalText,
+  vitrineModalites: optionalText,
   objectifs: optionalText,
   programme: optionalText,
   prerequis: optionalText,
@@ -49,3 +58,9 @@ export const ACADEMY_LABELS: Record<Academy, string> = {
 };
 
 export const ACADEMY_ORDER: Academy[] = ["DIGITAL", "SAFETY", "TRANSPORT", "LANGUE"];
+
+export const VITRINE_STATUT_LABELS: Record<VitrineStatut, string> = {
+  MASQUEE: "Masquée (pas sur le site)",
+  PUBLIEE: "Publiée (visible sur le site)",
+  SUSPENDUE: "Suspendue (temporairement retirée)",
+};
