@@ -148,6 +148,17 @@ enum Academy {
   LANGUE
 }
 
+// Statut de publication d'une formation sur le SITE VITRINE (capacademy.fr).
+// Piloté depuis la console ; consommé par l'API publique /api/public/formations.
+//  - MASQUEE  : n'apparaît pas sur le vitrine (par défaut)
+//  - PUBLIEE  : visible et ouverte sur le vitrine
+//  - SUSPENDUE: temporairement retirée du vitrine (conservée en base)
+enum VitrineStatut {
+  MASQUEE
+  PUBLIEE
+  SUSPENDUE
+}
+
 enum FinancementType {
   CPF
   OPCO
@@ -586,6 +597,15 @@ model Formation {
   tarif               Decimal? @db.Decimal(10, 2)
   modalite            Modalite @default(MIXTE)
   academy             Academy?
+  // Publication sur le site vitrine (piloté depuis la console).
+  vitrineStatut       VitrineStatut @default(MASQUEE)
+  // Contenu de présentation pour le site vitrine (formations créées EN console).
+  vitrineTagline      String?
+  vitrineDescription  String?  @db.Text
+  vitrineImageUrl     String?  @db.Text
+  vitrineCompetences  String[] @default([])
+  vitrineValidite     String?
+  vitrineModalites    String?  @db.Text
   prerequis           String?  @db.Text
   publicVise          String?  @db.Text
   methodesPedagogiques String? @db.Text
@@ -2213,4 +2233,54 @@ model CandidatMessage {
 
   @@index([candidatId])
   @@index([organismeId])
+}
+
+// =============================================================
+//  MODULE SITE VITRINE — BLOG & TRAFIC
+//  Contenus et analytics du site public capacademy.fr, pilotés depuis
+//  la console. Lus par le vitrine via /api/public/blog (ISR ~5 min).
+// =============================================================
+
+/// Article de blog / actualité publié sur le site vitrine.
+/// Le statut réutilise l'enum VitrineStatut (MASQUEE = brouillon,
+/// PUBLIEE = en ligne, SUSPENDUE = retiré temporairement).
+/// Jointure vitrine par `slug` (surcouche sur les articles statiques).
+model Article {
+  id              String        @id @default(cuid())
+  organismeId     String? // tenant (multi-OF)
+  slug            String // unique PAR organisme (cf. @@unique)
+  titre           String
+  extrait         String?       @db.Text // résumé court (listing + meta description)
+  // Corps en markdown léger : « ## » = sous-titre, « - » = puce, sinon paragraphe.
+  contenu         String?       @db.Text
+  auteur          String?
+  categorie       String? // ex. "Financement", "Sécurité"…
+  imageUrl        String?       @db.Text
+  imageAlt        String?
+  datePublication DateTime      @default(now())
+  statut          VitrineStatut @default(MASQUEE)
+  isArchived      Boolean       @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([organismeId, slug])
+  @@index([organismeId])
+  @@index([isArchived])
+  @@index([statut])
+}
+
+/// Vue de page du site vitrine (analytics privacy-first, sans cookie ni
+/// donnée personnelle). Alimentée par un beacon depuis le site public via
+/// /api/public/track, scopée par l'env VITRINE_ORGANISME_ID.
+model PageVue {
+  id          String   @id @default(cuid())
+  organismeId String? // tenant (multi-OF)
+  path        String // chemin visité, ex. "/formations/securite/sst"
+  referer     String? // origine (nom d'hôte du référent), ex. "google.com"
+  pays        String? // code pays éventuel (non implémenté par défaut)
+  createdAt   DateTime @default(now())
+
+  @@index([organismeId, createdAt])
+  @@index([path])
 }

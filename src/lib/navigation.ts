@@ -35,6 +35,8 @@ import {
   Library,
   UserCircle,
   History,
+  Globe,
+  Newspaper,
   type LucideIcon,
 } from "lucide-react";
 
@@ -270,6 +272,20 @@ export const navItems: NavItem[] = [
     icon: BookOpen,
     roles: ["ADMIN", "RESPONSABLE_FORMATION"],
     permission: "formations",
+  },
+  {
+    label: "Site vitrine",
+    href: "/site-vitrine",
+    icon: Globe,
+    roles: ["ADMIN", "RESPONSABLE_FORMATION"],
+    permission: "site-vitrine",
+  },
+  {
+    label: "Blog",
+    href: "/blog",
+    icon: Newspaper,
+    roles: ["ADMIN", "RESPONSABLE_FORMATION"],
+    permission: "blog",
   },
   {
     label: "Sessions",
