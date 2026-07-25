@@ -39,6 +39,7 @@ export default async function ModifierFormationPage({
             modalite: f.modalite,
             academy: f.academy ?? "",
             vitrineStatut: f.vitrineStatut,
+            numeroAgrement: f.numeroAgrement ?? "",
             vitrineTagline: f.vitrineTagline ?? "",
             vitrineDescription: f.vitrineDescription ?? "",
             vitrineImageUrl: f.vitrineImageUrl ?? "",

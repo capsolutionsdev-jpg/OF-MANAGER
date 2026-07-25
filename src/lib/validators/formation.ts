@@ -14,6 +14,7 @@ export const formationFormSchema = z.object({
   academy: z.nativeEnum(Academy).or(z.literal("")).optional(),
   // Publication sur le site vitrine (piloté depuis la console).
   vitrineStatut: z.nativeEnum(VitrineStatut).optional(),
+  numeroAgrement: optionalText,
   // Contenu de présentation vitrine (formations créées EN console).
   vitrineTagline: optionalText,
   vitrineDescription: optionalText,
