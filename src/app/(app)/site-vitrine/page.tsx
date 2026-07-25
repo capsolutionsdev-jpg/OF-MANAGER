@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Globe, ExternalLink, Rocket, EyeOff, PauseCircle, BarChart3 } from "lucide-react";
+import { Globe, ExternalLink, Rocket, EyeOff, PauseCircle, BarChart3, CalendarDays, CalendarPlus } from "lucide-react";
 import type { Academy } from "@prisma/client";
 import { getTenantDb } from "@/lib/tenant";
 import { PageHeader } from "@/components/ui/page-header";
@@ -64,6 +64,17 @@ export default async function SiteVitrinePage() {
     SUSPENDUE: formations.filter((f) => f.vitrineStatut === "SUSPENDUE").length,
   };
 
+  // Sessions à venir (celles qui alimentent le planning public + les places restantes).
+  const debutJour = new Date();
+  debutJour.setHours(0, 0, 0, 0);
+  const nbSessions = await db.session.count({
+    where: {
+      isArchived: false,
+      statut: { in: ["PLANIFIEE", "OUVERTE"] },
+      dateDebut: { gte: debutJour },
+    },
+  });
+
   // En ligne d'abord, puis brouillons, puis suspendues ; alpha en second critère.
   const ordre: Record<string, number> = { PUBLIEE: 0, MASQUEE: 1, SUSPENDUE: 2 };
   const rows = [...formations].sort(
@@ -111,6 +122,36 @@ export default async function SiteVitrinePage() {
           </Card>
         ))}
       </div>
+
+      {/* Sessions / planning → alimentent le planning public + les places restantes */}
+      <Card>
+        <CardContent className="flex flex-col gap-4 py-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+            <div className="rounded-xl bg-muted p-2.5">
+              <CalendarDays className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <div>
+              <div className="font-semibold">Planning des sessions</div>
+              <div className="text-sm text-muted-foreground">
+                {nbSessions} session{nbSessions > 1 ? "s" : ""} à venir — elles
+                s&apos;affichent en direct sur le planning du site (dates, lieu et
+                places restantes).
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button render={<Link href="/sessions/nouvelle" />}>
+              <CalendarPlus className="mr-2 h-4 w-4" /> Ajouter une session
+            </Button>
+            <Button variant="outline" render={<Link href="/planning" />}>
+              Voir le planning
+            </Button>
+            <Button variant="outline" render={<Link href="/sessions" />}>
+              Toutes les sessions
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {formations.length === 0 ? (
         <Card>
