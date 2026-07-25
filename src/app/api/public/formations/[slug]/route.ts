@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getTauxReussite } from "@/lib/vitrine-stats";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,6 +23,7 @@ export async function GET(
       ...(organismeId ? { organismeId } : {}),
     },
     select: {
+      id: true,
       reference: true,
       titre: true,
       academy: true,
@@ -51,10 +53,16 @@ export async function GET(
     );
   }
 
+  // Taux de réussite (calculé depuis les résultats de certification).
+  const taux = (await getTauxReussite({ organismeId, formationId: f.id })).get(f.id);
+
+  const { id: _id, ...rest } = f;
   const euro = new Intl.NumberFormat("fr-FR");
   const formation = {
-    ...f,
+    ...rest,
     tarif: f.tarif != null ? `${euro.format(Number(f.tarif))} € HT` : null,
+    tauxReussite: taux?.taux ?? null,
+    nbEvalues: taux?.nbEvalues ?? null,
   };
 
   return NextResponse.json(
