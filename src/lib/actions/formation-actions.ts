@@ -36,6 +36,7 @@ function toData(v: FormationFormValues) {
     modalite: v.modalite,
     academy: v.academy ? v.academy : null,
     vitrineStatut: v.vitrineStatut ?? "MASQUEE",
+    numeroAgrement: clean(v.numeroAgrement),
     vitrineTagline: clean(v.vitrineTagline),
     vitrineDescription: clean(v.vitrineDescription),
     vitrineImageUrl: clean(v.vitrineImageUrl),

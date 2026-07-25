@@ -599,6 +599,8 @@ model Formation {
   academy             Academy?
   // Publication sur le site vitrine (piloté depuis la console).
   vitrineStatut       VitrineStatut @default(MASQUEE)
+  // Numéro d'agrément de la formation (saisi manuellement ; affiché sur le vitrine).
+  numeroAgrement      String?
   // Contenu de présentation pour le site vitrine (formations créées EN console).
   vitrineTagline      String?
   vitrineDescription  String?  @db.Text

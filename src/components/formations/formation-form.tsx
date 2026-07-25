@@ -64,6 +64,7 @@ export function FormationForm({
       modalite: "MIXTE",
       academy: "",
       vitrineStatut: "MASQUEE",
+      numeroAgrement: "",
       vitrineTagline: "",
       vitrineDescription: "",
       vitrineImageUrl: "",
@@ -124,6 +125,17 @@ export function FormationForm({
           <div className="grid gap-2">
             <Label htmlFor="certification">Certification (n° RS)</Label>
             <Input id="certification" placeholder="RS7076" {...register("certification")} />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="numeroAgrement">Numéro d&apos;agrément</Label>
+            <Input
+              id="numeroAgrement"
+              placeholder="ex. Agrément préfectoral n°…"
+              {...register("numeroAgrement")}
+            />
+            <p className="text-xs text-muted-foreground">
+              Affiché sur la fiche de cette formation et, agrégé, en bas de page du site.
+            </p>
           </div>
           <div className="grid gap-2">
             <Label htmlFor="academy">Académie</Label>

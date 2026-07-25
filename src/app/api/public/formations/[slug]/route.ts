@@ -30,6 +30,7 @@ export async function GET(
       duree: true,
       tarif: true,
       certification: true,
+      numeroAgrement: true,
       objectifs: true,
       programme: true,
       publicVise: true,
