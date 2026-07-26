@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Globe, ExternalLink, Rocket, EyeOff, PauseCircle, BarChart3, CalendarDays, CalendarPlus } from "lucide-react";
+import { Globe, ExternalLink, Rocket, EyeOff, PauseCircle, BarChart3, CalendarDays, CalendarPlus, Images } from "lucide-react";
 import type { Academy } from "@prisma/client";
 import { getTenantDb } from "@/lib/tenant";
 import { PageHeader } from "@/components/ui/page-header";
@@ -98,6 +98,10 @@ export default async function SiteVitrinePage() {
         <Button variant="outline" render={<Link href="/site-vitrine/trafic" />}>
           <BarChart3 className="mr-2 h-4 w-4" />
           Trafic
+        </Button>
+        <Button variant="outline" render={<Link href="/site-vitrine/photos" />}>
+          <Images className="mr-2 h-4 w-4" />
+          Photos
         </Button>
         <Button variant="outline" render={<a href={VITRINE_URL} target="_blank" rel="noopener noreferrer" />}>
           <Globe className="mr-2 h-4 w-4" />
