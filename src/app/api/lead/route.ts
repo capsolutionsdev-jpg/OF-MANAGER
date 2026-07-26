@@ -20,6 +20,8 @@ async function notifierNouveauProspect(infos: {
   origine: string;
   sourceConnaissance: string;
   message: string | null;
+  session?: string;
+  objectifs?: string;
   dejaConnu: boolean;
 }) {
   try {
@@ -32,9 +34,9 @@ Nom        : ${infos.prenom} ${infos.nom}
 E-mail     : ${infos.email}
 Téléphone  : ${infos.telephone ?? "—"}
 Formation  : ${infos.formationTitre || "—"}
-Financement: ${infos.financement || "—"}
+${infos.session ? `Session    : ${infos.session}\n` : ""}Financement: ${infos.financement || "—"}
 Origine    : ${infos.origine} · ${infos.sourceConnaissance}
-${infos.message ? `Message    : ${infos.message}\n` : ""}
+${infos.objectifs ? `Objectifs  : ${infos.objectifs}\n` : ""}${infos.message ? `Message    : ${infos.message}\n` : ""}
 ➡️ À rappeler. Fiche dans le CRM : ${appBaseUrl()}/crm`;
     await sendEmail({ to, subject: sujet, body: corps });
   } catch (e) {
@@ -83,6 +85,32 @@ export async function POST(req: Request) {
   const utmSource = String(body.utmSource ?? "").trim();
   const utmCampaign = String(body.utmCampaign ?? "").trim();
 
+  // ── Expression de besoin (champs optionnels envoyés par le formulaire d'inscription) ──
+  // `undefined` = champ non fourni → Prisma ne l'écrase pas (utile en enrichissement).
+  const str = (v: unknown) => {
+    const s = String(v ?? "").trim();
+    return s ? s : undefined;
+  };
+  const dnRaw = str(body.dateNaissance);
+  const dn = dnRaw ? new Date(dnRaw) : null;
+  const besoinData = {
+    dateNaissance: dn && !Number.isNaN(dn.getTime()) ? dn : undefined,
+    lieuNaissance: str(body.lieuNaissance),
+    nationalite: str(body.nationalite),
+    adresse: str(body.adresse),
+    codePostal: str(body.codePostal ?? body.cp),
+    ville: str(body.ville),
+    situationPro: str(body.situationPro),
+    objectifsFormation: str(body.objectifs ?? body.objectifsFormation),
+    periodeSouhaitee: str(body.periodeSouhaitee ?? body.periode),
+    sessionSouhaitee: str(body.session ?? body.sessionSouhaitee),
+    besoinsAdaptation: str(body.besoinsAdaptation),
+    situationHandicap:
+      body.situationHandicap === true || body.situationHandicap === "true"
+        ? true
+        : undefined,
+  };
+
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return NextResponse.json({ ok: false, error: "E-mail invalide." }, { status: 422 });
   }
@@ -122,15 +150,22 @@ export async function POST(req: Request) {
           contenu: detail,
         },
       });
-      if (!existing.sourceConnaissance) {
-        await prisma.candidat.update({
-          where: { id: existing.id },
-          data: { sourceConnaissance },
-        });
-      }
+      // Enrichit la fiche existante avec les infos d'expression de besoin fournies.
+      await prisma.candidat.update({
+        where: { id: existing.id },
+        data: {
+          ...besoinData,
+          ...(existing.sourceConnaissance ? {} : { sourceConnaissance }),
+          ...(existing.formationSouhaiteeId || !formationSouhaiteeId
+            ? {}
+            : { formationSouhaiteeId }),
+          ...(existing.financementType || !financementType ? {} : { financementType }),
+        },
+      });
       await notifierNouveauProspect({
         prenom, nom, email, telephone,
         formationTitre, financement: financementRaw,
+        session: besoinData.sessionSouhaitee, objectifs: besoinData.objectifsFormation,
         origine: formOrigine, sourceConnaissance, message, dejaConnu: true,
       });
       return NextResponse.json({ ok: true, candidatId: existing.id, dedup: true });
@@ -147,6 +182,7 @@ export async function POST(req: Request) {
         sourceConnaissance,
         formationSouhaiteeId,
         financementType,
+        ...besoinData,
         interactionsCandidat: {
           create: {
             type: "EMAIL",
