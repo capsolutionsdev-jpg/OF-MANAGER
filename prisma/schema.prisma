@@ -2286,3 +2286,21 @@ model PageVue {
   @@index([organismeId, createdAt])
   @@index([path])
 }
+
+enum ZonePhoto {
+  CLIENTS_PARTENAIRES // page « Clients & partenaires »
+  CENTRE // photos du centre (page « Qui sommes-nous »)
+  ALBUM // page « Album photos » (sessions, souvenirs)
+}
+
+model PhotoVitrine {
+  id          String    @id @default(cuid())
+  organismeId String? // tenant (multi-OF)
+  zone        ZonePhoto
+  url         String    @db.Text
+  legende     String? // légende / nom (ex. nom du partenaire, titre de la session)
+  ordre       Int       @default(0)
+  createdAt   DateTime  @default(now())
+
+  @@index([organismeId, zone, ordre])
+}
