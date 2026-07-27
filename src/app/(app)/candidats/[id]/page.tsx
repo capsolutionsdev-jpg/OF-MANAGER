@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Pencil, History, CalendarDays, FileDown, Trash2, Target, MessageSquare, Calculator } from "lucide-react";
+import { ArrowLeft, Pencil, History, CalendarDays, FileDown, Trash2, Target, MessageSquare, Calculator, ClipboardCheck } from "lucide-react";
 import { auth } from "@/auth";
 import { canAccessSection, roleAllowedInSection } from "@/lib/permissions";
 import { getTenantDb } from "@/lib/tenant";
@@ -21,6 +21,7 @@ import { INSCRIPTION_STATUT_LABELS } from "@/lib/validators/inscription";
 import { INTERACTION_LABELS } from "@/lib/validators/crm";
 import { anonymiseCandidat } from "@/lib/actions/rgpd-actions";
 import { resendParcoursAction } from "@/lib/actions/parcours-actions";
+import { genererFicheExpressionBesoin } from "@/lib/actions/expression-besoin-actions";
 import { DossierChecklist } from "@/components/inscriptions/dossier-checklist";
 import { PieceValidation } from "@/components/inscriptions/piece-validation";
 import { CandidatAccessPanel } from "@/components/candidats/candidat-access-panel";
@@ -170,6 +171,12 @@ export default async function CandidatDetailPage({
                 sent={!!candidat.prospectFormSentAt}
               />
             )}
+            <form action={genererFicheExpressionBesoin}>
+              <input type="hidden" name="candidatId" value={candidat.id} />
+              <Button type="submit" variant="outline">
+                <ClipboardCheck className="mr-2 h-4 w-4" /> Fiche d&apos;expression du besoin
+              </Button>
+            </form>
             <Button
               variant="outline"
               render={<Link href={`/candidats/${candidat.id}/modifier`} />}
