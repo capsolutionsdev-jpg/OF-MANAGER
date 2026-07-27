@@ -33,6 +33,11 @@ import { AddInteractionForm } from "@/components/crm/add-interaction-form";
 import { CandidatMessagerie } from "@/components/candidats/candidat-messagerie";
 import { Send } from "lucide-react";
 
+// Les actions serveur de cette page génèrent des PDF via puppeteer/Chromium
+// (fiche d'expression du besoin, relance du parcours). Le démarrage du
+// navigateur dépasse la durée par défaut → on aligne sur les autres routes PDF.
+export const maxDuration = 60;
+
 function Field({ label, value }: { label: string; value?: string | null }) {
   return (
     <div>
