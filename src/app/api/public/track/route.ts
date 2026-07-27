@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { checkLimit, clientIp } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,6 +31,11 @@ function refererHost(ref: unknown): string | null {
 }
 
 export async function POST(req: Request) {
+  // Anti-spam : cape l'ingestion à 60 vues/min/IP (un vrai visiteur n'y arrive
+  // pas ; un bot qui pollue les stats est stoppé). Dépassement = drop silencieux.
+  const rl = await checkLimit(`track:${clientIp(req)}`, { limit: 60, windowMs: 60_000 });
+  if (!rl.ok) return new NextResponse(null, { status: 204, headers: CORS });
+
   let body: { path?: unknown; referer?: unknown } = {};
   try {
     // Le beacon envoie du text/plain → on parse manuellement.
