@@ -85,6 +85,10 @@ export async function POST(req: Request) {
   const utmSource = String(body.utmSource ?? "").trim();
   const utmCampaign = String(body.utmCampaign ?? "").trim();
 
+  // Tenant du site vitrine : sans lui, le candidat serait créé avec
+  // organismeId=null → INVISIBLE dans la liste scopée par tenant (getTenantDb).
+  const organismeId = process.env.VITRINE_ORGANISME_ID || undefined;
+
   // ── Expression de besoin (champs optionnels envoyés par le formulaire d'inscription) ──
   // `undefined` = champ non fourni → Prisma ne l'écrase pas (utile en enrichissement).
   const str = (v: unknown) => {
@@ -146,11 +150,12 @@ export async function POST(req: Request) {
     .join("\n");
 
   try {
-    const existing = await prisma.candidat.findFirst({ where: { email } });
+    const existing = await prisma.candidat.findFirst({ where: { email, organismeId } });
 
     if (existing) {
       await prisma.candidatInteraction.create({
         data: {
+          organismeId,
           candidatId: existing.id,
           type: "EMAIL",
           sujet: `Nouvelle demande depuis le site (${formOrigine})`,
@@ -180,6 +185,7 @@ export async function POST(req: Request) {
 
     const candidat = await prisma.candidat.create({
       data: {
+        organismeId,
         nom: nom || "—",
         prenom: prenom || "—",
         email,
@@ -192,6 +198,7 @@ export async function POST(req: Request) {
         ...besoinData,
         interactionsCandidat: {
           create: {
+            organismeId,
             type: "EMAIL",
             sujet: `Lead site (${formOrigine})`,
             contenu: detail,
