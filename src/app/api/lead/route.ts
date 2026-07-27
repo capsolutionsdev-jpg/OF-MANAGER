@@ -93,6 +93,8 @@ export async function POST(req: Request) {
   };
   const dnRaw = str(body.dateNaissance);
   const dn = dnRaw ? new Date(dnRaw) : null;
+  const entreprise = str(body.entreprise);
+  const activiteEntreprise = str(body.activiteEntreprise);
   const besoinData = {
     dateNaissance: dn && !Number.isNaN(dn.getTime()) ? dn : undefined,
     lieuNaissance: str(body.lieuNaissance),
@@ -101,6 +103,8 @@ export async function POST(req: Request) {
     codePostal: str(body.codePostal ?? body.cp),
     ville: str(body.ville),
     situationPro: str(body.situationPro),
+    // Raison sociale de l'entreprise (financement OPCO / plan de développement).
+    employeur: entreprise,
     objectifsFormation: str(body.objectifs ?? body.objectifsFormation),
     periodeSouhaitee: str(body.periodeSouhaitee ?? body.periode),
     sessionSouhaitee: str(body.session ?? body.sessionSouhaitee),
@@ -133,6 +137,9 @@ export async function POST(req: Request) {
   const detail = [
     `Demande via le site (${formOrigine}).`,
     formationTitre ? `Formation : ${formationTitre}.` : "",
+    entreprise
+      ? `Entreprise : ${entreprise}${activiteEntreprise ? ` (${activiteEntreprise})` : ""}.`
+      : "",
     message ? `Message : ${message}` : "",
   ]
     .filter(Boolean)
