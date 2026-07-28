@@ -7,6 +7,7 @@ import { getTenantDb } from "@/lib/tenant";
 import { auth } from "@/auth";
 import {
   formationFormSchema,
+  buildVitrineFormules,
   type FormationFormValues,
 } from "@/lib/validators/formation";
 
@@ -43,6 +44,7 @@ function toData(v: FormationFormValues) {
     vitrineCompetences: toLines(v.vitrineCompetences),
     vitrineValidite: clean(v.vitrineValidite),
     vitrineModalites: clean(v.vitrineModalites),
+    vitrineFormules: buildVitrineFormules(v) ?? Prisma.DbNull,
     objectifs: clean(v.objectifs),
     programme: clean(v.programme),
     prerequis: clean(v.prerequis),
@@ -176,6 +178,7 @@ export async function duplicateFormationAction(formData: FormData) {
       publicVise: src.publicVise,
       methodesPedagogiques: src.methodesPedagogiques,
       modalitesEvaluation: src.modalitesEvaluation,
+      vitrineFormules: src.vitrineFormules ?? Prisma.DbNull,
       conditionsAcces: src.conditionsAcces,
       delaiAcces: src.delaiAcces,
       piecesAttendues: src.piecesAttendues,

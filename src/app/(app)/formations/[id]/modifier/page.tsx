@@ -14,6 +14,15 @@ export default async function ModifierFormationPage({
   const f = await db.formation.findUnique({ where: { id } });
   if (!f) notFound();
 
+  // Formules stockées en JSON → 6 champs texte (heures/prix par formule).
+  const formulesArr = Array.isArray(f.vitrineFormules)
+    ? (f.vitrineFormules as { key?: string; heures?: string; prix?: string }[])
+    : [];
+  const formule = (key: string) => formulesArr.find((x) => x?.key === key) ?? {};
+  const fPres = formule("presentiel");
+  const fMixte = formule("mixte");
+  const fElearn = formule("elearning");
+
   return (
     <div className="space-y-6">
       <div>
@@ -46,6 +55,12 @@ export default async function ModifierFormationPage({
             vitrineCompetences: f.vitrineCompetences.join("\n"),
             vitrineValidite: f.vitrineValidite ?? "",
             vitrineModalites: f.vitrineModalites ?? "",
+            formulePresentielHeures: fPres.heures ?? "",
+            formulePresentielPrix: fPres.prix ?? "",
+            formuleMixteHeures: fMixte.heures ?? "",
+            formuleMixtePrix: fMixte.prix ?? "",
+            formuleElearningHeures: fElearn.heures ?? "",
+            formuleElearningPrix: fElearn.prix ?? "",
             objectifs: f.objectifs ?? "",
             programme: f.programme ?? "",
             prerequis: f.prerequis ?? "",

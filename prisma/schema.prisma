@@ -614,6 +614,10 @@ model Formation {
   vitrineCompetences  String[] @default([])
   vitrineValidite     String?
   vitrineModalites    String?  @db.Text
+  // Formules (formats) proposées sur le site vitrine, avec heures + prix par
+  // formule. JSON : [{ key, label, heures, prix, description }]. Piloté depuis
+  // la console (repli sur les valeurs statiques du vitrine si absent).
+  vitrineFormules     Json?
   prerequis           String?  @db.Text
   publicVise          String?  @db.Text
   methodesPedagogiques String? @db.Text
