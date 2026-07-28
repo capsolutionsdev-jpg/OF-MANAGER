@@ -1,10 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { VitrineStatut } from "@prisma/client";
+import { VitrineStatut, Prisma } from "@prisma/client";
 import { getTenantDb } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
+import { FORMULE_DEFS } from "@/lib/validators/formation";
 
 // [DEBUG TEMPORAIRE] journalise le déroulé/erreur de l'action dans AuditLog
 // (les logs Vercel ne sont pas accessibles en offre gratuite). À retirer.
@@ -37,6 +38,28 @@ async function dbg(marker: string, detail: string) {
 // =============================================================
 
 const clean = (s?: string | null) => (s && s.trim() !== "" ? s.trim() : null);
+
+// Construit le tableau de formules (JSON) depuis les 6 champs du cockpit.
+// Renvoie null si rien n'est saisi → le site vitrine garde ses formules statiques.
+function buildFormulesFromForm(formData: FormData) {
+  const val = (k: string) => {
+    const v = formData.get(k);
+    return v != null && String(v).trim() !== "" ? String(v).trim() : "";
+  };
+  const rows = [
+    { def: FORMULE_DEFS[0], heures: val("formulePresentielHeures"), prix: val("formulePresentielPrix") },
+    { def: FORMULE_DEFS[1], heures: val("formuleMixteHeures"), prix: val("formuleMixtePrix") },
+    { def: FORMULE_DEFS[2], heures: val("formuleElearningHeures"), prix: val("formuleElearningPrix") },
+  ];
+  if (!rows.some((r) => r.heures || r.prix)) return null;
+  return rows.map((r) => ({
+    key: r.def.key,
+    label: r.def.label,
+    heures: r.heures || "Sur demande",
+    prix: r.prix || "Sur devis",
+    description: r.def.description,
+  }));
+}
 
 /**
  * Enregistre en une fois la ligne du cockpit : statut vitrine + tarif + durée.
@@ -81,7 +104,9 @@ export async function saveVitrineRowAction(formData: FormData) {
     const dureeHeures =
       heuresNum !== null && !Number.isNaN(heuresNum) ? heuresNum : null;
 
-    step = `avant update tarif=${tarif} duree=${duree} h=${dureeHeures} statut=${vitrineStatut ?? "-"}`;
+    const formules = buildFormulesFromForm(formData);
+
+    step = `avant update tarif=${tarif} duree=${duree} h=${dureeHeures} statut=${vitrineStatut ?? "-"} formules=${formules ? formules.length : 0}`;
     await db.formation.update({
       where: { id },
       data: {
@@ -89,6 +114,7 @@ export async function saveVitrineRowAction(formData: FormData) {
         tarif,
         duree,
         dureeHeures,
+        vitrineFormules: formules ?? Prisma.DbNull,
       },
     });
 
