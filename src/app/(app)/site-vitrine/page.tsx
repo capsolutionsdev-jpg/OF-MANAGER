@@ -13,8 +13,20 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { VITRINE_STATUT_LABELS } from "@/lib/validators/formation";
+import { VITRINE_STATUT_LABELS, FORMULE_DEFS } from "@/lib/validators/formation";
 import { saveVitrineRowAction } from "@/lib/actions/vitrine-actions";
+
+// Récupère les valeurs (heures/prix) d'une formule stockée dans vitrineFormules (JSON).
+function formuleVal(
+  vf: unknown,
+  key: string,
+): { heures: string; prix: string } {
+  const arr = Array.isArray(vf)
+    ? (vf as { key?: string; heures?: string; prix?: string }[])
+    : [];
+  const row = arr.find((x) => x?.key === key);
+  return { heures: row?.heures ?? "", prix: row?.prix ?? "" };
+}
 
 export const metadata = { title: "Site vitrine" };
 
@@ -55,6 +67,7 @@ export default async function SiteVitrinePage() {
       tarif: true,
       duree: true,
       dureeHeures: true,
+      vitrineFormules: true,
     },
   });
 
@@ -183,14 +196,18 @@ export default async function SiteVitrinePage() {
                   categorie && f.vitrineStatut === "PUBLIEE"
                     ? `${VITRINE_URL}/formations/${categorie}/${f.reference}`
                     : null;
+                const fPres = formuleVal(f.vitrineFormules, "presentiel");
+                const fMixte = formuleVal(f.vitrineFormules, "mixte");
+                const fElearn = formuleVal(f.vitrineFormules, "elearning");
                 return (
                   <form
                     key={f.id}
                     action={saveVitrineRowAction}
-                    className="flex flex-col gap-3 p-4 lg:flex-row lg:items-end lg:gap-4"
+                    className="flex flex-col gap-3 p-4"
                   >
                     <input type="hidden" name="id" value={f.id} />
 
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:gap-4">
                     {/* Identité de la fiche */}
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
@@ -282,6 +299,40 @@ export default async function SiteVitrinePage() {
                     <Button type="submit" variant="secondary" className="shrink-0">
                       Enregistrer
                     </Button>
+                    </div>
+
+                    {/* Formules & tarifs (présentiel / mixte / e-learning) — heures + prix par formule */}
+                    <details className="rounded-lg border border-border bg-muted/30 px-3 py-2">
+                      <summary className="cursor-pointer text-xs font-medium text-muted-foreground">
+                        Formules &amp; tarifs — présentiel · mixte · e-learning (optionnel)
+                      </summary>
+                      <div className="mt-3 space-y-3">
+                        {[
+                          { def: FORMULE_DEFS[0], val: fPres, hName: "formulePresentielHeures", pName: "formulePresentielPrix" },
+                          { def: FORMULE_DEFS[1], val: fMixte, hName: "formuleMixteHeures", pName: "formuleMixtePrix" },
+                          { def: FORMULE_DEFS[2], val: fElearn, hName: "formuleElearningHeures", pName: "formuleElearningPrix" },
+                        ].map((r) => (
+                          <div key={r.def.key} className="grid grid-cols-1 gap-2 sm:grid-cols-[10rem_1fr_1fr] sm:items-center">
+                            <span className="text-xs font-semibold">{r.def.label}</span>
+                            <Input
+                              name={r.hName}
+                              placeholder="Heures (ex. 35 h)"
+                              defaultValue={r.val.heures}
+                              className="h-8"
+                            />
+                            <Input
+                              name={r.pName}
+                              placeholder="Prix (ex. 1 490 € ou Sur devis)"
+                              defaultValue={r.val.prix}
+                              className="h-8"
+                            />
+                          </div>
+                        ))}
+                        <p className="text-xs text-muted-foreground">
+                          Laissez tout vide pour conserver les valeurs par défaut du site. Cliquez sur « Enregistrer » ci-dessus pour valider.
+                        </p>
+                      </div>
+                    </details>
                   </form>
                 );
               })}
