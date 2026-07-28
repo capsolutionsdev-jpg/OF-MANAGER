@@ -21,7 +21,6 @@ import { INSCRIPTION_STATUT_LABELS } from "@/lib/validators/inscription";
 import { INTERACTION_LABELS } from "@/lib/validators/crm";
 import { anonymiseCandidat } from "@/lib/actions/rgpd-actions";
 import { resendParcoursAction } from "@/lib/actions/parcours-actions";
-import { genererFicheExpressionBesoin } from "@/lib/actions/expression-besoin-actions";
 import { DossierChecklist } from "@/components/inscriptions/dossier-checklist";
 import { PieceValidation } from "@/components/inscriptions/piece-validation";
 import { CandidatAccessPanel } from "@/components/candidats/candidat-access-panel";
@@ -176,12 +175,18 @@ export default async function CandidatDetailPage({
                 sent={!!candidat.prospectFormSentAt}
               />
             )}
-            <form action={genererFicheExpressionBesoin}>
-              <input type="hidden" name="candidatId" value={candidat.id} />
-              <Button type="submit" variant="outline">
-                <ClipboardCheck className="mr-2 h-4 w-4" /> Fiche d&apos;expression du besoin
-              </Button>
-            </form>
+            <Button
+              variant="outline"
+              render={
+                <a
+                  href={`/api/candidats/${candidat.id}/expression-besoin`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                />
+              }
+            >
+              <ClipboardCheck className="mr-2 h-4 w-4" /> Fiche d&apos;expression du besoin
+            </Button>
             <Button
               variant="outline"
               render={<Link href={`/candidats/${candidat.id}/modifier`} />}

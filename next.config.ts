@@ -66,9 +66,9 @@ const nextConfig: NextConfig = {
   // Force l'inclusion du binaire Chromium (@sparticuz) dans les fonctions
   // serverless qui génèrent des PDF — sinon « Could not find Chromium » sur Vercel.
   outputFileTracingIncludes: {
-    // Page candidat : l'action serveur « Fiche d'expression du besoin » génère
-    // un PDF via puppeteer → le binaire Chromium doit être embarqué ici aussi.
-    "/candidats/[id]": [
+    // Route « Fiche d'expression du besoin » : génère un PDF via puppeteer
+    // → embarquer le binaire Chromium dans cette fonction.
+    "/api/candidats/[id]/expression-besoin": [
       "./node_modules/@sparticuz/chromium/bin/**",
     ],
     "/parcours/[token]/documents": [
