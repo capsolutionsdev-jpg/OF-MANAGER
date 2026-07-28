@@ -45,7 +45,15 @@ const nextConfig: NextConfig = {
   output: "standalone",
   // Les server actions reçoivent des images en data-URL (logo/cachet/signature
   // de la console, photos candidat) → relever la limite du corps de requête.
-  experimental: { serverActions: { bodySizeLimit: "5mb" } },
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "5mb",
+      // Autorise explicitement le domaine officiel ET les URL de déploiement
+      // Vercel : sinon Next rejette les Server Actions quand l'hôte transmis
+      // (x-forwarded-host) diffère de l'origine → erreur au submit des formulaires.
+      allowedOrigins: ["app.capacademy.fr", "*.vercel.app"],
+    },
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
