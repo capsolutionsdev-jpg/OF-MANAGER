@@ -44,6 +44,7 @@ export async function GET(
       vitrineCompetences: true,
       vitrineValidite: true,
       vitrineModalites: true,
+      vitrineFormules: true,
     },
   });
 
@@ -57,11 +58,12 @@ export async function GET(
   // Taux de réussite (calculé depuis les résultats de certification).
   const taux = (await getTauxReussite({ organismeId, formationId: f.id })).get(f.id);
 
-  const { id: _id, ...rest } = f;
+  const { id: _id, vitrineFormules, ...rest } = f;
   const euro = new Intl.NumberFormat("fr-FR");
   const formation = {
     ...rest,
     tarif: f.tarif != null ? `${euro.format(Number(f.tarif))} € HT` : null,
+    formules: vitrineFormules ?? null,
     tauxReussite: taux?.taux ?? null,
     nbEvalues: taux?.nbEvalues ?? null,
   };

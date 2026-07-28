@@ -71,6 +71,12 @@ export function FormationForm({
       vitrineCompetences: "",
       vitrineValidite: "",
       vitrineModalites: "",
+      formulePresentielHeures: "",
+      formulePresentielPrix: "",
+      formuleMixteHeures: "",
+      formuleMixtePrix: "",
+      formuleElearningHeures: "",
+      formuleElearningPrix: "",
       objectifs: "",
       programme: "",
       prerequis: "",
@@ -279,6 +285,61 @@ export function FormationForm({
             public visé, les prérequis, la durée, le tarif, la certification et l&apos;évaluation sont
             repris des sections ci-dessus.
           </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Formules &amp; tarifs (site vitrine)</CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 gap-5">
+          <p className="text-xs text-muted-foreground">
+            Renseignez les heures et le prix de chaque formule (présentiel / mixte / e-learning).
+            Elles s&apos;affichent en tableau « Formules &amp; tarifs » sur la fiche du site vitrine.
+            Laissez vide pour conserver les valeurs par défaut du site.
+          </p>
+
+          <div className="grid gap-2">
+            <Label className="font-semibold">Présentiel</Label>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="grid gap-2">
+                <Label htmlFor="formulePresentielHeures" className="text-xs text-muted-foreground">Heures</Label>
+                <Input id="formulePresentielHeures" placeholder="ex. 35 h en centre" {...register("formulePresentielHeures")} />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="formulePresentielPrix" className="text-xs text-muted-foreground">Prix</Label>
+                <Input id="formulePresentielPrix" placeholder="ex. 1 490 € ou Sur devis" {...register("formulePresentielPrix")} />
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-2">
+            <Label className="font-semibold">Mixte — 1 jour de préparation</Label>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="grid gap-2">
+                <Label htmlFor="formuleMixteHeures" className="text-xs text-muted-foreground">Heures</Label>
+                <Input id="formuleMixteHeures" placeholder="ex. E-learning + 1 j en présentiel" {...register("formuleMixteHeures")} />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="formuleMixtePrix" className="text-xs text-muted-foreground">Prix</Label>
+                <Input id="formuleMixtePrix" placeholder="ex. 990 € ou Sur devis" {...register("formuleMixtePrix")} />
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-2">
+            <Label className="font-semibold">100% e-learning</Label>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="grid gap-2">
+                <Label htmlFor="formuleElearningHeures" className="text-xs text-muted-foreground">Heures</Label>
+                <Input id="formuleElearningHeures" placeholder="ex. Accès illimité, à votre rythme" {...register("formuleElearningHeures")} />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="formuleElearningPrix" className="text-xs text-muted-foreground">Prix</Label>
+                <Input id="formuleElearningPrix" placeholder="ex. 590 € ou Sur devis" {...register("formuleElearningPrix")} />
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
 

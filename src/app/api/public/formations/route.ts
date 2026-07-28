@@ -39,6 +39,7 @@ export async function GET() {
       vitrineStatut: true,
       vitrineTagline: true,
       vitrineImageUrl: true,
+      vitrineFormules: true,
     },
     orderBy: { titre: "asc" },
     take: 200,
@@ -61,6 +62,7 @@ export async function GET() {
       tarif: f.tarif != null ? `${euro.format(Number(f.tarif))} € HT` : null,
       tagline: f.vitrineTagline,
       image: f.vitrineImageUrl,
+      formules: f.vitrineFormules ?? null,
       tauxReussite: t?.taux ?? null,
       nbEvalues: t?.nbEvalues ?? null,
     };
