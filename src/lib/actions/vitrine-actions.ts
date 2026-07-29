@@ -3,26 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { VitrineStatut, Prisma } from "@prisma/client";
 import { getTenantDb } from "@/lib/tenant";
-import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { FORMULE_DEFS } from "@/lib/validators/formation";
-
-// [DEBUG TEMPORAIRE] journalise le déroulé/erreur de l'action dans AuditLog
-// (les logs Vercel ne sont pas accessibles en offre gratuite). À retirer.
-async function dbg(marker: string, detail: string) {
-  try {
-    await prisma.auditLog.create({
-      data: {
-        organismeId: process.env.VITRINE_ORGANISME_ID || null,
-        action: marker,
-        entityType: "CockpitDebug",
-        entityId: detail.slice(0, 900),
-      },
-    });
-  } catch {
-    /* ne jamais faire échouer le debug */
-  }
-}
 
 // =============================================================
 //  ACTIONS DU COCKPIT « SITE VITRINE »
@@ -66,82 +48,60 @@ function buildFormulesFromForm(formData: FormData) {
  * Progressive enhancement : appelée directement par `<form action={...}>`.
  */
 export async function saveVitrineRowAction(formData: FormData) {
-  let step = "start";
-  try {
-    const db = await getTenantDb();
-    const session = await auth();
-    if (!session?.user) {
-      await dbg("COCKPIT_NOSESSION", "pas de session");
-      return;
-    }
+  const db = await getTenantDb();
+  const session = await auth();
+  if (!session?.user) return;
 
-    const id = String(formData.get("id"));
-    if (!id) {
-      await dbg("COCKPIT_NOID", "id manquant");
-      return;
-    }
-    step = `parsed id=${id} org=${session.user.organismeId ?? "?"}`;
+  const id = String(formData.get("id"));
+  if (!id) return;
 
-    // Statut : valeur de l'enum uniquement (garde-fou).
-    const statutRaw = String(formData.get("vitrineStatut") ?? "");
-    const vitrineStatut = (Object.values(VitrineStatut) as string[]).includes(
-      statutRaw,
-    )
-      ? (statutRaw as VitrineStatut)
-      : undefined;
+  // Statut : valeur de l'enum uniquement (garde-fou).
+  const statutRaw = String(formData.get("vitrineStatut") ?? "");
+  const vitrineStatut = (Object.values(VitrineStatut) as string[]).includes(
+    statutRaw,
+  )
+    ? (statutRaw as VitrineStatut)
+    : undefined;
 
-    // Tarif : accepte la virgule décimale ; vide = on efface (null).
-    const tarifRaw = clean(String(formData.get("tarif") ?? ""));
-    const tarifNum =
-      tarifRaw !== null ? Number(tarifRaw.replace(/\s/g, "").replace(",", ".")) : null;
-    const tarif =
-      tarifNum !== null && !Number.isNaN(tarifNum) ? tarifNum : null;
+  // Tarif : accepte la virgule décimale ; vide = on efface (null).
+  const tarifRaw = clean(String(formData.get("tarif") ?? ""));
+  const tarifNum =
+    tarifRaw !== null ? Number(tarifRaw.replace(/\s/g, "").replace(",", ".")) : null;
+  const tarif =
+    tarifNum !== null && !Number.isNaN(tarifNum) ? tarifNum : null;
 
-    const duree = clean(String(formData.get("duree") ?? ""));
+  const duree = clean(String(formData.get("duree") ?? ""));
 
-    const heuresRaw = clean(String(formData.get("dureeHeures") ?? ""));
-    const heuresNum = heuresRaw !== null ? parseInt(heuresRaw, 10) : null;
-    const dureeHeures =
-      heuresNum !== null && !Number.isNaN(heuresNum) ? heuresNum : null;
+  const heuresRaw = clean(String(formData.get("dureeHeures") ?? ""));
+  const heuresNum = heuresRaw !== null ? parseInt(heuresRaw, 10) : null;
+  const dureeHeures =
+    heuresNum !== null && !Number.isNaN(heuresNum) ? heuresNum : null;
 
-    const formules = buildFormulesFromForm(formData);
+  const formules = buildFormulesFromForm(formData);
 
-    step = `avant update tarif=${tarif} duree=${duree} h=${dureeHeures} statut=${vitrineStatut ?? "-"} formules=${formules ? formules.length : 0}`;
-    await db.formation.update({
-      where: { id },
-      data: {
-        ...(vitrineStatut ? { vitrineStatut } : {}),
-        tarif,
-        duree,
-        dureeHeures,
-        vitrineFormules: formules ?? Prisma.DbNull,
-      },
-    });
+  await db.formation.update({
+    where: { id },
+    data: {
+      ...(vitrineStatut ? { vitrineStatut } : {}),
+      tarif,
+      duree,
+      dureeHeures,
+      vitrineFormules: formules ?? Prisma.DbNull,
+    },
+  });
 
-    step = "avant auditLog";
-    await db.auditLog.create({
-      data: {
-        userId: session.user.id,
-        action: "VITRINE_UPDATE",
-        entityType: "Formation",
-        entityId: id,
-      },
-    });
+  await db.auditLog.create({
+    data: {
+      userId: session.user.id,
+      action: "VITRINE_UPDATE",
+      entityType: "Formation",
+      entityId: id,
+    },
+  });
 
-    step = "avant revalidate";
-    revalidatePath("/site-vitrine");
-    revalidatePath("/formations");
-    revalidatePath(`/formations/${id}`);
-
-    await dbg("COCKPIT_OK", step);
-  } catch (e) {
-    const msg =
-      e instanceof Error
-        ? `${e.name}: ${e.message} @ ${step} | ${(e.stack || "").split("\n").slice(1, 4).join(" ")}`
-        : `${String(e)} @ ${step}`;
-    await dbg("COCKPIT_ERROR", msg);
-    throw e;
-  }
+  revalidatePath("/site-vitrine");
+  revalidatePath("/formations");
+  revalidatePath(`/formations/${id}`);
 }
 
 /**
