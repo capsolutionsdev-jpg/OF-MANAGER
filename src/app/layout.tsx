@@ -13,6 +13,7 @@ import {
 } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
+import { RegisterSW } from "@/components/pwa/register-sw";
 
 // Polices auto-hébergées via next/font (zéro <link> externe, zéro CLS).
 // Chaque police expose une variable CSS consommée par lib/themes.ts (designs
@@ -94,6 +95,7 @@ export default function RootLayout({
       <body className="min-h-full">
         {children}
         <Toaster richColors position="top-right" />
+        <RegisterSW />
       </body>
     </html>
   );
