@@ -6,6 +6,7 @@ import { CheckCircle2, Circle, Send, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { togglePieceRecue, relancerDossier } from "@/lib/actions/inscription-actions";
 import { Badge } from "@/components/ui/badge";
+import { ScanDocsButton } from "@/components/scan/scan-docs-button";
 
 type ValidInfo = { nom: string; date: string };
 
@@ -104,6 +105,7 @@ export function DossierChecklist({
             Relancer
           </button>
         )}
+        <ScanDocsButton inscriptionId={inscriptionId} piecesAttendues={piecesAttendues} />
       </div>
       <ul className="space-y-1">
         {piecesAttendues.map((piece) => {
