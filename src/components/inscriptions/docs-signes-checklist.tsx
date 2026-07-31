@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { CheckCircle2, Circle, Eye, Loader2 } from "lucide-react";
 import { DOCUMENT_MENU } from "@/lib/documents/templates";
+import { filterDocMenu, type FormationLike } from "@/lib/documents/families";
 import { toggleDocSigne } from "@/lib/actions/document-actions";
 
 type Info = { nom: string; date: string };
@@ -18,10 +19,13 @@ export function DocsSignesChecklist({
   inscriptionId,
   sessionId,
   docsSignes,
+  formation,
 }: {
   inscriptionId: string;
   sessionId?: string;
   docsSignes?: Record<string, Info>;
+  /** Formation de la session : filtre les documents non pertinents (SSIAP…). */
+  formation?: FormationLike;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
@@ -39,7 +43,7 @@ export function DocsSignesChecklist({
   const groups: { cat: string; docs: Doc[] }[] = [
     {
       cat: "Documents du candidat",
-      docs: DOCUMENT_MENU.map((d) => ({
+      docs: (formation ? filterDocMenu(DOCUMENT_MENU, formation) : DOCUMENT_MENU).map((d) => ({
         type: d.type,
         label: d.label,
         href: `/documents/${inscriptionId}/${d.type}`,

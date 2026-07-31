@@ -2,6 +2,7 @@ import type { Candidat, Entreprise, Formation, Inscription, Session } from "@pri
 import { DEFAULT_ORG_IDENTITY, type OrgIdentity } from "@/lib/org-identity";
 import { MODALITE_LABELS } from "@/lib/validators/formation";
 import { FINANCEMENT_LABELS } from "@/lib/validators/candidat";
+import { ssiapNiveauOfFormation } from "@/lib/documents/families";
 
 export type InscriptionComplete = Inscription & {
   candidat: Candidat & { entreprise?: Entreprise | null };
@@ -97,8 +98,12 @@ export function buildVariables(
         : `du ${d(s.dateDebut)} au ${d(s.dateFin)}`,
     horaires: s.horaires ?? "—",
     lieu: s.lieu ?? "—",
-    // Diplôme SSIAP détenu (attestation de recyclage / remise à niveau)
-    ssiap_niveau: c.ssiapNiveau ? String(c.ssiapNiveau) : "1",
+    // Diplôme SSIAP détenu (attestation de recyclage / remise à niveau).
+    // Niveau : celui du candidat, sinon déduit de la formation, sinon vide
+    // (ne JAMAIS défaulter à « 1 » — sortait un SSIAP 1 sur des formations non SSIAP).
+    ssiap_niveau: (c.ssiapNiveau ?? ssiapNiveauOfFormation(f))
+      ? String(c.ssiapNiveau ?? ssiapNiveauOfFormation(f))
+      : "",
     ssiap_numero: c.ssiapDiplomeNumero ?? "—",
     ssiap_date: d(c.ssiapDiplomeDate),
     // Divers

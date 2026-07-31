@@ -13,6 +13,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DOCUMENT_MENU } from "@/lib/documents/templates";
+import { filterDocMenu, type FormationLike } from "@/lib/documents/families";
 import { MANUAL_EVENTS, type ManualEvent } from "@/lib/manual-events";
 import { sendDocumentsToCandidate } from "@/lib/actions/document-actions";
 import { sendAutomationEventNow } from "@/lib/actions/manual-send-actions";
@@ -27,10 +28,13 @@ export function InscriptionQuickActions({
   inscriptionId,
   sessionId,
   docsSignes,
+  formation,
 }: {
   inscriptionId: string;
   sessionId?: string;
   docsSignes?: Record<string, { nom: string; date: string }>;
+  /** Formation de la session : filtre les documents non pertinents (SSIAP…). */
+  formation?: FormationLike;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -39,7 +43,9 @@ export function InscriptionQuickActions({
   const [busy, setBusy] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const allTypes = DOCUMENT_MENU.map((d) => d.type);
+  // Ne proposer que les documents pertinents pour cette formation.
+  const menu = formation ? filterDocMenu(DOCUMENT_MENU, formation) : DOCUMENT_MENU;
+  const allTypes = menu.map((d) => d.type);
   const toutCoche = selected.length === allTypes.length && allTypes.length > 0;
   const toggle = (t: string) =>
     setSelected((c) => (c.includes(t) ? c.filter((x) => x !== t) : [...c, t]));
@@ -91,7 +97,7 @@ export function InscriptionQuickActions({
               </button>
             </div>
             <div className="max-h-64 space-y-0.5 overflow-y-auto rounded-lg border p-1.5">
-              {DOCUMENT_MENU.map((d) => (
+              {menu.map((d) => (
                 <div key={d.type} className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted/50">
                   <input type="checkbox" className="h-4 w-4" checked={selected.includes(d.type)} onChange={() => toggle(d.type)} />
                   <label className="flex-1 cursor-pointer" onClick={() => toggle(d.type)}>{d.label}</label>
@@ -137,7 +143,7 @@ export function InscriptionQuickActions({
               <CheckCircle2 className="h-4 w-4 text-emerald-600" /> Validation — documents signés sur place
             </h3>
             <div className="rounded-lg border p-3">
-              <DocsSignesChecklist inscriptionId={inscriptionId} sessionId={sessionId} docsSignes={docsSignes} />
+              <DocsSignesChecklist inscriptionId={inscriptionId} sessionId={sessionId} docsSignes={docsSignes} formation={formation} />
             </div>
           </section>
         </div>
