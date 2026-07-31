@@ -6,6 +6,7 @@ import { Clock, AlertTriangle } from "lucide-react";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { AppTopNav } from "@/components/app-topnav";
+import { MobileTabBar } from "@/components/mobile-tabbar";
 import { buildNav } from "@/lib/navigation";
 import { getBranding, getCurrentOrganisme } from "@/lib/org";
 import { designVars, getDesign } from "@/lib/themes";
@@ -139,7 +140,15 @@ export default async function AppLayout({
       )}
       <main className="mx-auto max-w-[1500px] p-4 md:p-6">{children}</main>
 
-      <footer className="mt-8 border-t bg-card/40">
+      {/* Barre d'onglets mobile (accès au pouce). `pb-20 md:pb-0` sur le pied de
+          page évite que le contenu passe sous la barre fixe. */}
+      <MobileTabBar
+        role={navUser.role}
+        permissions={navUser.permissions ?? []}
+        fonctionnalites={navUser.fonctionnalites ?? []}
+      />
+
+      <footer className="mt-8 border-t bg-card/40 pb-20 md:pb-0">
         <div className="mx-auto flex max-w-[1500px] flex-col gap-2 px-4 py-5 text-xs text-muted-foreground md:flex-row md:items-center md:justify-between md:px-6">
           <p>{legalLine || branding.nom}</p>
           <nav aria-label="Liens légaux" className="flex flex-wrap items-center gap-x-4 gap-y-1">

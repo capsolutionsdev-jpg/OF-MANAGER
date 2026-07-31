@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import {
   Geist_Mono,
   Inter,
@@ -13,6 +13,7 @@ import {
 } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
+import { RegisterSW } from "@/components/pwa/register-sw";
 
 // Polices auto-hébergées via next/font (zéro <link> externe, zéro CLS).
 // Chaque police expose une variable CSS consommée par lib/themes.ts (designs
@@ -47,6 +48,13 @@ export const metadata: Metadata = {
   description:
     "OFManager : le logiciel des organismes de formation (sécurité privée, incendie, secourisme, prévention) — conforme Qualiopi, à votre marque. Édité par CAP Compétences.",
   applicationName: "OFManager",
+  // PWA : rend l'app « app-like » sur iOS (Safari « Ajouter à l'écran d'accueil »).
+  // Le manifeste (app/manifest.ts) couvre Android / desktop.
+  appleWebApp: {
+    capable: true,
+    title: "OFManager",
+    statusBarStyle: "default",
+  },
   openGraph: {
     type: "website",
     siteName: "OFManager",
@@ -54,6 +62,16 @@ export const metadata: Metadata = {
     images: [{ url: "/ofmanager-logo.png", width: 1200, height: 630, alt: "OFManager" }],
   },
   twitter: { card: "summary_large_image" },
+};
+
+// Viewport (Next 16 : export séparé). Couleur de barre système (thème mobile)
+// + zoom autorisé pour l'accessibilité + rendu bord-à-bord (encoches).
+export const viewport: Viewport = {
+  themeColor: "#0D1B3E",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -64,6 +82,8 @@ export default function RootLayout({
   return (
     <html lang="fr" className={`${fontVars} h-full antialiased`} suppressHydrationWarning>
       <head>
+        {/* Icône d'accueil iOS (apple-touch-icon) — complète le manifeste. */}
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
         {/* Applique le thème mémorisé AVANT le premier rendu (aucun flash).
             Par défaut : mode clair ; sombre uniquement si choisi par l'utilisateur. */}
         <script
@@ -75,6 +95,7 @@ export default function RootLayout({
       <body className="min-h-full">
         {children}
         <Toaster richColors position="top-right" />
+        <RegisterSW />
       </body>
     </html>
   );

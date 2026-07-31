@@ -89,13 +89,13 @@ export default async function ParcoursPage({
   const toutFinalise = signed && piecesCompletes;
 
   return (
-    <main className="min-h-screen bg-muted/40 px-4 py-10">
+    <main className="min-h-screen bg-muted/40 px-4 py-6 sm:py-10">
       <div className="mx-auto w-full max-w-2xl space-y-6">
         {/* En-tête */}
         <div className="flex flex-col items-center text-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/cap-competences-logo.png"
+            src={org.logoUrl ?? "/cap-competences-logo.png"}
             alt={org.name}
             className="mb-3 h-12 w-auto object-contain"
           />
@@ -108,7 +108,8 @@ export default async function ParcoursPage({
 
         {/* Progression — 4 étapes */}
         <Card>
-          <CardContent className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 py-4">
+          {/* Mobile : grille 2 colonnes (libellés longs) ; ≥ sm : une ligne centrée. */}
+          <CardContent className="grid grid-cols-2 gap-x-3 gap-y-2 py-4 sm:flex sm:flex-wrap sm:items-center sm:justify-center sm:gap-x-5">
             <Step done={formDone} current={!formDone} label="1. Mes informations" />
             <Step done={docsLus} current={formDone && !docsLus} label="2. Lire les documents" />
             <Step done={signed} current={docsLus && !signed} label="3. Signature" />

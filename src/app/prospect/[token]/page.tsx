@@ -37,7 +37,7 @@ export default async function ProspectPage({
       <div className="flex items-center gap-3">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/cap-competences-logo.png"
+          src={org.logoUrl ?? "/cap-competences-logo.png"}
           alt={org.name}
           className="h-12 w-auto"
         />
