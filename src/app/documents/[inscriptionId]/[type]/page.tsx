@@ -8,6 +8,7 @@ import {
   renderTemplate,
 } from "@/lib/documents/templates";
 import { buildVariables } from "@/lib/documents/resolve";
+import { isDocAllowedForFormation } from "@/lib/documents/families";
 import { orgConfigFor } from "@/lib/org-identity";
 import { getDocOverride } from "@/lib/documents/overrides";
 import { PrintButton } from "@/components/documents/print-button";
@@ -27,6 +28,11 @@ export default async function DocumentPage({
     include: { candidat: { include: { entreprise: true } }, session: { include: { formation: true } } },
   });
   if (!inscription) notFound();
+
+  // Garde : refuser un document non pertinent pour la formation de la session
+  // (ex. attestation de recyclage SSIAP sur une session SST). Défense en
+  // profondeur — le filtre UI masque déjà ces documents.
+  if (!isDocAllowedForFormation(type, inscription.session.formation)) notFound();
 
   const org = await orgConfigFor(inscription.organismeId);
   const vars = buildVariables(inscription, org);

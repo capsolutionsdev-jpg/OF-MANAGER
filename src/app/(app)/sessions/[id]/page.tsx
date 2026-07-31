@@ -617,6 +617,7 @@ export default async function SessionDetailPage({
                           inscriptionId={i.id}
                           sessionId={s.id}
                           docsSignes={(i.docsSignes as Record<string, { nom: string; date: string }> | null) ?? undefined}
+                          formation={{ reference: s.formation.reference, titre: s.formation.titre }}
                         />
                         <InscriptionActionsMenu
                           inscriptionId={i.id}
