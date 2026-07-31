@@ -10,11 +10,14 @@ export async function GET() {
   const start = new Date();
   start.setHours(0, 0, 0, 0);
 
+  const organismeId = process.env.VITRINE_ORGANISME_ID || undefined;
+
   const sessions = await prisma.session.findMany({
     where: {
       isArchived: false,
       statut: { in: ["PLANIFIEE", "OUVERTE"] },
       dateDebut: { gte: start },
+      ...(organismeId ? { organismeId } : {}),
     },
     include: {
       formation: { select: { titre: true, academy: true, reference: true } },

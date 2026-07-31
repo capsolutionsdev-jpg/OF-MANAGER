@@ -45,7 +45,15 @@ const nextConfig: NextConfig = {
   output: "standalone",
   // Les server actions reçoivent des images en data-URL (logo/cachet/signature
   // de la console, photos candidat) → relever la limite du corps de requête.
-  experimental: { serverActions: { bodySizeLimit: "5mb" } },
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "5mb",
+      // Autorise explicitement le domaine officiel ET les URL de déploiement
+      // Vercel : sinon Next rejette les Server Actions quand l'hôte transmis
+      // (x-forwarded-host) diffère de l'origine → erreur au submit des formulaires.
+      allowedOrigins: ["app.capacademy.fr", "*.vercel.app"],
+    },
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
@@ -58,6 +66,11 @@ const nextConfig: NextConfig = {
   // Force l'inclusion du binaire Chromium (@sparticuz) dans les fonctions
   // serverless qui génèrent des PDF — sinon « Could not find Chromium » sur Vercel.
   outputFileTracingIncludes: {
+    // Route « Fiche d'expression du besoin » : génère un PDF via puppeteer
+    // → embarquer le binaire Chromium dans cette fonction.
+    "/api/candidats/[id]/expression-besoin": [
+      "./node_modules/@sparticuz/chromium/bin/**",
+    ],
     "/parcours/[token]/documents": [
       "./node_modules/@sparticuz/chromium/bin/**",
     ],

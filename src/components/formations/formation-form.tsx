@@ -12,6 +12,7 @@ import {
   type FormationFormValues,
   MODALITE_LABELS,
   ACADEMY_LABELS,
+  VITRINE_STATUT_LABELS,
 } from "@/lib/validators/formation";
 import {
   createFormation,
@@ -62,6 +63,20 @@ export function FormationForm({
       tarif: "",
       modalite: "MIXTE",
       academy: "",
+      vitrineStatut: "MASQUEE",
+      numeroAgrement: "",
+      vitrineTagline: "",
+      vitrineDescription: "",
+      vitrineImageUrl: "",
+      vitrineCompetences: "",
+      vitrineValidite: "",
+      vitrineModalites: "",
+      formulePresentielHeures: "",
+      formulePresentielPrix: "",
+      formuleMixteHeures: "",
+      formuleMixtePrix: "",
+      formuleElearningHeures: "",
+      formuleElearningPrix: "",
       objectifs: "",
       programme: "",
       prerequis: "",
@@ -118,6 +133,17 @@ export function FormationForm({
             <Input id="certification" placeholder="RS7076" {...register("certification")} />
           </div>
           <div className="grid gap-2">
+            <Label htmlFor="numeroAgrement">Numéro d&apos;agrément</Label>
+            <Input
+              id="numeroAgrement"
+              placeholder="ex. Agrément préfectoral n°…"
+              {...register("numeroAgrement")}
+            />
+            <p className="text-xs text-muted-foreground">
+              Affiché sur la fiche de cette formation et, agrégé, en bas de page du site.
+            </p>
+          </div>
+          <div className="grid gap-2">
             <Label htmlFor="academy">Académie</Label>
             <select id="academy" className={selectClass} {...register("academy")}>
               <option value="">— Non classée —</option>
@@ -149,6 +175,21 @@ export function FormationForm({
           <div className="grid gap-2">
             <Label htmlFor="tarif">Tarif (€ HT)</Label>
             <Input id="tarif" type="number" step="0.01" placeholder="1500" {...register("tarif")} />
+          </div>
+          <div className="grid gap-2 sm:col-span-2">
+            <Label htmlFor="vitrineStatut">Site vitrine (capacademy.fr)</Label>
+            <select id="vitrineStatut" className={selectClass} {...register("vitrineStatut")}>
+              {Object.entries(VITRINE_STATUT_LABELS).map(([v, l]) => (
+                <option key={v} value={v}>
+                  {l}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-muted-foreground">
+              Pilote l&apos;affichage de cette formation sur le site public. « Publiée » la rend
+              visible (jointure par la <strong>référence</strong>) ; « Suspendue » la retire
+              temporairement.
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -182,6 +223,121 @@ export function FormationForm({
             <div className="grid gap-2">
               <Label htmlFor="modalitesEvaluation">Modalités d&apos;évaluation</Label>
               <Textarea id="modalitesEvaluation" rows={2} {...register("modalitesEvaluation")} />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Contenu du site vitrine (fiche publique)</CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 gap-4">
+          <div className="grid gap-2">
+            <Label htmlFor="vitrineTagline">Accroche</Label>
+            <Input
+              id="vitrineTagline"
+              placeholder="Phrase d'accroche affichée sous le titre"
+              {...register("vitrineTagline")}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="vitrineDescription">Description</Label>
+            <Textarea
+              id="vitrineDescription"
+              rows={3}
+              placeholder="Paragraphe de présentation en haut de la fiche"
+              {...register("vitrineDescription")}
+            />
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="grid gap-2">
+              <Label htmlFor="vitrineImageUrl">Image (URL)</Label>
+              <Input id="vitrineImageUrl" placeholder="https://…" {...register("vitrineImageUrl")} />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="vitrineValidite">Validité</Label>
+              <Input
+                id="vitrineValidite"
+                placeholder="ex. Carte professionnelle valable 5 ans"
+                {...register("vitrineValidite")}
+              />
+            </div>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="vitrineCompetences">
+              Compétences visées{" "}
+              <span className="font-normal text-muted-foreground">(une par ligne)</span>
+            </Label>
+            <Textarea id="vitrineCompetences" rows={4} {...register("vitrineCompetences")} />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="vitrineModalites">Modalités (pratiques)</Label>
+            <Textarea
+              id="vitrineModalites"
+              rows={2}
+              placeholder="ex. Formation en présentiel en centre agréé…"
+              {...register("vitrineModalites")}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Ces champs alimentent la fiche publique du site vitrine. Les objectifs, le programme, le
+            public visé, les prérequis, la durée, le tarif, la certification et l&apos;évaluation sont
+            repris des sections ci-dessus.
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Formules &amp; tarifs (site vitrine)</CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 gap-5">
+          <p className="text-xs text-muted-foreground">
+            Renseignez les heures et le prix de chaque formule (présentiel / mixte / e-learning).
+            Elles s&apos;affichent en tableau « Formules &amp; tarifs » sur la fiche du site vitrine.
+            Laissez vide pour conserver les valeurs par défaut du site.
+          </p>
+
+          <div className="grid gap-2">
+            <Label className="font-semibold">Présentiel</Label>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="grid gap-2">
+                <Label htmlFor="formulePresentielHeures" className="text-xs text-muted-foreground">Heures</Label>
+                <Input id="formulePresentielHeures" placeholder="ex. 35 h en centre" {...register("formulePresentielHeures")} />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="formulePresentielPrix" className="text-xs text-muted-foreground">Prix</Label>
+                <Input id="formulePresentielPrix" placeholder="ex. 1 490 € ou Sur devis" {...register("formulePresentielPrix")} />
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-2">
+            <Label className="font-semibold">Mixte — 1 jour de préparation</Label>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="grid gap-2">
+                <Label htmlFor="formuleMixteHeures" className="text-xs text-muted-foreground">Heures</Label>
+                <Input id="formuleMixteHeures" placeholder="ex. E-learning + 1 j en présentiel" {...register("formuleMixteHeures")} />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="formuleMixtePrix" className="text-xs text-muted-foreground">Prix</Label>
+                <Input id="formuleMixtePrix" placeholder="ex. 990 € ou Sur devis" {...register("formuleMixtePrix")} />
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-2">
+            <Label className="font-semibold">100% e-learning</Label>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="grid gap-2">
+                <Label htmlFor="formuleElearningHeures" className="text-xs text-muted-foreground">Heures</Label>
+                <Input id="formuleElearningHeures" placeholder="ex. Accès illimité, à votre rythme" {...register("formuleElearningHeures")} />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="formuleElearningPrix" className="text-xs text-muted-foreground">Prix</Label>
+                <Input id="formuleElearningPrix" placeholder="ex. 590 € ou Sur devis" {...register("formuleElearningPrix")} />
+              </div>
             </div>
           </div>
         </CardContent>

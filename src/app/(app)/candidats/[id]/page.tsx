@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Pencil, History, CalendarDays, FileDown, Trash2, Target, MessageSquare, Calculator } from "lucide-react";
+import { ArrowLeft, Pencil, History, CalendarDays, FileDown, Trash2, Target, MessageSquare, Calculator, ClipboardCheck } from "lucide-react";
 import { auth } from "@/auth";
 import { canAccessSection, roleAllowedInSection } from "@/lib/permissions";
 import { getTenantDb } from "@/lib/tenant";
@@ -31,6 +31,11 @@ import { CrmPanel } from "@/components/crm/crm-panel";
 import { AddInteractionForm } from "@/components/crm/add-interaction-form";
 import { CandidatMessagerie } from "@/components/candidats/candidat-messagerie";
 import { Send } from "lucide-react";
+
+// Les actions serveur de cette page génèrent des PDF via puppeteer/Chromium
+// (fiche d'expression du besoin, relance du parcours). Le démarrage du
+// navigateur dépasse la durée par défaut → on aligne sur les autres routes PDF.
+export const maxDuration = 60;
 
 function Field({ label, value }: { label: string; value?: string | null }) {
   return (
@@ -170,6 +175,18 @@ export default async function CandidatDetailPage({
                 sent={!!candidat.prospectFormSentAt}
               />
             )}
+            <Button
+              variant="outline"
+              render={
+                <a
+                  href={`/api/candidats/${candidat.id}/expression-besoin`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                />
+              }
+            >
+              <ClipboardCheck className="mr-2 h-4 w-4" /> Fiche d&apos;expression du besoin
+            </Button>
             <Button
               variant="outline"
               render={<Link href={`/candidats/${candidat.id}/modifier`} />}
