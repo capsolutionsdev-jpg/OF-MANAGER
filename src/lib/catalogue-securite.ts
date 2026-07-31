@@ -272,6 +272,51 @@ export const CATALOGUE_SECURITE: ModeleFormation[] = [
     programmeAValider: true,
   },
 
+  // Recyclages / remises à niveau SSIAP 2 et 3 : mêmes finalités qu'au niveau 1
+  // (maintien de la qualification), avec les durées propres à chaque niveau.
+  ...([
+    { n: 2 as const, type: "recyclage" as const, h: 14, ref: "SSIAP2-REC" },
+    { n: 2 as const, type: "ran" as const, h: 21, ref: "SSIAP2-RAN" },
+    { n: 3 as const, type: "recyclage" as const, h: 21, ref: "SSIAP3-REC" },
+    { n: 3 as const, type: "ran" as const, h: 35, ref: "SSIAP3-RAN" },
+  ].map(({ n, type, h, ref }): ModeleFormation => {
+    const libelle = type === "recyclage" ? "Recyclage" : "Remise à niveau";
+    const libelleMin = type === "recyclage" ? "recyclage" : "remise à niveau";
+    return {
+      cle: `ssiap${n}-${type}`,
+      reference: ref,
+      titre: `SSIAP ${n} — ${libelle}`,
+      alias: [`SSIAP ${n} ${libelleMin}`, `SSIAP${n} ${libelleMin}`],
+      dureeHeures: h,
+      duree: `${h} h`,
+      examen: false,
+      soumisJury: false,
+      certification: `SSIAP ${n} — ${libelleMin} (${REF_ARRETE})`,
+      objectifs: `Permettre au stagiaire de conserver sa qualification SSIAP ${n}.`,
+      prerequis:
+        `Être titulaire du diplôme SSIAP ${n} (ou équivalent reconnu). Qualification de secourisme ` +
+        `en cours de validité.` +
+        (type === "ran"
+          ? " Certificat médical de moins de trois mois pour le personnel n'exerçant pas une fonction dans un service de sécurité incendie."
+          : ""),
+      programme: [
+        "1. Prévention — évolution de la réglementation",
+        "2. Moyens de secours — évolution de la réglementation",
+        "3. Mises en situation d'intervention",
+        ...(type === "ran"
+          ? ["4. Exploitation du PC de sécurité", "5. Rondes de sécurité et surveillance des travaux"]
+          : []),
+        "",
+        "(Déroulé horaire détaillé à compléter par l'organisme selon son référentiel interne.)",
+      ].join("\n"),
+      modalitesEvaluation: `Mises en situation d'intervention. Délivrance d'une attestation de ${libelleMin} SSIAP ${n}.`,
+      publicVise: publicSsiap(n),
+      methodesPedagogiques: METHODES_SSIAP,
+      piecesAttendues: PIECES_SSIAP_DIPLOME,
+      programmeAValider: true,
+    };
+  })),
+
   // ───────────────────────── SST / MAC SST (INRS) ─────────────────────────
   {
     cle: "sst",
