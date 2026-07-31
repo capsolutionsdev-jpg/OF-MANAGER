@@ -75,6 +75,26 @@ export default async function SessionDetailPage({
       },
     },
   });
+
+  // Pièces justificatives déposées par les candidats de la session (dépôt via le
+  // parcours, e-mail, ou scan à l'accueil) — regroupées par candidat pour la
+  // carte « Documents de la session ».
+  const piecesParCandidat = new Map<string, { id: string; label: string; url: string; statut: string }[]>();
+  if (s) {
+    const candidatIds = s.inscriptions.map((i) => i.candidatId);
+    if (candidatIds.length > 0) {
+      const pieces = await db.pieceJointe.findMany({
+        where: { candidatId: { in: candidatIds } },
+        orderBy: { createdAt: "desc" },
+        select: { id: true, candidatId: true, label: true, url: true, statut: true },
+      });
+      for (const p of pieces) {
+        const liste = piecesParCandidat.get(p.candidatId) ?? [];
+        liste.push({ id: p.id, label: p.label, url: p.url, statut: p.statut });
+        piecesParCandidat.set(p.candidatId, liste);
+      }
+    }
+  }
   if (!s) notFound();
 
   const enrolledIds = s.inscriptions.map((i) => i.candidatId);
@@ -425,6 +445,36 @@ export default async function SessionDetailPage({
                         sent={!!i.satisfactionSentAt}
                       />
                     </span>
+
+                    {/* Pièces justificatives déposées par le candidat (parcours,
+                        e-mail ou scan à l'accueil) — consultables ici. */}
+                    {(() => {
+                      const pieces = piecesParCandidat.get(i.candidatId) ?? [];
+                      if (pieces.length === 0) return null;
+                      return (
+                        <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs sm:basis-full">
+                          <span className="text-muted-foreground">
+                            Pièces déposées ({pieces.length}) :
+                          </span>
+                          {pieces.map((p) => (
+                            <a
+                              key={p.id}
+                              href={p.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={
+                                p.statut === "REFUSEE"
+                                  ? "text-destructive line-through hover:underline"
+                                  : "text-primary hover:underline"
+                              }
+                              title={p.statut === "VALIDEE" ? "Validée" : p.statut === "REFUSEE" ? "Refusée" : "En attente de validation"}
+                            >
+                              {p.label}
+                            </a>
+                          ))}
+                        </span>
+                      );
+                    })()}
                   </li>
                 ))}
               </ul>
