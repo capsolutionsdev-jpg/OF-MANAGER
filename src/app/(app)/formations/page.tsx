@@ -3,6 +3,7 @@ import { Plus, BookOpen } from "lucide-react";
 import { getTenantDb } from "@/lib/tenant";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
+import { ImportCatalogueButton } from "@/components/formations/import-catalogue-button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -54,6 +55,7 @@ export default async function FormationsPage() {
         title="Formations"
         subtitle={`Catalogue — ${formations.length} formation${formations.length > 1 ? "s" : ""} active${formations.length > 1 ? "s" : ""}, classée${formations.length > 1 ? "s" : ""} par académie`}
       >
+        <ImportCatalogueButton />
         <Button render={<Link href="/formations/nouvelle" />}>
           <Plus className="mr-2 h-4 w-4" />
           Nouvelle formation
