@@ -31,7 +31,7 @@ import { InscriptionQuickActions } from "@/components/inscriptions/inscription-q
 import { SessionGardeFou } from "@/components/sessions/session-garde-fou";
 import { SessionClotureBar } from "@/components/sessions/session-cloture-bar";
 import { InscriptionActionsMenu } from "@/components/inscriptions/inscription-actions-menu";
-import { ssiapDiplomeNiveau } from "@/lib/documents/titres";
+import { ssiapDiplomeNiveau, attestationCodeForFormation, getTitreDef } from "@/lib/documents/titres";
 import { PaiementEditor } from "@/components/inscriptions/paiement-editor";
 import { CertificationSelect } from "@/components/inscriptions/certification-select";
 import { SendSatisfactionButton } from "@/components/sessions/send-satisfaction-button";
@@ -110,6 +110,9 @@ export default async function SessionDetailPage({
   // Diplôme SSIAP délivrable pour cette session (null hors SSIAP initial) →
   // conditionne l'affichage du bouton « Générer le diplôme ».
   const diplomeSsiapNiv = ssiapDiplomeNiveau(s.formation);
+  // Attestation délivrable (recyclage/RAN SSIAP, VTC, Taxi, H0B0, BS-BE) → bouton.
+  const attCode = attestationCodeForFormation(s.formation);
+  const attestationForDocs = attCode ? { code: attCode, label: getTitreDef(attCode)!.label } : null;
 
   // ── Garde-fou : ce qu'il reste à compléter pour la session ──
   const pa = s.formation.piecesAttendues;
@@ -625,6 +628,7 @@ export default async function SessionDetailPage({
                           candidatId={i.candidatId}
                           statut={i.statut}
                           diplomeSsiapNiveau={diplomeSsiapNiv}
+                          attestation={attestationForDocs}
                         />
                       </div>
                     </TableCell>

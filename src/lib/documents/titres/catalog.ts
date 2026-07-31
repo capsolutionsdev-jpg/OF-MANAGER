@@ -306,6 +306,30 @@ export function getTitreDef(code: string): TitreTypeDef | undefined {
  * remise à niveau, SST, VTC…). Sert à n'afficher le bouton « Générer le diplôme »
  * que sur les sessions concernées (et à filtrer les documents par famille).
  */
+/**
+ * Déduit le code du type d'ATTESTATION délivrable pour une formation (recyclage
+ * / RAN SSIAP, VTC, Taxi, H0B0, BS-BE) — ou `null` si la formation ne délivre pas
+ * d'attestation vérifiable (ex. SSIAP initial → diplôme, SST…). Sert à afficher
+ * le bon bouton « Générer l'attestation » sur la session.
+ */
+export function attestationCodeForFormation(f: {
+  reference?: string | null;
+  titre?: string | null;
+}): TitreTypeCode | null {
+  const S = `${f.reference ?? ""} ${f.titre ?? ""}`.toUpperCase();
+  const ssiapN = S.match(/SSIAP\s*-?\s*([123])/)?.[1];
+  if (ssiapN) {
+    if (/RAN|REMISE/.test(S)) return `SSIAP${ssiapN}_RAN` as TitreTypeCode;
+    if (/REC|RECYC/.test(S)) return `SSIAP${ssiapN}_RECYCLAGE` as TitreTypeCode;
+    return null; // SSIAP initial → diplôme, pas attestation
+  }
+  if (/\bVTC\b/.test(S)) return "FC_VTC";
+  if (/\bTAXI\b/.test(S)) return "FC_TAXI";
+  if (/BS\s*\/?\s*BE|BS-?BE/.test(S)) return "HABIL_BSBE";
+  if (/H0\s*-?\s*B0|H0B0/.test(S)) return "HABIL_H0B0";
+  return null;
+}
+
 export function ssiapDiplomeNiveau(f: {
   reference?: string | null;
   titre?: string | null;
