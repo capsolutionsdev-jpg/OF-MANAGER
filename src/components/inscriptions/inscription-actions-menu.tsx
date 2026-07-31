@@ -11,6 +11,7 @@ import {
   Trash2,
   FileText,
   Send,
+  Award,
 } from "lucide-react";
 import { InscriptionStatut } from "@prisma/client";
 import { Button } from "@/components/ui/button";
@@ -27,20 +28,38 @@ import {
   deleteInscriptionAction,
 } from "@/lib/actions/inscription-actions";
 import { relanceParcours } from "@/lib/actions/parcours-actions";
+import { genererDiplomeSsiap } from "@/lib/actions/titre-actions";
 
 export function InscriptionActionsMenu({
   inscriptionId,
   sessionId,
   candidatId,
   statut,
+  diplomeSsiapNiveau,
 }: {
   inscriptionId: string;
   sessionId: string;
   candidatId: string;
   statut: InscriptionStatut;
+  /** Niveau du diplôme SSIAP délivrable (1/2/3) pour cette session, sinon null. */
+  diplomeSsiapNiveau?: 1 | 2 | 3 | null;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+
+  function genererDiplome() {
+    if (!diplomeSsiapNiveau) return;
+    startTransition(async () => {
+      const res = await genererDiplomeSsiap(inscriptionId, diplomeSsiapNiveau);
+      if (!res.ok) {
+        toast.error(res.error ?? "Génération impossible.");
+        return;
+      }
+      toast.success(`Diplôme généré — n° ${res.numero}`);
+      window.open(`/diplomes/${res.diplomeId}/officiel`, "_blank");
+      router.refresh();
+    });
+  }
 
   function changeStatut(next: InscriptionStatut, label: string) {
     startTransition(async () => {
@@ -147,6 +166,12 @@ export function InscriptionActionsMenu({
           <FileText className="mr-2 h-4 w-4" />
           Dossier (PDF)
         </DropdownMenuItem>
+        {diplomeSsiapNiveau && (
+          <DropdownMenuItem onClick={genererDiplome}>
+            <Award className="mr-2 h-4 w-4 text-amber-600" />
+            Générer le diplôme SSIAP {diplomeSsiapNiveau}
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={retirer} variant="destructive">
           <Trash2 className="mr-2 h-4 w-4" />

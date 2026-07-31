@@ -31,6 +31,7 @@ import { InscriptionQuickActions } from "@/components/inscriptions/inscription-q
 import { SessionGardeFou } from "@/components/sessions/session-garde-fou";
 import { SessionClotureBar } from "@/components/sessions/session-cloture-bar";
 import { InscriptionActionsMenu } from "@/components/inscriptions/inscription-actions-menu";
+import { ssiapDiplomeNiveau } from "@/lib/documents/titres";
 import { PaiementEditor } from "@/components/inscriptions/paiement-editor";
 import { CertificationSelect } from "@/components/inscriptions/certification-select";
 import { SendSatisfactionButton } from "@/components/sessions/send-satisfaction-button";
@@ -105,6 +106,10 @@ export default async function SessionDetailPage({
   });
 
   const fmt = (d: Date) => d.toLocaleDateString("fr-FR");
+
+  // Diplôme SSIAP délivrable pour cette session (null hors SSIAP initial) →
+  // conditionne l'affichage du bouton « Générer le diplôme ».
+  const diplomeSsiapNiv = ssiapDiplomeNiveau(s.formation);
 
   // ── Garde-fou : ce qu'il reste à compléter pour la session ──
   const pa = s.formation.piecesAttendues;
@@ -618,6 +623,7 @@ export default async function SessionDetailPage({
                           sessionId={s.id}
                           candidatId={i.candidatId}
                           statut={i.statut}
+                          diplomeSsiapNiveau={diplomeSsiapNiv}
                         />
                       </div>
                     </TableCell>
