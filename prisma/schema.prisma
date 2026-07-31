@@ -838,6 +838,11 @@ model Inscription {
   positionnementJson        Json? // réponses du candidat
   positionnementCompletedAt DateTime?
   positionnementSignature   String?   @db.Text // signature manuscrite (PNG data URL)
+  francaisToken       String?   @unique // lien test de français (J1)
+  francaisSentAt      DateTime?
+  francaisJson        Json? // réponses au test de français
+  francaisCompletedAt DateTime?
+  francaisSignature   String?   @db.Text // signature manuscrite (PNG data URL)
   satisfactionEntrepriseToken       String?   @unique // lien enquête satisfaction côté entreprise (B2B)
   satisfactionEntrepriseSentAt      DateTime?
   satisfactionEntrepriseJson        Json? // réponses de l'entreprise (+ __signature)

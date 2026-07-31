@@ -342,6 +342,33 @@ export async function submitPositionnement(
   return { ok: true };
 }
 
+/** Soumission publique du test de français (via le token dédié). */
+export async function submitFrancais(
+  token: string,
+  reponses: Record<string, string | string[]>,
+  signatureDataUrl?: string,
+): Promise<{ ok: boolean; error?: string }> {
+  if (!signatureDataUrl || !signatureDataUrl.startsWith("data:image/"))
+    return { ok: false, error: "Merci de dessiner votre signature." };
+
+  const insc = await prisma.inscription.findUnique({
+    where: { francaisToken: token },
+    select: { id: true, francaisCompletedAt: true },
+  });
+  if (!insc) return { ok: false, error: "Lien invalide ou expiré." };
+  if (insc.francaisCompletedAt) return { ok: true }; // déjà répondu
+
+  await prisma.inscription.update({
+    where: { id: insc.id },
+    data: {
+      francaisJson: reponses,
+      francaisSignature: signatureDataUrl,
+      francaisCompletedAt: new Date(),
+    },
+  });
+  return { ok: true };
+}
+
 /**
  * Dépôt public d'une réclamation (lien joint à l'e-mail de satisfaction).
  * Alimente directement le registre des réclamations (indicateurs 31-32).
