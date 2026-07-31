@@ -12,6 +12,7 @@ import {
   FileText,
   Send,
   Award,
+  ShieldCheck,
 } from "lucide-react";
 import { InscriptionStatut } from "@prisma/client";
 import { Button } from "@/components/ui/button";
@@ -28,7 +29,7 @@ import {
   deleteInscriptionAction,
 } from "@/lib/actions/inscription-actions";
 import { relanceParcours } from "@/lib/actions/parcours-actions";
-import { genererDiplomeSsiap } from "@/lib/actions/titre-actions";
+import { genererDiplomeSsiap, genererAttestation } from "@/lib/actions/titre-actions";
 
 export function InscriptionActionsMenu({
   inscriptionId,
@@ -36,6 +37,7 @@ export function InscriptionActionsMenu({
   candidatId,
   statut,
   diplomeSsiapNiveau,
+  attestation,
 }: {
   inscriptionId: string;
   sessionId: string;
@@ -43,9 +45,25 @@ export function InscriptionActionsMenu({
   statut: InscriptionStatut;
   /** Niveau du diplôme SSIAP délivrable (1/2/3) pour cette session, sinon null. */
   diplomeSsiapNiveau?: 1 | 2 | 3 | null;
+  /** Attestation délivrable pour cette session (recyclage/RAN/VTC/H0B0…), sinon null. */
+  attestation?: { code: string; label: string } | null;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+
+  function genererAttestationDoc() {
+    if (!attestation) return;
+    startTransition(async () => {
+      const res = await genererAttestation(inscriptionId, attestation.code);
+      if (!res.ok) {
+        toast.error(res.error ?? "Génération impossible.");
+        return;
+      }
+      toast.success(`Attestation générée — n° ${res.numero}`);
+      window.open(`/titres/${res.titreId}`, "_blank");
+      router.refresh();
+    });
+  }
 
   function genererDiplome() {
     if (!diplomeSsiapNiveau) return;
@@ -170,6 +188,12 @@ export function InscriptionActionsMenu({
           <DropdownMenuItem onClick={genererDiplome}>
             <Award className="mr-2 h-4 w-4 text-amber-600" />
             Générer le diplôme SSIAP {diplomeSsiapNiveau}
+          </DropdownMenuItem>
+        )}
+        {attestation && (
+          <DropdownMenuItem onClick={genererAttestationDoc}>
+            <ShieldCheck className="mr-2 h-4 w-4 text-emerald-600" />
+            Générer l&apos;attestation ({attestation.label})
           </DropdownMenuItem>
         )}
         <DropdownMenuSeparator />

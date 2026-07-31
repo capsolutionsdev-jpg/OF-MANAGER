@@ -5,7 +5,55 @@ import { auth } from "@/auth";
 import { getTenantDb } from "@/lib/tenant";
 import { hasStrictFeature } from "@/lib/feature-guard";
 import { orgConfigFor } from "@/lib/org-identity";
-import { getTitreDef, genNumeroTitre, type SsiapConfig } from "@/lib/documents/titres";
+import { getTitreDef, genNumeroTitre, type SsiapConfig, type TitreTypeDef } from "@/lib/documents/titres";
+import { genSel, hashDob } from "@/lib/anti-fraude/hash";
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Db = any;
+
+/**
+ * Indexe un titre dans le registre vérifiable (TitreDelivre) : hash salé de la
+ * date de naissance (jamais en clair), numéro, statut, organisme signataire.
+ * Best-effort pour les diplômes (nécessite la date de naissance).
+ */
+async function indexerTitre(
+  db: Db,
+  organismeId: string,
+  p: {
+    def: TitreTypeDef;
+    numero: string;
+    nom: string;
+    prenom: string;
+    dateNaissance: Date | null;
+    organismeSignataire: string;
+    dateDelivrance: Date;
+    dateFinValidite?: Date | null;
+    inscriptionId?: string | null;
+    sessionId?: string | null;
+    formationId?: string | null;
+  },
+): Promise<{ ok: boolean }> {
+  if (!p.dateNaissance) return { ok: false }; // pas de date → non vérifiable
+  const sel = genSel();
+  await db.titreDelivre.create({
+    data: {
+      organismeId,
+      typeCode: p.def.code,
+      numeroVerification: p.numero,
+      hashDateNaissance: hashDob(p.dateNaissance, sel),
+      selUnique: sel,
+      nomTitulaire: p.nom,
+      prenomTitulaire: p.prenom,
+      dateDelivrance: p.dateDelivrance,
+      dateFinValidite: p.dateFinValidite ?? null,
+      organismeSignataire: p.organismeSignataire,
+      inscriptionId: p.inscriptionId ?? null,
+      sessionId: p.sessionId ?? null,
+      formationId: p.formationId ?? null,
+    },
+  });
+  return { ok: true };
+}
 
 /**
  * Génération des TITRES officiels CAP Compétences (diplômes SSIAP).
@@ -89,7 +137,81 @@ export async function genererDiplomeSsiap(
     },
   });
 
+  // Index vérifiable (anti-fraude) — le diplôme SSIAP n'expire pas (dateFin null).
+  await indexerTitre(db, organismeId, {
+    def,
+    numero,
+    nom: c.nom,
+    prenom: c.prenom,
+    dateNaissance: c.dateNaissance,
+    organismeSignataire: org.name,
+    dateDelivrance: new Date(),
+    dateFinValidite: null,
+    inscriptionId: insc.id,
+    sessionId: insc.session.id,
+    formationId: insc.session.formationId,
+  });
+
   revalidatePath(`/sessions/${insc.session.id}`);
   revalidatePath("/diplomes");
   return { ok: true, diplomeId: d.id, numero };
+}
+
+/**
+ * Génère une ATTESTATION (recyclage / remise à niveau SSIAP, formation continue
+ * VTC/Taxi, habilitation H0B0 / BS-BE) pour un inscrit : réserve le numéro
+ * `PRÉFIXE-ANNÉE-SEQ-CLÉ` (avec clé de Luhn) et l'indexe dans le registre
+ * vérifiable (hash salé de la date de naissance). Idempotent par (inscription, type).
+ */
+export async function genererAttestation(
+  inscriptionId: string,
+  code: string,
+): Promise<{ ok: true; titreId: string; numero: string } | { ok: false; error: string }> {
+  const { organismeId } = await guard();
+  const db = await getTenantDb();
+
+  const def = getTitreDef(code);
+  if (!def || def.kind !== "attestation") return { ok: false, error: "Type d'attestation inconnu." };
+
+  const insc = await db.inscription.findFirst({
+    where: { id: inscriptionId },
+    include: { candidat: true, session: { select: { id: true, formationId: true } } },
+  });
+  if (!insc) return { ok: false, error: "Inscription introuvable." };
+  if (!insc.candidat.dateNaissance)
+    return { ok: false, error: "Date de naissance du candidat requise pour la vérification." };
+
+  // Idempotence : une attestation de ce type existe déjà pour cet inscrit.
+  const existing = await db.titreDelivre.findFirst({
+    where: { inscriptionId: insc.id, typeCode: def.code },
+    select: { id: true, numeroVerification: true },
+  });
+  if (existing) return { ok: true, titreId: existing.id, numero: existing.numeroVerification };
+
+  const numero = await genNumeroTitre(organismeId, def, { niveau: def.niveau });
+  const org = await orgConfigFor(organismeId);
+
+  const c = insc.candidat;
+  const dob = c.dateNaissance!; // garanti non-null par le contrôle ci-dessus
+  const sel = genSel();
+  const t = await db.titreDelivre.create({
+    data: {
+      organismeId,
+      typeCode: def.code,
+      numeroVerification: numero,
+      hashDateNaissance: hashDob(dob, sel),
+      selUnique: sel,
+      nomTitulaire: c.nom,
+      prenomTitulaire: c.prenom,
+      dateDelivrance: new Date(),
+      dateFinValidite: null, // durées réglementaires paramétrables (à renseigner)
+      organismeSignataire: org.name,
+      inscriptionId: insc.id,
+      sessionId: insc.session.id,
+      formationId: insc.session.formationId,
+    },
+  });
+
+  revalidatePath(`/sessions/${insc.session.id}`);
+  return { ok: true, titreId: t.id, numero };
 }

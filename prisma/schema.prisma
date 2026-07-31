@@ -2184,6 +2184,51 @@ model Diplome {
 }
 
 // =============================================================
+//  MODULE ANTI-FRAUDE — index vérifiable des titres délivrés
+// =============================================================
+
+/// Statut de validité d'un titre (exposé par la vérification publique).
+enum TitreStatut {
+  VALIDE
+  EXPIRE
+  REVOQUE
+  ANNULE
+  ARCHIVE
+}
+
+/// Titre délivré, indexé pour la vérification publique en ligne
+/// (numéro + date de naissance). La date de naissance n'est JAMAIS stockée en
+/// clair : seul son hash salé (SHA-256(dob + selUnique)) est conservé, pour
+/// comparaison. Aucune liste n'est consultable : accès uniquement par numéro.
+model TitreDelivre {
+  id                 String      @id @default(cuid())
+  organismeId        String // tenant
+  typeCode           String // code du catalogue titres (SSIAP1_DIPLOME, HABIL_H0B0, FC_VTC…)
+  numeroVerification String // numéro affiché sur le document
+  hashDateNaissance  String // SHA-256(dateNaissance_yyyy-mm-dd + selUnique)
+  selUnique          String // sel aléatoire par enregistrement
+  nomTitulaire       String
+  prenomTitulaire    String
+  dateDelivrance     DateTime
+  dateFinValidite    DateTime? // null si le type n'expire pas (diplômes SSIAP)
+  statut             TitreStatut @default(VALIDE)
+  organismeSignataire String
+  hashPdf            String? // empreinte SHA-256 du PDF délivré (intégrité, optionnel)
+  // Rattachements internes (traçabilité ; jamais exposés publiquement)
+  inscriptionId String?
+  sessionId     String?
+  formationId   String?
+  createdById   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([organismeId, numeroVerification])
+  @@index([organismeId])
+  @@index([sessionId])
+  @@index([inscriptionId])
+}
+
+// =============================================================
 //  MODULE JURY — annuaire, affectation par session, défraiement
 // =============================================================
 
