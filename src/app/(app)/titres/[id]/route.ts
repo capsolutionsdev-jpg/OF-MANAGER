@@ -1,5 +1,6 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import QRCode from "qrcode";
 import { auth } from "@/auth";
 import { getTenantDb } from "@/lib/tenant";
 import { orgConfigFor } from "@/lib/org-identity";
@@ -68,6 +69,14 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     dateFin: insc?.session.dateFin ?? null,
   };
 
+  // QR de vérification (attestations) : encode l'URL publique + le numéro.
+  let qrDataUri: string | null = null;
+  if (def.kind === "attestation") {
+    const base = process.env.VITRINE_BASE_URL || "https://capacademy.fr";
+    const url = `${base}/verification?n=${encodeURIComponent(titre.numeroVerification)}`;
+    qrDataUri = await QRCode.toDataURL(url, { margin: 1, width: 260 });
+  }
+
   const html = renderTitreHtml(
     def,
     data,
@@ -79,7 +88,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       siret: org.siret,
       nda: org.nda,
     },
-    { logoUri, signatureUri: org.signatureUrl, verifUrl: "capacademy.fr/verification" },
+    { logoUri, signatureUri: org.signatureUrl, verifUrl: "capacademy.fr/verification", qrDataUri },
   );
 
   const pdf = await htmlToPdf(html, { landscape: true });

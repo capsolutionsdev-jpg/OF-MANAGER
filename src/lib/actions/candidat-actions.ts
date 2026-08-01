@@ -49,6 +49,33 @@ function toData(v: CandidatFormValues) {
   };
 }
 
+/**
+ * Renseigne le diplôme SSIAP DÉTENU par un candidat (n° + date, niveau optionnel)
+ * — retranscrit sur les attestations de recyclage / remise à niveau générées.
+ * Action ciblée utilisable depuis la fiche session et le formulaire d'inscription.
+ */
+export async function setCandidatSsiap(
+  candidatId: string,
+  input: { numero?: string; date?: string; niveau?: string },
+): Promise<ActionResult> {
+  const session = await auth();
+  if (!session?.user) return { ok: false, error: "Non autorisé." };
+  const db = await getTenantDb();
+  const data: {
+    ssiapDiplomeNumero: string | null;
+    ssiapDiplomeDate: Date | null;
+    ssiapNiveau?: number;
+  } = {
+    ssiapDiplomeNumero: clean(input.numero),
+    ssiapDiplomeDate: input.date ? new Date(input.date) : null,
+  };
+  if (input.niveau && /^[123]$/.test(input.niveau.trim())) data.ssiapNiveau = Number(input.niveau.trim());
+  const r = await db.candidat.updateMany({ where: { id: candidatId }, data });
+  if (r.count === 0) return { ok: false, error: "Candidat introuvable." };
+  revalidatePath("/candidats");
+  return { ok: true, id: candidatId };
+}
+
 export async function createCandidat(
   values: CandidatFormValues,
 ): Promise<ActionResult> {

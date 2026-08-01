@@ -15,6 +15,8 @@ import {
   type InscriptionFormValues,
 } from "@/lib/validators/inscription";
 import { startParcours } from "@/lib/actions/parcours-actions";
+import { genererDiplomeSsiap } from "@/lib/actions/titre-actions";
+import { ssiapDiplomeNiveau } from "@/lib/documents/titres";
 import { sendEmail, toBase64 } from "@/lib/email";
 import { orgConfigFor } from "@/lib/org-identity";
 import { generateToken, appBaseUrl } from "@/lib/token";
@@ -139,7 +141,7 @@ export async function setCertification(
       session: {
         select: {
           formationId: true,
-          formation: { select: { titre: true, diplomante: true } },
+          formation: { select: { titre: true, reference: true, diplomante: true } },
         },
       },
     },
@@ -154,13 +156,17 @@ export async function setCertification(
     },
   });
 
-  // Certifié + formation diplômante + module actif → on GÉNÈRE automatiquement le
-  // diplôme (coordonnées récupérées de l'inscrit) ; seul le n° reste à saisir.
-  // Idempotent (un diplôme par inscription). Best-effort : ne bloque pas la
-  // certification si le module est absent.
-  if (resultat === "CERTIFIE" && insc.session.formation.diplomante) {
+  // Certifié → génération AUTOMATIQUE du diplôme (best-effort, idempotent) :
+  //  • Formation SSIAP initiale → diplôme NUMÉROTÉ (n° préfectoral DEPT-AGR-NIV-
+  //    AAAA-SEQ) + indexé dans le registre vérifiable anti-fraude.
+  //  • Autre formation diplômante → enregistrement diplôme (le n° reste à saisir).
+  if (resultat === "CERTIFIE") {
+    const f = insc.session.formation;
+    const ssiapNiv = ssiapDiplomeNiveau({ reference: f.reference, titre: f.titre });
     try {
-      if (await hasStrictFeature("diplomes")) {
+      if (ssiapNiv) {
+        await genererDiplomeSsiap(inscriptionId, ssiapNiv);
+      } else if (f.diplomante && (await hasStrictFeature("diplomes"))) {
         const existe = await db.diplome.findFirst({ where: { inscriptionId } });
         if (!existe) {
           await db.diplome.create({

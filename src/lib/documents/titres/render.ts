@@ -25,6 +25,8 @@ export type TitreAssets = {
   signatureUri?: string | null;
   /** URL publique de la page de vérification (attestations). */
   verifUrl?: string;
+  /** QR code réel (data-URI) encodant l'URL de vérification. À défaut : aperçu. */
+  qrDataUri?: string | null;
 };
 
 /* ------------------------------------------------------------------ */
@@ -181,8 +183,11 @@ export function renderTitreHtml(
     </div></div>`;
   } else {
     const verifUrl = assets.verifUrl || "capacademy.fr/verification";
+    const qrHtml = assets.qrDataUri
+      ? `<img src="${assets.qrDataUri}" alt="QR de vérification" style="width:100%;height:100%;object-fit:contain" />`
+      : qrPreview(seedFrom(data.numero));
     foot = `<div class="foot att">
-      <div class="verif"><div class="qr">${qrPreview(seedFrom(data.numero))}</div><div class="txt"><b>Document authentifiable.</b> Scannez le QR ou rendez-vous sur <span class="link">${esc(
+      <div class="verif"><div class="qr">${qrHtml}</div><div class="txt"><b>Document authentifiable.</b> Scannez le QR ou rendez-vous sur <span class="link">${esc(
         verifUrl,
       )}</span>, puis saisissez le n° ci-dessus <b>et la date de naissance</b> du titulaire.<br><span style="color:#8a8578">Aucune liste de titulaires n'est consultable.</span></div></div>
       <div class="sigwrap"><div class="seal">${sceau}</div><div><div class="place">${place}</div><div class="sig"><div class="role">${esc(

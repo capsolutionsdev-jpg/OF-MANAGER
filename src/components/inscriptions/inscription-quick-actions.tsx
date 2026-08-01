@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
-  Send, FileText, CheckCircle2, MailCheck, Loader2, Eye, ChevronRight,
+  Send, FileText, CheckCircle2, MailCheck, Loader2, Eye, ChevronRight, Award,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,10 +14,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DOCUMENT_MENU } from "@/lib/documents/templates";
 import { filterDocMenu, type FormationLike } from "@/lib/documents/families";
+import { attestationCodeForFormation } from "@/lib/documents/titres";
 import { MANUAL_EVENTS, type ManualEvent } from "@/lib/manual-events";
 import { sendDocumentsToCandidate } from "@/lib/actions/document-actions";
 import { sendAutomationEventNow } from "@/lib/actions/manual-send-actions";
 import { DocsSignesChecklist } from "@/components/inscriptions/docs-signes-checklist";
+import { SsiapDiplomeInline } from "@/components/inscriptions/ssiap-diplome-inline";
 
 /**
  * Bouton « Actions » qui ouvre un panneau latéral (petite page) : voir & envoyer
@@ -29,13 +31,22 @@ export function InscriptionQuickActions({
   sessionId,
   docsSignes,
   formation,
+  candidatId,
+  ssiap,
 }: {
   inscriptionId: string;
   sessionId?: string;
   docsSignes?: Record<string, { nom: string; date: string }>;
   /** Formation de la session : filtre les documents non pertinents (SSIAP…). */
   formation?: FormationLike;
+  candidatId?: string;
+  /** Diplôme SSIAP détenu par le candidat (pour l'attestation de recyclage / RAN). */
+  ssiap?: { numero?: string | null; date?: string | null; niveau?: number | null };
 }) {
+  // Session de recyclage / remise à niveau SSIAP → champ « n° diplôme détenu ».
+  const attCode = formation ? attestationCodeForFormation(formation) : null;
+  const showSsiap =
+    !!candidatId && !!attCode && (attCode.endsWith("_RECYCLAGE") || attCode.endsWith("_RAN"));
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
@@ -85,6 +96,26 @@ export function InscriptionQuickActions({
         </SheetHeader>
 
         <div className="space-y-6 px-4 pb-8">
+          {/* ── Diplôme SSIAP détenu (recyclage / remise à niveau) ── */}
+          {showSsiap && (
+            <section>
+              <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold">
+                <Award className="h-4 w-4 text-amber-600" /> Diplôme SSIAP détenu
+              </h3>
+              <div className="rounded-lg border p-3">
+                <p className="mb-2 text-xs text-muted-foreground">
+                  Reporté sur l&apos;attestation de recyclage / remise à niveau générée.
+                </p>
+                <SsiapDiplomeInline
+                  candidatId={candidatId!}
+                  numero={ssiap?.numero}
+                  date={ssiap?.date}
+                  niveau={ssiap?.niveau}
+                />
+              </div>
+            </section>
+          )}
+
           {/* ── Documents ── */}
           <section>
             <div className="mb-2 flex items-center justify-between">
