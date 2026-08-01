@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { CandidatStatut } from "@prisma/client";
+import { CandidatStatut, CnapsStatut } from "@prisma/client";
 import { getTenantDb } from "@/lib/tenant";
 import { auth } from "@/auth";
 import {
@@ -73,6 +73,46 @@ export async function setCandidatSsiap(
   const r = await db.candidat.updateMany({ where: { id: candidatId }, data });
   if (r.count === 0) return { ok: false, error: "Candidat introuvable." };
   revalidatePath("/candidats");
+  return { ok: true, id: candidatId };
+}
+
+/**
+ * Renseigne les prérequis/spécificités d'un candidat au moment de l'inscription
+ * sur place : diplôme SSIAP détenu, autorisation CNAPS, carte professionnelle.
+ * Ces attributs appartiennent au candidat (réutilisables d'une session à l'autre).
+ */
+export async function setCandidatPrerequis(
+  candidatId: string,
+  input: {
+    ssiapNumero?: string;
+    ssiapDate?: string;
+    ssiapNiveau?: string;
+    cnapsStatut?: string;
+    carteProNumero?: string;
+    carteProValidite?: string;
+  },
+): Promise<ActionResult> {
+  const session = await auth();
+  if (!session?.user) return { ok: false, error: "Non autorisé." };
+  const db = await getTenantDb();
+
+  const data: Record<string, unknown> = {};
+  if (input.ssiapNumero !== undefined) data.ssiapDiplomeNumero = clean(input.ssiapNumero);
+  if (input.ssiapDate !== undefined)
+    data.ssiapDiplomeDate = input.ssiapDate ? new Date(input.ssiapDate) : null;
+  if (input.ssiapNiveau && /^[123]$/.test(input.ssiapNiveau.trim()))
+    data.ssiapNiveau = Number(input.ssiapNiveau.trim());
+  if (input.cnapsStatut && input.cnapsStatut in CnapsStatut)
+    data.cnapsStatut = input.cnapsStatut as CnapsStatut;
+  if (input.carteProNumero !== undefined) data.carteProNumero = clean(input.carteProNumero);
+  if (input.carteProValidite !== undefined)
+    data.carteProValidite = input.carteProValidite ? new Date(input.carteProValidite) : null;
+
+  if (Object.keys(data).length === 0) return { ok: true, id: candidatId };
+  const r = await db.candidat.updateMany({ where: { id: candidatId }, data });
+  if (r.count === 0) return { ok: false, error: "Candidat introuvable." };
+  revalidatePath("/candidats");
+  revalidatePath(`/candidats/${candidatId}`);
   return { ok: true, id: candidatId };
 }
 

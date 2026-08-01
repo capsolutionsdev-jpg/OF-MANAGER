@@ -307,6 +307,7 @@ ${org.representant} — ${org.name}`;
 
 export async function createInscription(
   values: InscriptionFormValues,
+  opts?: { positionnementSurPlace?: boolean; prerequisVerifies?: boolean },
 ): Promise<ActionResult> {
   const db = await getTenantDb();
   const session = await auth();
@@ -349,8 +350,21 @@ export async function createInscription(
         where: { id: v.candidatId },
         data: { statut: "INSCRIT" },
       });
-      // Démarre le parcours automatisé (e-mail + lien de finalisation)
-      await startParcours(created.id);
+      // Démarre le parcours automatisé (e-mail + lien de finalisation), SAUF si
+      // l'inscription est traitée sur place (positionnement/documents en présentiel).
+      if (!opts?.positionnementSurPlace) await startParcours(created.id);
+    }
+
+    // Traçabilité Qualiopi : vérification des prérequis par le collaborateur.
+    if (opts?.prerequisVerifies) {
+      await db.auditLog.create({
+        data: {
+          userId: session.user.id,
+          action: "PREREQUIS_VERIFIES",
+          entityType: "Inscription",
+          entityId: created.id,
+        },
+      });
     }
 
     await db.auditLog.create({
