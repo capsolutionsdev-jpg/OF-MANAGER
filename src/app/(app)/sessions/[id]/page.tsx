@@ -113,6 +113,8 @@ export default async function SessionDetailPage({
   // Attestation délivrable (recyclage/RAN SSIAP, VTC, Taxi, H0B0, BS-BE) → bouton.
   const attCode = attestationCodeForFormation(s.formation);
   const attestationForDocs = attCode ? { code: attCode, label: getTitreDef(attCode)!.label } : null;
+  // Session de recyclage / remise à niveau SSIAP → saisie du n° de diplôme détenu.
+  const isSsiapRecyclage = !!attCode && (attCode.endsWith("_RECYCLAGE") || attCode.endsWith("_RAN"));
 
   // ── Garde-fou : ce qu'il reste à compléter pour la session ──
   const pa = s.formation.piecesAttendues;
@@ -621,6 +623,14 @@ export default async function SessionDetailPage({
                           sessionId={s.id}
                           docsSignes={(i.docsSignes as Record<string, { nom: string; date: string }> | null) ?? undefined}
                           formation={{ reference: s.formation.reference, titre: s.formation.titre }}
+                          candidatId={i.candidatId}
+                          ssiap={{
+                            numero: i.candidat.ssiapDiplomeNumero,
+                            date: i.candidat.ssiapDiplomeDate
+                              ? i.candidat.ssiapDiplomeDate.toISOString().slice(0, 10)
+                              : null,
+                            niveau: i.candidat.ssiapNiveau,
+                          }}
                         />
                         <InscriptionActionsMenu
                           inscriptionId={i.id}
@@ -641,7 +651,7 @@ export default async function SessionDetailPage({
 
           <div className="rounded-lg border bg-muted/30 p-4">
             <h3 className="mb-3 text-sm font-semibold">Inscrire un candidat</h3>
-            <EnrollForm sessionId={s.id} candidats={candidatsDisponibles} />
+            <EnrollForm sessionId={s.id} candidats={candidatsDisponibles} showSsiap={isSsiapRecyclage} />
           </div>
         </CardContent>
       </Card>

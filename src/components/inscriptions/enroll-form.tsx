@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,6 +14,7 @@ import {
 } from "@/lib/validators/inscription";
 import { FINANCEMENT_LABELS } from "@/lib/validators/candidat";
 import { createInscription } from "@/lib/actions/inscription-actions";
+import { setCandidatSsiap } from "@/lib/actions/candidat-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,12 +27,17 @@ type CandidatOption = { id: string; nom: string; prenom: string };
 export function EnrollForm({
   sessionId,
   candidats,
+  showSsiap = false,
 }: {
   sessionId: string;
   candidats: CandidatOption[];
+  /** Session de recyclage / RAN SSIAP → saisir le n° du diplôme détenu. */
+  showSsiap?: boolean;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [ssiapNum, setSsiapNum] = useState("");
+  const [ssiapDate, setSsiapDate] = useState("");
 
   const { register, handleSubmit, reset } = useForm<InscriptionFormValues>({
     resolver: zodResolver(inscriptionFormSchema),
@@ -48,6 +54,10 @@ export function EnrollForm({
     startTransition(async () => {
       const res = await createInscription(values);
       if (res.ok) {
+        // Session recyclage / RAN SSIAP : reporter le n° du diplôme sur le candidat.
+        if (showSsiap && values.candidatId && (ssiapNum.trim() || ssiapDate)) {
+          await setCandidatSsiap(values.candidatId, { numero: ssiapNum, date: ssiapDate });
+        }
         toast.success("Candidat inscrit à la session.");
         reset({
           candidatId: "",
@@ -56,6 +66,8 @@ export function EnrollForm({
           statut: "EN_ATTENTE",
           montant: "",
         });
+        setSsiapNum("");
+        setSsiapDate("");
         router.refresh();
       } else {
         toast.error(res.error);
@@ -118,6 +130,23 @@ export function EnrollForm({
         <Label htmlFor="montant">Montant (€)</Label>
         <Input id="montant" type="number" step="0.01" {...register("montant")} />
       </div>
+      {showSsiap && (
+        <>
+          <div className="grid gap-2 lg:col-span-2">
+            <Label htmlFor="ssiapNum">N° du diplôme SSIAP détenu</Label>
+            <Input
+              id="ssiapNum"
+              value={ssiapNum}
+              onChange={(e) => setSsiapNum(e.target.value)}
+              placeholder="091-9119-1-2018-00246"
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="ssiapDate">Diplôme obtenu le</Label>
+            <Input id="ssiapDate" type="date" value={ssiapDate} onChange={(e) => setSsiapDate(e.target.value)} />
+          </div>
+        </>
+      )}
       <div className="lg:col-span-4">
         <Button type="submit" disabled={isPending}>
           <UserPlus className="mr-2 h-4 w-4" />
