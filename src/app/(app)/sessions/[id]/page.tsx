@@ -32,6 +32,7 @@ import { SessionGardeFou } from "@/components/sessions/session-garde-fou";
 import { SessionClotureBar } from "@/components/sessions/session-cloture-bar";
 import { InscriptionActionsMenu } from "@/components/inscriptions/inscription-actions-menu";
 import { ssiapDiplomeNiveau, attestationCodeForFormation, getTitreDef } from "@/lib/documents/titres";
+import { formationPrereq } from "@/lib/inscription/prerequis";
 import { PaiementEditor } from "@/components/inscriptions/paiement-editor";
 import { CertificationSelect } from "@/components/inscriptions/certification-select";
 import { SendSatisfactionButton } from "@/components/sessions/send-satisfaction-button";
@@ -113,8 +114,8 @@ export default async function SessionDetailPage({
   // Attestation délivrable (recyclage/RAN SSIAP, VTC, Taxi, H0B0, BS-BE) → bouton.
   const attCode = attestationCodeForFormation(s.formation);
   const attestationForDocs = attCode ? { code: attCode, label: getTitreDef(attCode)!.label } : null;
-  // Session de recyclage / remise à niveau SSIAP → saisie du n° de diplôme détenu.
-  const isSsiapRecyclage = !!attCode && (attCode.endsWith("_RECYCLAGE") || attCode.endsWith("_RAN"));
+  // Prérequis & spécificités de la formation (SSIAP, CNAPS, carte pro…) pour l'inscription.
+  const prereq = formationPrereq(s.formation);
 
   // ── Garde-fou : ce qu'il reste à compléter pour la session ──
   const pa = s.formation.piecesAttendues;
@@ -651,7 +652,12 @@ export default async function SessionDetailPage({
 
           <div className="rounded-lg border bg-muted/30 p-4">
             <h3 className="mb-3 text-sm font-semibold">Inscrire un candidat</h3>
-            <EnrollForm sessionId={s.id} candidats={candidatsDisponibles} showSsiap={isSsiapRecyclage} />
+            <EnrollForm
+              sessionId={s.id}
+              candidats={candidatsDisponibles}
+              prereq={prereq}
+              piecesAttendues={s.formation.piecesAttendues}
+            />
           </div>
         </CardContent>
       </Card>
