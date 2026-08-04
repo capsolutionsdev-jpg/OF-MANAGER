@@ -11,8 +11,10 @@ export const candidatFormSchema = z.object({
   email: z.string().trim().email("Email invalide").max(190, "Email trop long"),
   telephone: optionalText,
   dateNaissance: optionalText, // chaîne "AAAA-MM-JJ" issue de l'input date
-  lieuNaissance: optionalText,
+  lieuNaissance: optionalText, // commune de naissance
+  departementNaissance: optionalText,
   paysNaissance: optionalText,
+  nationalite: optionalText,
   adresse: optionalText,
   ville: optionalText,
   codePostal: optionalText,

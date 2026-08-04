@@ -14,8 +14,9 @@ export default async function ModifierCandidatPage({
   const [c, formations, collaborateurs] = await Promise.all([
     db.candidat.findUnique({ where: { id } }),
     db.formation.findMany({
-      where: { isArchived: false },
-      select: { id: true, titre: true },
+      // Uniquement les formations publiées sur le site vitrine.
+      where: { isArchived: false, vitrineStatut: "PUBLIEE" },
+      select: { id: true, titre: true, reference: true },
       orderBy: { titre: "asc" },
     }),
     db.user.findMany({

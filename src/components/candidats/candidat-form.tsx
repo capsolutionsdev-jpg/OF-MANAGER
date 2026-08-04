@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,15 +17,14 @@ import {
   DIPLOME_OPTIONS,
 } from "@/lib/validators/candidat";
 import { createCandidat, updateCandidat } from "@/lib/actions/candidat-actions";
+import { PAYS_NOMS, NATIONALITES } from "@/lib/data/pays";
+import { DEPARTEMENTS } from "@/lib/data/departements";
+import { SITUATIONS_PRO, SITUATION_AUTRE } from "@/lib/data/situations-pro";
+import { formationPrereq } from "@/lib/inscription/prerequis";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const selectClass =
   "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30";
@@ -35,6 +34,8 @@ function ErrorText({ msg }: { msg?: string }) {
   return <p className="text-sm text-destructive">{msg}</p>;
 }
 
+type FormationOption = { id: string; titre: string; reference?: string | null };
+
 export function CandidatForm({
   candidatId,
   defaultValues,
@@ -43,15 +44,27 @@ export function CandidatForm({
 }: {
   candidatId?: string;
   defaultValues?: Partial<CandidatFormValues>;
-  formations?: { id: string; titre: string }[];
+  formations?: FormationOption[];
   collaborateurs?: { id: string; name: string }[];
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
+  // Situation professionnelle : liste + « Autre » (champ libre).
+  const dvSituation = defaultValues?.situationPro ?? "";
+  const initSituation = dvSituation
+    ? SITUATIONS_PRO.includes(dvSituation)
+      ? dvSituation
+      : SITUATION_AUTRE
+    : "";
+  const [situationAutre, setSituationAutre] = useState(
+    dvSituation && !SITUATIONS_PRO.includes(dvSituation) ? dvSituation : "",
+  );
+
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<CandidatFormValues>({
     resolver: zodResolver(candidatFormSchema),
@@ -62,12 +75,13 @@ export function CandidatForm({
       telephone: "",
       dateNaissance: "",
       lieuNaissance: "",
+      departementNaissance: "",
       paysNaissance: "",
+      nationalite: "",
       adresse: "",
       ville: "",
       codePostal: "",
       pays: "France",
-      situationPro: "",
       employeur: "",
       posteOccupe: "",
       dernierDiplome: "",
@@ -85,15 +99,28 @@ export function CandidatForm({
       situationHandicap: false,
       besoinsAdaptation: "",
       ...defaultValues,
+      situationPro: initSituation,
     },
   });
 
+  // Prérequis conditionnels selon la formation souhaitée.
+  const formationId = watch("formationSouhaiteeId");
+  const situationPro = watch("situationPro");
+  const selectedFormation = formations.find((f) => f.id === formationId);
+  const prereq = selectedFormation ? formationPrereq(selectedFormation) : {};
+  const showCnaps = !!(prereq.cnaps || prereq.carteProAlternative);
+  const showSsiap = !!prereq.ssiap;
+
   function onSubmit(values: CandidatFormValues) {
+    // « Autre » → reporte le texte libre dans situationPro.
+    const payload: CandidatFormValues = { ...values };
+    if (values.situationPro === SITUATION_AUTRE) {
+      payload.situationPro = situationAutre.trim() || SITUATION_AUTRE;
+    }
     startTransition(async () => {
       const res = candidatId
-        ? await updateCandidat(candidatId, values)
-        : await createCandidat(values);
-
+        ? await updateCandidat(candidatId, payload)
+        : await createCandidat(payload);
       if (res.ok) {
         toast.success(candidatId ? "Candidat mis à jour." : "Candidat créé.");
         router.push(`/candidats/${res.id}`);
@@ -136,20 +163,37 @@ export function CandidatForm({
             <Input id="dateNaissance" type="date" {...register("dateNaissance")} />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="lieuNaissance">Lieu de naissance</Label>
-            <Input
-              id="lieuNaissance"
-              placeholder="Ville de naissance"
-              {...register("lieuNaissance")}
-            />
+            <Label htmlFor="nationalite">Nationalité</Label>
+            <select id="nationalite" className={selectClass} {...register("nationalite")}>
+              <option value="">— Sélectionner —</option>
+              {NATIONALITES.map((n) => (
+                <option key={n} value={n}>{n}</option>
+              ))}
+            </select>
           </div>
           <div className="grid gap-2">
             <Label htmlFor="paysNaissance">Pays de naissance</Label>
-            <Input
-              id="paysNaissance"
-              placeholder="France"
-              {...register("paysNaissance")}
-            />
+            <select id="paysNaissance" className={selectClass} {...register("paysNaissance")}>
+              <option value="">— Sélectionner —</option>
+              {PAYS_NOMS.map((p) => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="departementNaissance">Département de naissance</Label>
+            <select id="departementNaissance" className={selectClass} {...register("departementNaissance")}>
+              <option value="">— Sélectionner —</option>
+              {DEPARTEMENTS.map((d) => (
+                <option key={d.code} value={d.code}>
+                  {d.code} — {d.nom}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="lieuNaissance">Commune de naissance</Label>
+            <Input id="lieuNaissance" placeholder="Commune / ville de naissance" {...register("lieuNaissance")} />
           </div>
           <div className="grid gap-2">
             <Label htmlFor="adresse">Adresse</Label>
@@ -165,7 +209,11 @@ export function CandidatForm({
           </div>
           <div className="grid gap-2">
             <Label htmlFor="pays">Pays</Label>
-            <Input id="pays" {...register("pays")} />
+            <select id="pays" className={selectClass} {...register("pays")}>
+              {PAYS_NOMS.map((p) => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
           </div>
         </CardContent>
       </Card>
@@ -173,19 +221,29 @@ export function CandidatForm({
       {/* Informations professionnelles */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">
-            Informations professionnelles
-          </CardTitle>
+          <CardTitle className="text-base">Informations professionnelles</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="grid gap-2">
             <Label htmlFor="situationPro">Situation professionnelle</Label>
-            <Input
-              id="situationPro"
-              placeholder="Salarié, demandeur d'emploi…"
-              {...register("situationPro")}
-            />
+            <select id="situationPro" className={selectClass} {...register("situationPro")}>
+              <option value="">— Sélectionner —</option>
+              {SITUATIONS_PRO.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
           </div>
+          {situationPro === SITUATION_AUTRE && (
+            <div className="grid gap-2 sm:col-span-2">
+              <Label htmlFor="situationAutre">Préciser la situation</Label>
+              <Input
+                id="situationAutre"
+                value={situationAutre}
+                onChange={(e) => setSituationAutre(e.target.value)}
+                placeholder="Décrivez la situation professionnelle…"
+              />
+            </div>
+          )}
           <div className="grid gap-2">
             <Label htmlFor="employeur">Employeur</Label>
             <Input id="employeur" {...register("employeur")} />
@@ -196,16 +254,9 @@ export function CandidatForm({
           </div>
           <div className="grid gap-2 sm:col-span-3">
             <Label htmlFor="dernierDiplome">Dernier diplôme obtenu</Label>
-            <Input
-              id="dernierDiplome"
-              list="diplome-options"
-              placeholder="Choisissez ou saisissez…"
-              {...register("dernierDiplome")}
-            />
+            <Input id="dernierDiplome" list="diplome-options" placeholder="Choisissez ou saisissez…" {...register("dernierDiplome")} />
             <datalist id="diplome-options">
-              {DIPLOME_OPTIONS.map((d) => (
-                <option key={d} value={d} />
-              ))}
+              {DIPLOME_OPTIONS.map((d) => (<option key={d} value={d} />))}
             </datalist>
           </div>
         </CardContent>
@@ -219,125 +270,98 @@ export function CandidatForm({
         <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="grid gap-2 sm:col-span-2">
             <Label htmlFor="formationSouhaiteeId">Formation souhaitée</Label>
-            <select
-              id="formationSouhaiteeId"
-              className={selectClass}
-              {...register("formationSouhaiteeId")}
-            >
+            <select id="formationSouhaiteeId" className={selectClass} {...register("formationSouhaiteeId")}>
               <option value="">— Non précisée —</option>
               {formations.map((f) => (
-                <option key={f.id} value={f.id}>
-                  {f.titre}
-                </option>
+                <option key={f.id} value={f.id}>{f.titre}</option>
               ))}
             </select>
           </div>
           <div className="grid gap-2">
             <Label htmlFor="financementType">Financement envisagé</Label>
-            <select
-              id="financementType"
-              className={selectClass}
-              {...register("financementType")}
-            >
+            <select id="financementType" className={selectClass} {...register("financementType")}>
               <option value="">Non précisé</option>
-              {Object.entries(FINANCEMENT_LABELS).map(([v, l]) => (
-                <option key={v} value={v}>
-                  {l}
-                </option>
-              ))}
+              {Object.entries(FINANCEMENT_LABELS).map(([v, l]) => (<option key={v} value={v}>{l}</option>))}
             </select>
           </div>
           <div className="grid gap-2">
             <Label htmlFor="statut">Statut</Label>
             <select id="statut" className={selectClass} {...register("statut")}>
-              {Object.entries(STATUT_LABELS).map(([v, l]) => (
-                <option key={v} value={v}>
-                  {l}
-                </option>
-              ))}
+              {Object.entries(STATUT_LABELS).map(([v, l]) => (<option key={v} value={v}>{l}</option>))}
             </select>
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="sourceConnaissance">
-              Comment nous a-t-il connus ?
-            </Label>
-            <select
-              id="sourceConnaissance"
-              className={selectClass}
-              {...register("sourceConnaissance")}
-            >
+            <Label htmlFor="sourceConnaissance">Comment nous a-t-il connus ?</Label>
+            <select id="sourceConnaissance" className={selectClass} {...register("sourceConnaissance")}>
               <option value="">— Sélectionner —</option>
-              {SOURCE_CONNAISSANCE_OPTIONS.map((s) => (
-                <option key={s} value={s}>{s}</option>
-              ))}
+              {SOURCE_CONNAISSANCE_OPTIONS.map((s) => (<option key={s} value={s}>{s}</option>))}
             </select>
           </div>
           <div className="grid gap-2">
             <Label htmlFor="assignedToId">Suivi par (collaborateur)</Label>
-            <select
-              id="assignedToId"
-              className={selectClass}
-              {...register("assignedToId")}
-            >
+            <select id="assignedToId" className={selectClass} {...register("assignedToId")}>
               <option value="">— Non attribué —</option>
-              {collaborateurs.map((u) => (
-                <option key={u.id} value={u.id}>{u.name}</option>
-              ))}
+              {collaborateurs.map((u) => (<option key={u.id} value={u.id}>{u.name}</option>))}
             </select>
           </div>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Sécurité privée (CNAPS)</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-3">
-          <div className="grid gap-2">
-            <Label htmlFor="cnapsStatut">Autorisation préalable CNAPS</Label>
-            <select id="cnapsStatut" className={selectClass} {...register("cnapsStatut")}>
-              <option value="">— Non concerné —</option>
-              {Object.entries(CNAPS_STATUT_LABELS).map(([v, l]) => (
-                <option key={v} value={v}>{l}</option>
-              ))}
-            </select>
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="carteProNumero">N° carte professionnelle</Label>
-            <Input id="carteProNumero" placeholder="CAR-…" {...register("carteProNumero")} />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="carteProValidite">Validité carte pro</Label>
-            <Input id="carteProValidite" type="date" {...register("carteProValidite")} />
-          </div>
-        </CardContent>
-      </Card>
+      {/* Sécurité privée (CNAPS) — affiché seulement si la formation le requiert */}
+      {showCnaps && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Sécurité privée (CNAPS)</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-2">
+              <Label htmlFor="cnapsStatut">Autorisation préalable CNAPS</Label>
+              <select id="cnapsStatut" className={selectClass} {...register("cnapsStatut")}>
+                <option value="">— À renseigner —</option>
+                {Object.entries(CNAPS_STATUT_LABELS).map(([v, l]) => (<option key={v} value={v}>{l}</option>))}
+              </select>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="carteProNumero">N° carte professionnelle</Label>
+              <Input id="carteProNumero" placeholder="CAR-…" {...register("carteProNumero")} />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="carteProValidite">Validité carte pro</Label>
+              <Input id="carteProValidite" type="date" {...register("carteProValidite")} />
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Diplôme SSIAP (recyclage / remise à niveau)</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-3">
-          <div className="grid gap-2">
-            <Label htmlFor="ssiapNiveau">Niveau du diplôme</Label>
-            <select id="ssiapNiveau" className={selectClass} {...register("ssiapNiveau")}>
-              <option value="">— Non concerné —</option>
-              <option value="1">SSIAP 1</option>
-              <option value="2">SSIAP 2</option>
-              <option value="3">SSIAP 3</option>
-            </select>
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="ssiapDiplomeNumero">N° du diplôme</Label>
-            <Input id="ssiapDiplomeNumero" placeholder="091-9119-1-2018-00246" {...register("ssiapDiplomeNumero")} />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="ssiapDiplomeDate">Date d&apos;obtention</Label>
-            <Input id="ssiapDiplomeDate" type="date" {...register("ssiapDiplomeDate")} />
-          </div>
-        </CardContent>
-      </Card>
+      {/* Diplôme SSIAP — affiché seulement pour un recyclage / remise à niveau SSIAP */}
+      {showSsiap && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Diplôme SSIAP {prereq.ssiap?.niveau} détenu (recyclage / remise à niveau)</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-2">
+              <Label htmlFor="ssiapNiveau">Niveau du diplôme</Label>
+              <select id="ssiapNiveau" className={selectClass} {...register("ssiapNiveau")}>
+                <option value="">— Non concerné —</option>
+                <option value="1">SSIAP 1</option>
+                <option value="2">SSIAP 2</option>
+                <option value="3">SSIAP 3</option>
+              </select>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="ssiapDiplomeNumero">N° du diplôme</Label>
+              <Input id="ssiapDiplomeNumero" placeholder="091-9119-1-2018-00246" {...register("ssiapDiplomeNumero")} />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="ssiapDiplomeDate">Date d&apos;obtention</Label>
+              <Input id="ssiapDiplomeDate" type="date" {...register("ssiapDiplomeDate")} />
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
+      {/* Accessibilité */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Accessibilité (handicap)</CardTitle>
@@ -361,9 +385,7 @@ export function CandidatForm({
       </Card>
 
       <div className="flex justify-end gap-3">
-        <Button type="button" variant="outline" onClick={() => router.back()}>
-          Annuler
-        </Button>
+        <Button type="button" variant="outline" onClick={() => router.back()}>Annuler</Button>
         <Button type="submit" disabled={isPending}>
           <Save className="mr-2 h-4 w-4" />
           {isPending ? "Enregistrement…" : "Enregistrer"}
