@@ -46,7 +46,18 @@ export function buildVariables(
     telephone: c.telephone ?? "",
     date_naissance: d(c.dateNaissance),
     lieu_naissance: c.lieuNaissance ?? "—",
+    departement_naissance: c.departementNaissance ?? "—",
     pays_naissance: c.paysNaissance ?? "—",
+    nationalite: c.nationalite ?? "—",
+    // Lieu complet : « Commune (75) » ou « Ville, Pays » pour une naissance à l'étranger.
+    lieu_naissance_complet:
+      [
+        c.lieuNaissance,
+        c.departementNaissance ? `(${c.departementNaissance})` : null,
+        c.paysNaissance && c.paysNaissance !== "France" ? `— ${c.paysNaissance}` : null,
+      ]
+        .filter(Boolean)
+        .join(" ") || "—",
     naissance:
       [d(c.dateNaissance), c.lieuNaissance, c.paysNaissance]
         .filter(Boolean)
