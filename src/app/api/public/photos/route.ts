@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { appBaseUrl } from "@/lib/token";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -7,15 +8,29 @@ export const dynamic = "force-dynamic";
 // API publique : photos des galeries du SITE VITRINE, groupées par zone.
 // Lecture seule, sans données personnelles, CORS ouvert.
 // Scopé par l'env VITRINE_ORGANISME_ID.
-export async function GET() {
+//
+// IMPORTANT : on ne renvoie JAMAIS le contenu des images ici. Sans Vercel Blob,
+// les photos sont stockées en « data URL » (base64) et la réponse atteignait
+// plusieurs Mo — au-delà de ce que le cache de données du site vitrine accepte,
+// qui affichait alors une galerie VIDE (repli silencieux). On renvoie donc une
+// URL par photo, servie par /api/public/photos/[id].
+export async function GET(req: Request) {
   const organismeId = process.env.VITRINE_ORGANISME_ID || undefined;
 
   const photos = await prisma.photoVitrine.findMany({
     where: { ...(organismeId ? { organismeId } : {}) },
     orderBy: [{ zone: "asc" }, { ordre: "asc" }],
-    select: { zone: true, url: true, legende: true },
+    select: { id: true, zone: true, url: true, legende: true },
     take: 500,
   });
+
+  // Base absolue : le site vitrine est hébergé sur un autre domaine.
+  let base: string;
+  try {
+    base = new URL(req.url).origin;
+  } catch {
+    base = appBaseUrl();
+  }
 
   const byZone: Record<string, { url: string; legende: string | null }[]> = {
     CLIENTS_PARTENAIRES: [],
@@ -23,7 +38,11 @@ export async function GET() {
     ALBUM: [],
   };
   for (const p of photos) {
-    (byZone[p.zone] ??= []).push({ url: p.url, legende: p.legende });
+    // URL http (Blob/CDN) → telle quelle ; data URL → route d'image dédiée.
+    const url = p.url.startsWith("http")
+      ? p.url
+      : `${base}/api/public/photos/${p.id}`;
+    (byZone[p.zone] ??= []).push({ url, legende: p.legende });
   }
 
   return NextResponse.json(
