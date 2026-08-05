@@ -194,6 +194,11 @@ export async function genererAttestation(
   const c = insc.candidat;
   const dob = c.dateNaissance!; // garanti non-null par le contrôle ci-dessus
   const sel = genSel();
+  const dateDelivrance = new Date();
+  // Fin de validité selon la durée réglementaire du type (null = pas d'expiration).
+  const dateFinValidite = def.dureeValiditeMois
+    ? new Date(new Date(dateDelivrance).setMonth(dateDelivrance.getMonth() + def.dureeValiditeMois))
+    : null;
   const t = await db.titreDelivre.create({
     data: {
       organismeId,
@@ -203,8 +208,8 @@ export async function genererAttestation(
       selUnique: sel,
       nomTitulaire: c.nom,
       prenomTitulaire: c.prenom,
-      dateDelivrance: new Date(),
-      dateFinValidite: null, // durées réglementaires paramétrables (à renseigner)
+      dateDelivrance,
+      dateFinValidite,
       organismeSignataire: org.name,
       inscriptionId: insc.id,
       sessionId: insc.session.id,

@@ -123,6 +123,7 @@ html,body{background:#fff}
 .refbox{margin:4mm auto 0;display:inline-flex;align-items:center;gap:3mm;border:1px solid var(--gold);background:rgba(176,138,62,.06);padding:1.8mm 6.5mm;border-radius:1mm;}
 .refbox .lbl{font-size:8pt;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);font-weight:600;}
 .refbox .num{font-family:"Cormorant Garamond",serif;font-weight:700;font-size:14pt;letter-spacing:.1em;color:var(--navy);font-variant-numeric:lining-nums tabular-nums;}
+.validite{margin-top:2mm;font-size:10.4pt;color:#5a5f6b;}.validite b{color:var(--navy);}
 .foot{margin-top:auto;width:100%;}
 .divider{width:66mm;border-top:0.6px solid rgba(176,138,62,.55);margin:0 auto 3mm;}
 .place{font-size:10.4pt;font-style:italic;color:#4a4a53;margin-bottom:3mm;text-align:center;}
@@ -166,7 +167,11 @@ export function renderTitreHtml(
   const badge = def.badge ? `<div class="level">${esc(def.badge)}</div>` : "";
   const refbox = `<div class="refbox"><span class="lbl">${esc(def.refLabel)}</span><span class="num">${esc(
     data.numero,
-  )}</span></div>`;
+  )}</span></div>${
+    data.dateFinValidite
+      ? `<p class="validite">Valable jusqu'au <b>${fdateLong(data.dateFinValidite)}</b></p>`
+      : ""
+  }`;
   const sceau = seal(def.sealCenter, def.sealSub);
 
   let foot: string;

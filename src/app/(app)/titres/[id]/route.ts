@@ -62,6 +62,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     lieuNaissance: c?.lieuNaissance ?? null,
     numero: titre.numeroVerification,
     dateDelivrance: titre.dateDelivrance,
+    dateFinValidite: titre.dateFinValidite,
     ville: org.ville,
     diplomeRef: c?.ssiapDiplomeNumero ?? null,
     diplomeObtenuLe: c?.ssiapDiplomeDate ?? null,
