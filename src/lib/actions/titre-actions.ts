@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { TitreStatut } from "@prisma/client";
 import { auth } from "@/auth";
 import { getTenantDb } from "@/lib/tenant";
 import { hasStrictFeature } from "@/lib/feature-guard";
@@ -219,4 +220,36 @@ export async function genererAttestation(
 
   revalidatePath(`/sessions/${insc.session.id}`);
   return { ok: true, titreId: t.id, numero };
+}
+
+/**
+ * Change le statut d'un titre vérifiable (VALIDE / REVOQUE / ANNULE / ARCHIVE).
+ * Un titre révoqué ou annulé est indistinguable d'un numéro inexistant côté
+ * vérification publique (message générique). Réservé au staff, tracé en audit.
+ */
+export async function setTitreStatut(
+  id: string,
+  statut: TitreStatut,
+): Promise<{ ok: boolean; error?: string }> {
+  const { organismeId } = await guard();
+  const db = await getTenantDb();
+  const t = await db.titreDelivre.findFirst({ where: { id }, select: { id: true } });
+  if (!t) return { ok: false, error: "Titre introuvable." };
+
+  await db.titreDelivre.updateMany({ where: { id }, data: { statut } });
+
+  const session = await auth();
+  if (session?.user?.id) {
+    await db.auditLog.create({
+      data: {
+        userId: session.user.id,
+        action: `TITRE_${statut}`,
+        entityType: "TitreDelivre",
+        entityId: id,
+      },
+    });
+  }
+  void organismeId;
+  revalidatePath("/diplomes/titres");
+  return { ok: true };
 }
