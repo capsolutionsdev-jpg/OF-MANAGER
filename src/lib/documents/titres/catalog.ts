@@ -23,6 +23,7 @@ export type TitreData = {
   lieuNaissance?: string | null;
   numero: string;
   dateDelivrance?: Date | string | null;   // « Fait à … le … »
+  dateFinValidite?: Date | string | null;  // fin de validité (attestations)
   ville?: string;                           // ville de délivrance (défaut : org.ville)
   // Spécifiques :
   dateJury?: Date | string | null;          // diplôme
@@ -53,6 +54,7 @@ export type TitreTypeDef = {
   sealSub: string;          // sous-texte du sceau
   footer: string;           // mentions légales de pied de page
   numberPrefix?: string;    // préfixe du n° (attestations)
+  dureeValiditeMois?: number; // durée de validité (mois) → dateFinValidite ; absent = pas d'expiration
   appliqueLuhn: boolean;    // clé de contrôle (false pour diplômes SSIAP)
   body: (d: TitreData, org: OrgLike) => string;
 };
@@ -143,6 +145,7 @@ for (const n of [1, 2, 3] as const) {
     sealSub: "ARRÊTÉ 02·05·2005",
     footer: FOOT_SSIAP,
     numberPrefix: `RECYC-SSIAP${n}`,
+    dureeValiditeMois: 36, // recyclage SSIAP triennal
     appliqueLuhn: true,
     body: (d) => `
       <p>Vu le diplôme SSIAP&nbsp;${n} n°&nbsp;<b>${esc(d.diplomeRef) || "……………………"}</b>${
@@ -173,6 +176,7 @@ for (const n of [1, 2, 3] as const) {
     sealSub: "ARRÊTÉ 02·05·2005",
     footer: FOOT_SSIAP,
     numberPrefix: `RAN-SSIAP${n}`,
+    dureeValiditeMois: 36, // remise à niveau SSIAP → validité triennale
     appliqueLuhn: true,
     body: (d) => `
       <p>Vu le diplôme SSIAP&nbsp;${n} n°&nbsp;<b>${esc(d.diplomeRef) || "……………………"}</b>${
@@ -201,6 +205,7 @@ defs.push({
   sealSub: "T3P",
   footer: FOOT_T3P,
   numberPrefix: "FC-VTC",
+  dureeValiditeMois: 60, // formation continue VTC quinquennale
   appliqueLuhn: true,
   body: (d, org) => `
     <p>${esc(org.name)} certifie que</p>
@@ -227,6 +232,7 @@ defs.push({
   sealSub: "T3P",
   footer: FOOT_T3P,
   numberPrefix: "FC-TAXI",
+  dureeValiditeMois: 60, // formation continue Taxi quinquennale
   appliqueLuhn: true,
   body: (d, org) => `
     <p>${esc(org.name)} certifie que</p>
@@ -253,6 +259,7 @@ defs.push({
   sealSub: "NF C 18-510",
   footer: FOOT_ELEC,
   numberPrefix: "HAB-H0B0",
+  dureeValiditeMois: 36, // habilitation électrique — recyclage recommandé (NF C 18-510)
   appliqueLuhn: true,
   body: (d, org) => `
     <p>${esc(org.name)} certifie que</p>
@@ -279,6 +286,7 @@ defs.push({
   sealSub: "NF C 18-510",
   footer: FOOT_ELEC,
   numberPrefix: "HAB-BSBE",
+  dureeValiditeMois: 36, // habilitation électrique — recyclage recommandé (NF C 18-510)
   appliqueLuhn: true,
   body: (d, org) => `
     <p>${esc(org.name)} certifie que</p>
