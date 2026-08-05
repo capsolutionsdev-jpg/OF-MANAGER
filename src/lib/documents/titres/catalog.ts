@@ -73,8 +73,10 @@ const FOOT_SSIAP =
   "Délivré conformément à l'arrêté du 2 mai 2005 modifié relatif aux missions, à l'emploi et à la qualification du personnel permanent des services de sécurité incendie des ERP et des IGH.";
 const FOOT_ELEC =
   "Formation à la prévention du risque électrique — norme NF C 18-510 · articles R.4544-9 et suivants du Code du travail. L'habilitation est délivrée par l'employeur.";
+// « [AGREMENT] » est remplacé au rendu par l'agrément de l'organisme pour la
+// famille concernée (cf. lib/agrements) ; la mention disparaît s'il est absent.
 const FOOT_T3P =
-  "Action de formation professionnelle continue (art. L.6313-1 du Code du travail) · Agrément préfectoral n° [XXXX].";
+  "Action de formation professionnelle continue (art. L.6313-1 du Code du travail).[AGREMENT]";
 
 /** Bloc identité titulaire commun (nom + date/lieu de naissance). */
 function titulaire(d: TitreData, bornSize = 11): string {
