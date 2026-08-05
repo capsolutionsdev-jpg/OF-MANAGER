@@ -5,6 +5,7 @@ import { getTenantDb } from "@/lib/tenant";
 import { orgConfigFor } from "@/lib/org-identity";
 import { htmlToPdf } from "@/lib/pdf";
 import { hasStrictFeature } from "@/lib/feature-guard";
+import { readAgrements } from "@/lib/agrements";
 import {
   getTitreDef,
   niveauFromNumero,
@@ -77,6 +78,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       adresse: org.adresse,
       siret: org.siret,
       nda: org.nda,
+      agrement: readAgrements(org.documentsConfig).ssiap,
     },
     { logoUri, signatureUri: org.signatureUrl },
   );

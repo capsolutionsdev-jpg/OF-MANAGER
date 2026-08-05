@@ -38,12 +38,16 @@ export function formationPrereq(f: FormationLike): PrereqSpec {
   const ssiapInit = ssiapDiplomeNiveau(f);
   if (ssiapInit === 1 || ssiapInit === 2) spec.medicalCert = true;
 
-  // Sécurité privée (CNAPS). MAC APS : carte pro OU autorisation.
+  // Sécurité privée (CNAPS) : APS, A3P (protection physique), opérateur de
+  // vidéoprotection → autorisation préalable CNAPS. MAC APS, A3P et
+  // vidéoprotection acceptent une carte professionnelle valide EN ALTERNATIVE.
   const hasSst = /SST|SAUVETEUR/.test(S);
   const isMacAps = /MAC/.test(S) && /APS/.test(S);
   const isAps = /APS/.test(S) && !hasSst;
-  if (isAps) spec.cnaps = true;
-  if (isMacAps) spec.carteProAlternative = true;
+  const isA3P = /A3P|PROTECTION\s+PHYSIQUE/.test(S);
+  const isVideoprot = /VID[EÉ]OPROTECTION/.test(S);
+  if (isAps || isA3P || isVideoprot) spec.cnaps = true;
+  if (isMacAps || isA3P || isVideoprot) spec.carteProAlternative = true;
 
   // MAC SST → certificat SST détenu.
   if (/MAC/.test(S) && hasSst) spec.sstCert = true;

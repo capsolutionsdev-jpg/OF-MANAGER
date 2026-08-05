@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Award, ShieldCheck } from "lucide-react";
+import { Award, ShieldCheck, ListChecks } from "lucide-react";
 import { getTenantDb } from "@/lib/tenant";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
@@ -62,8 +62,11 @@ export default async function DiplomesPage() {
         title="Diplômes"
         subtitle="Suivi des diplômes (envoyé au certificateur → reçu → remis) et attestation de remise, par formation et par session."
       >
+        <Button variant="outline" render={<Link href="/diplomes/agrements" />}>
+          <ShieldCheck className="mr-2 h-4 w-4" /> Agréments
+        </Button>
         <Button variant="outline" render={<Link href="/diplomes/titres" />}>
-          <ShieldCheck className="mr-2 h-4 w-4" /> Registre des titres
+          <ListChecks className="mr-2 h-4 w-4" /> Registre des titres
         </Button>
       </PageHeader>
       {formations.length === 0 ? (
