@@ -16,6 +16,8 @@ export type TitreOrg = {
   adresse: string;
   siret: string;
   nda: string;
+  /** Agrément applicable à la famille du titre (cf. lib/agrements). */
+  agrement?: string;
 };
 
 export type TitreAssets = {
@@ -196,9 +198,14 @@ export function renderTitreHtml(
     </div>`;
   }
 
+  // « [AGREMENT] » → mention d'agrément si l'organisme en a un pour cette famille.
+  const footer = def.footer.replace(
+    "[AGREMENT]",
+    org.agrement ? ` Agrément préfectoral n° ${esc(org.agrement)}.` : "",
+  );
   const legal = `${esc(org.name)} — ${esc(org.adresse)}${org.siret ? ` · SIRET ${esc(org.siret)}` : ""}${
     org.nda ? ` · Déclaration d'activité n° ${esc(org.nda)}` : ""
-  } · ${def.footer}`;
+  } · ${footer}`;
 
   const inner = `<div class="page ${def.kind}">
     <div class="frame-outer"></div><div class="frame-inner"></div><div class="frame-hair"></div>

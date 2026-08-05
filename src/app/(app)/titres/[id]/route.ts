@@ -7,6 +7,7 @@ import { orgConfigFor } from "@/lib/org-identity";
 import { htmlToPdf } from "@/lib/pdf";
 import { hasStrictFeature } from "@/lib/feature-guard";
 import { getTitreDef, renderTitreHtml, type TitreData } from "@/lib/documents/titres";
+import { readAgrements, agrementPourTypeCode } from "@/lib/agrements";
 
 export const runtime = "nodejs";
 
@@ -87,6 +88,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       adresse: org.adresse,
       siret: org.siret,
       nda: org.nda,
+      agrement: agrementPourTypeCode(titre.typeCode, readAgrements(org.documentsConfig)),
     },
     { logoUri, signatureUri: org.signatureUrl, verifUrl: "capacademy.fr/verification", qrDataUri },
   );
