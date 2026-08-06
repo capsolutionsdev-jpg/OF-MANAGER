@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { appBaseUrl } from "@/lib/token";
+import { organismeScope } from "@/lib/public-scope";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,7 +16,7 @@ export const dynamic = "force-dynamic";
 // qui affichait alors une galerie VIDE (repli silencieux). On renvoie donc une
 // URL par photo, servie par /api/public/photos/[id].
 export async function GET(req: Request) {
-  const organismeId = process.env.VITRINE_ORGANISME_ID || undefined;
+  const organismeId = organismeScope(req);
 
   const photos = await prisma.photoVitrine.findMany({
     where: { ...(organismeId ? { organismeId } : {}) },

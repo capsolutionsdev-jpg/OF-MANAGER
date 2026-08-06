@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { organismeScope } from "@/lib/public-scope";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -69,8 +70,8 @@ function toBlocs(contenu: string | null): Bloc[] {
   return blocs;
 }
 
-export async function GET() {
-  const organismeId = process.env.VITRINE_ORGANISME_ID || undefined;
+export async function GET(req: Request) {
+  const organismeId = organismeScope(req);
 
   const articles = await prisma.article.findMany({
     where: {

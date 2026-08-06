@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getTauxReussite } from "@/lib/vitrine-stats";
+import { organismeScope } from "@/lib/public-scope";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,10 +17,10 @@ export const dynamic = "force-dynamic";
 //   - PUBLIEE   → formation affichée (tarif live si fourni)
 //   - SUSPENDUE → formation retirée du catalogue
 //
-// Portée : par défaut toutes les formations ; scopable à un organisme via
-// l'env VITRINE_ORGANISME_ID (recommandé en multi-tenant).
-export async function GET() {
-  const organismeId = process.env.VITRINE_ORGANISME_ID || undefined;
+// Portée (multi-tenant) : `?organisme=<id>` passé par le site vitrine appelant,
+// avec repli sur l'env VITRINE_ORGANISME_ID (cf. lib/public-scope).
+export async function GET(req: Request) {
+  const organismeId = organismeScope(req);
 
   const formations = await prisma.formation.findMany({
     where: {
