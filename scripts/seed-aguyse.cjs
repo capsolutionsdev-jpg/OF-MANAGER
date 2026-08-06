@@ -44,6 +44,9 @@ const IDENTITE = {
   // Charte AGUYSE (or métallique + bleu pétrole), cf. logo du client.
   couleurPrimaire: "#9A6E22",
   couleurSecondaire: "#142530",
+  // Abonnement vendu : formule Medium, client payant (contrat signé).
+  statut: "ACTIF",
+  formule: "MEDIUM",
 };
 
 // Fonctionnalités : socle « Cœur » + pilotage du site vitrine + modules de
@@ -151,8 +154,8 @@ const FORMATIONS = [
   console.log("ORGANISME_ID =", org.id);
   console.log("→ reporter dans lib/tenants/aguyse.ts (organismeId)");
   console.log("──────────────────────────────────────────────");
-  console.log("À compléter ensuite dans la console : représentant, Qualiopi,");
-  console.log("référent handicap, statut/formule d'abonnement.");
+  console.log("À compléter ensuite dans la console : représentant légal (nom +");
+  console.log("qualité), certificat Qualiopi et référent handicap.");
 
   await p.$disconnect();
 })().catch((e) => {
