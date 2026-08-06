@@ -7,6 +7,7 @@ import { Loader2, ExternalLink, Search } from "lucide-react";
 import { TitreStatut } from "@prisma/client";
 import { setTitreStatut } from "@/lib/actions/titre-actions";
 import { Input } from "@/components/ui/input";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 
 export type TitreRow = {
   id: string;
@@ -45,6 +46,7 @@ const badgeClass = (s: TitreStatut, expire: boolean): string => {
 
 export function TitresRegistre({ rows }: { rows: TitreRow[] }) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [q, setQ] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [, start] = useTransition();
@@ -55,15 +57,17 @@ export function TitresRegistre({ rows }: { rows: TitreRow[] }) {
     return r.numero.toLowerCase().includes(s) || r.titulaire.toLowerCase().includes(s);
   });
 
-  function change(r: TitreRow, next: TitreStatut) {
+  async function change(r: TitreRow, next: TitreStatut) {
     if (next === r.statut) return;
-    if (
-      (next === "REVOQUE" || next === "ANNULE") &&
-      !confirm(
-        `Passer le titre ${r.numero} en « ${STATUT_LABELS[next]} » ? Il ne sera plus reconnu par la vérification publique.`,
-      )
-    )
-      return;
+    if (next === "REVOQUE" || next === "ANNULE") {
+      const ok = await confirm({
+        title: `Passer le titre ${r.numero} en « ${STATUT_LABELS[next]} » ?`,
+        description: "Il ne sera plus reconnu par la vérification publique.",
+        confirmLabel: STATUT_LABELS[next],
+        destructive: true,
+      });
+      if (!ok) return;
+    }
     setBusy(r.id);
     start(async () => {
       const res = await setTitreStatut(r.id, next);
