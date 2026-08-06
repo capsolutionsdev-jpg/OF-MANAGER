@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { organismeScope } from "@/lib/public-scope";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,7 +21,7 @@ const MIMES_AUTORISES = new Set([
 ]);
 
 export async function GET(
-  _req: Request,
+  req: Request,
   ctx: { params: Promise<{ id: string }> },
 ) {
   const { id } = await ctx.params;
@@ -31,8 +32,9 @@ export async function GET(
   });
   if (!photo) return new Response("Introuvable", { status: 404 });
 
-  // Cloisonnement : on ne sert que les photos du site vitrine configuré.
-  const organismeId = process.env.VITRINE_ORGANISME_ID || undefined;
+  // Cloisonnement : on ne sert que les photos du site vitrine appelant
+  // (`?organisme=<id>`, repli sur VITRINE_ORGANISME_ID en mono-vitrine).
+  const organismeId = organismeScope(req);
   if (organismeId && photo.organismeId !== organismeId) {
     return new Response("Introuvable", { status: 404 });
   }
