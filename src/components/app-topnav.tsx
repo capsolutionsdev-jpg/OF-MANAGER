@@ -60,9 +60,9 @@ export function AppTopNav({
     );
 
   return (
-    <header className="sticky top-0 z-30 border-b bg-card/85 backdrop-blur-md">
-      {/* Accent de marque : fin filet violet à plat (aplat, pas de dégradé) */}
-      <div className="h-[3px] w-full bg-primary" />
+    <header className="sticky top-0 z-30 border-b border-border/70 bg-background/70 backdrop-blur-xl supports-backdrop-filter:bg-background/60">
+      {/* Accent de marque : filet fin à l'accent du tenant (aplat) */}
+      <div className="h-[2px] w-full bg-primary/80" />
       <div className="mx-auto flex h-14 max-w-[1500px] items-center gap-3 px-3 md:px-5">
         {/* Burger mobile */}
         <Sheet>
