@@ -1,5 +1,3 @@
-import { promises as fs } from "node:fs";
-import path from "node:path";
 import { PDFDocument } from "pdf-lib";
 import { prisma } from "@/lib/prisma";
 import {
@@ -128,9 +126,10 @@ export async function buildInscriptionPdf(
     : "";
 
   // Images en base64
-  const pub = path.join(process.cwd(), "public");
-  const logoBuf = await fs.readFile(path.join(pub, "cap-competences-logo.png"));
-  const logo64 = org.logoUrl ?? `data:image/png;base64,${logoBuf.toString("base64")}`;
+  // Logo = UNIQUEMENT celui du tenant (org.logoUrl). Jamais de repli sur l'asset
+  // CAP : sinon un autre organisme afficherait le logo CAP sur ses documents
+  // (même règle que le cachet). Le tenant CAP porte son logo dans org.logoUrl.
+  const logo64 = org.logoUrl ?? EMPTY_IMAGE;
   // Cachet/signature = UNIQUEMENT celui du tenant (org.cachetUrl). Jamais de repli
   // sur l'asset CAP : sinon un autre organisme afficherait le tampon CAP sur ses
   // documents. Vide tant que le tenant ne l'a pas chargé (console superadmin).
@@ -251,9 +250,10 @@ export async function buildSatisfactionPdf(
       <div><div class="sig-label">Cachet de l'organisme</div><div class="sig-box"><img src="/signature-cap-competences.png" class="doc-stamp" alt="Cachet" /></div></div>
     </div>`;
 
-  const pub = path.join(process.cwd(), "public");
-  const logoBuf = await fs.readFile(path.join(pub, "cap-competences-logo.png"));
-  const logo64 = org.logoUrl ?? `data:image/png;base64,${logoBuf.toString("base64")}`;
+  // Logo = UNIQUEMENT celui du tenant (org.logoUrl). Jamais de repli sur l'asset
+  // CAP : sinon un autre organisme afficherait le logo CAP sur ses documents
+  // (même règle que le cachet). Le tenant CAP porte son logo dans org.logoUrl.
+  const logo64 = org.logoUrl ?? EMPTY_IMAGE;
   // Cachet/signature = UNIQUEMENT celui du tenant (org.cachetUrl). Jamais de repli
   // sur l'asset CAP : sinon un autre organisme afficherait le tampon CAP sur ses
   // documents. Vide tant que le tenant ne l'a pas chargé (console superadmin).
@@ -330,9 +330,10 @@ export async function buildContratFormateurPdf(
       : "",
   };
 
-  const pub = path.join(process.cwd(), "public");
-  const logoBuf = await fs.readFile(path.join(pub, "cap-competences-logo.png"));
-  const logo64 = org.logoUrl ?? `data:image/png;base64,${logoBuf.toString("base64")}`;
+  // Logo = UNIQUEMENT celui du tenant (org.logoUrl). Jamais de repli sur l'asset
+  // CAP : sinon un autre organisme afficherait le logo CAP sur ses documents
+  // (même règle que le cachet). Le tenant CAP porte son logo dans org.logoUrl.
+  const logo64 = org.logoUrl ?? EMPTY_IMAGE;
   // Cachet/signature = UNIQUEMENT celui du tenant (org.cachetUrl). Jamais de repli
   // sur l'asset CAP : sinon un autre organisme afficherait le tampon CAP sur ses
   // documents. Vide tant que le tenant ne l'a pas chargé (console superadmin).
@@ -390,9 +391,10 @@ export async function buildCompteRenduPdf(
       : "",
   };
 
-  const pub = path.join(process.cwd(), "public");
-  const logoBuf = await fs.readFile(path.join(pub, "cap-competences-logo.png"));
-  const logo64 = org.logoUrl ?? `data:image/png;base64,${logoBuf.toString("base64")}`;
+  // Logo = UNIQUEMENT celui du tenant (org.logoUrl). Jamais de repli sur l'asset
+  // CAP : sinon un autre organisme afficherait le logo CAP sur ses documents
+  // (même règle que le cachet). Le tenant CAP porte son logo dans org.logoUrl.
+  const logo64 = org.logoUrl ?? EMPTY_IMAGE;
   // Cachet/signature = UNIQUEMENT celui du tenant (org.cachetUrl). Jamais de repli
   // sur l'asset CAP : sinon un autre organisme afficherait le tampon CAP sur ses
   // documents. Vide tant que le tenant ne l'a pas chargé (console superadmin).

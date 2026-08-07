@@ -3,12 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { DataRequestType, DataRequestStatut } from "@prisma/client";
 import { getTenantDb } from "@/lib/tenant";
-import { auth } from "@/auth";
+import { requireSection } from "@/lib/section-guard";
 
 export async function createDataRequest(formData: FormData) {
+  await requireSection("rgpd");
   const db = await getTenantDb();
-  const session = await auth();
-  if (!session?.user) return;
 
   const subjectEmail = String(formData.get("subjectEmail") ?? "").trim();
   const type = String(formData.get("type")) as DataRequestType;
@@ -19,9 +18,8 @@ export async function createDataRequest(formData: FormData) {
 }
 
 export async function processDataRequest(formData: FormData) {
+  const session = await requireSection("rgpd");
   const db = await getTenantDb();
-  const session = await auth();
-  if (!session?.user) return;
 
   const id = String(formData.get("id"));
   await db.dataRequest.update({
@@ -41,9 +39,8 @@ export async function processDataRequest(formData: FormData) {
 export async function exportDonneesPersonne(
   email: string,
 ): Promise<{ ok: boolean; error?: string; filename?: string; json?: string }> {
+  const session = await requireSection("rgpd");
   const db = await getTenantDb();
-  const session = await auth();
-  if (!session?.user) return { ok: false, error: "Non autorisé." };
 
   const e = email.trim().toLowerCase();
   if (!e) return { ok: false, error: "Indiquez un e-mail." };
@@ -81,9 +78,8 @@ export async function exportDonneesPersonne(
 // Anonymisation (droit à l'effacement) : on conserve les enregistrements liés
 // (obligations Qualiopi/comptables) mais on efface les données personnelles.
 export async function anonymiseCandidat(formData: FormData) {
+  const session = await requireSection("rgpd");
   const db = await getTenantDb();
-  const session = await auth();
-  if (!session?.user) return;
 
   const candidatId = String(formData.get("candidatId"));
   const c = await db.candidat.findUnique({ where: { id: candidatId } });

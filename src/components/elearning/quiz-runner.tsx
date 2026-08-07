@@ -53,12 +53,18 @@ export function QuizRunner({
 
   function submit() {
     setSubmitted(true);
-    const s = score();
+    // On envoie les RÉPONSES (indices choisis) ; le score est recalculé côté
+    // serveur (source de vérité). Les questions rédigées ne sont pas notées.
+    const reponses: Record<number, number[]> = {};
+    quiz.forEach((q, i) => {
+      if (q.type === "REDIGEE") return;
+      reponses[i] = (answers[i] as number[]) ?? [];
+    });
     startTransition(async () => {
-      const res = await submitQuizResultat(leconId, s, total);
+      const res = await submitQuizResultat(leconId, reponses);
       if (!res.ok) toast.error(res.error ?? "Erreur.");
       else {
-        toast.success(`Quiz validé : ${s}/${total}`);
+        toast.success(`Quiz validé : ${res.score ?? score()}/${res.total ?? total}`);
         router.refresh();
       }
     });

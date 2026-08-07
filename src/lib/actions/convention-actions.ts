@@ -24,7 +24,7 @@ export type ConventionInput = {
 };
 
 export type ConventionResult =
-  | { ok: true; conventionId: string; inscrits: number }
+  | { ok: true; conventionId: string; inscrits: number; warning?: string }
   | { ok: false; error: string };
 
 /**
@@ -135,7 +135,21 @@ export async function createConventionEntreprise(
   revalidatePath(`/sessions/${input.sessionId}`);
   revalidatePath(`/clients-pro/${input.entrepriseId}`);
   revalidatePath("/candidats");
-  return { ok: true, conventionId: convention.id, inscrits };
+
+  // Avertissement de capacité (n'empêche pas l'inscription groupée).
+  let warning: string | undefined;
+  const capSess = await db.session.findUnique({
+    where: { id: input.sessionId },
+    select: { nbPlaces: true },
+  });
+  if (capSess) {
+    const total = await db.inscription.count({
+      where: { sessionId: input.sessionId, statut: { not: "ANNULEE" } },
+    });
+    if (total > capSess.nbPlaces)
+      warning = `Session complète : ${total}/${capSess.nbPlaces} inscrits (capacité dépassée).`;
+  }
+  return { ok: true, conventionId: convention.id, inscrits, warning };
 }
 
 /**

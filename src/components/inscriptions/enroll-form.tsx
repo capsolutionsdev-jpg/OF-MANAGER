@@ -86,6 +86,7 @@ export function EnrollForm({
         if (Object.keys(input).length > 0) await setCandidatPrerequis(values.candidatId, input);
       }
       toast.success("Candidat inscrit à la session.");
+      if (res.warning) toast.warning(res.warning);
       reset({ candidatId: "", sessionId, financementType: "", statut: "EN_ATTENTE", montant: "" });
       setSsiapNum(""); setSsiapDate(""); setCnaps(""); setCarteProNum(""); setCarteProVal("");
       setSstCert(false); setMedical(false); setChecks({}); setPrerequisOk(false); setPositionnement("lien");

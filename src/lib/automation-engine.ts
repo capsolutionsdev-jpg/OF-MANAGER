@@ -1,6 +1,6 @@
 import { EmailStatut, DemiJournee } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { sendEmail, toBase64, type EmailAttachment } from "@/lib/email";
+import { sendEmail, emailConfigured, toBase64, type EmailAttachment } from "@/lib/email";
 import { sendSms } from "@/lib/sms";
 import { orgConfigFor } from "@/lib/org-identity";
 import { generateToken, appBaseUrl } from "@/lib/token";
@@ -87,7 +87,10 @@ export async function runAutomations(): Promise<Counts> {
         sessionId: opts.sessionId,
       },
     });
-    return res.sent;
+    // « Enregistrable » = envoi réussi OU e-mail non configuré (mode démo).
+    // Un vrai échec (configuré mais non envoyé) renvoie false → le jalon n'est
+    // pas posé et l'événement sera retenté au prochain run (pas de perte).
+    return res.sent || !emailConfigured();
   };
 
   const inscriptions = await prisma.inscription.findMany({
@@ -128,7 +131,7 @@ Merci de vous présenter muni(e) d'une pièce d'identité.
 
 Cordialement,
 ${org.representant} — ${org.name}`;
-      await logAndSend({ to, subject, body, sessionId: s.id });
+      const sent = await logAndSend({ to, subject, body, sessionId: s.id });
       if (entEmail) {
         await logAndSend({
           to: entEmail,
@@ -148,11 +151,13 @@ ${org.representant} — ${org.name}`,
         convRule.body ||
           `Convocation ${f.titre} le ${fmt(s.dateDebut)}${s.lieu ? ` à ${s.lieu}` : ""}. ${org.name}`,
       );
-      await prisma.inscription.update({
-        where: { id: i.id },
-        data: { convocationSentAt: new Date() },
-      });
-      counts.convocations++;
+      if (sent) {
+        await prisma.inscription.update({
+          where: { id: i.id },
+          data: { convocationSentAt: new Date() },
+        });
+        counts.convocations++;
+      }
     }
 
     // ── 1ter) RAPPEL J-1 (signé, 24h avant le début, pas déjà envoyé) ──
@@ -174,18 +179,20 @@ Merci de vous présenter à l'heure, muni(e) d'une pièce d'identité.
 
 À demain,
 ${org.representant} — ${org.name}`;
-      await logAndSend({ to, subject, body, sessionId: s.id });
+      const sent = await logAndSend({ to, subject, body, sessionId: s.id });
       await maybeSms(
         rappelRule.channel,
         i.candidat.telephone,
         rappelRule.body ||
           `Rappel : « ${f.titre} » débute demain ${fmt(s.dateDebut)}${s.horaires ? ` (${s.horaires})` : ""}${s.lieu ? ` à ${s.lieu}` : ""}. ${org.name}`,
       );
-      await prisma.inscription.update({
-        where: { id: i.id },
-        data: { rappelSentAt: new Date() },
-      });
-      counts.rappels++;
+      if (sent) {
+        await prisma.inscription.update({
+          where: { id: i.id },
+          data: { rappelSentAt: new Date() },
+        });
+        counts.rappels++;
+      }
     }
 
     // ── 1bis) CONVOCATION À L'EXAMEN (signé, J-7 avant la fin, mail séparé + PDF) ──
@@ -213,7 +220,7 @@ Vous trouverez votre convocation à l'examen en pièce jointe (PDF). Merci de vo
 Cordialement,
 ${org.representant} — ${org.name}`;
       const cvxPdf = await buildSingleDocPdf(i.id, "CONVOCATION_EXAMEN");
-      await logAndSend({
+      const sent = await logAndSend({
         to,
         subject,
         body,
@@ -222,11 +229,13 @@ ${org.representant} — ${org.name}`;
           ? [{ name: "Convocation-examen.pdf", content: toBase64(cvxPdf.data) }]
           : undefined,
       });
-      await prisma.inscription.update({
-        where: { id: i.id },
-        data: { convocationExamenSentAt: new Date() },
-      });
-      counts.convocationsExamen++;
+      if (sent) {
+        await prisma.inscription.update({
+          where: { id: i.id },
+          data: { convocationExamenSentAt: new Date() },
+        });
+        counts.convocationsExamen++;
+      }
     }
 
     // ── 2) ATTESTATION D'ENTRÉE (J1 atteint, signé, pas déjà envoyée) ──
@@ -250,7 +259,7 @@ ${org.representant} — ${org.name}`;
       const attPj = attPdf
         ? [{ name: "Attestation-entree.pdf", content: toBase64(attPdf.data) }]
         : undefined;
-      await logAndSend({ to, subject, body, sessionId: s.id, attachments: attPj });
+      const sent = await logAndSend({ to, subject, body, sessionId: s.id, attachments: attPj });
       if (entEmail) {
         await logAndSend({
           to: entEmail,
@@ -267,11 +276,13 @@ ${org.representant} — ${org.name}`,
           attachments: attPj,
         });
       }
-      await prisma.inscription.update({
-        where: { id: i.id },
-        data: { attestationEntreeSentAt: new Date() },
-      });
-      counts.attestationsEntree++;
+      if (sent) {
+        await prisma.inscription.update({
+          where: { id: i.id },
+          data: { attestationEntreeSentAt: new Date() },
+        });
+        counts.attestationsEntree++;
+      }
     }
 
     // ── 2ter) TEST DE POSITIONNEMENT (1er jour de formation, lien en ligne) ──
@@ -299,11 +310,13 @@ Vos réponses, signées, seront conservées dans votre dossier de formation.
 
 Bonne formation,
 ${org.representant} — ${org.name}`;
-      await logAndSend({ to, subject: posSubject, body: posBody, sessionId: s.id });
-      await prisma.inscription.update({
-        where: { id: i.id },
-        data: { positionnementSentAt: new Date() },
-      });
+      const sent = await logAndSend({ to, subject: posSubject, body: posBody, sessionId: s.id });
+      if (sent) {
+        await prisma.inscription.update({
+          where: { id: i.id },
+          data: { positionnementSentAt: new Date() },
+        });
+      }
     }
 
     // ── 2quater) TEST DE FRANÇAIS (1er jour, lien en ligne) ──
@@ -326,11 +339,13 @@ Vos réponses, signées, seront conservées dans votre dossier de formation.
 
 Bonne formation,
 ${org.representant} — ${org.name}`;
-      await logAndSend({ to, subject: frSubject, body: frBody, sessionId: s.id });
-      await prisma.inscription.update({
-        where: { id: i.id },
-        data: { francaisSentAt: new Date() },
-      });
+      const sent = await logAndSend({ to, subject: frSubject, body: frBody, sessionId: s.id });
+      if (sent) {
+        await prisma.inscription.update({
+          where: { id: i.id },
+          data: { francaisSentAt: new Date() },
+        });
+      }
     }
 
     // ── 3) ENQUÊTE DE SATISFACTION (formation terminée, pas déjà envoyée) ──
@@ -358,17 +373,19 @@ ${base}/reclamer/${satToken}
 
 Cordialement,
 ${org.representant} — ${org.name}`;
-      await logAndSend({ to, subject, body, sessionId: s.id });
+      const sent = await logAndSend({ to, subject, body, sessionId: s.id });
       await maybeSms(
         satRule.channel,
         i.candidat.telephone,
         satRule.body || `${prenom}, merci d'évaluer la formation « ${f.titre} » : ${base}/satisfaction/${satToken}`,
       );
-      await prisma.inscription.update({
-        where: { id: i.id },
-        data: { satisfactionSentAt: new Date() },
-      });
-      counts.satisfactions++;
+      if (sent) {
+        await prisma.inscription.update({
+          where: { id: i.id },
+          data: { satisfactionSentAt: new Date() },
+        });
+        counts.satisfactions++;
+      }
     }
 
     // ── 3bis) SATISFACTION ENTREPRISE (B2B : formation terminée, client pro) ──
@@ -385,7 +402,7 @@ ${org.representant} — ${org.name}`;
           data: { satisfactionEntrepriseToken: entToken },
         });
       }
-      await logAndSend({
+      const sent = await logAndSend({
         to: entEmail,
         subject: `Votre évaluation de la formation — ${f.titre}`,
         body: `Bonjour,
@@ -404,10 +421,12 @@ Cordialement,
 ${org.representant} — ${org.name}`,
         sessionId: s.id,
       });
-      await prisma.inscription.update({
-        where: { id: i.id },
-        data: { satisfactionEntrepriseSentAt: new Date() },
-      });
+      if (sent) {
+        await prisma.inscription.update({
+          where: { id: i.id },
+          data: { satisfactionEntrepriseSentAt: new Date() },
+        });
+      }
     }
 
     // ── 4) DOCUMENTS DE FIN DE FORMATION (terminée, pas déjà envoyés) ──
@@ -423,7 +442,7 @@ ${base}/parcours/${i.accessToken}/documents
 Cordialement,
 ${org.representant} — ${org.name}`;
       const finPdf = await buildSingleDocPdf(i.id, "ATTESTATION_FIN");
-      await logAndSend({
+      const sent = await logAndSend({
         to,
         subject,
         body,
@@ -454,11 +473,13 @@ ${org.representant} — ${org.name}`,
           attachments: pj.length ? pj : undefined,
         });
       }
-      await prisma.inscription.update({
-        where: { id: i.id },
-        data: { docsFinSentAt: new Date() },
-      });
-      counts.docsFin++;
+      if (sent) {
+        await prisma.inscription.update({
+          where: { id: i.id },
+          data: { docsFinSentAt: new Date() },
+        });
+        counts.docsFin++;
+      }
     }
 
     // ── 4bis) SUIVI À 6 MOIS (Qualiopi ind. 11 — devenir / insertion pro) ──
@@ -485,17 +506,19 @@ Vos réponses nous aident à améliorer nos formations.
 
 Cordialement,
 ${org.representant} — ${org.name}`;
-      await logAndSend({ to, subject, body, sessionId: s.id });
+      const sent = await logAndSend({ to, subject, body, sessionId: s.id });
       await maybeSms(
         suiviRule.channel,
         i.candidat.telephone,
         suiviRule.body ||
           `${prenom}, 2 min pour nous dire où vous en êtes 6 mois après « ${f.titre} » : ${base}/suivi/${suiviToken}`,
       );
-      await prisma.inscription.update({
-        where: { id: i.id },
-        data: { suivi6moisSentAt: new Date() },
-      });
+      if (sent) {
+        await prisma.inscription.update({
+          where: { id: i.id },
+          data: { suivi6moisSentAt: new Date() },
+        });
+      }
     }
   }
 
@@ -534,12 +557,14 @@ Ce document alimente nos indicateurs qualité (Qualiopi).
 
 Cordialement,
 ${org.representant} — ${org.name}`;
-    await logAndSend({ to: f.email, subject, body, sessionId: s.id });
-    await prisma.session.update({
-      where: { id: s.id },
-      data: { crFormateurSentAt: new Date() },
-    });
-    counts.compteRendus++;
+    const sent = await logAndSend({ to: f.email, subject, body, sessionId: s.id });
+    if (sent) {
+      await prisma.session.update({
+        where: { id: s.id },
+        data: { crFormateurSentAt: new Date() },
+      });
+      counts.compteRendus++;
+    }
   }
 
   // ── 6) ÉMARGEMENT DU JOUR (matin avant 13h, après-midi ensuite) ──
@@ -569,12 +594,14 @@ ${link}
 
 Cordialement,
 ${org.representant} — ${org.name}`;
-    await logAndSend({ to: e.email, subject, body, sessionId: e.sessionId });
-    await prisma.emargementSignature.update({
-      where: { id: e.id },
-      data: { sentAt: new Date() },
-    });
-    counts.emargements++;
+    const sent = await logAndSend({ to: e.email, subject, body, sessionId: e.sessionId });
+    if (sent) {
+      await prisma.emargementSignature.update({
+        where: { id: e.id },
+        data: { sentAt: new Date() },
+      });
+      counts.emargements++;
+    }
   }
 
   return counts;

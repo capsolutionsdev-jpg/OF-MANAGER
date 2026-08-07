@@ -84,6 +84,7 @@ export function ConventionDialog({
       });
       if (res.ok) {
         toast.success(`Convention créée — ${res.inscrits} salarié(s) inscrit(s).`);
+        if (res.warning) toast.warning(res.warning);
         setOpen(false);
         setNouveaux([{ nom: "", prenom: "", email: "" }]);
         setExistants([]);

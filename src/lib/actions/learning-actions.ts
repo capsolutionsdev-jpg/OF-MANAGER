@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getTenantDb } from "@/lib/tenant";
 import { auth } from "@/auth";
+import { type LeconQuizItem } from "@/lib/validators/cours";
 
 type Res = { ok: boolean; error?: string };
 
@@ -56,17 +57,38 @@ export async function setLeconDone(
   return { ok: true };
 }
 
-/** Enregistre le score d'un quiz (calculé côté client pour QCU/QCM). */
+/**
+ * Enregistre le résultat d'un quiz. Le score est RECALCULÉ CÔTÉ SERVEUR à partir
+ * des réponses de l'apprenant et des bonnes réponses stockées (lecon.quizJson) —
+ * le score envoyé par le client N'EST PLUS accepté (intégrité, cf. BUG-OFM-011).
+ * `answers` : indices choisis par question (les questions REDIGEE ne sont pas notées).
+ */
 export async function submitQuizResultat(
   leconId: string,
-  score: number,
-  total: number,
-): Promise<Res> {
+  answers: Record<number, number[]>,
+): Promise<Res & { score?: number; total?: number }> {
   const db = await getTenantDb();
   const apprenant = await currentApprenant();
   if (!apprenant) return { ok: false, error: "Non autorisé." };
   const coursId = await leconAutorisee(apprenant.id, leconId);
   if (!coursId) return { ok: false, error: "Accès refusé." };
+
+  // Barème serveur : source de vérité (les bonnes réponses ne quittent pas la base).
+  const lecon = await db.lecon.findUnique({
+    where: { id: leconId },
+    select: { quizJson: true },
+  });
+  const quiz = (lecon?.quizJson as unknown as LeconQuizItem[] | null) ?? [];
+  const total = quiz.filter((q) => q.type !== "REDIGEE").length;
+  let score = 0;
+  quiz.forEach((q, i) => {
+    if (q.type === "REDIGEE") return;
+    const chosen = Array.isArray(answers?.[i]) ? answers[i] : [];
+    const correct = q.bonnes ?? [];
+    const ok =
+      chosen.length === correct.length && chosen.every((c) => correct.includes(c));
+    if (ok) score += 1;
+  });
 
   await db.quizResultat.upsert({
     where: { apprenantId_leconId: { apprenantId: apprenant.id, leconId } },
@@ -80,5 +102,5 @@ export async function submitQuizResultat(
     create: { apprenantId: apprenant.id, leconId },
   });
   revalidatePath(`/mes-cours/${coursId}`);
-  return { ok: true };
+  return { ok: true, score, total };
 }

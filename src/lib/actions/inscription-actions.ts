@@ -22,7 +22,7 @@ import { generateToken, appBaseUrl } from "@/lib/token";
 import { hasStrictFeature } from "@/lib/feature-guard";
 
 export type ActionResult =
-  | { ok: true; inscriptionId: string }
+  | { ok: true; inscriptionId: string; warning?: string }
   | { ok: false; error: string };
 
 export type SimpleResult = { ok: boolean; error?: string };
@@ -74,7 +74,15 @@ export async function setInscriptionStatut(
       data: { statut: "INSCRIT" },
     });
     // Démarre le parcours automatisé seulement s'il n'a jamais été lancé.
-    if (!insc.accessToken) await startParcours(inscriptionId);
+    // Best-effort : une panne d'e-mail/PDF ne doit pas faire échouer le
+    // changement de statut (sinon plant de rendu, digest en prod).
+    if (!insc.accessToken) {
+      try {
+        await startParcours(inscriptionId);
+      } catch (e) {
+        console.error("setInscriptionStatut: startParcours échoué (ignoré)", e);
+      }
+    }
   }
 
   await db.auditLog.create({
@@ -318,7 +326,14 @@ export async function createInscription(
       });
       // Démarre le parcours automatisé (e-mail + lien de finalisation), SAUF si
       // l'inscription est traitée sur place (positionnement/documents en présentiel).
-      if (!opts?.positionnementSurPlace) await startParcours(created.id);
+      // Best-effort : une panne d'e-mail/PDF ne doit pas annuler l'inscription.
+      if (!opts?.positionnementSurPlace) {
+        try {
+          await startParcours(created.id);
+        } catch (e) {
+          console.error("createInscription: startParcours échoué (ignoré)", e);
+        }
+      }
     }
 
     // Traçabilité Qualiopi : vérification des prérequis par le collaborateur.
@@ -346,7 +361,22 @@ export async function createInscription(
     revalidatePath(`/candidats/${v.candidatId}`);
     revalidatePath("/crm");
     revalidatePath("/candidats");
-    return { ok: true, inscriptionId: created.id };
+
+    // Avertissement de capacité (n'empêche pas l'inscription — listes d'attente
+    // fréquentes en OF). nbPlaces n'était jusqu'ici qu'informatif.
+    let warning: string | undefined;
+    const sess = await db.session.findUnique({
+      where: { id: v.sessionId },
+      select: { nbPlaces: true },
+    });
+    if (sess) {
+      const inscrits = await db.inscription.count({
+        where: { sessionId: v.sessionId, statut: { not: "ANNULEE" } },
+      });
+      if (inscrits > sess.nbPlaces)
+        warning = `Session complète : ${inscrits}/${sess.nbPlaces} inscrits (capacité dépassée).`;
+    }
+    return { ok: true, inscriptionId: created.id, warning };
   } catch (e) {
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
       return { ok: false, error: "Ce candidat est déjà inscrit à cette session." };
