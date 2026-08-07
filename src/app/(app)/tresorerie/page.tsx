@@ -135,7 +135,7 @@ export default async function TresoreriePage() {
                   recap.filter((r) => r.caCents > 0).map((r) => (
                     <tr key={r.mois} className="border-b last:border-0">
                       <td className="p-3 capitalize">{r.label}</td>
-                      <td className="p-3 text-right font-medium text-emerald-700">{euro(r.caCents)}</td>
+                      <td className="p-3 text-right font-medium text-emerald-700 dark:text-emerald-300">{euro(r.caCents)}</td>
                     </tr>
                   ))
                 )}
@@ -162,7 +162,7 @@ function Kpi({ icon: Icon, label, value, tone }: {
     <Card className="transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
       <CardContent className="pt-5">
         <Icon className="h-5 w-5 text-muted-foreground" />
-        <p className={`mt-2 text-2xl font-bold ${tone === "pos" ? "text-emerald-700" : "text-rose-700"}`}>{value}</p>
+        <p className={`mt-2 text-2xl font-bold ${tone === "pos" ? "text-emerald-700 dark:text-emerald-300" : "text-rose-700 dark:text-rose-300"}`}>{value}</p>
         <p className="text-xs text-muted-foreground">{label}</p>
       </CardContent>
     </Card>

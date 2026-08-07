@@ -56,9 +56,9 @@ const MOIS = [
 type Etat = "PAYE" | "PARTIEL" | "IMPAYE" | "A_CHIFFRER";
 
 const ETATS: Record<Etat, { label: string; cls: string }> = {
-  PAYE: { label: "Payé", cls: "bg-emerald-500/10 text-emerald-700" },
-  PARTIEL: { label: "Partiel", cls: "bg-amber-500/10 text-amber-700" },
-  IMPAYE: { label: "Impayé", cls: "bg-rose-500/10 text-rose-700" },
+  PAYE: { label: "Payé", cls: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" },
+  PARTIEL: { label: "Partiel", cls: "bg-amber-500/10 text-amber-700 dark:text-amber-300" },
+  IMPAYE: { label: "Impayé", cls: "bg-rose-500/10 text-rose-700 dark:text-rose-300" },
   A_CHIFFRER: { label: "À chiffrer", cls: "bg-muted text-muted-foreground" },
 };
 
@@ -389,7 +389,7 @@ export default async function ComptabilitePage({
         <h2 className="flex items-center gap-2 text-lg font-semibold">
           <AlertCircle className="h-5 w-5 text-rose-600" />
           Clients non soldés
-          <Badge className="bg-rose-500/10 text-rose-700">{nonSoldes.length}</Badge>
+          <Badge className="bg-rose-500/10 text-rose-700 dark:text-rose-300">{nonSoldes.length}</Badge>
         </h2>
         <Card>
           <CardContent className="p-0">
@@ -428,8 +428,8 @@ export default async function ComptabilitePage({
                         <Badge variant="secondary">{l.mode}</Badge>
                       </TableCell>
                       <TableCell className="text-right">{euro(l.du)}</TableCell>
-                      <TableCell className="text-right text-emerald-700">{euro(l.paye)}</TableCell>
-                      <TableCell className="text-right font-semibold text-rose-700">
+                      <TableCell className="text-right text-emerald-700 dark:text-emerald-300">{euro(l.paye)}</TableCell>
+                      <TableCell className="text-right font-semibold text-rose-700 dark:text-rose-300">
                         {euro(l.restant)}
                       </TableCell>
                       <TableCell className="hidden lg:table-cell text-right text-muted-foreground">
@@ -499,7 +499,7 @@ export default async function ComptabilitePage({
                     <TableCell className="text-right">
                       {l.du > 0 ? euro(l.du) : "—"}
                     </TableCell>
-                    <TableCell className="text-right text-emerald-700">
+                    <TableCell className="text-right text-emerald-700 dark:text-emerald-300">
                       {l.paye > 0 ? euro(l.paye) : "—"}
                     </TableCell>
                     <TableCell className="text-right font-medium">
@@ -555,7 +555,7 @@ export default async function ComptabilitePage({
                       <TableCell>
                         {r.mode ? <Badge variant="secondary">{r.mode}</Badge> : "—"}
                       </TableCell>
-                      <TableCell className="text-right font-medium text-emerald-700">
+                      <TableCell className="text-right font-medium text-emerald-700 dark:text-emerald-300">
                         {euro(r.montant)}
                       </TableCell>
                       <TableCell className="text-muted-foreground">{r.par}</TableCell>
@@ -590,7 +590,7 @@ export default async function ComptabilitePage({
                       <TableCell className="font-medium">{mode}</TableCell>
                       <TableCell className="text-right">{v.nb}</TableCell>
                       <TableCell className="text-right">{euro(v.du)}</TableCell>
-                      <TableCell className="text-right text-emerald-700">{euro(v.paye)}</TableCell>
+                      <TableCell className="text-right text-emerald-700 dark:text-emerald-300">{euro(v.paye)}</TableCell>
                       <TableCell className="text-right">{euro(Math.max(0, v.du - v.paye))}</TableCell>
                     </TableRow>
                   ))}
