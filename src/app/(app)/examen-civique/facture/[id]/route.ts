@@ -5,6 +5,7 @@ import { hasExamenCivique } from "@/lib/civique-guard";
 import type { CivicMention, CivicPaiementMethode } from "@prisma/client";
 
 export const runtime = "nodejs";
+export const maxDuration = 60; // génération PDF (Chromium serverless)
 
 const STAFF = ["SUPERADMIN", "ADMIN", "RESPONSABLE_FORMATION"];
 

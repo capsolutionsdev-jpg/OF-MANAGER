@@ -60,6 +60,13 @@ function Field({ label, value }: { label: string; value?: string | null }) {
   );
 }
 
+// Server actions déclenchées depuis cette page (relance de parcours, confirmation
+// d'inscription, inscription…) génèrent des PDF via Chromium. Sans budget de durée
+// suffisant, la fonction serverless peut être tuée (timeout) au démarrage à froid
+// → plant de rendu. On aligne sur le budget des routes PDF (60 s).
+export const runtime = "nodejs";
+export const maxDuration = 60;
+
 export default async function SessionDetailPage({
   params,
 }: {

@@ -23,6 +23,9 @@ import {
 import { TrendingUp } from "lucide-react";
 
 export const dynamic = "force-dynamic";
+// QuickEnrollModal → createInscription → startParcours → PDF (Chromium).
+export const runtime = "nodejs";
+export const maxDuration = 60;
 
 const STATUT_BADGE: Record<string, string> = {
   NOUVEAU: "bg-blue-500/10 text-blue-700 dark:text-blue-300",

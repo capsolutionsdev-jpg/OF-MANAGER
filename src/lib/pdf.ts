@@ -34,11 +34,23 @@ const PDF_OPTS = {
 
 export type PdfOptions = { landscape?: boolean };
 
-/** Rend plusieurs documents HTML en PDF dans une seule session de navigateur. */
-export async function htmlToPdfMany(
-  htmls: string[],
-  opts: PdfOptions = {},
-): Promise<Uint8Array[]> {
+// Fail-fast : plafond de durée de la génération PDF, sous le maxDuration (60 s)
+// des routes/pages. Un Chromium bloqué (démarrage à froid, page qui pend) rejette
+// ainsi AVANT que la plateforme ne tue la fonction — l'appelant peut alors
+// dégrader proprement (ex. envoyer le lien sans la pièce jointe) au lieu de planter.
+const PDF_TIMEOUT_MS = 45_000;
+
+function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error(`Timeout ${label} après ${ms} ms`)), ms);
+    p.then(
+      (v) => { clearTimeout(t); resolve(v); },
+      (e) => { clearTimeout(t); reject(e); },
+    );
+  });
+}
+
+async function renderPdfs(htmls: string[], opts: PdfOptions): Promise<Uint8Array[]> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const browser: any = await launchBrowser();
   try {
@@ -46,7 +58,9 @@ export async function htmlToPdfMany(
     const out: Uint8Array[] = [];
     for (const html of htmls) {
       const page = await browser.newPage();
-      await page.setContent(html, { waitUntil: "networkidle0" });
+      // "load" (et non "networkidle0") : nos HTML sont auto-suffisants (CSS + images
+      // en data:), aucune ressource externe à attendre → rendu rapide et déterministe.
+      await page.setContent(html, { waitUntil: "load", timeout: 30_000 });
       out.push(new Uint8Array(await page.pdf(pdfOpts)));
       await page.close();
     }
@@ -54,6 +68,14 @@ export async function htmlToPdfMany(
   } finally {
     await browser.close();
   }
+}
+
+/** Rend plusieurs documents HTML en PDF dans une seule session de navigateur. */
+export async function htmlToPdfMany(
+  htmls: string[],
+  opts: PdfOptions = {},
+): Promise<Uint8Array[]> {
+  return withTimeout(renderPdfs(htmls, opts), PDF_TIMEOUT_MS, "génération PDF");
 }
 
 /** Rend un seul document HTML en PDF. */

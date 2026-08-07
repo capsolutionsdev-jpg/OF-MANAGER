@@ -16,6 +16,9 @@ import { RelanceButton } from "@/components/signatures/relance-button";
 import { SignedOnSiteButton } from "@/components/signatures/signed-on-site-button";
 
 export const dynamic = "force-dynamic";
+// RelanceButton → relanceParcours → startParcours → PDF (Chromium).
+export const runtime = "nodejs";
+export const maxDuration = 60;
 
 export default async function SignaturesPage() {
   const db = await getTenantDb();

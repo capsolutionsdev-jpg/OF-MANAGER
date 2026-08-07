@@ -5,6 +5,7 @@ import { htmlToPdf } from "@/lib/pdf";
 import { hasStrictFeature } from "@/lib/feature-guard";
 
 export const runtime = "nodejs";
+export const maxDuration = 60; // génération PDF (Chromium serverless)
 
 const STAFF = ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"];
 const esc = (s: string | null | undefined) =>
