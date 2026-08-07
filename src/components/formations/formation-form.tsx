@@ -11,7 +11,6 @@ import {
   formationFormSchema,
   type FormationFormValues,
   MODALITE_LABELS,
-  ACADEMY_LABELS,
   VITRINE_STATUT_LABELS,
 } from "@/lib/validators/formation";
 import {
@@ -62,7 +61,6 @@ export function FormationForm({
       dureeHeures: "",
       tarif: "",
       modalite: "MIXTE",
-      academy: "",
       vitrineStatut: "MASQUEE",
       numeroAgrement: "",
       vitrineTagline: "",
@@ -142,17 +140,6 @@ export function FormationForm({
             <p className="text-xs text-muted-foreground">
               Affiché sur la fiche de cette formation et, agrégé, en bas de page du site.
             </p>
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="academy">Académie</Label>
-            <select id="academy" className={selectClass} {...register("academy")}>
-              <option value="">— Non classée —</option>
-              {Object.entries(ACADEMY_LABELS).map(([v, l]) => (
-                <option key={v} value={v}>
-                  {l}
-                </option>
-              ))}
-            </select>
           </div>
           <div className="grid gap-2">
             <Label htmlFor="modalite">Modalité</Label>

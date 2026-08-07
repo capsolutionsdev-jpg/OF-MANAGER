@@ -6,12 +6,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { ImportCatalogueButton } from "@/components/formations/import-catalogue-button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -20,11 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  MODALITE_LABELS,
-  ACADEMY_LABELS,
-  ACADEMY_ORDER,
-} from "@/lib/validators/formation";
+import { MODALITE_LABELS } from "@/lib/validators/formation";
 
 export default async function FormationsPage() {
   const db = await getTenantDb();
@@ -34,26 +25,11 @@ export default async function FormationsPage() {
     include: { _count: { select: { sessions: true } } },
   });
 
-  // Regroupement par académie (ordre fixe + "Non classées" à la fin).
-  type Groupe = { key: string; titre: string; items: typeof formations };
-  const groupes: Groupe[] = [
-    ...ACADEMY_ORDER.map((a) => ({
-      key: a as string,
-      titre: ACADEMY_LABELS[a],
-      items: formations.filter((f) => f.academy === a),
-    })),
-    {
-      key: "AUTRE",
-      titre: "Non classées",
-      items: formations.filter((f) => !f.academy),
-    },
-  ].filter((g) => g.items.length > 0);
-
   return (
     <div className="space-y-6">
       <PageHeader
         title="Formations"
-        subtitle={`Catalogue — ${formations.length} formation${formations.length > 1 ? "s" : ""} active${formations.length > 1 ? "s" : ""}, classée${formations.length > 1 ? "s" : ""} par académie`}
+        subtitle={`Catalogue — ${formations.length} formation${formations.length > 1 ? "s" : ""} active${formations.length > 1 ? "s" : ""}`}
       >
         <ImportCatalogueButton />
         <Button render={<Link href="/formations/nouvelle" />}>
@@ -73,63 +49,42 @@ export default async function FormationsPage() {
           />
         </Card>
       ) : (
-        <div className="space-y-6">
-          {groupes.map((g) => (
-            <Card key={g.key}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  {g.titre}
-                  <Badge variant="secondary">{g.items.length}</Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <Table className="stagger-rows">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Titre</TableHead>
-                      <TableHead>Référence</TableHead>
-                      <TableHead>Modalité</TableHead>
-                      <TableHead>Durée</TableHead>
-                      <TableHead>Tarif</TableHead>
-                      <TableHead>Sessions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {g.items.map((f) => (
-                      <TableRow key={f.id} className="transition-colors hover:bg-muted/40">
-                        <TableCell className="font-medium">
-                          <Link
-                            href={`/formations/${f.id}`}
-                            className="hover:underline"
-                          >
-                            {f.titre}
-                          </Link>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {f.reference}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="secondary">
-                            {MODALITE_LABELS[f.modalite]}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {f.duree ?? "—"}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {f.tarif ? `${Number(f.tarif)} € HT` : "—"}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {f._count.sessions}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <Card>
+          <CardContent className="p-0">
+            <Table className="stagger-rows">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Titre</TableHead>
+                  <TableHead>Référence</TableHead>
+                  <TableHead>Modalité</TableHead>
+                  <TableHead>Durée</TableHead>
+                  <TableHead>Tarif</TableHead>
+                  <TableHead>Sessions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {formations.map((f) => (
+                  <TableRow key={f.id} className="transition-colors hover:bg-muted/40">
+                    <TableCell className="font-medium">
+                      <Link href={`/formations/${f.id}`} className="hover:underline">
+                        {f.titre}
+                      </Link>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">{f.reference}</TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">{MODALITE_LABELS[f.modalite]}</Badge>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">{f.duree ?? "—"}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {f.tarif ? `${Number(f.tarif)} € HT` : "—"}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">{f._count.sessions}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       )}
     </div>
   );
