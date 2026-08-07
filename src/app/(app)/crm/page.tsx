@@ -25,10 +25,10 @@ import { TrendingUp } from "lucide-react";
 export const dynamic = "force-dynamic";
 
 const STATUT_BADGE: Record<string, string> = {
-  NOUVEAU: "bg-blue-500/10 text-blue-700",
-  EN_TRAITEMENT: "bg-amber-500/10 text-amber-700",
-  INSCRIT: "bg-emerald-500/10 text-emerald-700",
-  REFUSE: "bg-red-500/10 text-red-700",
+  NOUVEAU: "bg-blue-500/10 text-blue-700 dark:text-blue-300",
+  EN_TRAITEMENT: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
+  INSCRIT: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+  REFUSE: "bg-red-500/10 text-red-700 dark:text-red-300",
   ARCHIVE: "bg-muted text-muted-foreground",
 };
 
@@ -289,11 +289,11 @@ export default async function CrmPage() {
                         <div className="flex flex-wrap items-center justify-end gap-1.5">
                           {/* Fiche prospect : statut */}
                           {c.prospectFormCompletedAt ? (
-                            <Badge className="bg-emerald-500/10 text-emerald-700">
+                            <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
                               fiche signée
                             </Badge>
                           ) : c.prospectFormSentAt ? (
-                            <Badge className="bg-amber-500/10 text-amber-700">
+                            <Badge className="bg-amber-500/10 text-amber-700 dark:text-amber-300">
                               lien envoyé
                             </Badge>
                           ) : null}

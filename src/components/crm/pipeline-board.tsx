@@ -117,7 +117,7 @@ export function PipelineBoard({ initial }: { initial: PipelineCard[] }) {
                       )}
                       <div className="mt-1.5 flex flex-wrap items-center gap-1">
                         {euro(c.valeurEstimee) && (
-                          <span className="rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700">
+                          <span className="rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 dark:text-emerald-300">
                             {euro(c.valeurEstimee)}
                           </span>
                         )}
@@ -130,8 +130,8 @@ export function PipelineBoard({ initial }: { initial: PipelineCard[] }) {
                           <span
                             className={`inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] ${
                               relanceLate(c.relanceDate)
-                                ? "bg-red-500/10 text-red-700"
-                                : "bg-amber-500/10 text-amber-700"
+                                ? "bg-red-500/10 text-red-700 dark:text-red-300"
+                                : "bg-amber-500/10 text-amber-700 dark:text-amber-300"
                             }`}
                           >
                             <CalendarClock className="h-2.5 w-2.5" />
