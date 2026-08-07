@@ -12,9 +12,9 @@ export type AdminPiece = {
 };
 
 const PILL: Record<string, string> = {
-  EN_ATTENTE: "bg-amber-500/10 text-amber-700",
-  VALIDEE: "bg-emerald-500/10 text-emerald-700",
-  REFUSEE: "bg-red-500/10 text-red-700",
+  EN_ATTENTE: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
+  VALIDEE: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+  REFUSEE: "bg-red-500/10 text-red-700 dark:text-red-300",
 };
 const LABEL: Record<string, string> = { EN_ATTENTE: "À vérifier", VALIDEE: "Validée", REFUSEE: "Refusée" };
 
@@ -54,11 +54,11 @@ export function PieceValidation({ pieces }: { pieces: AdminPiece[] }) {
               <a href={`/api/public/piece/${p.id}`} target="_blank" rel="noopener noreferrer" className="flex-1 truncate text-primary hover:underline">{p.label}</a>
               <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${PILL[p.statut]}`}>{LABEL[p.statut]}</span>
               <button type="button" disabled={pending} onClick={() => valide(p.id)}
-                className="inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-xs text-emerald-700 hover:bg-emerald-50">
+                className="inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-xs text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:bg-emerald-500/10">
                 <Check className="h-3.5 w-3.5" /> Valider
               </button>
               <button type="button" disabled={pending} onClick={() => { setRefusFor(refusFor === p.id ? null : p.id); setMotif(p.motifRefus ?? ""); }}
-                className="inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-xs text-red-700 hover:bg-red-50">
+                className="inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-xs text-red-700 dark:text-red-300 hover:bg-red-50 dark:bg-red-500/10">
                 <X className="h-3.5 w-3.5" /> Refuser
               </button>
             </div>

@@ -14,9 +14,9 @@ export const dynamic = "force-dynamic";
 
 const STATUT_LABEL: Record<string, string> = { OUVERT: "Ouvert", EN_COURS: "En cours", RESOLU: "Résolu" };
 const STATUT_BADGE: Record<string, string> = {
-  OUVERT: "bg-amber-500/10 text-amber-700",
-  EN_COURS: "bg-blue-500/10 text-blue-700",
-  RESOLU: "bg-emerald-500/10 text-emerald-700",
+  OUVERT: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
+  EN_COURS: "bg-blue-500/10 text-blue-700 dark:text-blue-300",
+  RESOLU: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
 };
 const PRIO_LABEL: Record<string, string> = { BASSE: "Basse", NORMALE: "Normale", HAUTE: "Haute", URGENTE: "Urgente" };
 

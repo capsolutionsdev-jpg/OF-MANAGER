@@ -129,7 +129,7 @@ export function QuickEnrollModal({
           /* ── Formulaire ── */
           <form onSubmit={onSubmit} className="space-y-4 py-2">
             {available.length === 0 ? (
-              <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
+              <p className="rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-300">
                 Aucune session ouverte pour cette formation.{" "}
                 <Link href="/sessions/nouvelle" className="underline">
                   Créez une session

@@ -117,10 +117,10 @@ export function ValidationsManager({ items, canValidate }: { items: ValidationRo
                     <TableCell className="text-right">
                       {canValidate ? (
                         <div className="flex justify-end gap-1">
-                          <Button size="sm" variant="outline" className="h-8 text-emerald-700" onClick={() => run(decideValidation(i.id, "VALIDE"), "Validé.")}>
+                          <Button size="sm" variant="outline" className="h-8 text-emerald-700 dark:text-emerald-300" onClick={() => run(decideValidation(i.id, "VALIDE"), "Validé.")}>
                             <Check className="h-4 w-4" />
                           </Button>
-                          <Button size="sm" variant="outline" className="h-8 text-rose-700" onClick={() => setRefus(i)}>
+                          <Button size="sm" variant="outline" className="h-8 text-rose-700 dark:text-rose-300" onClick={() => setRefus(i)}>
                             <X className="h-4 w-4" />
                           </Button>
                           <DropdownMenu>
@@ -175,8 +175,8 @@ export function ValidationsManager({ items, canValidate }: { items: ValidationRo
                     </TableCell>
                     <TableCell>
                       {i.statut === "VALIDE"
-                        ? <Badge variant="outline" className="text-emerald-700">Validé</Badge>
-                        : <Badge variant="outline" className="text-rose-700">Refusé</Badge>}
+                        ? <Badge variant="outline" className="text-emerald-700 dark:text-emerald-300">Validé</Badge>
+                        : <Badge variant="outline" className="text-rose-700 dark:text-rose-300">Refusé</Badge>}
                     </TableCell>
                     <TableCell className="text-sm font-medium">{i.valideParNom ?? "—"}</TableCell>
                     <TableCell className="text-sm">{fmt(i.decidedAt)}</TableCell>

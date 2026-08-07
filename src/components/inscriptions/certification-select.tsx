@@ -9,8 +9,8 @@ import { setCertification } from "@/lib/actions/inscription-actions";
 
 const CLS: Record<CertificationResultat, string> = {
   NON_EVALUE: "border-input bg-transparent text-muted-foreground",
-  CERTIFIE: "border-emerald-300 bg-emerald-500/10 text-emerald-700",
-  AJOURNE: "border-amber-300 bg-amber-500/10 text-amber-700",
+  CERTIFIE: "border-emerald-300 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+  AJOURNE: "border-amber-300 bg-amber-500/10 text-amber-700 dark:text-amber-300",
   ABANDON: "border-destructive/40 bg-destructive/10 text-destructive",
 };
 
@@ -35,6 +35,23 @@ export function CertificationSelect({
       }
       toast.success("Résultat enregistré (reporté au BPF).");
       router.refresh();
+
+      // Certifié → génération + envoi de l'attestation de réussite via la route
+      // dédiée (PDF/Chromium fiable hors server action). En arrière-plan (non
+      // bloquant) : le select se réactive immédiatement, l'envoi suit son cours.
+      if (res.attestationPending) {
+        const t = toast.loading("Envoi de l'attestation de réussite…");
+        fetch(`/api/inscriptions/${inscriptionId}/attestation-reussite`, { method: "POST" })
+          .then(async (r) => {
+            const j = (await r.json().catch(() => ({}))) as { ok?: boolean };
+            if (r.ok && j.ok) {
+              toast.success("Attestation de réussite envoyée au candidat.", { id: t });
+            } else {
+              toast.error("Attestation non envoyée — réessayez depuis la fiche du candidat.", { id: t });
+            }
+          })
+          .catch(() => toast.error("Attestation non envoyée (réseau).", { id: t }));
+      }
     });
   }
 

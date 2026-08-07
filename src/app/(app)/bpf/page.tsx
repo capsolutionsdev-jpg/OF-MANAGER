@@ -324,7 +324,7 @@ export default async function BpfPage({
               <CardTitle className="flex flex-wrap items-center gap-2 text-base">
                 <GraduationCap className="h-4 w-4" /> Résultats de certification
                 {tauxReussite !== null && (
-                  <Badge className="bg-emerald-500/10 text-emerald-700">
+                  <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
                     Taux de réussite : {tauxReussite}%
                   </Badge>
                 )}
@@ -333,13 +333,13 @@ export default async function BpfPage({
             <CardContent>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <div className="rounded-lg border bg-emerald-500/5 p-3 text-center">
-                  <p className="text-2xl font-bold text-emerald-700">
+                  <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">
                     {cert.CERTIFIE}
                   </p>
                   <p className="text-xs text-muted-foreground">Certifiés</p>
                 </div>
                 <div className="rounded-lg border bg-amber-500/5 p-3 text-center">
-                  <p className="text-2xl font-bold text-amber-700">
+                  <p className="text-2xl font-bold text-amber-700 dark:text-amber-300">
                     {cert.AJOURNE}
                   </p>
                   <p className="text-xs text-muted-foreground">Ajournés</p>
@@ -370,7 +370,7 @@ export default async function BpfPage({
               <CardTitle className="flex flex-wrap items-center gap-2 text-base">
                 <Users className="h-4 w-4" /> Insertion à 6 mois (suivi Qualiopi)
                 {tauxEmploi !== null && (
-                  <Badge className="bg-emerald-500/10 text-emerald-700">Taux d&apos;emploi : {tauxEmploi}%</Badge>
+                  <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">Taux d&apos;emploi : {tauxEmploi}%</Badge>
                 )}
               </CardTitle>
             </CardHeader>
@@ -388,11 +388,11 @@ export default async function BpfPage({
                       <p className="text-xs text-muted-foreground">Répondants</p>
                     </div>
                     <div className="rounded-lg border bg-emerald-500/5 p-3 text-center">
-                      <p className="text-2xl font-bold text-emerald-700">{suivi.enEmploi}</p>
+                      <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">{suivi.enEmploi}</p>
                       <p className="text-xs text-muted-foreground">En emploi</p>
                     </div>
                     <div className="rounded-lg border bg-sky-500/5 p-3 text-center">
-                      <p className="text-2xl font-bold text-sky-700">{tauxEmploi}%</p>
+                      <p className="text-2xl font-bold text-sky-700 dark:text-sky-300">{tauxEmploi}%</p>
                       <p className="text-xs text-muted-foreground">Taux d&apos;emploi</p>
                     </div>
                     <div className="rounded-lg border bg-primary/5 p-3 text-center">

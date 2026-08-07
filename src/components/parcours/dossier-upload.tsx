@@ -39,9 +39,9 @@ function fileToDataUrl(file: File, maxW = 1600): Promise<string> {
 function isImg(mime: string | null) { return !!mime && mime.startsWith("image/"); }
 
 function StatutPill({ statut }: { statut: PieceDTO["statut"] }) {
-  if (statut === "VALIDEE") return <span className="rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700">Validée</span>;
-  if (statut === "REFUSEE") return <span className="rounded bg-red-500/10 px-1.5 py-0.5 text-[10px] font-medium text-red-700">Refusée</span>;
-  return <span className="rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">À vérifier</span>;
+  if (statut === "VALIDEE") return <span className="rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 dark:text-emerald-300">Validée</span>;
+  if (statut === "REFUSEE") return <span className="rounded bg-red-500/10 px-1.5 py-0.5 text-[10px] font-medium text-red-700 dark:text-red-300">Refusée</span>;
+  return <span className="rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-300">À vérifier</span>;
 }
 
 export function DossierUpload({
@@ -121,7 +121,7 @@ export function DossierUpload({
                     ? <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
                     : <Circle className="h-4 w-4 shrink-0 text-muted-foreground" />}
                   <span className={`text-sm font-medium ${fourni ? "" : "text-muted-foreground"}`}>{label}</span>
-                  {fourni && <span className="text-xs font-medium text-emerald-700">Fourni</span>}
+                  {fourni && <span className="text-xs font-medium text-emerald-700 dark:text-emerald-300">Fourni</span>}
                 </div>
 
                 {/* fichiers déjà déposés pour cette pièce */}

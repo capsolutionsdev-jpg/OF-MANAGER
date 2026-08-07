@@ -83,10 +83,10 @@ const eur = (cents: number) =>
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("fr-FR");
 
 function statutBadge(s: string) {
-  if (s === "rembourse") return <Badge variant="outline" className="text-amber-700">Remboursé</Badge>;
+  if (s === "rembourse") return <Badge variant="outline" className="text-amber-700 dark:text-amber-300">Remboursé</Badge>;
   if (s === "annule") return <Badge variant="outline" className="text-muted-foreground">Annulé</Badge>;
   if (s === "en_attente") return <Badge variant="outline">En attente</Badge>;
-  return <Badge variant="outline" className="text-emerald-700">Payé</Badge>;
+  return <Badge variant="outline" className="text-emerald-700 dark:text-emerald-300">Payé</Badge>;
 }
 
 export function CivicPaymentsManager({
@@ -222,7 +222,7 @@ export function CivicPaymentsManager({
                         href={`/examen-civique/facture/${p.avoirId}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="mt-0.5 flex items-center gap-1 text-xs text-amber-700 hover:underline"
+                        className="mt-0.5 flex items-center gap-1 text-xs text-amber-700 dark:text-amber-300 hover:underline"
                       >
                         <Undo2 className="h-3 w-3" /> {p.avoirNumero}
                       </a>
@@ -354,7 +354,7 @@ function RecordPaymentDialog({
 
         {done ? (
           <div className="space-y-3">
-            <div className="rounded-lg border bg-emerald-50 p-4 text-sm text-emerald-900">
+            <div className="rounded-lg border bg-emerald-50 dark:bg-emerald-500/10 p-4 text-sm text-emerald-900 dark:text-emerald-300">
               Paiement enregistré ✓{done.numero ? ` — facture ${done.numero}` : ""}.
             </div>
             <DialogFooter>
@@ -490,7 +490,7 @@ function GuichetDialog({
 
         {done ? (
           <div className="space-y-3">
-            <div className="rounded-lg border bg-emerald-50 p-4 text-sm text-emerald-900">
+            <div className="rounded-lg border bg-emerald-50 dark:bg-emerald-500/10 p-4 text-sm text-emerald-900 dark:text-emerald-300">
               <p className="font-medium">Inscription enregistrée ✓{done.numero ? ` — facture ${done.numero}` : ""}</p>
               <p className="mt-1">Code d'accès :</p>
               <code className="mt-1 block break-all rounded bg-white px-2 py-1 font-mono text-xs">{done.code}</code>

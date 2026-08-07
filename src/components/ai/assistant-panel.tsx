@@ -56,7 +56,7 @@ export function AssistantPanel({
     <div className="grid gap-6 lg:grid-cols-2">
       <form ref={formRef} action={onSubmit} className="space-y-3 rounded-xl border bg-muted/30 p-4">
         {!configured && (
-          <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-800">
+          <div className="rounded-md border border-amber-300 bg-amber-50 dark:bg-amber-500/10 p-3 text-xs text-amber-800 dark:text-amber-300">
             Mode démo : l&apos;assistant est branché mais aucune clé IA n&apos;est configurée.
             Ajoutez <code>ANTHROPIC_API_KEY</code> à l&apos;environnement pour activer la génération.
           </div>

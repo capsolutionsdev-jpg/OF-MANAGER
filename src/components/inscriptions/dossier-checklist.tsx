@@ -83,14 +83,14 @@ export function DossierChecklist({
         <Badge
           className={
             complete
-              ? "bg-emerald-500/10 text-emerald-700"
-              : "bg-amber-500/10 text-amber-700"
+              ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+              : "bg-amber-500/10 text-amber-700 dark:text-amber-300"
           }
         >
           {done}/{piecesAttendues.length} pièce{piecesAttendues.length > 1 ? "s" : ""}
         </Badge>
         {complete ? (
-          <span className="text-xs font-medium text-emerald-700">
+          <span className="text-xs font-medium text-emerald-700 dark:text-emerald-300">
             Dossier complet ✓
           </span>
         ) : (
@@ -127,7 +127,7 @@ export function DossierChecklist({
                 <span className="flex-1">
                   <span className={ok ? "text-foreground" : "text-muted-foreground"}>{piece}</span>
                   {info && (
-                    <span className="mt-0.5 block text-[11px] text-emerald-700">
+                    <span className="mt-0.5 block text-[11px] text-emerald-700 dark:text-emerald-300">
                       ✓ validé par {info.nom}{info.date ? ` · ${fmtDate(info.date)}` : ""}
                     </span>
                   )}

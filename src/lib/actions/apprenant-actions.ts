@@ -24,64 +24,92 @@ export async function createApprenantAccount(
   if (!password || password.length < 8)
     return { ok: false, error: "Mot de passe : 8 caractères minimum." };
 
-  const candidat = await db.candidat.findUnique({
-    where: { id: candidatId },
-    select: { id: true, nom: true, prenom: true, email: true },
-  });
-  if (!candidat) return { ok: false, error: "Candidat introuvable." };
-
-  const email = (emailOverride?.trim() || candidat.email).toLowerCase();
-  if (!email) return { ok: false, error: "Aucune adresse e-mail." };
-
-  const apprenant = await db.apprenant.upsert({
-    where: { candidatId },
-    update: {},
-    create: { candidatId },
-    select: { id: true, userId: true },
-  });
-
-  const passwordHash = await bcrypt.hash(password, 10);
-  const name = `${candidat.prenom} ${candidat.nom}`.trim();
-
-  // Un utilisateur avec cet e-mail existe-t-il déjà ?
-  const existingUser = await db.user.findUnique({ where: { email } });
-
-  if (apprenant.userId) {
-    // Compte déjà lié → réinitialise le mot de passe
-    await db.user.update({
-      where: { id: apprenant.userId },
-      data: { passwordHash, role: "APPRENANT", isActive: true },
+  try {
+    const candidat = await db.candidat.findUnique({
+      where: { id: candidatId },
+      select: { id: true, nom: true, prenom: true, email: true, organismeId: true },
     });
-  } else if (existingUser) {
-    await db.user.update({
-      where: { id: existingUser.id },
-      data: { passwordHash, role: "APPRENANT", isActive: true, name },
+    if (!candidat) return { ok: false, error: "Candidat introuvable." };
+
+    const email = (emailOverride?.trim() || candidat.email).toLowerCase();
+    if (!email) return { ok: false, error: "Aucune adresse e-mail." };
+
+    const apprenant = await db.apprenant.upsert({
+      where: { candidatId },
+      update: {},
+      create: { candidatId },
+      select: { id: true, userId: true },
     });
-    await db.apprenant.update({
-      where: { id: apprenant.id },
-      data: { userId: existingUser.id },
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    const name = `${candidat.prenom} ${candidat.nom}`.trim();
+
+    // User = entité GLOBALE (e-mail unique, authentification cross-tenant) → on
+    // utilise le client BRUT `prisma`, JAMAIS le client scopé : ce dernier filtre
+    // par organisme et masquerait un utilisateur d'un autre organisme (ou à
+    // organisme nul), ce qui provoquait une collision de contrainte unique au
+    // `user.create` → exception non gérée → crash. Cf. lib/tenant.ts.
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+
+    if (apprenant.userId) {
+      // Compte déjà lié → réinitialise le mot de passe.
+      await prisma.user.update({
+        where: { id: apprenant.userId },
+        data: { passwordHash, role: "APPRENANT", isActive: true },
+      });
+    } else if (existingUser) {
+      await prisma.user.update({
+        where: { id: existingUser.id },
+        data: { passwordHash, role: "APPRENANT", isActive: true, name },
+      });
+      await db.apprenant.update({
+        where: { id: apprenant.id },
+        data: { userId: existingUser.id },
+      });
+    } else {
+      const user = await prisma.user.create({
+        data: { email, name, role: "APPRENANT", passwordHash, organismeId: candidat.organismeId },
+      });
+      await db.apprenant.update({
+        where: { id: apprenant.id },
+        data: { userId: user.id },
+      });
+    }
+
+    await db.auditLog.create({
+      data: {
+        userId: session.user.id,
+        action: "APPRENANT_ACCOUNT",
+        entityType: "Apprenant",
+        entityId: apprenant.id,
+      },
     });
-  } else {
-    const user = await db.user.create({
-      data: { email, name, role: "APPRENANT", passwordHash },
-    });
-    await db.apprenant.update({
-      where: { id: apprenant.id },
-      data: { userId: user.id },
-    });
+
+    revalidatePath("/elearning/apprenants");
+    return { ok: true };
+  } catch (e) {
+    // Instrumentation : capture la cause EXACTE en base (le message est masqué en
+    // prod). Diagnostic → AuditLog action="APPRENANT_ACCOUNT_ERROR" (entityId=msg).
+    // Retourne une erreur propre au lieu de jeter → plus de crash de page.
+    const msg = e instanceof Error ? e.message : String(e);
+    try {
+      await db.auditLog.create({
+        data: {
+          userId: session.user.id,
+          action: "APPRENANT_ACCOUNT_ERROR",
+          entityType: "Apprenant",
+          entityId: msg.slice(0, 480),
+        },
+      });
+    } catch {
+      /* le journal ne doit jamais masquer l'erreur d'origine */
+    }
+    console.error("[createApprenantAccount]", e);
+    return {
+      ok: false,
+      error: "Création de l'accès impossible. Réessayez, ou contactez le support si le problème persiste.",
+    };
   }
-
-  await db.auditLog.create({
-    data: {
-      userId: session.user.id,
-      action: "APPRENANT_ACCOUNT",
-      entityType: "Apprenant",
-      entityId: apprenant.id,
-    },
-  });
-
-  revalidatePath("/elearning/apprenants");
-  return { ok: true };
 }
 
 /** Apprenant connecté (via son compte utilisateur), sinon null. */

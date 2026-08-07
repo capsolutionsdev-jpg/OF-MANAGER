@@ -38,7 +38,7 @@ export default async function SignaturesPage() {
   const Etape = ({ ok, label }: { ok: boolean; label: string }) => (
     <Badge
       className={
-        ok ? "bg-emerald-500/10 text-emerald-700" : "bg-muted text-muted-foreground"
+        ok ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : "bg-muted text-muted-foreground"
       }
     >
       {ok ? "✓ " : "○ "}
@@ -190,7 +190,7 @@ export default async function SignaturesPage() {
                     </TableCell>
                     <TableCell>
                       {i.docsCopieSentAt ? (
-                        <Badge className="bg-emerald-500/10 text-emerald-700">
+                        <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
                           ✓ {fmt(i.docsCopieSentAt)}
                         </Badge>
                       ) : (
