@@ -900,7 +900,10 @@ model Inscription {
 
   documents  DocumentGenere[]
   contrat    Contrat?
-  convention Convention?
+  convention Convention? @relation("ConventionUnique")
+  // Convention de GROUPE (client pro) : plusieurs salariés sous une même convention.
+  conventionId     String?
+  conventionGroupe Convention? @relation("ConventionGroupe", fields: [conventionId], references: [id])
   factures   Facture[]
   paiements  Paiement[]
   signatures SignatureRequest[]
@@ -1091,7 +1094,9 @@ model Convention {
   organismeId String? // tenant (multi-OF)
   reference     String // unique PAR organisme (cf. @@unique)
   inscriptionId String?  @unique
-  inscription   Inscription? @relation(fields: [inscriptionId], references: [id])
+  inscription   Inscription? @relation("ConventionUnique", fields: [inscriptionId], references: [id])
+  // Convention de GROUPE (client pro) : plusieurs salariés rattachés.
+  inscriptions  Inscription[] @relation("ConventionGroupe")
   sessionId     String?
 
   @@unique([organismeId, reference])

@@ -40,6 +40,7 @@ import { SendConvocationsButton } from "@/components/sessions/send-convocations-
 import { SendCompteRenduButton } from "@/components/sessions/send-compte-rendu-button";
 import { SendContratButton } from "@/components/sessions/send-contrat-button";
 import { DossierChecklist } from "@/components/inscriptions/dossier-checklist";
+import { ConventionDialog } from "@/components/conventions/convention-dialog";
 
 const STATUT_BADGE_CLS: Record<string, string> = {
   EN_ATTENTE: "bg-muted text-muted-foreground",
@@ -105,6 +106,11 @@ export default async function SessionDetailPage({
     select: { id: true, nom: true, prenom: true },
     orderBy: [{ nom: "asc" }, { prenom: "asc" }],
   });
+  // Clients professionnels (convention entreprise / inscription groupée).
+  const entreprisesPro = await db.entreprise.findMany({
+    select: { id: true, raisonSociale: true },
+    orderBy: { raisonSociale: "asc" },
+  });
 
   const fmt = (d: Date) => d.toLocaleDateString("fr-FR");
 
@@ -159,6 +165,7 @@ export default async function SessionDetailPage({
             <Badge variant="outline">{SESSION_STATUT_LABELS[s.statut]}</Badge>
           </div>
           <div className="flex flex-wrap gap-2">
+            <ConventionDialog sessionId={s.id} entreprises={entreprisesPro} />
             <SendConvocationsButton sessionId={s.id} />
             <Button
               variant="outline"
