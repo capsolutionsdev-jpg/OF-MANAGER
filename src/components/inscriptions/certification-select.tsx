@@ -9,8 +9,8 @@ import { setCertification } from "@/lib/actions/inscription-actions";
 
 const CLS: Record<CertificationResultat, string> = {
   NON_EVALUE: "border-input bg-transparent text-muted-foreground",
-  CERTIFIE: "border-emerald-300 bg-emerald-500/10 text-emerald-700",
-  AJOURNE: "border-amber-300 bg-amber-500/10 text-amber-700",
+  CERTIFIE: "border-emerald-300 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+  AJOURNE: "border-amber-300 bg-amber-500/10 text-amber-700 dark:text-amber-300",
   ABANDON: "border-destructive/40 bg-destructive/10 text-destructive",
 };
 

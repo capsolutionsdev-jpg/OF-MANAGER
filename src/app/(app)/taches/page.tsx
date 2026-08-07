@@ -76,7 +76,7 @@ export default async function TachesPage() {
             {t.dueDate && (
               <span
                 className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] ${
-                  late ? "bg-red-500/10 text-red-700" : "bg-muted text-muted-foreground"
+                  late ? "bg-red-500/10 text-red-700 dark:text-red-300" : "bg-muted text-muted-foreground"
                 }`}
               >
                 <CalendarClock className="h-3 w-3" /> {fmt(t.dueDate)}

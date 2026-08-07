@@ -41,7 +41,7 @@ export default async function CompteCollaborateurPage() {
       {seat && (
         <div
           className={`rounded-lg border px-4 py-3 text-sm ${
-            seat.canAdd ? "bg-muted/40" : "border-amber-300 bg-amber-50 text-amber-800"
+            seat.canAdd ? "bg-muted/40" : "border-amber-300 bg-amber-50 dark:bg-amber-500/10 text-amber-800 dark:text-amber-300"
           }`}
         >
           <span className="font-medium">

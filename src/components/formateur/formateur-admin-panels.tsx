@@ -16,10 +16,10 @@ const LABELS: Record<string, string> = {
   EN_ATTENTE: "En attente", EN_COURS: "En cours", PAYEE: "Payée", REJETEE: "Rejetée",
 };
 const CLS: Record<string, string> = {
-  EN_ATTENTE: "bg-amber-500/10 text-amber-700",
-  EN_COURS: "bg-sky-500/10 text-sky-700",
-  PAYEE: "bg-emerald-500/10 text-emerald-700",
-  REJETEE: "bg-red-500/10 text-red-700",
+  EN_ATTENTE: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
+  EN_COURS: "bg-sky-500/10 text-sky-700 dark:text-sky-300",
+  PAYEE: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+  REJETEE: "bg-red-500/10 text-red-700 dark:text-red-300",
 };
 const STATUTS = ["EN_ATTENTE", "EN_COURS", "PAYEE", "REJETEE"] as const;
 

@@ -67,11 +67,11 @@ export function JurysManager({ jurys, sessions, affectations, formations }: { ju
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <div className="rounded-lg border bg-card p-4">
           <div className="text-xs text-muted-foreground">À payer</div>
-          <div className="text-xl font-bold text-amber-700">{totalDu.toFixed(2)} €</div>
+          <div className="text-xl font-bold text-amber-700 dark:text-amber-300">{totalDu.toFixed(2)} €</div>
         </div>
         <div className="rounded-lg border bg-card p-4">
           <div className="text-xs text-muted-foreground">Payé</div>
-          <div className="text-xl font-bold text-emerald-700">{totalPaye.toFixed(2)} €</div>
+          <div className="text-xl font-bold text-emerald-700 dark:text-emerald-300">{totalPaye.toFixed(2)} €</div>
         </div>
         <div className="rounded-lg border bg-card p-4">
           <div className="text-xs text-muted-foreground">Affectations</div>
@@ -209,7 +209,7 @@ function AffectRow({
         <button type="button" disabled={isPending}
           onClick={() => run("s" + a.id, setAffectationStatut(a.id, paye ? "A_PAYER" : "PAYE"), paye ? "Marqué à payer." : (a.juryEmail ? "Payé — note de défraiement envoyée au juré." : "Payé (pas d'e-mail : note non envoyée)."))}
           title={paye ? "Repasser à payer" : "Marquer payé → envoie la note de défraiement au juré"}
-          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${paye ? "bg-emerald-500/10 text-emerald-700" : "bg-amber-500/10 text-amber-700"}`}>
+          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${paye ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : "bg-amber-500/10 text-amber-700 dark:text-amber-300"}`}>
           <Check className="h-3 w-3" /> {paye ? "Payé" : "À payer"}
         </button>
         <a href={`/jurys/affectation/${a.id}/defraiement`} target="_blank" rel="noreferrer"

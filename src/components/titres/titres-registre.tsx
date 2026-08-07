@@ -32,13 +32,13 @@ const STATUT_LABELS: Record<TitreStatut, string> = {
 const CHOIX: TitreStatut[] = ["VALIDE", "REVOQUE", "ANNULE", "ARCHIVE"];
 
 const badgeClass = (s: TitreStatut, expire: boolean): string => {
-  if (s === "VALIDE" && expire) return "bg-amber-100 text-amber-800";
+  if (s === "VALIDE" && expire) return "bg-amber-100 dark:bg-amber-500/15 text-amber-800 dark:text-amber-300";
   switch (s) {
     case "VALIDE":
-      return "bg-emerald-100 text-emerald-800";
+      return "bg-emerald-100 dark:bg-emerald-500/15 text-emerald-800 dark:text-emerald-300";
     case "REVOQUE":
     case "ANNULE":
-      return "bg-rose-100 text-rose-800";
+      return "bg-rose-100 dark:bg-rose-500/15 text-rose-800 dark:text-rose-300";
     default:
       return "bg-slate-100 text-slate-700";
   }
@@ -123,7 +123,7 @@ export function TitresRegistre({ rows }: { rows: TitreRow[] }) {
                 <td className="px-3 py-2">{r.delivreLe}</td>
                 <td className="px-3 py-2">
                   {r.finValidite ? (
-                    <span className={r.expire ? "text-amber-700" : ""}>
+                    <span className={r.expire ? "text-amber-700 dark:text-amber-300" : ""}>
                       {r.expire ? "Expiré le " : "Jusqu'au "}
                       {r.finValidite}
                     </span>

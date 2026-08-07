@@ -12,7 +12,7 @@ export const FACTURE_FORMATEUR_LABELS: Record<string, string> = {
 };
 const STATUT_CLASS: Record<string, string> = {
   EN_ATTENTE: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
-  EN_COURS: "bg-sky-500/10 text-sky-700",
+  EN_COURS: "bg-sky-500/10 text-sky-700 dark:text-sky-300",
   PAYEE: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
   REJETEE: "bg-red-500/10 text-red-700 dark:text-red-300",
 };

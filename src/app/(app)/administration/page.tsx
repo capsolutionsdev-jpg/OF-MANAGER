@@ -23,9 +23,9 @@ import { ManageSubscriptionButton } from "@/components/billing/manage-subscripti
 export const dynamic = "force-dynamic";
 
 const STATUT_BADGE: Record<string, { label: string; cls: string }> = {
-  ACTIF: { label: "Abonnement actif", cls: "bg-emerald-500/10 text-emerald-700" },
-  ESSAI: { label: "Période d'essai", cls: "bg-amber-500/10 text-amber-700" },
-  SUSPENDU: { label: "Suspendu", cls: "bg-rose-500/10 text-rose-700" },
+  ACTIF: { label: "Abonnement actif", cls: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" },
+  ESSAI: { label: "Période d'essai", cls: "bg-amber-500/10 text-amber-700 dark:text-amber-300" },
+  SUSPENDU: { label: "Suspendu", cls: "bg-rose-500/10 text-rose-700 dark:text-rose-300" },
 };
 
 const COMPTES = [

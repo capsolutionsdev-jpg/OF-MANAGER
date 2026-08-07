@@ -120,7 +120,7 @@ export function DocsSignesChecklist({
                     <span className="flex-1">
                       <span className={ok ? "text-foreground" : "text-muted-foreground"}>{d.label}</span>
                       {info && (
-                        <span className="mt-0.5 block text-[11px] text-emerald-700">
+                        <span className="mt-0.5 block text-[11px] text-emerald-700 dark:text-emerald-300">
                           ✓ validé par {info.nom}{info.date ? ` · ${fmt(info.date)}` : ""}
                         </span>
                       )}
