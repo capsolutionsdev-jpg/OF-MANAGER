@@ -93,8 +93,8 @@ export default async function EmargementPage({
               <Badge
                 className={
                   sigDone === sigTotal
-                    ? "bg-emerald-500/10 text-emerald-700"
-                    : "bg-amber-500/10 text-amber-700"
+                    ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                    : "bg-amber-500/10 text-amber-700 dark:text-amber-300"
                 }
               >
                 {sigDone}/{sigTotal} signées
@@ -122,7 +122,7 @@ export default async function EmargementPage({
                         </Badge>
                         <span className="font-medium">{e.nom}</span>
                         {e.signedAt ? (
-                          <span className="inline-flex items-center gap-1 text-xs text-emerald-700">
+                          <span className="inline-flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-300">
                             <CheckCircle2 className="h-3.5 w-3.5" /> signé à{" "}
                             {e.signedAt.toLocaleTimeString("fr-FR", {
                               hour: "2-digit",
@@ -130,7 +130,7 @@ export default async function EmargementPage({
                             })}
                           </span>
                         ) : e.sentAt ? (
-                          <span className="inline-flex items-center gap-1 text-xs text-amber-700">
+                          <span className="inline-flex items-center gap-1 text-xs text-amber-700 dark:text-amber-300">
                             <Clock className="h-3.5 w-3.5" /> lien envoyé — en attente
                           </span>
                         ) : (

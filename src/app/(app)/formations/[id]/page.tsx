@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowLeft, Pencil, Copy, Archive } from "lucide-react";
 import { getTenantDb } from "@/lib/tenant";
 import { Button } from "@/components/ui/button";
+import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -93,9 +94,17 @@ export default async function FormationDetailPage({
             {!f.isArchived && (
               <form action={archiveFormationAction}>
                 <input type="hidden" name="id" value={f.id} />
-                <Button type="submit" variant="outline">
+                <ConfirmSubmitButton
+                  variant="outline"
+                  confirm={{
+                    title: `Archiver « ${f.titre} » ?`,
+                    description:
+                      "La formation sera retirée du catalogue actif. Ses sessions passées restent consultables ; vous pourrez la réactiver plus tard.",
+                    confirmLabel: "Archiver",
+                  }}
+                >
                   <Archive className="mr-2 h-4 w-4" /> Archiver
-                </Button>
+                </ConfirmSubmitButton>
               </form>
             )}
           </div>

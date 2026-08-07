@@ -32,12 +32,12 @@ const ETATS = [
   {
     key: "ENCOURS",
     label: "En cours",
-    badge: "bg-emerald-500/10 text-emerald-700",
+    badge: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
   },
   {
     key: "AVENIR",
     label: "À venir",
-    badge: "bg-blue-500/10 text-blue-700",
+    badge: "bg-blue-500/10 text-blue-700 dark:text-blue-300",
   },
   {
     key: "PASSEE",
@@ -47,7 +47,7 @@ const ETATS = [
   {
     key: "ARCHIVEE",
     label: "Archivées",
-    badge: "bg-red-500/10 text-red-700",
+    badge: "bg-red-500/10 text-red-700 dark:text-red-300",
   },
 ] as const;
 

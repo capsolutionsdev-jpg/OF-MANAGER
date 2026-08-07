@@ -5,14 +5,20 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { PenLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { markInscriptionSignedOnSite } from "@/lib/actions/document-actions";
 
 export function SignedOnSiteButton({ inscriptionId }: { inscriptionId: string }) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [isPending, startTransition] = useTransition();
 
-  function onClick() {
-    if (!confirm("Marquer les documents comme signés sur place ?")) return;
+  async function onClick() {
+    if (!(await confirm({
+      title: "Marquer les documents comme signés sur place ?",
+      description: "Les documents de ce candidat seront considérés signés en présentiel.",
+      confirmLabel: "Marquer signé",
+    }))) return;
     startTransition(async () => {
       const r = await markInscriptionSignedOnSite(inscriptionId);
       if (r.ok) {

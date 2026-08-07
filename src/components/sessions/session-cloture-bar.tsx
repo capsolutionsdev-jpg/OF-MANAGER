@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import Link from "next/link";
 import { Archive, BellRing, Loader2, Lock, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { notifierCollaborateurs } from "@/lib/actions/session-guard-actions";
 import { archiveSessionValidated } from "@/lib/actions/session-validation-actions";
 
@@ -19,10 +20,20 @@ export function SessionClotureBar({
   dejaArchivee: boolean;
 }) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [archiving, startArchive] = useTransition();
   const [notifying, startNotify] = useTransition();
 
-  function archiver() {
+  async function archiver() {
+    if (
+      !(await confirm({
+        title: "Archiver et clôturer cette session ?",
+        description:
+          "La session sera définitivement clôturée et archivée. Vérifiez que la validation est complète avant de continuer.",
+        confirmLabel: "Archiver la session",
+      }))
+    )
+      return;
     startArchive(async () => {
       // L'archivage s'appuie exclusivement sur le service de validation.
       const r = await archiveSessionValidated(sessionId);
@@ -48,7 +59,7 @@ export function SessionClotureBar({
         Rappeler les collaborateurs
       </Button>
       {dejaArchivee ? (
-        <span className="inline-flex items-center gap-1.5 rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
+        <span className="inline-flex items-center gap-1.5 rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300">
           <Archive className="h-3.5 w-3.5" /> Session archivée
         </span>
       ) : (

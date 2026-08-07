@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { InscriptionStatut } from "@prisma/client";
 import { Button } from "@/components/ui/button";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,6 +50,7 @@ export function InscriptionActionsMenu({
   attestation?: { code: string; label: string } | null;
 }) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [isPending, startTransition] = useTransition();
 
   function genererAttestationDoc() {
@@ -107,11 +109,14 @@ export function InscriptionActionsMenu({
     });
   }
 
-  function retirer() {
+  async function retirer() {
     if (
-      !confirm(
-        "Retirer définitivement ce candidat de la session ? Cette action supprime l'inscription.",
-      )
+      !(await confirm({
+        title: "Retirer ce candidat de la session ?",
+        description: "Cette action supprime définitivement l'inscription.",
+        destructive: true,
+        confirmLabel: "Retirer",
+      }))
     )
       return;
     startTransition(async () => {

@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { cn } from "@/lib/utils";
 
 export type LeadRow = {
@@ -51,6 +52,7 @@ function fmt(d: Date) {
 }
 
 function LeadCard({ lead }: { lead: LeadRow }) {
+  const confirm = useConfirm();
   const [pending, start] = useTransition();
   const [notes, setNotes] = useState(lead.notes ?? "");
   const [savingNotes, startNotes] = useTransition();
@@ -112,7 +114,7 @@ function LeadCard({ lead }: { lead: LeadRow }) {
               <PhoneCall className="h-3.5 w-3.5" /> Marquer rappelé
             </Button>
           )}
-          <Button size="sm" variant="ghost" className="h-9 text-muted-foreground hover:text-destructive" disabled={pending} onClick={() => { if (confirm("Supprimer ce lead ?")) start(() => deleteLead(lead.id)); }} aria-label="Supprimer">
+          <Button size="sm" variant="ghost" className="h-9 text-muted-foreground hover:text-destructive" disabled={pending} onClick={async () => { if (await confirm({ title: "Supprimer ce lead ?", description: "Cette action est définitive.", destructive: true, confirmLabel: "Supprimer" })) start(() => deleteLead(lead.id)); }} aria-label="Supprimer">
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>

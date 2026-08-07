@@ -96,7 +96,7 @@ export default async function FormationsPage() {
                   </TableHeader>
                   <TableBody>
                     {g.items.map((f) => (
-                      <TableRow key={f.id}>
+                      <TableRow key={f.id} className="transition-colors hover:bg-muted/40">
                         <TableCell className="font-medium">
                           <Link
                             href={`/formations/${f.id}`}
