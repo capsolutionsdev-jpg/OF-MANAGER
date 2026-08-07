@@ -3,7 +3,7 @@ import path from "node:path";
 import JSZip from "jszip";
 import HTMLtoDOCX from "@turbodocx/html-to-docx";
 import { prisma } from "@/lib/prisma";
-import { DOCUMENTS, renderTemplate } from "@/lib/documents/templates";
+import { DOCUMENTS, EMPTY_IMAGE, renderTemplate } from "@/lib/documents/templates";
 import { buildVariables } from "@/lib/documents/resolve";
 import { orgConfigFor } from "@/lib/org-identity";
 import {
@@ -79,12 +79,10 @@ export async function buildInscriptionDocsZip(
 
   // Images encodées en base64 (html-to-docx ne charge pas les URL).
   const pub = path.join(process.cwd(), "public");
-  const [logoBuf, stampBuf] = await Promise.all([
-    fs.readFile(path.join(pub, "cap-competences-logo.png")),
-    fs.readFile(path.join(pub, "signature-cap-competences.png")),
-  ]);
+  const logoBuf = await fs.readFile(path.join(pub, "cap-competences-logo.png"));
   const logo64 = org.logoUrl ?? `data:image/png;base64,${logoBuf.toString("base64")}`;
-  const stamp64 = org.cachetUrl ?? `data:image/png;base64,${stampBuf.toString("base64")}`;
+  // Cachet/signature = UNIQUEMENT celui du tenant. Jamais l'asset CAP (marque blanche).
+  const stamp64 = org.cachetUrl ?? EMPTY_IMAGE;
   const inlineImages = (html: string) =>
     html
       .split("/cap-competences-logo.png").join(logo64)

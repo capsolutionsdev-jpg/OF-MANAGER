@@ -4,6 +4,7 @@ import { PDFDocument } from "pdf-lib";
 import { prisma } from "@/lib/prisma";
 import {
   DOCUMENTS,
+  EMPTY_IMAGE,
   renderTemplate,
   compteRenduFormateurHtml,
   contratFormateurHtml,
@@ -112,12 +113,12 @@ export async function buildInscriptionPdf(
 
   // Images en base64
   const pub = path.join(process.cwd(), "public");
-  const [logoBuf, stampBuf] = await Promise.all([
-    fs.readFile(path.join(pub, "cap-competences-logo.png")),
-    fs.readFile(path.join(pub, "signature-cap-competences.png")),
-  ]);
+  const logoBuf = await fs.readFile(path.join(pub, "cap-competences-logo.png"));
   const logo64 = org.logoUrl ?? `data:image/png;base64,${logoBuf.toString("base64")}`;
-  const stamp64 = org.cachetUrl ?? `data:image/png;base64,${stampBuf.toString("base64")}`;
+  // Cachet/signature = UNIQUEMENT celui du tenant (org.cachetUrl). Jamais de repli
+  // sur l'asset CAP : sinon un autre organisme afficherait le tampon CAP sur ses
+  // documents. Vide tant que le tenant ne l'a pas chargé (console superadmin).
+  const stamp64 = org.cachetUrl ?? EMPTY_IMAGE;
   const inlineImages = (html: string) =>
     html
       .split("/cap-competences-logo.png").join(logo64)
@@ -231,12 +232,12 @@ export async function buildSatisfactionPdf(
     </div>`;
 
   const pub = path.join(process.cwd(), "public");
-  const [logoBuf, stampBuf] = await Promise.all([
-    fs.readFile(path.join(pub, "cap-competences-logo.png")),
-    fs.readFile(path.join(pub, "signature-cap-competences.png")),
-  ]);
+  const logoBuf = await fs.readFile(path.join(pub, "cap-competences-logo.png"));
   const logo64 = org.logoUrl ?? `data:image/png;base64,${logoBuf.toString("base64")}`;
-  const stamp64 = org.cachetUrl ?? `data:image/png;base64,${stampBuf.toString("base64")}`;
+  // Cachet/signature = UNIQUEMENT celui du tenant (org.cachetUrl). Jamais de repli
+  // sur l'asset CAP : sinon un autre organisme afficherait le tampon CAP sur ses
+  // documents. Vide tant que le tenant ne l'a pas chargé (console superadmin).
+  const stamp64 = org.cachetUrl ?? EMPTY_IMAGE;
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8" />${DOC_STYLE}</head><body>${inner}</body></html>`
     .split("/cap-competences-logo.png").join(logo64)
     .split("/signature-cap-competences.png").join(stamp64);
@@ -309,12 +310,12 @@ export async function buildContratFormateurPdf(
   };
 
   const pub = path.join(process.cwd(), "public");
-  const [logoBuf, stampBuf] = await Promise.all([
-    fs.readFile(path.join(pub, "cap-competences-logo.png")),
-    fs.readFile(path.join(pub, "signature-cap-competences.png")),
-  ]);
+  const logoBuf = await fs.readFile(path.join(pub, "cap-competences-logo.png"));
   const logo64 = org.logoUrl ?? `data:image/png;base64,${logoBuf.toString("base64")}`;
-  const stamp64 = org.cachetUrl ?? `data:image/png;base64,${stampBuf.toString("base64")}`;
+  // Cachet/signature = UNIQUEMENT celui du tenant (org.cachetUrl). Jamais de repli
+  // sur l'asset CAP : sinon un autre organisme afficherait le tampon CAP sur ses
+  // documents. Vide tant que le tenant ne l'a pas chargé (console superadmin).
+  const stamp64 = org.cachetUrl ?? EMPTY_IMAGE;
   const inner = renderTemplate(contratFormateurHtml(), vars)
     .split("/cap-competences-logo.png").join(logo64)
     .split("/signature-cap-competences.png").join(stamp64);
@@ -369,12 +370,12 @@ export async function buildCompteRenduPdf(
   };
 
   const pub = path.join(process.cwd(), "public");
-  const [logoBuf, stampBuf] = await Promise.all([
-    fs.readFile(path.join(pub, "cap-competences-logo.png")),
-    fs.readFile(path.join(pub, "signature-cap-competences.png")),
-  ]);
+  const logoBuf = await fs.readFile(path.join(pub, "cap-competences-logo.png"));
   const logo64 = org.logoUrl ?? `data:image/png;base64,${logoBuf.toString("base64")}`;
-  const stamp64 = org.cachetUrl ?? `data:image/png;base64,${stampBuf.toString("base64")}`;
+  // Cachet/signature = UNIQUEMENT celui du tenant (org.cachetUrl). Jamais de repli
+  // sur l'asset CAP : sinon un autre organisme afficherait le tampon CAP sur ses
+  // documents. Vide tant que le tenant ne l'a pas chargé (console superadmin).
+  const stamp64 = org.cachetUrl ?? EMPTY_IMAGE;
   const inner = renderTemplate(compteRenduFormateurHtml(), vars)
     .split("/cap-competences-logo.png").join(logo64)
     .split("/signature-cap-competences.png").join(stamp64);

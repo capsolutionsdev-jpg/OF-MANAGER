@@ -22,8 +22,14 @@ const footer = `
   auprès du préfet de région Île-de-France. Cet enregistrement ne vaut pas agrément de l'État.
 </div>`;
 
+// Image vide (pixel transparent) : sert de cachet/signature quand le tenant n'en
+// a pas encore chargé — pour NE JAMAIS afficher l'asset CAP sur les documents
+// d'un autre organisme (intégrité de la marque blanche).
+export const EMPTY_IMAGE =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M8AAAMBAQDJ/pLvAAAAAElFTkSuQmCC";
+
 // Cachet + signature de l'organisme (image), à apposer sur tous les documents.
-const stamp = `<img src="/signature-cap-competences.png" alt="Cachet et signature CAP Compétences" class="doc-stamp" />`;
+const stamp = `<img src="/signature-cap-competences.png" alt="Cachet et signature de l'organisme" class="doc-stamp" />`;
 
 // Bloc cachet seul (pour les documents sans signature à deux parties).
 const orgStampBlock = `<div class="org-stamp-block"><div class="sig-label">Cachet et signature de l'organisme</div>${stamp}</div>`;

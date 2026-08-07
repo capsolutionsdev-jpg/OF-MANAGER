@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { getTenantDb } from "@/lib/tenant";
 import {
   DOCUMENTS,
+  EMPTY_IMAGE,
   isDocType,
   renderTemplate,
 } from "@/lib/documents/templates";
@@ -40,7 +41,7 @@ export default async function DocumentPage({
     .split("/cap-competences-logo.png")
     .join(org.logoUrl ?? "/cap-competences-logo.png")
     .split("/signature-cap-competences.png")
-    .join(org.cachetUrl ?? "/signature-cap-competences.png");
+    .join(org.cachetUrl ?? EMPTY_IMAGE);
 
   // Document fourni par l'OF (remplace notre modèle pour les docs réglementaires)
   const override = getDocOverride(org.documentsConfig, type);
