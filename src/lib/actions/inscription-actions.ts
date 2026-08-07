@@ -200,7 +200,11 @@ export async function setCertification(
   });
 
   // Certifié → attestation de réussite + félicitations (une seule fois).
+  // NON BLOQUANT : un échec de génération PDF (Chromium) ou d'envoi d'e-mail ne
+  // doit JAMAIS faire échouer la certification — le résultat est déjà enregistré
+  // plus haut. (Corrige le crash « Server Components render » à chaque validation.)
   if (resultat === "CERTIFIE" && !insc.attestationReussiteSentAt) {
+    try {
     const org = await orgConfigFor(insc.organismeId);
     const titre = insc.session.formation.titre;
     const subject = `Félicitations — vous avez obtenu « ${titre} »`;
@@ -236,6 +240,9 @@ ${org.representant} — ${org.name}`;
       where: { id: inscriptionId },
       data: { attestationReussiteSentAt: new Date() },
     });
+    } catch (e) {
+      console.error("[certification] attestation de réussite (non bloquant) :", e);
+    }
   }
 
   revalidatePath(`/sessions/${insc.sessionId}`);
