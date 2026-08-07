@@ -43,8 +43,8 @@ import { DossierChecklist } from "@/components/inscriptions/dossier-checklist";
 
 const STATUT_BADGE_CLS: Record<string, string> = {
   EN_ATTENTE: "bg-muted text-muted-foreground",
-  VALIDEE: "bg-emerald-500/10 text-emerald-700",
-  SUSPENDUE: "bg-amber-500/10 text-amber-700",
+  VALIDEE: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+  SUSPENDUE: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
   ANNULEE: "bg-destructive/10 text-destructive",
 };
 
@@ -277,7 +277,7 @@ export default async function SessionDetailPage({
               </span>
               {s.crFormateurCompletedAt ? (
                 <>
-                  <Badge className="bg-emerald-500/10 text-emerald-700">
+                  <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
                     ✓ Complété
                   </Badge>
                   <Button
@@ -294,7 +294,7 @@ export default async function SessionDetailPage({
                   </Button>
                 </>
               ) : s.crFormateurSentAt ? (
-                <Badge className="bg-amber-500/10 text-amber-700">
+                <Badge className="bg-amber-500/10 text-amber-700 dark:text-amber-300">
                   Lien envoyé — en attente
                 </Badge>
               ) : (
@@ -317,7 +317,7 @@ export default async function SessionDetailPage({
               </span>
               {s.contratFormateurSignedAt ? (
                 <>
-                  <Badge className="bg-emerald-500/10 text-emerald-700">
+                  <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
                     ✓ Signé
                   </Badge>
                   <Button
@@ -334,7 +334,7 @@ export default async function SessionDetailPage({
                   </Button>
                 </>
               ) : s.contratFormateurSentAt ? (
-                <Badge className="bg-amber-500/10 text-amber-700">
+                <Badge className="bg-amber-500/10 text-amber-700 dark:text-amber-300">
                   Envoyé — en attente de signature
                 </Badge>
               ) : (
@@ -401,35 +401,35 @@ export default async function SessionDetailPage({
                         {i.candidat.prenom} {i.candidat.nom}
                       </span>
                       {i.signedAt ? (
-                        <Badge className="bg-emerald-500/10 text-emerald-700">
+                        <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
                           dossier signé{i.signedParNom ? ` · par ${i.signedParNom}` : ""}
                         </Badge>
                       ) : (
                         <Badge variant="secondary">non signé</Badge>
                       )}
                       {i.satisfactionCompletedAt ? (
-                        <Badge className="bg-emerald-500/10 text-emerald-700">
+                        <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
                           satisfaction reçue
                         </Badge>
                       ) : i.satisfactionSentAt ? (
-                        <Badge className="bg-amber-500/10 text-amber-700">
+                        <Badge className="bg-amber-500/10 text-amber-700 dark:text-amber-300">
                           satisfaction envoyée
                         </Badge>
                       ) : null}
                       {/* Tâches à faire pour ce candidat */}
                       {s.formation.piecesAttendues.length > 0 &&
                         s.formation.piecesAttendues.some((p) => !i.piecesRecues.includes(p)) && (
-                          <Badge variant="outline" className="border-amber-300 text-amber-700">
+                          <Badge variant="outline" className="border-amber-300 text-amber-700 dark:border-amber-500/40 dark:text-amber-300">
                             ⚠ Dossier à compléter
                           </Badge>
                         )}
                       {!i.convocationSentAt && (
-                        <Badge variant="outline" className="border-amber-300 text-amber-700">
+                        <Badge variant="outline" className="border-amber-300 text-amber-700 dark:border-amber-500/40 dark:text-amber-300">
                           ⚠ Convocation à envoyer
                         </Badge>
                       )}
                       {!i.positionnementCompletedAt && (
-                        <Badge variant="outline" className="border-amber-300 text-amber-700">
+                        <Badge variant="outline" className="border-amber-300 text-amber-700 dark:border-amber-500/40 dark:text-amber-300">
                           ⚠ Positionnement
                         </Badge>
                       )}
@@ -566,7 +566,7 @@ export default async function SessionDetailPage({
                       {s.formation.piecesAttendues.length === 0 ? (
                         <span className="text-xs text-muted-foreground">—</span>
                       ) : manquantes.length === 0 ? (
-                        <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">
+                        <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
                           Complet
                         </Badge>
                       ) : (
@@ -574,7 +574,7 @@ export default async function SessionDetailPage({
                           href={`/candidats/${i.candidatId}`}
                           title={`Pièces manquantes : ${manquantes.join(", ")}`}
                         >
-                          <Badge variant="secondary" className="bg-red-100 text-red-700 hover:bg-red-200">
+                          <Badge variant="secondary" className="bg-red-500/10 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-500/20">
                             {manquantes.length} pièce{manquantes.length > 1 ? "s" : ""} manquante{manquantes.length > 1 ? "s" : ""}
                           </Badge>
                         </Link>
@@ -588,12 +588,12 @@ export default async function SessionDetailPage({
                           rel="noopener"
                           title="Voir les réponses signées"
                         >
-                          <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200">
+                          <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-200 dark:hover:bg-emerald-500/20">
                             Répondu
                           </Badge>
                         </a>
                       ) : i.positionnementSentAt ? (
-                        <Badge variant="secondary" className="bg-amber-100 text-amber-700">
+                        <Badge variant="secondary" className="bg-amber-500/10 text-amber-700 dark:text-amber-300">
                           Envoyé
                         </Badge>
                       ) : (
@@ -677,8 +677,8 @@ export default async function SessionDetailPage({
             </p>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {[
-                { label: "Certifiés", n: s.inscriptions.filter((i) => i.resultatCertification === "CERTIFIE").length, cls: "text-emerald-700" },
-                { label: "Ajournés", n: s.inscriptions.filter((i) => i.resultatCertification === "AJOURNE").length, cls: "text-amber-700" },
+                { label: "Certifiés", n: s.inscriptions.filter((i) => i.resultatCertification === "CERTIFIE").length, cls: "text-emerald-700 dark:text-emerald-300" },
+                { label: "Ajournés", n: s.inscriptions.filter((i) => i.resultatCertification === "AJOURNE").length, cls: "text-amber-700 dark:text-amber-300" },
                 { label: "Absents", n: s.inscriptions.filter((i) => i.resultatCertification === "ABANDON").length, cls: "text-destructive" },
                 { label: "En attente", n: s.inscriptions.filter((i) => i.resultatCertification === "NON_EVALUE").length, cls: "text-muted-foreground" },
               ].map((k) => (
@@ -694,7 +694,7 @@ export default async function SessionDetailPage({
               </Button>
               {s.resultatsDeclaresAt ? (
                 <>
-                  <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-700">
+                  <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-300">
                     <CheckCircle2 className="h-3.5 w-3.5" /> Résultats déclarés au certificateur le {fmt(s.resultatsDeclaresAt)}
                   </span>
                   <form action={setResultatsDeclares}>
@@ -742,7 +742,7 @@ export default async function SessionDetailPage({
                       {i.candidat.prenom} {i.candidat.nom}
                     </Link>
                     {manquantes.length === 0 ? (
-                      <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">
+                      <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
                         Dossier complet
                       </Badge>
                     ) : (

@@ -39,7 +39,7 @@ export default async function SessionValidationPage({
           <h1 className="text-2xl font-bold tracking-tight">{s.formation.titre}</h1>
           <Badge variant="outline">{SESSION_STATUT_LABELS[s.statut]}</Badge>
           {state.isValidated && !state.isArchived && (
-            <Badge className="bg-emerald-500/10 text-emerald-700">Prête à archiver</Badge>
+            <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">Prête à archiver</Badge>
           )}
           {state.isArchived && (
             <Badge className="bg-muted text-muted-foreground">Archivée</Badge>

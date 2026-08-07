@@ -18,8 +18,8 @@ export function SessionGardeFou({ groups }: { groups: GardeFouGroup[] }) {
 
   if (total === 0) {
     return (
-      <Card className="border-emerald-200 bg-emerald-50/50">
-        <CardContent className="flex items-center gap-2 py-3 text-sm font-medium text-emerald-800">
+      <Card className="border-emerald-200 bg-emerald-50/50 dark:border-emerald-500/30 dark:bg-emerald-500/10">
+        <CardContent className="flex items-center gap-2 py-3 text-sm font-medium text-emerald-800 dark:text-emerald-300">
           <ShieldCheck className="h-4 w-4" /> Garde-fou : tout est à jour pour cette session ✓
         </CardContent>
       </Card>
@@ -27,21 +27,21 @@ export function SessionGardeFou({ groups }: { groups: GardeFouGroup[] }) {
   }
 
   return (
-    <Card className="border-amber-200 bg-amber-50/40">
+    <Card className="border-amber-200 bg-amber-50/40 dark:border-amber-500/30 dark:bg-amber-500/10">
       <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-base text-amber-900">
+        <CardTitle className="flex items-center gap-2 text-base text-amber-900 dark:text-amber-200">
           <ShieldAlert className="h-4 w-4" /> Garde-fou — à compléter
-          <Badge className="bg-amber-500/15 text-amber-800">{total} point{total > 1 ? "s" : ""}</Badge>
+          <Badge className="bg-amber-500/15 text-amber-800 dark:text-amber-200">{total} point{total > 1 ? "s" : ""}</Badge>
         </CardTitle>
       </CardHeader>
       <CardContent className="grid gap-3 sm:grid-cols-2">
         {actifs.map((g) => {
           const Icon = ICONS[g.key] ?? FileWarning;
           return (
-            <div key={g.key} className="rounded-lg border border-amber-200 bg-white p-3">
-              <div className="mb-1 flex items-center gap-2 text-sm font-semibold text-amber-900">
+            <div key={g.key} className="rounded-lg border border-amber-200 bg-white p-3 dark:border-amber-500/25 dark:bg-white/5">
+              <div className="mb-1 flex items-center gap-2 text-sm font-semibold text-amber-900 dark:text-amber-200">
                 <Icon className="h-4 w-4" /> {g.label}
-                <span className="ml-auto rounded-full bg-amber-100 px-2 text-xs font-medium text-amber-800">
+                <span className="ml-auto rounded-full bg-amber-100 px-2 text-xs font-medium text-amber-800 dark:bg-amber-500/20 dark:text-amber-200">
                   {g.noms.length}
                 </span>
               </div>

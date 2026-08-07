@@ -45,8 +45,8 @@ export function SessionTabs({
               <span
                 className={`rounded-full px-1.5 py-0.5 text-[11px] font-semibold ${
                   validationBadge.ok
-                    ? "bg-emerald-500/10 text-emerald-700"
-                    : "bg-amber-500/10 text-amber-700"
+                    ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                    : "bg-amber-500/10 text-amber-700 dark:text-amber-300"
                 }`}
               >
                 {validationBadge.percentage}%
