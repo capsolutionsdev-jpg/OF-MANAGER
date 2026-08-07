@@ -275,17 +275,24 @@ export async function buildContratFormateurPdf(
 ): Promise<PdfResult> {
   const s = await prisma.session.findUnique({
     where: { id: sessionId },
-    include: { formation: true, formateurs: true },
+    include: { formation: true, formateurs: true, seances: { select: { date: true } } },
   });
   if (!s) return null;
   const f = s.formateurs[0];
   if (!f) return null;
 
   const fmtD = (d: Date) => d.toLocaleDateString("fr-FR");
-  // Nombre de jours : la durée de la formation fait foi (dureeJours). À défaut,
-  // on compte les jours OUVRÉS entre les dates (sans les week-ends) plutôt que
-  // le simple écart calendaire, qui gonflait le total (ex. 2 j → 12 j).
-  const nbJours = s.formation.dureeJours ?? businessDaysBetween(s.dateDebut, s.dateFin);
+  // Nombre de jours facturés au formateur, par ordre de fiabilité :
+  //  1) durée de la formation (dureeJours) = source de vérité ;
+  //  2) sinon nombre de JOURS DISTINCTS réellement planifiés (séances) — gère les
+  //     sessions non-contiguës (ex. 1 j/semaine) sans surcompter ;
+  //  3) en dernier repli, jours ouvrés entre les dates (sans week-ends).
+  const joursSeances = new Set(
+    s.seances.map((x) => x.date.toISOString().slice(0, 10)),
+  ).size;
+  const nbJours =
+    s.formation.dureeJours ??
+    (joursSeances > 0 ? joursSeances : businessDaysBetween(s.dateDebut, s.dateFin));
 
   const tarif =
     s.tarifFormateurJour != null

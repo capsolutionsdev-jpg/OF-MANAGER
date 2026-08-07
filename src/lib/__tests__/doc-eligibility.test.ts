@@ -51,4 +51,32 @@ describe("isDocApplicable — documents selon l'inscription", () => {
       expect(isDocApplicable(t, particulierExamen)).toBe(true);
     }
   });
+
+  // BUG-006 : c'est le FINANCEMENT qui décide contrat/convention, pas le seul
+  // rattachement à une entreprise.
+  it("salarié rattaché à une entreprise mais financé en CPF → contrat (pas convention)", () => {
+    const salarieCpf: DocContext = {
+      formation: { reference: "SST", titre: "SST", examen: false },
+      hasEntreprise: true,
+      financementType: "CPF",
+    };
+    expect(isDocApplicable("CONTRAT_FORMATION", salarieCpf)).toBe(true);
+    expect(isDocApplicable("CONVENTION_FORMATION", salarieCpf)).toBe(false);
+  });
+
+  it("financement ENTREPRISE → convention même sans rattachement explicite", () => {
+    const finEntreprise: DocContext = {
+      formation: { reference: "SST", titre: "SST", examen: false },
+      hasEntreprise: false,
+      financementType: "ENTREPRISE",
+    };
+    expect(isDocApplicable("CONVENTION_FORMATION", finEntreprise)).toBe(true);
+    expect(isDocApplicable("CONTRAT_FORMATION", finEntreprise)).toBe(false);
+  });
+
+  it("financement non renseigné → repli sur le rattachement entreprise", () => {
+    const base = { formation: { reference: "SST", titre: "SST", examen: false } };
+    expect(isDocApplicable("CONTRAT_FORMATION", { ...base, hasEntreprise: false, financementType: null })).toBe(true);
+    expect(isDocApplicable("CONVENTION_FORMATION", { ...base, hasEntreprise: true, financementType: null })).toBe(true);
+  });
 });

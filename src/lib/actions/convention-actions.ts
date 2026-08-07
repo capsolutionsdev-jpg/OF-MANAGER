@@ -63,16 +63,41 @@ export async function createConventionEntreprise(
       : FinancementType.ENTREPRISE;
 
   // 1) Salariés : création des nouveaux candidats + collecte des candidatIds.
+  // Dédup : un « nouveau salarié » qui existe déjà (même e-mail, sinon même
+  // nom+prénom) est RÉUTILISÉ au lieu de créer un doublon (rattaché à l'entreprise
+  // au passage).
   const candidatIds = new Set<string>(input.candidatIdsExistants ?? []);
   for (const s of input.nouveaux ?? []) {
     const nom = clean(s.nom);
     const prenom = clean(s.prenom);
     if (!nom || !prenom) continue;
+    const email = clean(s.email);
+
+    const existing = await db.candidat.findFirst({
+      where: email
+        ? { email: { equals: email, mode: "insensitive" } }
+        : {
+            nom: { equals: nom, mode: "insensitive" },
+            prenom: { equals: prenom, mode: "insensitive" },
+          },
+      select: { id: true, entrepriseId: true },
+    });
+    if (existing) {
+      if (existing.entrepriseId !== input.entrepriseId) {
+        await db.candidat.update({
+          where: { id: existing.id },
+          data: { entrepriseId: input.entrepriseId },
+        });
+      }
+      candidatIds.add(existing.id);
+      continue;
+    }
+
     const c = await db.candidat.create({
       data: {
         nom,
         prenom,
-        email: clean(s.email) ?? `${prenom}.${nom}@${Date.now()}.local`.toLowerCase().replace(/\s+/g, ""),
+        email: email ?? `${prenom}.${nom}@${Date.now()}.local`.toLowerCase().replace(/\s+/g, ""),
         entrepriseId: input.entrepriseId,
         financementType: fin,
         statut: "INSCRIT",
