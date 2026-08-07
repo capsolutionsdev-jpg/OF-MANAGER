@@ -19,6 +19,7 @@ import {
   QuickEnrollModal,
   type SessionOption,
 } from "@/components/inscriptions/quick-enroll-modal";
+import { cn } from "@/lib/utils";
 
 export type CandidatRow = {
   id: string;
@@ -43,11 +44,20 @@ const STATUT_ORDER: CandidatStatut[] = [
 ];
 
 const STATUT_BADGE: Record<CandidatStatut, string> = {
-  NOUVEAU: "bg-blue-500/10 text-blue-700",
-  EN_TRAITEMENT: "bg-amber-500/10 text-amber-700",
-  INSCRIT: "bg-emerald-500/10 text-emerald-700",
-  REFUSE: "bg-red-500/10 text-red-700",
+  NOUVEAU: "bg-blue-500/10 text-blue-700 dark:text-blue-300",
+  EN_TRAITEMENT: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
+  INSCRIT: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+  REFUSE: "bg-red-500/10 text-red-700 dark:text-red-300",
   ARCHIVE: "bg-muted text-muted-foreground",
+};
+
+// Pastille de statut (point coloré façon macOS, lisible en clair et sombre).
+const STATUT_DOT: Record<CandidatStatut, string> = {
+  NOUVEAU: "bg-blue-500",
+  EN_TRAITEMENT: "bg-amber-500",
+  INSCRIT: "bg-emerald-500",
+  REFUSE: "bg-red-500",
+  ARCHIVE: "bg-muted-foreground/50",
 };
 
 export function CandidatsTable({
@@ -136,7 +146,7 @@ export function CandidatsTable({
           </p>
         </div>
       ) : (
-        <div className="rounded-lg border">
+        <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
           <Table className="stagger-rows">
             <TableHeader>
               <TableRow>
@@ -152,7 +162,7 @@ export function CandidatsTable({
             </TableHeader>
             <TableBody>
               {filtered.map((c) => (
-                <TableRow key={c.id}>
+                <TableRow key={c.id} className="transition-colors hover:bg-muted/40">
                   <TableCell className="font-medium">
                     <Link href={`/candidats/${c.id}`} className="flex items-center gap-2.5 hover:underline">
                       {c.photoUrl ? (
@@ -181,8 +191,9 @@ export function CandidatsTable({
                   <TableCell>
                     <Badge
                       variant="secondary"
-                      className={STATUT_BADGE[c.statut]}
+                      className={cn("gap-1.5 rounded-full", STATUT_BADGE[c.statut])}
                     >
+                      <span className={cn("h-1.5 w-1.5 rounded-full", STATUT_DOT[c.statut])} />
                       {STATUT_LABELS[c.statut]}
                     </Badge>
                   </TableCell>

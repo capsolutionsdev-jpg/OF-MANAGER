@@ -47,6 +47,8 @@ export function EnrollForm({
   const [carteProNum, setCarteProNum] = useState("");
   const [carteProVal, setCarteProVal] = useState("");
   const [sstCert, setSstCert] = useState(false);
+  const [medical, setMedical] = useState(false);
+  const [checks, setChecks] = useState<Record<string, boolean>>({});
   // Suivi de l'inscription.
   const [positionnement, setPositionnement] = useState<"lien" | "sur_place">("lien");
   const [prerequisOk, setPrerequisOk] = useState(false);
@@ -86,7 +88,7 @@ export function EnrollForm({
       toast.success("Candidat inscrit à la session.");
       reset({ candidatId: "", sessionId, financementType: "", statut: "EN_ATTENTE", montant: "" });
       setSsiapNum(""); setSsiapDate(""); setCnaps(""); setCarteProNum(""); setCarteProVal("");
-      setSstCert(false); setPrerequisOk(false); setPositionnement("lien");
+      setSstCert(false); setMedical(false); setChecks({}); setPrerequisOk(false); setPositionnement("lien");
       router.refresh();
     });
   }
@@ -179,6 +181,23 @@ export function EnrollForm({
                 Titulaire du certificat SST (en cours de validité ou récemment expiré)
               </label>
             )}
+            {prereq.medicalCert && (
+              <label className="flex items-center gap-2 text-sm lg:col-span-2">
+                <input type="checkbox" className="h-4 w-4" checked={medical} onChange={(e) => setMedical(e.target.checked)} />
+                Aptitude médicale — certificat médical fourni
+              </label>
+            )}
+            {prereq.checks?.map((c) => (
+              <label key={c} className="flex items-start gap-2 text-sm lg:col-span-4">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 h-4 w-4 shrink-0"
+                  checked={!!checks[c]}
+                  onChange={(e) => setChecks((s) => ({ ...s, [c]: e.target.checked }))}
+                />
+                {c}
+              </label>
+            ))}
           </div>
 
           {piecesAttendues.length > 0 && (

@@ -442,7 +442,8 @@ model Candidat {
   nom           String
   prenom        String
   dateNaissance DateTime?
-  lieuNaissance String?
+  lieuNaissance String? // commune de naissance
+  departementNaissance String? // code département (ou "99" pour l'étranger)
   paysNaissance String?
   telephone     String?
   email         String

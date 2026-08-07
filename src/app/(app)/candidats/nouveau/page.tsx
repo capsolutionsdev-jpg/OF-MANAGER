@@ -9,8 +9,9 @@ export default async function NouveauCandidatPage() {
   const db = await getTenantDb();
   const [formations, collaborateurs] = await Promise.all([
     db.formation.findMany({
-      where: { isArchived: false },
-      select: { id: true, titre: true },
+      // Uniquement les formations publiées sur le site vitrine.
+      where: { isArchived: false, vitrineStatut: "PUBLIEE" },
+      select: { id: true, titre: true, reference: true },
       orderBy: { titre: "asc" },
     }),
     db.user.findMany({

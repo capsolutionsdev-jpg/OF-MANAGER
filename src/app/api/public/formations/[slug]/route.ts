@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getTauxReussite } from "@/lib/vitrine-stats";
+import { organismeScope } from "@/lib/public-scope";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -9,11 +10,11 @@ export const dynamic = "force-dynamic";
 // Lecture seule, sans données personnelles, CORS ouvert.
 // Ne renvoie que les formations PUBLIEE (jointure par `reference` = slug d'URL).
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ slug: string }> },
 ) {
   const { slug } = await params;
-  const organismeId = process.env.VITRINE_ORGANISME_ID || undefined;
+  const organismeId = organismeScope(req);
 
   const f = await prisma.formation.findFirst({
     where: {

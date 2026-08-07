@@ -58,23 +58,26 @@
    skins par tenant surchargent ces valeurs et restent intacts.
    ───────────────────────────────────────────────────────────── */
 :root {
-  --background: #f8f7fc; /* blanc à légère teinte violette */
-  --foreground: #1c1b2e; /* encre violet-noir */
+  /* Direction « CAP OS » — base neutre macOS. Surfaces gris clair sans teinte,
+     encre neutre. L'accent (violet CAP) est posé PAR TENANT via themeVars
+     (lib/themes.ts) : ici, seules les valeurs de repli sont violettes. */
+  --background: #f4f4f7; /* gris fenêtre macOS (neutre, pointe froide) */
+  --foreground: #1d1d1f; /* encre quasi-noire */
   --card: #ffffff;
-  --card-foreground: #1c1b2e;
+  --card-foreground: #1d1d1f;
   --popover: #ffffff;
-  --popover-foreground: #1c1b2e;
-  --primary: #7c3aed; /* violet (aplat) */
+  --popover-foreground: #1d1d1f;
+  --primary: #7c3aed; /* accent (repli — surchargé par tenant) */
   --primary-foreground: #ffffff;
-  --secondary: #f1eefa; /* surface violet-clair */
-  --secondary-foreground: #3a3550;
-  --muted: #f1eefa;
-  --muted-foreground: #6b6982; /* gris-violet — contraste AA (>= 4.5:1) sur blanc/#f8f7fc */
-  --accent: #f3effe; /* teinte violette (survols) */
-  --accent-foreground: #5b21b6;
-  --destructive: #d6335a;
-  --border: #eceaf4; /* filet gris-violet */
-  --input: #e0ddef;
+  --secondary: #ececee; /* surface neutre claire */
+  --secondary-foreground: #1d1d1f;
+  --muted: #f0f0f2;
+  --muted-foreground: #6e6e73; /* gris secondaire macOS — contraste AA sur blanc/#f4f4f7 */
+  --accent: #eceef0; /* survols neutres (repli — surchargé par tenant) */
+  --accent-foreground: #1d1d1f;
+  --destructive: #e5484d;
+  --border: #e4e4e9; /* séparateur macOS */
+  --input: #d8d8de;
   --ring: #7c3aed;
   --chart-1: #7c3aed; /* violet */
   --chart-2: #0e9c9c; /* sarcelle */
@@ -82,13 +85,13 @@
   --chart-4: #e23670; /* rose */
   --chart-5: #12a150; /* émeraude */
   --radius: 0.85rem;
-  --sidebar: #fbfafe; /* sidebar claire */
-  --sidebar-foreground: #1c1b2e;
+  --sidebar: #f7f7f9; /* rail clair (verre appliqué par le composant) */
+  --sidebar-foreground: #1d1d1f;
   --sidebar-primary: #7c3aed;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f3effe; /* actif : violet tinté */
-  --sidebar-accent-foreground: #5b21b6;
-  --sidebar-border: #efedf8;
+  --sidebar-accent: #eceef0; /* actif (repli — surchargé par tenant) */
+  --sidebar-accent-foreground: #1d1d1f;
+  --sidebar-border: #e4e4e9;
   --sidebar-ring: #7c3aed;
   /* Tokens de marque réutilisables (vitrine + composants) */
   --brand: #7c3aed;
@@ -98,52 +101,54 @@
   --amber-tint: #fbf0da;
   --success: #12a150;
   --success-tint: #e6f6ec;
-  --ink: #1c1b2e;
-  --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
-  --font-heading: var(--font-plus-jakarta), system-ui, sans-serif;
+  --ink: #1d1d1f;
+  /* Pile Apple-first : SF Pro sur Mac, Segoe UI sur Windows, Inter en repli. */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", var(--font-inter), "Segoe UI", system-ui, sans-serif;
+  --font-heading: -apple-system, BlinkMacSystemFont, "SF Pro Display", var(--font-plus-jakarta), "Segoe UI", system-ui, sans-serif;
 }
 
 .dark {
-  --background: #17141f; /* violet-charbon */
-  --foreground: #eeebf8;
-  --card: #201c2e;
-  --card-foreground: #eeebf8;
-  --popover: #201c2e;
-  --popover-foreground: #eeebf8;
-  --primary: #8b5cf6; /* violet plus clair sur fond sombre */
+  /* CAP OS — sombre macOS : gris-charbon neutres, cartes surélevées. */
+  --background: #1c1c1e; /* fond fenêtre sombre macOS */
+  --foreground: #f5f5f7;
+  --card: #2c2c2e;
+  --card-foreground: #f5f5f7;
+  --popover: #2c2c2e;
+  --popover-foreground: #f5f5f7;
+  --primary: #9f75ff; /* accent éclairci (repli — surchargé par tenant) */
   --primary-foreground: #ffffff;
-  --secondary: #262138;
-  --secondary-foreground: #eeebf8;
-  --muted: #262138;
-  --muted-foreground: #a29fbc;
-  --accent: #2a2440;
-  --accent-foreground: #c4b0fb;
-  --destructive: #f26d8b;
-  --border: #2e2942;
-  --input: #3a3452;
-  --ring: #8b5cf6;
+  --secondary: #3a3a3c;
+  --secondary-foreground: #f5f5f7;
+  --muted: #2c2c2e;
+  --muted-foreground: #a1a1a6;
+  --accent: #38383b; /* survols neutres (repli — surchargé par tenant) */
+  --accent-foreground: #f5f5f7;
+  --destructive: #ff453a;
+  --border: #38383c;
+  --input: #48484c;
+  --ring: #9f75ff;
   --chart-1: #a182f6;
   --chart-2: #2dd4bf;
   --chart-3: #f0b45c;
   --chart-4: #f472a0;
   --chart-5: #34d07f;
-  --sidebar: #1b1727;
-  --sidebar-foreground: #eeebf8;
-  --sidebar-primary: #8b5cf6;
+  --sidebar: #1e1e20;
+  --sidebar-foreground: #f5f5f7;
+  --sidebar-primary: #9f75ff;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #2a2440;
-  --sidebar-accent-foreground: #c4b0fb;
-  --sidebar-border: #2a2540;
-  --sidebar-ring: #8b5cf6;
-  --secondary-foreground: #eeebf8;
-  --brand: #8b5cf6;
-  --brand-strong: #a182f6;
-  --brand-tint: #2a2440;
+  --sidebar-accent: #38383b;
+  --sidebar-accent-foreground: #f5f5f7;
+  --sidebar-border: #303032;
+  --sidebar-ring: #9f75ff;
+  --secondary-foreground: #f5f5f7;
+  --brand: #9f75ff;
+  --brand-strong: #b18bff;
+  --brand-tint: #2f2a3d;
   --amber: #f0b45c;
   --amber-tint: #2e2733;
   --success: #34d07f;
   --success-tint: #17291f;
-  --ink: #eeebf8;
+  --ink: #f5f5f7;
 }
 
 @layer base {

@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import {
   QUIZ_TYPE_LABELS,
   type QuizType,
@@ -129,6 +130,7 @@ function ModuleBlock({
   run: RunFn;
 }) {
   const [newLecon, setNewLecon] = useState("");
+  const confirm = useConfirm();
   return (
     <div className="rounded-xl border bg-card">
       <div className="flex items-center justify-between gap-2 border-b px-4 py-2.5">
@@ -161,8 +163,15 @@ function ModuleBlock({
             variant="ghost"
             size="icon-sm"
             aria-label="Supprimer le chapitre"
-            onClick={() => {
-              if (confirm("Supprimer ce chapitre et ses leçons ?"))
+            onClick={async () => {
+              if (
+                await confirm({
+                  title: "Supprimer ce chapitre et ses leçons ?",
+                  description: "Le chapitre et toutes ses leçons seront supprimés définitivement.",
+                  destructive: true,
+                  confirmLabel: "Supprimer",
+                })
+              )
                 run(() => deleteModule(module.id), "Chapitre supprimé.");
             }}
           >
@@ -221,6 +230,7 @@ function LeconBlock({
   run: RunFn;
 }) {
   const [open, setOpen] = useState(false);
+  const confirm = useConfirm();
   const [titre, setTitre] = useState(lecon.titre);
   const [videoUrl, setVideoUrl] = useState(lecon.videoUrl);
   const [dureeMin, setDureeMin] = useState(lecon.dureeMin?.toString() ?? "");
@@ -431,8 +441,14 @@ function LeconBlock({
             </label>
             <div className="flex gap-2">
               <Button variant="ghost" size="sm"
-                onClick={() => {
-                  if (confirm("Supprimer cette leçon ?"))
+                onClick={async () => {
+                  if (
+                    await confirm({
+                      title: "Supprimer cette leçon ?",
+                      destructive: true,
+                      confirmLabel: "Supprimer",
+                    })
+                  )
                     run(() => deleteLecon(lecon.id), "Leçon supprimée.");
                 }}>
                 <Trash2 className="mr-1.5 h-4 w-4 text-destructive" /> Supprimer

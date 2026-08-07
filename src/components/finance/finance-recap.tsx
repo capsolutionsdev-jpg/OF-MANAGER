@@ -113,9 +113,9 @@ export function FinanceRecap({ rows }: { rows: RecapRow[] }) {
                 rows.map((r) => (
                   <tr key={r.mois} className="border-b last:border-0 transition-colors hover:bg-muted/40">
                     <td className="p-3 capitalize">{r.label}</td>
-                    <td className="p-3 text-right text-emerald-700">{euro(r.caCents)}</td>
-                    <td className="p-3 text-right text-rose-700">{euro(r.chargesCents)}</td>
-                    <td className={`p-3 text-right font-semibold ${r.balanceCents >= 0 ? "text-emerald-700" : "text-rose-700"}`}>
+                    <td className="p-3 text-right text-emerald-700 dark:text-emerald-300">{euro(r.caCents)}</td>
+                    <td className="p-3 text-right text-rose-700 dark:text-rose-300">{euro(r.chargesCents)}</td>
+                    <td className={`p-3 text-right font-semibold ${r.balanceCents >= 0 ? "text-emerald-700 dark:text-emerald-300" : "text-rose-700 dark:text-rose-300"}`}>
                       {euro(r.balanceCents)}
                     </td>
                   </tr>
@@ -145,9 +145,9 @@ export function FinanceRecap({ rows }: { rows: RecapRow[] }) {
                 {annees.map(([y, e]) => (
                   <tr key={y} className="border-b last:border-0 transition-colors hover:bg-muted/40">
                     <td className="p-3 font-medium">{y}</td>
-                    <td className="p-3 text-right text-emerald-700">{euro(e.ca)}</td>
-                    <td className="p-3 text-right text-rose-700">{euro(e.charges)}</td>
-                    <td className={`p-3 text-right font-semibold ${e.ca - e.charges >= 0 ? "text-emerald-700" : "text-rose-700"}`}>
+                    <td className="p-3 text-right text-emerald-700 dark:text-emerald-300">{euro(e.ca)}</td>
+                    <td className="p-3 text-right text-rose-700 dark:text-rose-300">{euro(e.charges)}</td>
+                    <td className={`p-3 text-right font-semibold ${e.ca - e.charges >= 0 ? "text-emerald-700 dark:text-emerald-300" : "text-rose-700 dark:text-rose-300"}`}>
                       {euro(e.ca - e.charges)}
                     </td>
                   </tr>

@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { canAccessSection, roleAllowedInSection } from "@/lib/permissions";
 import { getTenantDb } from "@/lib/tenant";
 import { Button } from "@/components/ui/button";
+import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -149,11 +150,11 @@ export default async function CandidatDetailPage({
             </h1>
             <Badge variant="secondary">{STATUT_LABELS[candidat.statut]}</Badge>
             {candidat.prospectFormCompletedAt ? (
-              <Badge className="bg-emerald-500/10 text-emerald-700">
+              <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
                 fiche signée
               </Badge>
             ) : candidat.prospectFormSentAt ? (
-              <Badge className="bg-amber-500/10 text-amber-700">
+              <Badge className="bg-amber-500/10 text-amber-700 dark:text-amber-300">
                 lien d&apos;inscription envoyé
               </Badge>
             ) : null}
@@ -201,9 +202,18 @@ export default async function CandidatDetailPage({
             </Button>
             <form action={anonymiseCandidat}>
               <input type="hidden" name="candidatId" value={candidat.id} />
-              <Button type="submit" variant="outline">
+              <ConfirmSubmitButton
+                variant="outline"
+                confirm={{
+                  title: `Anonymiser ${candidat.prenom} ${candidat.nom} ?`,
+                  description:
+                    "Les données personnelles seront effacées de façon irréversible (RGPD). Le dossier ne pourra plus être identifié.",
+                  destructive: true,
+                  confirmLabel: "Anonymiser",
+                }}
+              >
                 <Trash2 className="mr-2 h-4 w-4 text-destructive" /> Anonymiser
-              </Button>
+              </ConfirmSubmitButton>
             </form>
           </div>
         </div>
@@ -432,7 +442,7 @@ export default async function CandidatDetailPage({
                         key={label}
                         className={
                           date
-                            ? "bg-emerald-500/10 text-emerald-700"
+                            ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
                             : "bg-muted text-muted-foreground"
                         }
                       >
@@ -484,7 +494,7 @@ export default async function CandidatDetailPage({
                       </span>
                       <span>
                         Payé :{" "}
-                        <span className="font-medium text-emerald-700">{eur(paye)}</span>
+                        <span className="font-medium text-emerald-700 dark:text-emerald-300">{eur(paye)}</span>
                       </span>
                       <span>
                         Restant :{" "}

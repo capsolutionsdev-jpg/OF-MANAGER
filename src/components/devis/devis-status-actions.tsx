@@ -4,6 +4,7 @@ import { useTransition } from "react";
 import { toast } from "sonner";
 import { FileSignature } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { setDevisStatut, requestDevisSignature } from "@/lib/actions/devis-actions";
 
 // Boutons de changement de statut d'un devis, avec retour utilisateur (toast)
@@ -16,6 +17,7 @@ export function DevisStatutButtons({
   actions: { statut: string; label: string }[];
 }) {
   const [pending, start] = useTransition();
+  const confirm = useConfirm();
   return (
     <>
       {actions.map((a) => (
@@ -25,7 +27,18 @@ export function DevisStatutButtons({
           size="sm"
           variant="outline"
           disabled={pending}
-          onClick={() =>
+          onClick={async () => {
+            if (
+              a.statut === "ANNULEE" &&
+              !(await confirm({
+                title: "Annuler ce devis ?",
+                description: "Le devis sera marqué comme refusé/annulé.",
+                destructive: true,
+                confirmLabel: "Annuler le devis",
+                cancelLabel: "Retour",
+              }))
+            )
+              return;
             start(async () => {
               const fd = new FormData();
               fd.set("id", id);
@@ -33,8 +46,8 @@ export function DevisStatutButtons({
               const r = await setDevisStatut(fd);
               if (r.ok) toast.success("Statut mis à jour.");
               else toast.error(r.error);
-            })
-          }
+            });
+          }}
         >
           {a.label}
         </Button>

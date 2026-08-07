@@ -17,6 +17,7 @@ import { getResolvedPlans } from "@/lib/pricing";
 import { PLAN_ORDER } from "@/lib/plans";
 import { isStripeConfigured } from "@/lib/stripe";
 import { SubscribePanel } from "@/components/billing/subscribe-panel";
+import { ConfirmProvider } from "@/components/ui/confirm-dialog";
 import { cn } from "@/lib/utils";
 
 // Rendu dynamique : ces pages lisent la base de données et la session,
@@ -138,7 +139,9 @@ export default async function AppLayout({
           <Link href="/tarifs" className="ml-1 underline hover:no-underline">Choisir une formule</Link>
         </div>
       )}
-      <main className="mx-auto max-w-[1500px] p-4 md:p-6">{children}</main>
+      <main className="mx-auto max-w-[1500px] p-4 md:p-6">
+        <ConfirmProvider>{children}</ConfirmProvider>
+      </main>
 
       {/* Barre d'onglets mobile (accès au pouce). `pb-20 md:pb-0` sur le pied de
           page évite que le contenu passe sous la barre fixe. */}

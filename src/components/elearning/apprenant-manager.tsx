@@ -80,7 +80,7 @@ export function ApprenantManager({
       {/* Compte */}
       <div className="flex flex-wrap items-center gap-2">
         {hasAccount ? (
-          <Badge className="bg-emerald-500/10 text-emerald-700">
+          <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
             <UserCheck className="mr-1 h-3 w-3" /> Compte actif{login ? ` · ${login}` : ""}
           </Badge>
         ) : (
