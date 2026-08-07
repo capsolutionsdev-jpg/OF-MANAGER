@@ -106,7 +106,7 @@ export function QuizRunner({
                     onChange={(e) => setAnswers((p) => ({ ...p, [qi]: e.target.value }))}
                   />
                   {submitted && q.corrige && (
-                    <p className="mt-1 rounded bg-emerald-500/10 p-2 text-xs text-emerald-800">
+                    <p className="mt-1 rounded bg-emerald-500/10 p-2 text-xs text-emerald-800 dark:text-emerald-300">
                       <strong>Corrigé : </strong>
                       {q.corrige}
                     </p>

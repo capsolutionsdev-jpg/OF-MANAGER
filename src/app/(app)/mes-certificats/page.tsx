@@ -82,7 +82,7 @@ export default async function MesCertificatsPage() {
                       Diplôme{d.numeroDiplome ? ` n° ${d.numeroDiplome}` : ""}
                       {d.remisAt ? ` — remis le ${fmt(d.remisAt)}` : ""}
                     </span>
-                    <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-700">Remis</span>
+                    <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-300">Remis</span>
                   </div>
                 ))}
               </CardContent>
