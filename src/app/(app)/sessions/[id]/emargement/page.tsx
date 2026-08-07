@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { genererSeances } from "@/lib/actions/emargement-actions";
 import { PresenceCell } from "@/components/emargement/presence-cell";
+import { SeanceFormateurSelect } from "@/components/sessions/seance-formateur-select";
 import { PrepareSignaturesButton } from "@/components/emargement/prepare-signatures-button";
 import { SendEmargementLinkButton } from "@/components/emargement/send-emargement-link-button";
 
@@ -32,6 +33,12 @@ export default async function EmargementPage({
     },
   });
   if (!s) notFound();
+
+  // Formateurs de l'organisme (pour affecter un formateur par séance).
+  const formateurs = await db.formateur.findMany({
+    orderBy: [{ nom: "asc" }, { prenom: "asc" }],
+    select: { id: true, nom: true, prenom: true },
+  });
 
   const fmt = (d: Date) => d.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
   const fmtCourt = (d: Date) => d.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" });
@@ -174,15 +181,22 @@ export default async function EmargementPage({
         <div className="space-y-6">
           {s.seances.map((seance) => (
             <Card key={seance.id}>
-              <CardHeader className="flex flex-row items-center justify-between">
+              <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
                 <CardTitle className="text-base capitalize">{fmt(seance.date)}</CardTitle>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  render={<Link href={`/emargement/${seance.id}`} target="_blank" />}
-                >
-                  <FileText className="mr-2 h-4 w-4" /> Feuille d&apos;émargement
-                </Button>
+                <div className="flex items-center gap-2">
+                  <SeanceFormateurSelect
+                    seanceId={seance.id}
+                    formateurId={seance.formateurId}
+                    formateurs={formateurs}
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    render={<Link href={`/emargement/${seance.id}`} target="_blank" />}
+                  >
+                    <FileText className="mr-2 h-4 w-4" /> Feuille d&apos;émargement
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="space-y-2">
                 {participants.length === 0 ? (

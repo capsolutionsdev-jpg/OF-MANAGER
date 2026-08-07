@@ -14,9 +14,14 @@ export async function genererSeances(sessionId: string) {
 
   const s = await db.session.findUnique({
     where: { id: sessionId },
-    include: { seances: true, inscriptions: true },
+    include: { seances: true, inscriptions: true, formateurs: true },
   });
   if (!s) return;
+
+  // Si la session n'a qu'un seul formateur, il est affecté d'office à chaque
+  // séance (les formations longues à plusieurs formateurs se règlent séance
+  // par séance via setSeanceFormateur).
+  const formateurParDefaut = s.formateurs.length === 1 ? s.formateurs[0].id : null;
 
   for (const insc of s.inscriptions) {
     const app = await db.apprenant.upsert({
@@ -46,6 +51,7 @@ export async function genererSeances(sessionId: string) {
           type: SeanceType.JOURNEE,
           heureDebut: "09:00",
           heureFin: "17:00",
+          formateurId: formateurParDefaut,
         },
       });
       d.setDate(d.getDate() + 1);
@@ -54,6 +60,24 @@ export async function genererSeances(sessionId: string) {
   }
 
   revalidatePath(`/sessions/${sessionId}/emargement`);
+}
+
+/** Affecte (ou retire) le formateur d'une séance (formations longues : un
+ *  formateur différent par jour). `formateurId` vide = aucun formateur. */
+export async function setSeanceFormateur(seanceId: string, formateurId: string) {
+  const db = await getTenantDb();
+  const session = await auth();
+  if (!session?.user) return;
+  const seance = await db.seance.findUnique({
+    where: { id: seanceId },
+    select: { sessionId: true },
+  });
+  if (!seance) return;
+  await db.seance.update({
+    where: { id: seanceId },
+    data: { formateurId: formateurId.trim() !== "" ? formateurId : null },
+  });
+  revalidatePath(`/sessions/${seance.sessionId}/emargement`);
 }
 
 export async function setPresence(
