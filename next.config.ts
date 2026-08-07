@@ -33,6 +33,56 @@ const securityHeaders = [
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), browsing-topics=()" },
 ];
 
+// Binaire Chromium (@sparticuz) à embarquer dans les fonctions serverless qui
+// génèrent un PDF — sinon « Could not find Chromium » sur Vercel.
+const CHROMIUM_BIN = ["./node_modules/@sparticuz/chromium/bin/**"];
+
+// Toutes les entrées (routes ET pages) dont le code — directement ou via une
+// server action déclenchée depuis la page — lance Chromium. Une server action
+// s'exécute dans la fonction de la PAGE qui la déclenche : cette page doit donc
+// aussi embarquer le binaire (cas du plant « envoi du lien d'inscription »).
+const PDF_ENTRYPOINTS = [
+  // Routes qui renvoient un PDF (contenu ou pièce jointe)
+  "/api/candidats/[id]/expression-besoin",
+  "/api/inscriptions/[id]/attestation-reussite",
+  "/api/convention",
+  "/api/cron/parcours",
+  "/api/pdf-test",
+  "/parcours/[token]/documents",
+  "/compte-rendu/[token]/document",
+  "/contrat-formateur/[token]/document",
+  "/satisfaction/[token]/document",
+  "/suivi/[token]/document",
+  "/documents/[inscriptionId]/pdf",
+  "/documents/[inscriptionId]/satisfaction",
+  "/documents/contrat-formateur/[sessionId]",
+  "/titres/[id]",
+  "/diplomes/[id]/officiel",
+  "/diplomes/[id]/attestation",
+  "/examen-civique/facture/[id]",
+  "/jurys/affectation/[id]/defraiement",
+  "/mes-cours/[coursId]/attestation",
+  // Exports (PDF conditionnel ?format=pdf → tableToPdf → Chromium)
+  "/candidats/export",
+  "/sessions/export",
+  "/sessions/[id]/candidats/export",
+  "/comptabilite/export",
+  "/tresorerie/export/recap",
+  "/tresorerie/export/charges",
+  "/tresorerie/export/ca",
+  "/formations/[id]/diplomes/export",
+  "/rapports/pedagogique",
+  "/examen-civique/export/comptable",
+  "/examen-civique/export/pedagogique",
+  // PAGES dont une server action génère un PDF (startParcours → buildSingleDocPdf,
+  // certification, etc.) — le binaire doit être présent dans la fonction de la page.
+  "/sessions/[id]",
+  "/candidats",
+  "/candidats/[id]",
+  "/crm",
+  "/signatures",
+];
+
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   // Épingle la racine du projet : évite que Next infère un mauvais workspace root
@@ -65,50 +115,10 @@ const nextConfig: NextConfig = {
   ],
   // Force l'inclusion du binaire Chromium (@sparticuz) dans les fonctions
   // serverless qui génèrent des PDF — sinon « Could not find Chromium » sur Vercel.
-  outputFileTracingIncludes: {
-    // Route « Fiche d'expression du besoin » : génère un PDF via puppeteer
-    // → embarquer le binaire Chromium dans cette fonction.
-    "/api/candidats/[id]/expression-besoin": [
-      "./node_modules/@sparticuz/chromium/bin/**",
-    ],
-    "/parcours/[token]/documents": [
-      "./node_modules/@sparticuz/chromium/bin/**",
-    ],
-    "/compte-rendu/[token]/document": [
-      "./node_modules/@sparticuz/chromium/bin/**",
-    ],
-    "/contrat-formateur/[token]/document": [
-      "./node_modules/@sparticuz/chromium/bin/**",
-    ],
-    "/satisfaction/[token]/document": [
-      "./node_modules/@sparticuz/chromium/bin/**",
-    ],
-    "/documents/[inscriptionId]/pdf": [
-      "./node_modules/@sparticuz/chromium/bin/**",
-    ],
-    "/documents/[inscriptionId]/satisfaction": [
-      "./node_modules/@sparticuz/chromium/bin/**",
-    ],
-    "/documents/contrat-formateur/[sessionId]": [
-      "./node_modules/@sparticuz/chromium/bin/**",
-    ],
-    "/api/cron/parcours": [
-      "./node_modules/@sparticuz/chromium/bin/**",
-    ],
-    "/api/pdf-test": [
-      "./node_modules/@sparticuz/chromium/bin/**",
-    ],
-    "/api/convention": [
-      "./node_modules/@sparticuz/chromium/bin/**",
-    ],
-    // Attestation de réussite (générée après certification) → PDF via puppeteer.
-    "/api/inscriptions/[id]/attestation-reussite": [
-      "./node_modules/@sparticuz/chromium/bin/**",
-    ],
-    "/mes-cours/[coursId]/attestation": [
-      "./node_modules/@sparticuz/chromium/bin/**",
-    ],
-  },
+  // Couvre routes + pages hébergeant une server action PDF (cf. PDF_ENTRYPOINTS).
+  outputFileTracingIncludes: Object.fromEntries(
+    PDF_ENTRYPOINTS.map((p) => [p, CHROMIUM_BIN]),
+  ),
 };
 
 export default nextConfig;
