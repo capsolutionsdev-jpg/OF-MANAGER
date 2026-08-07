@@ -52,7 +52,8 @@ export default async function DevisDetailPage({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
+      {/* Barre d'actions collante — reste accessible pendant le scroll du document A4 */}
+      <div className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-3 border-b bg-background/95 py-2 backdrop-blur print:hidden">
         <Link href="/devis" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" /> Retour aux devis
         </Link>
@@ -102,8 +103,9 @@ export default async function DevisDetailPage({
         </div>
       )}
 
-      <article className="mx-auto max-w-3xl rounded-lg bg-white p-10 text-black shadow-sm print:shadow-none">
-        <header className="flex items-start justify-between gap-6 border-b-2 border-[#111] pb-4">
+      {/* Aperçu « papier » A4 — theme-aware à l'écran, forcé blanc à l'impression */}
+      <article className="mx-auto max-w-3xl rounded-lg border bg-card p-10 text-card-foreground shadow-sm print:rounded-none print:border-0 print:bg-white print:text-black print:shadow-none">
+        <header className="flex items-start justify-between gap-6 border-b-2 border-foreground/60 pb-4 print:border-black">
           <div className="flex items-center gap-3">
             {org.logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -119,21 +121,21 @@ export default async function DevisDetailPage({
           <div className="text-right">
             <div className="text-xl font-bold">DEVIS</div>
             <div className="text-sm">{d.reference}</div>
-            <div className="text-xs text-[#555]">Émis le {fmt(d.dateEmission)}</div>
-            {d.validUntil && <div className="text-xs text-[#555]">Valable jusqu&apos;au {fmt(d.validUntil)}</div>}
+            <div className="text-xs text-muted-foreground print:text-neutral-600">Émis le {fmt(d.dateEmission)}</div>
+            {d.validUntil && <div className="text-xs text-muted-foreground print:text-neutral-600">Valable jusqu&apos;au {fmt(d.validUntil)}</div>}
           </div>
         </header>
 
         <div className="mt-6 flex justify-between gap-6 text-sm">
           <div>
-            <div className="mb-1 text-xs font-semibold uppercase text-[#777]">Client</div>
+            <div className="mb-1 text-xs font-semibold uppercase text-muted-foreground print:text-neutral-500">Client</div>
             <div className="font-medium">{clientNom}</div>
-            {clientAdresse && <div className="text-xs text-[#555]">{clientAdresse}</div>}
-            {d.entreprise?.siret && <div className="text-xs text-[#555]">SIRET {d.entreprise.siret}</div>}
+            {clientAdresse && <div className="text-xs text-muted-foreground print:text-neutral-600">{clientAdresse}</div>}
+            {d.entreprise?.siret && <div className="text-xs text-muted-foreground print:text-neutral-600">SIRET {d.entreprise.siret}</div>}
           </div>
           {d.objet && (
             <div className="max-w-xs text-right">
-              <div className="mb-1 text-xs font-semibold uppercase text-[#777]">Objet</div>
+              <div className="mb-1 text-xs font-semibold uppercase text-muted-foreground print:text-neutral-500">Objet</div>
               <div className="text-sm">{d.objet}</div>
             </div>
           )}
@@ -142,7 +144,7 @@ export default async function DevisDetailPage({
         <div className="mt-6 overflow-x-auto">
         <table className="w-full border-collapse text-sm">
           <thead>
-            <tr className="border-b border-[#ccc] text-left text-xs uppercase text-[#777]">
+            <tr className="border-b border-border text-left text-xs uppercase text-muted-foreground print:border-neutral-300 print:text-neutral-500">
               <th className="py-2">Désignation</th>
               <th className="py-2 text-right">Qté</th>
               <th className="py-2 text-right">PU HT</th>
@@ -151,7 +153,7 @@ export default async function DevisDetailPage({
           </thead>
           <tbody>
             {lignes.map((l, i) => (
-              <tr key={i} className="border-b border-[#eee]">
+              <tr key={i} className="border-b border-border/70 print:border-neutral-200">
                 <td className="py-2">{l.designation}</td>
                 <td className="py-2 text-right tabular-nums">{l.quantite}</td>
                 <td className="py-2 text-right tabular-nums">{euro(l.puHT)}</td>
@@ -164,19 +166,19 @@ export default async function DevisDetailPage({
 
         <div className="mt-4 flex justify-end">
           <div className="w-64 space-y-1 text-sm">
-            <div className="flex justify-between"><span className="text-[#555]">Total HT</span><span className="tabular-nums">{euro(ht)}</span></div>
-            <div className="flex justify-between"><span className="text-[#555]">TVA ({tva}%)</span><span className="tabular-nums">{euro(ttc - ht)}</span></div>
-            <div className="flex justify-between border-t border-[#111] pt-1 text-base font-bold"><span>Total TTC</span><span className="tabular-nums">{euro(ttc)}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground print:text-neutral-600">Total HT</span><span className="tabular-nums">{euro(ht)}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground print:text-neutral-600">TVA ({tva}%)</span><span className="tabular-nums">{euro(ttc - ht)}</span></div>
+            <div className="flex justify-between border-t border-foreground/60 pt-1 text-base font-bold print:border-black"><span>Total TTC</span><span className="tabular-nums">{euro(ttc)}</span></div>
           </div>
         </div>
 
         {d.acceptedAt && d.signatureUrl ? (
           <div className="mt-8 flex justify-end">
             <div className="w-64 text-sm">
-              <div className="mb-1 text-xs font-semibold uppercase text-[#777]">Bon pour accord</div>
+              <div className="mb-1 text-xs font-semibold uppercase text-muted-foreground print:text-neutral-500">Bon pour accord</div>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={d.signatureUrl} alt="Signature" className="h-20 w-auto" />
-              <div className="mt-1 border-t border-[#111] pt-1 text-xs">
+              <div className="mt-1 border-t border-foreground/60 pt-1 text-xs print:border-black">
                 {d.signataire}
                 <br />
                 Le {d.acceptedAt.toLocaleDateString("fr-FR")}
@@ -185,7 +187,7 @@ export default async function DevisDetailPage({
           </div>
         ) : null}
 
-        <div className="mt-10 border-t border-[#ddd] pt-3 text-[10px] leading-relaxed text-[#777]">
+        <div className="mt-10 border-t border-border pt-3 text-[10px] leading-relaxed text-muted-foreground print:border-neutral-300 print:text-neutral-500">
           {org.name} — {org.qualiopi} · SIRET {org.siret} · NDA {org.nda}.
           Devis valable {d.validUntil ? `jusqu'au ${fmt(d.validUntil)}` : "30 jours"}.
           {d.acceptedAt ? "" : " Bon pour accord (date + signature) :"}
