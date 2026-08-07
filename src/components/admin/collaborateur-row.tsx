@@ -42,7 +42,7 @@ export function CollaborateurRow({ c }: { c: Collab }) {
             {c.role === "RESPONSABLE_FORMATION" ? "Responsable" : "Assistant"}
           </Badge>
           {c.isActive ? (
-            <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">Actif</Badge>
+            <Badge variant="secondary" className="bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">Actif</Badge>
           ) : (
             <Badge variant="secondary" className="bg-muted text-muted-foreground">Désactivé</Badge>
           )}

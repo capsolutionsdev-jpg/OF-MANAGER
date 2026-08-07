@@ -96,7 +96,7 @@ export default async function CoursManagePage({
           <h1 className="text-2xl font-bold tracking-tight">{cours.titre}</h1>
           <Badge variant="outline">{ACADEMY_LABELS[cours.academy]}</Badge>
           {cours.isPublished ? (
-            <Badge className="bg-emerald-500/10 text-emerald-700">publié</Badge>
+            <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">publié</Badge>
           ) : (
             <Badge variant="secondary">brouillon</Badge>
           )}

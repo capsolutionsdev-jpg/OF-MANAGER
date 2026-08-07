@@ -132,7 +132,7 @@ export default async function AppLayout({
         notifications={notifications}
       />
       {trial.isTrial && (
-        <div className="flex items-center justify-center gap-2 bg-amber-500/10 px-4 py-2 text-center text-xs font-medium text-amber-700">
+        <div className="flex items-center justify-center gap-2 bg-amber-500/10 px-4 py-2 text-center text-xs font-medium text-amber-700 dark:text-amber-300">
           <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
           Essai gratuit — il vous reste{" "}
           <span className="font-bold">{Math.max(0, trial.daysLeft)} jour{trial.daysLeft > 1 ? "s" : ""}</span>.

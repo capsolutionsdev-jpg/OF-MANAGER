@@ -24,8 +24,8 @@ const FILTERS = [
 
 const PLAN_BADGE: Record<string, string> = {
   BASIQUE: "bg-slate-500/10 text-slate-600",
-  MEDIUM: "bg-blue-500/10 text-blue-700",
-  COMPLET: "bg-violet-500/10 text-violet-700",
+  MEDIUM: "bg-blue-500/10 text-blue-700 dark:text-blue-300",
+  COMPLET: "bg-violet-500/10 text-violet-700 dark:text-violet-300",
 };
 
 export function OrganismesTable({ rows }: { rows: OrgRow[] }) {

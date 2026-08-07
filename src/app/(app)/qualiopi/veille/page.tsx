@@ -17,9 +17,9 @@ import { creerVeille, supprimerVeille } from "@/lib/actions/registre-actions";
 export const dynamic = "force-dynamic";
 
 const TYPES: Record<string, { label: string; ind: string; cls: string }> = {
-  LEGALE: { label: "Veille légale & réglementaire", ind: "Indicateur 23", cls: "bg-blue-100 text-blue-700" },
-  METIERS: { label: "Veille métiers & compétences", ind: "Indicateur 24", cls: "bg-violet-100 text-violet-700" },
-  PEDAGOGIQUE: { label: "Veille pédagogique & technologique", ind: "Indicateur 25", cls: "bg-emerald-100 text-emerald-700" },
+  LEGALE: { label: "Veille légale & réglementaire", ind: "Indicateur 23", cls: "bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300" },
+  METIERS: { label: "Veille métiers & compétences", ind: "Indicateur 24", cls: "bg-violet-100 dark:bg-violet-500/15 text-violet-700 dark:text-violet-300" },
+  PEDAGOGIQUE: { label: "Veille pédagogique & technologique", ind: "Indicateur 25", cls: "bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300" },
 };
 
 export default async function VeillePage() {

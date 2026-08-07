@@ -26,7 +26,7 @@ function Notice({ state, okText }: { state: AccountState | undefined; okText: st
     );
   if (state?.ok)
     return (
-      <div className="flex items-center gap-2 rounded-md bg-emerald-500/10 p-2.5 text-sm text-emerald-700">
+      <div className="flex items-center gap-2 rounded-md bg-emerald-500/10 p-2.5 text-sm text-emerald-700 dark:text-emerald-300">
         <CheckCircle2 className="h-4 w-4 shrink-0" /> {okText}
       </div>
     );
@@ -89,7 +89,7 @@ export function TeamCard({ editors, currentId }: { editors: Editor[]; currentId:
               <span className="font-medium">{e.name}</span>
               <span className="text-muted-foreground">{e.email}</span>
               {e.id === currentId && <Badge variant="secondary">vous</Badge>}
-              {!e.isActive && <Badge className="bg-rose-500/10 text-rose-700">inactif</Badge>}
+              {!e.isActive && <Badge className="bg-rose-500/10 text-rose-700 dark:text-rose-300">inactif</Badge>}
               {e.id !== currentId && (
                 <Button
                   size="sm"

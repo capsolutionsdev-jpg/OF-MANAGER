@@ -504,7 +504,7 @@ export function EditOrganismeForm({ org, plans }: { org: OrgFormData; plans?: Pl
                               }}
                             />
                           </label>
-                          {cur.fileUrl && <span className="text-xs text-emerald-700">✓ {cur.fileName ?? "fichier"}</span>}
+                          {cur.fileUrl && <span className="text-xs text-emerald-700 dark:text-emerald-300">✓ {cur.fileName ?? "fichier"}</span>}
                         </span>
                       )}
                     </div>
@@ -585,7 +585,7 @@ export function EditOrganismeForm({ org, plans }: { org: OrgFormData; plans?: Pl
           </div>
         )}
         {state?.ok && (
-          <div className="mt-6 flex items-center gap-2 rounded-md bg-emerald-500/10 p-3 text-sm text-emerald-700">
+          <div className="mt-6 flex items-center gap-2 rounded-md bg-emerald-500/10 p-3 text-sm text-emerald-700 dark:text-emerald-300">
             <CheckCircle2 className="h-4 w-4 shrink-0" /> Configuration enregistrée.
           </div>
         )}

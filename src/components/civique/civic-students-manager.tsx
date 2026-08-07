@@ -103,9 +103,9 @@ function fmtDate(iso: string | null) {
 }
 function effectiveStatut(s: CivicStudentRow) {
   if (s.statut === "DESACTIVE") return { label: "Désactivé", cls: "bg-muted text-muted-foreground" };
-  if (s.statut === "SUSPENDU") return { label: "Suspendu", cls: "bg-amber-100 text-amber-800" };
+  if (s.statut === "SUSPENDU") return { label: "Suspendu", cls: "bg-amber-100 dark:bg-amber-500/15 text-amber-800 dark:text-amber-300" };
   if (s.expired) return { label: "Expiré", cls: "bg-muted text-muted-foreground" };
-  return { label: "Actif", cls: "bg-emerald-100 text-emerald-800" };
+  return { label: "Actif", cls: "bg-emerald-100 dark:bg-emerald-500/15 text-emerald-800 dark:text-emerald-300" };
 }
 
 export function CivicStudentsManager({ students }: { students: CivicStudentRow[] }) {
@@ -164,8 +164,8 @@ export function CivicStudentsManager({ students }: { students: CivicStudentRow[]
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
           <Badge variant="secondary">{students.length} compte(s)</Badge>
-          <span className="text-emerald-700">{counts.actifs} actif(s)</span>
-          <span className="text-amber-700">{counts.suspendus} suspendu(s)</span>
+          <span className="text-emerald-700 dark:text-emerald-300">{counts.actifs} actif(s)</span>
+          <span className="text-amber-700 dark:text-amber-300">{counts.suspendus} suspendu(s)</span>
           <span>{counts.expires} expiré(s)</span>
         </div>
         <div className="flex items-center gap-2">
@@ -177,8 +177,8 @@ export function CivicStudentsManager({ students }: { students: CivicStudentRow[]
       </div>
 
       {expiringSoon.length > 0 && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
-          <div className="flex items-center gap-2 text-sm font-medium text-amber-900">
+        <div className="rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-500/10 p-3">
+          <div className="flex items-center gap-2 text-sm font-medium text-amber-900 dark:text-amber-300">
             <Clock className="h-4 w-4" /> {expiringSoon.length} accès expire(nt) dans les 7 jours
           </div>
           <div className="mt-2 flex flex-wrap gap-2">
@@ -186,7 +186,7 @@ export function CivicStudentsManager({ students }: { students: CivicStudentRow[]
               <button
                 key={s.id}
                 onClick={() => runAction(extendCivicAccess(s.id, 30), `Accès de ${s.prenom} prolongé de 30 jours.`)}
-                className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-white px-2.5 py-1 text-xs text-amber-900 hover:bg-amber-100"
+                className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-white px-2.5 py-1 text-xs text-amber-900 dark:text-amber-300 hover:bg-amber-100 dark:bg-amber-500/15"
                 title="Prolonger de 30 jours"
               >
                 <CalendarPlus className="h-3 w-3" /> {s.prenom} {s.nom} ({fmtDate(s.accessUntil)})
@@ -270,7 +270,7 @@ export function CivicStudentsManager({ students }: { students: CivicStudentRow[]
                       {s.bestMock === null ? (
                         <span className="text-muted-foreground">—</span>
                       ) : (
-                        <span className={s.bestMock >= 80 ? "font-medium text-emerald-700" : ""}>{s.bestMock}%</span>
+                        <span className={s.bestMock >= 80 ? "font-medium text-emerald-700 dark:text-emerald-300" : ""}>{s.bestMock}%</span>
                       )}
                     </TableCell>
                     <TableCell className="text-sm">{fmtDate(s.accessUntil)}</TableCell>
@@ -381,9 +381,9 @@ function CreateStudentDialog({ open, onOpenChange }: { open: boolean; onOpenChan
 
         {code ? (
           <div className="space-y-3">
-            <div className="rounded-lg border bg-emerald-50 p-4 text-sm">
-              <p className="font-medium text-emerald-900">Compte créé ✓</p>
-              <p className="mt-1 text-emerald-800">Code d'accès (e-mail : {form.email.toLowerCase()}) :</p>
+            <div className="rounded-lg border bg-emerald-50 dark:bg-emerald-500/10 p-4 text-sm">
+              <p className="font-medium text-emerald-900 dark:text-emerald-300">Compte créé ✓</p>
+              <p className="mt-1 text-emerald-800 dark:text-emerald-300">Code d'accès (e-mail : {form.email.toLowerCase()}) :</p>
               <code className="mt-1 block break-all rounded bg-white px-2 py-1 font-mono text-xs">{code}</code>
             </div>
             <DialogFooter className="gap-2">
@@ -509,7 +509,7 @@ function StudentDetailDialog({ student, onClose }: { student: CivicStudentRow | 
                 {s.mocks.slice(0, 6).map((m, i) => (
                   <li key={i} className="flex items-center justify-between gap-2">
                     <span>{fmtDate(m.date)}</span>
-                    <span className={m.score >= 80 ? "font-medium text-emerald-700" : ""}>
+                    <span className={m.score >= 80 ? "font-medium text-emerald-700 dark:text-emerald-300" : ""}>
                       {m.score}% · proba {m.proba}%
                     </span>
                   </li>

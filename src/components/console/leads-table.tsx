@@ -35,10 +35,10 @@ const STATUTS = [
   { key: "PERDU", label: "Perdu" },
 ];
 const STATUT_BADGE: Record<string, string> = {
-  NOUVEAU: "bg-blue-500/10 text-blue-700",
-  A_RAPPELER: "bg-amber-500/10 text-amber-700",
-  RAPPELE: "bg-violet-500/10 text-violet-700",
-  CONVERTI: "bg-emerald-500/10 text-emerald-700",
+  NOUVEAU: "bg-blue-500/10 text-blue-700 dark:text-blue-300",
+  A_RAPPELER: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
+  RAPPELE: "bg-violet-500/10 text-violet-700 dark:text-violet-300",
+  CONVERTI: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
   PERDU: "bg-slate-500/10 text-slate-600",
 };
 const FILTERS = [

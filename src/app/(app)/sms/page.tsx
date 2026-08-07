@@ -7,10 +7,10 @@ import { SendSmsForm, type SmsRecipient } from "@/components/sms/send-sms-form";
 export const dynamic = "force-dynamic";
 
 const STATUT_BADGE: Record<string, string> = {
-  ENVOYE: "bg-emerald-500/10 text-emerald-700",
-  DEMO: "bg-blue-500/10 text-blue-700",
-  ECHEC: "bg-red-500/10 text-red-700",
-  EN_ATTENTE: "bg-amber-500/10 text-amber-700",
+  ENVOYE: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+  DEMO: "bg-blue-500/10 text-blue-700 dark:text-blue-300",
+  ECHEC: "bg-red-500/10 text-red-700 dark:text-red-300",
+  EN_ATTENTE: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
 };
 
 export default async function SmsPage() {

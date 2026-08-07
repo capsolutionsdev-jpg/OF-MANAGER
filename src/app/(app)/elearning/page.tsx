@@ -86,7 +86,7 @@ export default async function ElearningPage() {
                     <span className="flex items-center gap-2 text-xs text-muted-foreground">
                       {c._count.modules} module(s) · {nbLecons(c)} leçon(s)
                       {c.isPublished ? (
-                        <Badge className="bg-emerald-500/10 text-emerald-700">
+                        <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
                           publié
                         </Badge>
                       ) : (

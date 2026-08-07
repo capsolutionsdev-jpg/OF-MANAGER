@@ -12,9 +12,9 @@ import { setInscriptionPaiement } from "@/lib/actions/inscription-actions";
 
 const STATUT_BADGE: Record<PaiementStatut, string> = {
   EN_ATTENTE: "bg-muted text-muted-foreground",
-  ACOMPTE: "bg-amber-500/10 text-amber-700",
-  PAYE: "bg-emerald-500/10 text-emerald-700",
-  REMBOURSE: "bg-sky-500/10 text-sky-700",
+  ACOMPTE: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
+  PAYE: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+  REMBOURSE: "bg-sky-500/10 text-sky-700 dark:text-sky-300",
   ANNULE: "bg-destructive/10 text-destructive",
 };
 

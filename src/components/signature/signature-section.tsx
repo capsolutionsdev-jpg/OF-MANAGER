@@ -29,7 +29,7 @@ export async function SignatureSection({
       <span className="font-medium">Signature électronique :</span>
 
       {sig?.statut === "SIGNEE" ? (
-        <Badge className="bg-emerald-100 text-emerald-700">
+        <Badge className="bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">
           <CheckCircle2 className="mr-1 h-3.5 w-3.5" />
           Signé le {sig.signedAt?.toLocaleDateString("fr-FR")}
         </Badge>

@@ -35,7 +35,7 @@ export function CandidatAccessPanel({
         <GraduationCap className="h-4 w-4 text-muted-foreground" />
         <span className="font-medium">Espace apprenant</span>
         {hasAccount ? (
-          <span className="text-emerald-700">Accès actif{email ? ` · ${email}` : ""}</span>
+          <span className="text-emerald-700 dark:text-emerald-300">Accès actif{email ? ` · ${email}` : ""}</span>
         ) : (
           <span className="text-muted-foreground">Aucun accès{!email ? " — renseignez d'abord un e-mail" : ""}</span>
         )}
