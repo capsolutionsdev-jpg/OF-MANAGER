@@ -119,7 +119,7 @@ export function ChargesManager({ charges, months }: { charges: ChargeRow[]; mont
 
       <div className="flex flex-wrap gap-4 text-sm">
         <span>Total affiché : <strong>{eur(total)}</strong></span>
-        {enAttente > 0 && <span className="text-amber-700">Dont en attente : {eur(enAttente)}</span>}
+        {enAttente > 0 && <span className="text-amber-700 dark:text-amber-300">Dont en attente : {eur(enAttente)}</span>}
         <span className="text-muted-foreground">{filtered.length} ligne(s)</span>
       </div>
 
@@ -153,8 +153,8 @@ export function ChargesManager({ charges, months }: { charges: ChargeRow[]; mont
                   <TableCell className="text-sm font-medium">{eur(c.montantCents)}</TableCell>
                   <TableCell>
                     {c.statut === "PAYE"
-                      ? <Badge variant="outline" className="text-emerald-700">Payé</Badge>
-                      : <Badge variant="outline" className="text-amber-700">En attente</Badge>}
+                      ? <Badge variant="outline" className="text-emerald-700 dark:text-emerald-300">Payé</Badge>
+                      : <Badge variant="outline" className="text-amber-700 dark:text-amber-300">En attente</Badge>}
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>
