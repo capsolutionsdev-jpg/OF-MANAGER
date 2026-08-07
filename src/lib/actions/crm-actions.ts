@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { CrmStage, InteractionType } from "@prisma/client";
 import { getTenantDb } from "@/lib/tenant";
-import { auth } from "@/auth";
+import { requireSection } from "@/lib/section-guard";
 
 type Res = { ok: boolean; error?: string };
 
@@ -12,9 +12,8 @@ export async function setCrmStage(
   candidatId: string,
   stage: CrmStage,
 ): Promise<Res> {
+  const session = await requireSection("crm");
   const db = await getTenantDb();
-  const session = await auth();
-  if (!session?.user) return { ok: false, error: "Non autorisé." };
 
   await db.candidat.update({
     where: { id: candidatId },
@@ -39,13 +38,20 @@ export async function assignCandidat(
   candidatId: string,
   userId: string | null,
 ): Promise<Res> {
+  await requireSection("crm");
   const db = await getTenantDb();
-  const session = await auth();
-  if (!session?.user) return { ok: false, error: "Non autorisé." };
 
+  // Valide que l'utilisateur affecté appartient bien à l'organisme (db scopé →
+  // findFirst renvoie null si le userId vient d'un autre tenant) : empêche
+  // d'affecter un prospect à un utilisateur d'un autre organisme.
+  const cible = userId && userId.trim() !== "" ? userId : null;
+  if (cible) {
+    const u = await db.user.findFirst({ where: { id: cible }, select: { id: true } });
+    if (!u) return { ok: false, error: "Utilisateur invalide." };
+  }
   await db.candidat.update({
     where: { id: candidatId },
-    data: { assignedToId: userId && userId.trim() !== "" ? userId : null },
+    data: { assignedToId: cible },
   });
   revalidatePath("/crm");
   revalidatePath("/crm/pipeline");
@@ -58,9 +64,8 @@ export async function setRelance(
   candidatId: string,
   dateStr: string | null,
 ): Promise<Res> {
+  await requireSection("crm");
   const db = await getTenantDb();
-  const session = await auth();
-  if (!session?.user) return { ok: false, error: "Non autorisé." };
 
   await db.candidat.update({
     where: { id: candidatId },
@@ -76,9 +81,8 @@ export async function updateTags(
   candidatId: string,
   tags: string[],
 ): Promise<Res> {
+  await requireSection("crm");
   const db = await getTenantDb();
-  const session = await auth();
-  if (!session?.user) return { ok: false, error: "Non autorisé." };
 
   const clean = Array.from(
     new Set(tags.map((t) => t.trim()).filter((t) => t !== "")),
@@ -98,9 +102,8 @@ export async function setValeurEstimee(
   candidatId: string,
   montant: string | null,
 ): Promise<Res> {
+  await requireSection("crm");
   const db = await getTenantDb();
-  const session = await auth();
-  if (!session?.user) return { ok: false, error: "Non autorisé." };
 
   const n = montant ? Number(montant.replace(",", ".")) : null;
   await db.candidat.update({
@@ -119,9 +122,8 @@ export async function addInteraction(
   sujet: string,
   contenu: string,
 ): Promise<Res> {
+  const session = await requireSection("crm");
   const db = await getTenantDb();
-  const session = await auth();
-  if (!session?.user) return { ok: false, error: "Non autorisé." };
 
   await db.candidatInteraction.create({
     data: {
@@ -141,9 +143,8 @@ export async function deleteInteraction(
   interactionId: string,
   candidatId: string,
 ): Promise<Res> {
+  await requireSection("crm");
   const db = await getTenantDb();
-  const session = await auth();
-  if (!session?.user) return { ok: false, error: "Non autorisé." };
 
   await db.candidatInteraction.delete({ where: { id: interactionId } });
   revalidatePath(`/candidats/${candidatId}`);

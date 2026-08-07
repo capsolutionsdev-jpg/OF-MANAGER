@@ -145,13 +145,15 @@ ${org.representant} — ${org.name}`,
           sessionId: s.id,
         });
       }
-      await maybeSms(
-        convRule.channel,
-        i.candidat.telephone,
-        convRule.body ||
-          `Convocation ${f.titre} le ${fmt(s.dateDebut)}${s.lieu ? ` à ${s.lieu}` : ""}. ${org.name}`,
-      );
       if (sent) {
+        // SMS lié au jalon : n'est envoyé QUE si l'e-mail a réussi (ou mode démo),
+        // sinon le bloc serait rejoué au prochain cron → SMS en double.
+        await maybeSms(
+          convRule.channel,
+          i.candidat.telephone,
+          convRule.body ||
+            `Convocation ${f.titre} le ${fmt(s.dateDebut)}${s.lieu ? ` à ${s.lieu}` : ""}. ${org.name}`,
+        );
         await prisma.inscription.update({
           where: { id: i.id },
           data: { convocationSentAt: new Date() },
@@ -180,13 +182,13 @@ Merci de vous présenter à l'heure, muni(e) d'une pièce d'identité.
 À demain,
 ${org.representant} — ${org.name}`;
       const sent = await logAndSend({ to, subject, body, sessionId: s.id });
-      await maybeSms(
-        rappelRule.channel,
-        i.candidat.telephone,
-        rappelRule.body ||
-          `Rappel : « ${f.titre} » débute demain ${fmt(s.dateDebut)}${s.horaires ? ` (${s.horaires})` : ""}${s.lieu ? ` à ${s.lieu}` : ""}. ${org.name}`,
-      );
       if (sent) {
+        await maybeSms(
+          rappelRule.channel,
+          i.candidat.telephone,
+          rappelRule.body ||
+            `Rappel : « ${f.titre} » débute demain ${fmt(s.dateDebut)}${s.horaires ? ` (${s.horaires})` : ""}${s.lieu ? ` à ${s.lieu}` : ""}. ${org.name}`,
+        );
         await prisma.inscription.update({
           where: { id: i.id },
           data: { rappelSentAt: new Date() },
@@ -374,12 +376,12 @@ ${base}/reclamer/${satToken}
 Cordialement,
 ${org.representant} — ${org.name}`;
       const sent = await logAndSend({ to, subject, body, sessionId: s.id });
-      await maybeSms(
-        satRule.channel,
-        i.candidat.telephone,
-        satRule.body || `${prenom}, merci d'évaluer la formation « ${f.titre} » : ${base}/satisfaction/${satToken}`,
-      );
       if (sent) {
+        await maybeSms(
+          satRule.channel,
+          i.candidat.telephone,
+          satRule.body || `${prenom}, merci d'évaluer la formation « ${f.titre} » : ${base}/satisfaction/${satToken}`,
+        );
         await prisma.inscription.update({
           where: { id: i.id },
           data: { satisfactionSentAt: new Date() },
@@ -507,13 +509,13 @@ Vos réponses nous aident à améliorer nos formations.
 Cordialement,
 ${org.representant} — ${org.name}`;
       const sent = await logAndSend({ to, subject, body, sessionId: s.id });
-      await maybeSms(
-        suiviRule.channel,
-        i.candidat.telephone,
-        suiviRule.body ||
-          `${prenom}, 2 min pour nous dire où vous en êtes 6 mois après « ${f.titre} » : ${base}/suivi/${suiviToken}`,
-      );
       if (sent) {
+        await maybeSms(
+          suiviRule.channel,
+          i.candidat.telephone,
+          suiviRule.body ||
+            `${prenom}, 2 min pour nous dire où vous en êtes 6 mois après « ${f.titre} » : ${base}/suivi/${suiviToken}`,
+        );
         await prisma.inscription.update({
           where: { id: i.id },
           data: { suivi6moisSentAt: new Date() },

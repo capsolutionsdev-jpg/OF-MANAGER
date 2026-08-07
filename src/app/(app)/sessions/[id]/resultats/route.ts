@@ -1,18 +1,23 @@
+import { auth } from "@/auth";
 import { getTenantDb } from "@/lib/tenant";
 import { CERTIFICATION_LABELS } from "@/lib/validators/inscription";
+import { toCsvMatrix, csvResponse } from "@/lib/export-csv";
 
 export const dynamic = "force-dynamic";
 
-const cell = (v: unknown) => {
-  const s = v == null ? "" : String(v);
-  return /[";\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-};
+const STAFF = ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"];
 
 /** Export CSV des résultats d'examen d'une session (pour déclaration au certificateur). */
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  // Garde de rôle (défense en profondeur, comme les autres routes d'export).
+  const session = await auth();
+  if (!session?.user || !STAFF.includes(session.user.role as string)) {
+    return new Response("Non autorisé", { status: 401 });
+  }
+
   const { id } = await params;
   const db = await getTenantDb();
   const s = await db.session.findUnique({
@@ -33,30 +38,20 @@ export async function GET(
     "Formation", "Référence", "Certification",
     "Date d'examen", "Résultat", "Date de certification",
   ];
-  const lines = [header.map(cell).join(";")];
-  for (const i of s.inscriptions) {
-    lines.push(
-      [
-        i.candidat.nom,
-        i.candidat.prenom,
-        i.candidat.email,
-        fmt(i.candidat.dateNaissance),
-        s.formation.titre,
-        s.formation.reference,
-        s.formation.certification ?? "",
-        fmt(s.dateExamen),
-        CERTIFICATION_LABELS[i.resultatCertification] ?? i.resultatCertification,
-        fmt(i.certificationDate),
-      ].map(cell).join(";"),
-    );
-  }
-  // BOM UTF-8 pour Excel (accents).
-  const csv = "﻿" + lines.join("\r\n");
+  // Anti-injection de formule CSV via toCsvMatrix/esc (les nom/prénom/email
+  // viennent du formulaire lead public → potentiellement `=…`, `@…`, etc.).
+  const rows = s.inscriptions.map((i) => [
+    i.candidat.nom,
+    i.candidat.prenom,
+    i.candidat.email ?? "",
+    fmt(i.candidat.dateNaissance),
+    s.formation.titre,
+    s.formation.reference,
+    s.formation.certification ?? "",
+    fmt(s.dateExamen),
+    CERTIFICATION_LABELS[i.resultatCertification] ?? i.resultatCertification,
+    fmt(i.certificationDate),
+  ]);
   const ref = (s.reference || s.id).replace(/[^a-zA-Z0-9_-]/g, "_");
-  return new Response(csv, {
-    headers: {
-      "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="resultats-${ref}.csv"`,
-    },
-  });
+  return csvResponse(`resultats-${ref}.csv`, toCsvMatrix(header, rows));
 }
