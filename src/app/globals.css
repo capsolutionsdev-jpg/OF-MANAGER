@@ -58,97 +58,97 @@
    skins par tenant surchargent ces valeurs et restent intacts.
    ───────────────────────────────────────────────────────────── */
 :root {
-  /* Direction « CAP OS » — base neutre macOS. Surfaces gris clair sans teinte,
-     encre neutre. L'accent (violet CAP) est posé PAR TENANT via themeVars
-     (lib/themes.ts) : ici, seules les valeurs de repli sont violettes. */
-  --background: #f4f4f7; /* gris fenêtre macOS (neutre, pointe froide) */
-  --foreground: #1d1d1f; /* encre quasi-noire */
+  /* Direction « Console » — clair, net, haut contraste (style outil pro).
+     Encre quasi-noire à pointe froide, page gris très clair, cartes blanches,
+     filets fins. L'accent est posé PAR TENANT via themeVars (lib/themes.ts) :
+     ici, seules les valeurs de repli sont cobalt. */
+  --background: #f6f7f9; /* page — gris froid très clair, les cartes blanches ressortent */
+  --foreground: #14161b; /* encre quasi-noire, pointe froide (contraste renforcé) */
   --card: #ffffff;
-  --card-foreground: #1d1d1f;
+  --card-foreground: #14161b;
   --popover: #ffffff;
-  --popover-foreground: #1d1d1f;
-  --primary: #7c3aed; /* accent (repli — surchargé par tenant) */
+  --popover-foreground: #14161b;
+  --primary: #2c53c0; /* accent cobalt (repli — surchargé par tenant) */
   --primary-foreground: #ffffff;
-  --secondary: #ececee; /* surface neutre claire */
-  --secondary-foreground: #1d1d1f;
-  --muted: #f0f0f2;
-  --muted-foreground: #6e6e73; /* gris secondaire macOS — contraste AA sur blanc/#f4f4f7 */
-  --accent: #eceef0; /* survols neutres (repli — surchargé par tenant) */
-  --accent-foreground: #1d1d1f;
+  --secondary: #eef0f3; /* surface neutre claire */
+  --secondary-foreground: #14161b;
+  --muted: #f1f3f6;
+  --muted-foreground: #5c6270; /* gris froid — contraste AA sur blanc et sur #f6f7f9 */
+  --accent: #eef0f3; /* survols neutres (repli — surchargé par tenant) */
+  --accent-foreground: #14161b;
   --destructive: #e5484d;
-  --border: #e4e4e9; /* séparateur macOS */
-  --input: #d8d8de;
-  --ring: #7c3aed;
-  --chart-1: #7c3aed; /* violet */
+  --border: #e6e8ec; /* filet fin, froid */
+  --input: #d3d7de;
+  --ring: #2c53c0;
+  --chart-1: #2c53c0; /* cobalt */
   --chart-2: #0e9c9c; /* sarcelle */
   --chart-3: #e08a00; /* ambre */
   --chart-4: #e23670; /* rose */
   --chart-5: #12a150; /* émeraude */
-  --radius: 0.85rem;
-  --sidebar: #f7f7f9; /* rail clair (verre appliqué par le composant) */
-  --sidebar-foreground: #1d1d1f;
-  --sidebar-primary: #7c3aed;
+  --radius: 0.6rem; /* coins nets (console) */
+  --sidebar: #ffffff; /* rail clair net */
+  --sidebar-foreground: #14161b;
+  --sidebar-primary: #2c53c0;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #eceef0; /* actif (repli — surchargé par tenant) */
-  --sidebar-accent-foreground: #1d1d1f;
-  --sidebar-border: #e4e4e9;
-  --sidebar-ring: #7c3aed;
+  --sidebar-accent: #eef0f3; /* actif (repli — surchargé par tenant) */
+  --sidebar-accent-foreground: #14161b;
+  --sidebar-border: #e6e8ec;
+  --sidebar-ring: #2c53c0;
   /* Tokens de marque réutilisables (vitrine + composants) */
-  --brand: #7c3aed;
-  --brand-strong: #6d28d9;
-  --brand-tint: #f3effe;
+  --brand: #2c53c0;
+  --brand-strong: #23459f;
+  --brand-tint: #eaf0fb;
   --amber: #e08a00;
   --amber-tint: #fbf0da;
   --success: #12a150;
   --success-tint: #e6f6ec;
-  --ink: #1d1d1f;
-  /* Pile Apple-first : SF Pro sur Mac, Segoe UI sur Windows, Inter en repli. */
-  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", var(--font-inter), "Segoe UI", system-ui, sans-serif;
-  --font-heading: -apple-system, BlinkMacSystemFont, "SF Pro Display", var(--font-plus-jakarta), "Segoe UI", system-ui, sans-serif;
+  --ink: #14161b;
+  /* Typo « Console » : Space Grotesk pour les titres, Inter pour le corps. */
+  --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --font-heading: var(--font-space-grotesk), var(--font-inter), "Segoe UI", system-ui, sans-serif;
 }
 
 .dark {
-  /* CAP OS — sombre macOS : gris-charbon neutres, cartes surélevées. */
-  --background: #1c1c1e; /* fond fenêtre sombre macOS */
-  --foreground: #f5f5f7;
-  --card: #2c2c2e;
-  --card-foreground: #f5f5f7;
-  --popover: #2c2c2e;
-  --popover-foreground: #f5f5f7;
-  --primary: #9f75ff; /* accent éclairci (repli — surchargé par tenant) */
+  /* Console — sombre : gris-charbon froids, cartes surélevées, filets nets. */
+  --background: #0e0f13;
+  --foreground: #e8eaef;
+  --card: #16181d;
+  --card-foreground: #f3f4f7;
+  --popover: #16181d;
+  --popover-foreground: #f3f4f7;
+  --primary: #6f8bff; /* cobalt éclairci (repli — surchargé par tenant) */
   --primary-foreground: #ffffff;
-  --secondary: #3a3a3c;
-  --secondary-foreground: #f5f5f7;
-  --muted: #2c2c2e;
-  --muted-foreground: #a1a1a6;
-  --accent: #38383b; /* survols neutres (repli — surchargé par tenant) */
-  --accent-foreground: #f5f5f7;
-  --destructive: #ff453a;
-  --border: #38383c;
-  --input: #48484c;
-  --ring: #9f75ff;
-  --chart-1: #a182f6;
+  --secondary: #22252c;
+  --secondary-foreground: #f3f4f7;
+  --muted: #1a1d23;
+  --muted-foreground: #9aa0ac;
+  --accent: #24272f; /* survols neutres (repli — surchargé par tenant) */
+  --accent-foreground: #f3f4f7;
+  --destructive: #ff5a5f;
+  --border: #262932;
+  --input: #363a44;
+  --ring: #6f8bff;
+  --chart-1: #6f8bff;
   --chart-2: #2dd4bf;
   --chart-3: #f0b45c;
   --chart-4: #f472a0;
   --chart-5: #34d07f;
-  --sidebar: #1e1e20;
-  --sidebar-foreground: #f5f5f7;
-  --sidebar-primary: #9f75ff;
+  --sidebar: #121317;
+  --sidebar-foreground: #e8eaef;
+  --sidebar-primary: #6f8bff;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #38383b;
-  --sidebar-accent-foreground: #f5f5f7;
-  --sidebar-border: #303032;
-  --sidebar-ring: #9f75ff;
-  --secondary-foreground: #f5f5f7;
-  --brand: #9f75ff;
-  --brand-strong: #b18bff;
-  --brand-tint: #2f2a3d;
+  --sidebar-accent: #24272f;
+  --sidebar-accent-foreground: #f3f4f7;
+  --sidebar-border: #262932;
+  --sidebar-ring: #6f8bff;
+  --brand: #6f8bff;
+  --brand-strong: #8aa0ff;
+  --brand-tint: #1b2540;
   --amber: #f0b45c;
   --amber-tint: #2e2733;
   --success: #34d07f;
   --success-tint: #17291f;
-  --ink: #f5f5f7;
+  --ink: #f3f4f7;
 }
 
 @layer base {
@@ -161,7 +161,7 @@
   html {
     @apply font-sans;
   }
-  /* Titres en police d'en-tête (Plus Jakarta par défaut) sur toutes les
+  /* Titres en police d'en-tête (Space Grotesk par défaut) sur toutes les
      surfaces — console, vitrine, login. Les designs tenant la surchargent. */
   h1,
   h2,
@@ -169,7 +169,11 @@
   h4,
   [data-slot="card-title"] {
     font-family: var(--font-heading);
-    letter-spacing: -0.01em;
+    letter-spacing: -0.02em;
+  }
+  /* Console : chiffres alignés dans les tableaux de données (colonnes nettes). */
+  table {
+    font-variant-numeric: tabular-nums;
   }
 }
 

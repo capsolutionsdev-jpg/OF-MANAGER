@@ -69,11 +69,11 @@ const BRICOLAGE = "var(--font-bricolage), system-ui, sans-serif";
 export const DESIGNS: Design[] = [
   {
     key: "defaut",
-    name: "Défaut — Sable & Cobalt",
-    desc: "L'habillage standard : sable chaleureux, cobalt, titres Plus Jakarta.",
+    name: "Console — Clair & net",
+    desc: "L'habillage standard : clair, dense, haut contraste, filets fins. Corps Inter, titres Space Grotesk. Style outil pro.",
     mode: "light",
     fontSans: SANS.inter,
-    fontHeading: SANS.jakarta,
+    fontHeading: SANS.space,
     defaultColor: "#2C53C0",
     vars: {}, // utilise les valeurs de :root (globals.css)
   },
@@ -412,7 +412,7 @@ export function themeVars(
 ): Record<string, string> {
   const t = getPalette(themeKey);
   const primary = t ? t.primary : couleurPrimaire?.trim() || DEFAULT_THEME_COLOR;
-  const radius = t ? t.radius : "0.8rem";
+  const radius = t ? t.radius : "0.6rem"; // repli console — coins nets
   return {
     "--primary": primary,
     "--primary-foreground": "#ffffff",

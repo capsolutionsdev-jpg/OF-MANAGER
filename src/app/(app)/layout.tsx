@@ -5,7 +5,8 @@ import { redirect } from "next/navigation";
 import { Clock, AlertTriangle } from "lucide-react";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { AppTopNav } from "@/components/app-topnav";
+import { AppSidebar } from "@/components/app-sidebar";
+import { AppTopbar } from "@/components/app-topbar";
 import { MobileTabBar } from "@/components/mobile-tabbar";
 import { buildNav } from "@/lib/navigation";
 import { getBranding, getCurrentOrganisme } from "@/lib/org";
@@ -122,50 +123,61 @@ export default async function AppLayout({
 
   return (
     <div
-      className={cn("min-h-screen bg-muted/40", isDark && "dark")}
+      className={cn("min-h-screen bg-background", isDark && "dark")}
       data-design={dataDesign}
       style={brandStyle}
     >
-      <AppTopNav
-        user={navUser}
-        brand={{ nom: branding.nom, logoUrl: branding.logoUrl }}
-        notifications={notifications}
-      />
-      {trial.isTrial && (
-        <div className="flex items-center justify-center gap-2 bg-amber-500/10 px-4 py-2 text-center text-xs font-medium text-amber-700 dark:text-amber-300">
-          <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-          Essai gratuit — il vous reste{" "}
-          <span className="font-bold">{Math.max(0, trial.daysLeft)} jour{trial.daysLeft > 1 ? "s" : ""}</span>.
-          <Link href="/tarifs" className="ml-1 underline hover:no-underline">Choisir une formule</Link>
-        </div>
-      )}
-      <main className="mx-auto max-w-[1500px] p-4 md:p-6">
-        <ConfirmProvider>{children}</ConfirmProvider>
-      </main>
+      <div className="flex min-h-screen">
+        {/* Rail de navigation vertical (desktop ≥ lg) */}
+        <AppSidebar
+          user={navUser}
+          brand={{ nom: branding.nom, logoUrl: branding.logoUrl }}
+        />
 
-      {/* Barre d'onglets mobile (accès au pouce). `pb-20 md:pb-0` sur le pied de
-          page évite que le contenu passe sous la barre fixe. */}
-      <MobileTabBar
-        role={navUser.role}
-        permissions={navUser.permissions ?? []}
-        fonctionnalites={navUser.fonctionnalites ?? []}
-      />
+        {/* Colonne de contenu */}
+        <div className="flex min-w-0 flex-1 flex-col">
+          <AppTopbar
+            user={navUser}
+            brand={{ nom: branding.nom, logoUrl: branding.logoUrl }}
+            notifications={notifications}
+          />
+          {trial.isTrial && (
+            <div className="flex items-center justify-center gap-2 bg-amber-500/10 px-4 py-2 text-center text-xs font-medium text-amber-700 dark:text-amber-300">
+              <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+              Essai gratuit — il vous reste{" "}
+              <span className="font-bold">{Math.max(0, trial.daysLeft)} jour{trial.daysLeft > 1 ? "s" : ""}</span>.
+              <Link href="/tarifs" className="ml-1 underline hover:no-underline">Choisir une formule</Link>
+            </div>
+          )}
+          <main className="mx-auto w-full max-w-[1400px] flex-1 p-4 md:p-6">
+            <ConfirmProvider>{children}</ConfirmProvider>
+          </main>
 
-      <footer className="mt-8 border-t bg-card/40 pb-20 md:pb-0">
-        <div className="mx-auto flex max-w-[1500px] flex-col gap-2 px-4 py-5 text-xs text-muted-foreground md:flex-row md:items-center md:justify-between md:px-6">
-          <p>{legalLine || branding.nom}</p>
-          <nav aria-label="Liens légaux" className="flex flex-wrap items-center gap-x-4 gap-y-1">
-            <Link href="/mentions-legales" className="hover:text-foreground hover:underline">
-              Mentions légales
-            </Link>
-            {footerItems.map((it) => (
-              <Link key={it.href} href={it.href} className="hover:text-foreground hover:underline">
-                {it.label}
-              </Link>
-            ))}
-          </nav>
+          {/* Barre d'onglets mobile (accès au pouce). `pb-20 md:pb-0` sur le pied de
+              page évite que le contenu passe sous la barre fixe. */}
+          <MobileTabBar
+            role={navUser.role}
+            permissions={navUser.permissions ?? []}
+            fonctionnalites={navUser.fonctionnalites ?? []}
+          />
+
+          <footer className="mt-8 border-t bg-card/40 pb-20 md:pb-0">
+            <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-2 px-4 py-5 text-xs text-muted-foreground md:flex-row md:items-center md:justify-between md:px-6">
+              <p>{legalLine || branding.nom}</p>
+              <nav aria-label="Liens légaux" className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                <Link href="/mentions-legales" className="hover:text-foreground hover:underline">
+                  Mentions légales
+                </Link>
+                {footerItems.map((it) => (
+                  <Link key={it.href} href={it.href} className="hover:text-foreground hover:underline">
+                    {it.label}
+                  </Link>
+                ))}
+              </nav>
+            </div>
+          </footer>
         </div>
-      </footer>
+      </div>
     </div>
   );
 }
