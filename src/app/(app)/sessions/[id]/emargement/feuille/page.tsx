@@ -36,6 +36,16 @@ export default async function FeuilleEmargementSessionPage({
 
   const jours = joursSession(s.seances, s.dateDebut, s.dateFin);
 
+  // Découpage en semaines de 5 jours maximum : une page par semaine, pour que
+  // les cases de date/signature restent lisibles sur les formations longues
+  // (ex. SSIAP 2 sur 10 jours → 2 pages de 5 jours au lieu de 20 colonnes).
+  const JOURS_PAR_PAGE = 5;
+  const semaines: Date[][] = [];
+  for (let i = 0; i < jours.length; i += JOURS_PAR_PAGE) {
+    semaines.push(jours.slice(i, i + JOURS_PAR_PAGE));
+  }
+  if (semaines.length === 0) semaines.push([]); // feuille vide (aucune date)
+
   // Report des signatures électroniques recueillies
   // clé : `${who}|${dayKey}|${demi}` → { heure, image }
   const sigMap = new Map<string, { at: Date; url: string | null }>();
@@ -84,120 +94,130 @@ export default async function FeuilleEmargementSessionPage({
         <PrintButton />
       </div>
 
-      {/* Feuille imprimable */}
-      <div className="emarge-sheet mx-auto bg-white p-6 text-black shadow-sm">
-        <div className="mb-4 flex items-center gap-4 border-b pb-3">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={org.logoUrl ?? "/cap-competences-logo.png"} alt={org.name} className="h-14 w-auto" />
-          <div className="text-[11px] leading-snug">
-            <strong className="text-sm">{org.name}</strong> — {org.qualiopi}
-            <br />
-            {org.adresse}
-            <br />
-            SIRET {org.siret} · NDA {org.nda}
+      {/* Feuille imprimable — une PAGE par semaine (5 jours max) */}
+      {semaines.map((joursSemaine, page) => (
+        <div key={page} className="emarge-sheet emarge-page mx-auto bg-white p-6 text-black shadow-sm">
+          <div className="mb-4 flex items-center gap-4 border-b pb-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={org.logoUrl ?? "/cap-competences-logo.png"} alt={org.name} className="h-14 w-auto" />
+            <div className="text-[11px] leading-snug">
+              <strong className="text-sm">{org.name}</strong> — {org.qualiopi}
+              <br />
+              {org.adresse}
+              <br />
+              SIRET {org.siret} · NDA {org.nda}
+            </div>
           </div>
-        </div>
 
-        <h1 className="mb-1 text-center text-lg font-bold">
-          Feuille d&apos;émargement
-        </h1>
-
-        <table className="info-table mb-3 w-full text-[11px]">
-          <tbody>
-            <tr>
-              <td className="font-semibold">Formation</td>
-              <td>
-                {s.formation.titre} ({s.formation.reference})
-              </td>
-              <td className="font-semibold">Modalité</td>
-              <td>{MODALITE_LABELS[s.modalite]}</td>
-            </tr>
-            <tr>
-              <td className="font-semibold">Dates</td>
-              <td>
-                du {fmt(s.dateDebut)} au {fmt(s.dateFin)}
-              </td>
-              <td className="font-semibold">Lieu</td>
-              <td>{s.lieu ?? "—"}</td>
-            </tr>
-            <tr>
-              <td className="font-semibold">Formateur(s)</td>
-              <td>{formateurs || "—"}</td>
-              <td className="font-semibold">Horaires</td>
-              <td>{s.horaires ?? "—"}</td>
-            </tr>
-          </tbody>
-        </table>
-
-        {/* Tableau principal : candidats × jours (Matin / Après-midi) */}
-        <table className="emarge w-full text-[10px]">
-          <thead>
-            <tr>
-              <th rowSpan={2} className="name-col">
-                Nom et prénom du stagiaire
-              </th>
-              {jours.map((j, i) => (
-                <th key={i} colSpan={2}>
-                  {fmtJour(j)}
-                </th>
-              ))}
-            </tr>
-            <tr>
-              {jours.map((_, i) => (
-                <Fragment key={i}>
-                  <th>Matin</th>
-                  <th>A.-m.</th>
-                </Fragment>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {s.inscriptions.length === 0 ? (
-              <tr>
-                <td colSpan={1 + jours.length * 2}>Aucun stagiaire inscrit.</td>
-              </tr>
-            ) : (
-              s.inscriptions.map((insc) => (
-                <tr key={insc.id}>
-                  <td className="name-col">
-                    {insc.candidat.prenom} {insc.candidat.nom}
-                  </td>
-                  {jours.map((jour, i) => (
-                    <Fragment key={i}>
-                      <td className="sig">{cellFor(insc.candidatId, jour, "MATIN")}</td>
-                      <td className="sig">
-                        {cellFor(insc.candidatId, jour, "APRES_MIDI")}
-                      </td>
-                    </Fragment>
-                  ))}
-                </tr>
-              ))
+          <h1 className="mb-1 text-center text-lg font-bold">
+            Feuille d&apos;émargement
+            {semaines.length > 1 && (
+              <span className="ml-2 text-sm font-normal">
+                — Semaine {page + 1} / {semaines.length}
+                {joursSemaine.length > 0 &&
+                  ` (du ${fmt(joursSemaine[0])} au ${fmt(joursSemaine[joursSemaine.length - 1])})`}
+              </span>
             )}
-            {/* Ligne formateur */}
-            <tr className="formateur-row">
-              <td className="name-col">Formateur : {formateurs || "—"}</td>
-              {jours.map((jour, i) => (
-                <Fragment key={i}>
-                  <td className="sig">{cellFor("FORM", jour, "MATIN")}</td>
-                  <td className="sig">{cellFor("FORM", jour, "APRES_MIDI")}</td>
-                </Fragment>
-              ))}
-            </tr>
-          </tbody>
-        </table>
+          </h1>
 
-        <div className="mt-6 flex justify-between text-[11px]">
-          <div>
-            <p className="mb-8">Cachet de l&apos;organisme :</p>
-          </div>
-          <div>
-            <p className="mb-8">Signature du formateur :</p>
+          <table className="info-table mb-3 w-full text-[11px]">
+            <tbody>
+              <tr>
+                <td className="font-semibold">Formation</td>
+                <td>
+                  {s.formation.titre} ({s.formation.reference})
+                </td>
+                <td className="font-semibold">Modalité</td>
+                <td>{MODALITE_LABELS[s.modalite]}</td>
+              </tr>
+              <tr>
+                <td className="font-semibold">Dates</td>
+                <td>
+                  du {fmt(s.dateDebut)} au {fmt(s.dateFin)}
+                </td>
+                <td className="font-semibold">Lieu</td>
+                <td>{s.lieu ?? "—"}</td>
+              </tr>
+              <tr>
+                <td className="font-semibold">Formateur(s)</td>
+                <td>{formateurs || "—"}</td>
+                <td className="font-semibold">Horaires</td>
+                <td>{s.horaires ?? "—"}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          {/* Tableau principal : candidats × jours de la semaine (Matin / Après-midi) */}
+          <table className="emarge w-full text-[10px]">
+            <thead>
+              <tr>
+                <th rowSpan={2} className="name-col">
+                  Nom et prénom du stagiaire
+                </th>
+                {joursSemaine.map((j, i) => (
+                  <th key={i} colSpan={2}>
+                    {fmtJour(j)}
+                  </th>
+                ))}
+              </tr>
+              <tr>
+                {joursSemaine.map((_, i) => (
+                  <Fragment key={i}>
+                    <th>Matin</th>
+                    <th>A.-m.</th>
+                  </Fragment>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {s.inscriptions.length === 0 ? (
+                <tr>
+                  <td colSpan={1 + joursSemaine.length * 2}>Aucun stagiaire inscrit.</td>
+                </tr>
+              ) : (
+                s.inscriptions.map((insc) => (
+                  <tr key={insc.id}>
+                    <td className="name-col">
+                      {insc.candidat.prenom} {insc.candidat.nom}
+                    </td>
+                    {joursSemaine.map((jour, i) => (
+                      <Fragment key={i}>
+                        <td className="sig">{cellFor(insc.candidatId, jour, "MATIN")}</td>
+                        <td className="sig">
+                          {cellFor(insc.candidatId, jour, "APRES_MIDI")}
+                        </td>
+                      </Fragment>
+                    ))}
+                  </tr>
+                ))
+              )}
+              {/* Ligne formateur */}
+              <tr className="formateur-row">
+                <td className="name-col">Formateur : {formateurs || "—"}</td>
+                {joursSemaine.map((jour, i) => (
+                  <Fragment key={i}>
+                    <td className="sig">{cellFor("FORM", jour, "MATIN")}</td>
+                    <td className="sig">{cellFor("FORM", jour, "APRES_MIDI")}</td>
+                  </Fragment>
+                ))}
+              </tr>
+            </tbody>
+          </table>
+
+          <div className="mt-6 flex justify-between text-[11px]">
+            <div>
+              <p className="mb-8">Cachet de l&apos;organisme :</p>
+            </div>
+            <div>
+              <p className="mb-8">Signature du formateur :</p>
+            </div>
           </div>
         </div>
-      </div>
+      ))}
 
       <style>{`
         .emarge-sheet { max-width: 1100px; }
+        .emarge-page + .emarge-page { margin-top: 24px; }
         .info-table td { border: 1px solid #999; padding: 3px 6px; }
         table.emarge { border-collapse: collapse; }
         table.emarge th, table.emarge td { border: 1px solid #555; padding: 4px; text-align: center; }
@@ -212,6 +232,11 @@ export default async function FeuilleEmargementSessionPage({
         @media print {
           @page { size: A4 landscape; margin: 10mm; }
           body { background: white; }
+          /* Une semaine par page : saut de page entre les feuilles, jamais coupé au milieu. */
+          .emarge-page { break-after: page; page-break-after: always; }
+          .emarge-page:last-child { break-after: auto; page-break-after: auto; }
+          .emarge-page + .emarge-page { margin-top: 0; }
+          table.emarge { page-break-inside: avoid; }
         }
       `}</style>
     </div>
