@@ -1,7 +1,9 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ChevronDown } from "lucide-react";
 import type { Role } from "@prisma/client";
 import { buildNav, type NavItem } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
@@ -28,6 +30,40 @@ export function SidebarNav({
   );
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(`${href}/`);
+
+  const activeGroup =
+    groups.find((g) => g.items.some((it) => isActive(it.href)))?.name ?? null;
+
+  // Repli par groupe, persistant (localStorage). Par défaut seul le groupe de
+  // la page courante est ouvert → le rail reste court.
+  const [open, setOpen] = useState<Record<string, boolean>>({});
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("ofm.nav.groups");
+      if (raw) setOpen(JSON.parse(raw));
+    } catch {
+      /* stockage indisponible : on garde les valeurs par défaut */
+    }
+  }, []);
+  useEffect(() => {
+    if (activeGroup) {
+      setOpen((prev) =>
+        prev[activeGroup] ? prev : { ...prev, [activeGroup]: true },
+      );
+    }
+  }, [activeGroup]);
+  const isOpen = (name: string) => open[name] ?? name === activeGroup;
+  const toggle = (name: string) =>
+    setOpen((prev) => {
+      const cur = prev[name] ?? name === activeGroup;
+      const next = { ...prev, [name]: !cur };
+      try {
+        localStorage.setItem("ofm.nav.groups", JSON.stringify(next));
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
 
   const renderItem = (it: NavItem) => {
     const active = isActive(it.href);
@@ -65,14 +101,28 @@ export function SidebarNav({
       {standalone.length > 0 && (
         <div className="space-y-0.5">{standalone.map(renderItem)}</div>
       )}
-      {groups.map((g) => (
-        <div key={g.name} className="space-y-0.5">
-          <p className="px-2.5 pb-1 text-[10.5px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-            {g.name}
-          </p>
-          {g.items.map(renderItem)}
-        </div>
-      ))}
+      {groups.map((g) => {
+        const expanded = isOpen(g.name);
+        return (
+          <div key={g.name} className="space-y-0.5">
+            <button
+              type="button"
+              onClick={() => toggle(g.name)}
+              aria-expanded={expanded}
+              className="flex w-full items-center gap-1.5 rounded-md px-2.5 py-1 text-[10.5px] font-semibold uppercase tracking-wider text-muted-foreground/70 transition-colors hover:text-foreground"
+            >
+              <ChevronDown
+                className={cn(
+                  "h-3 w-3 shrink-0 transition-transform duration-200",
+                  expanded ? "" : "-rotate-90",
+                )}
+              />
+              <span>{g.name}</span>
+            </button>
+            {expanded && g.items.map(renderItem)}
+          </div>
+        );
+      })}
       {footer.length > 0 && (
         <div className="space-y-0.5 border-t border-sidebar-border pt-3">
           {footer.map(renderItem)}
