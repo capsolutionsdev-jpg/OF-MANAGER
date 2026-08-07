@@ -17,6 +17,8 @@ export type OrgIdentity = {
   logoUrl: string | null;
   cachetUrl: string | null;
   signatureUrl: string | null;
+  referentHandicapNom: string | null;
+  referentHandicapContact: string | null;
   documentsConfig: unknown;
 };
 
@@ -36,6 +38,8 @@ export const DEFAULT_ORG_IDENTITY: OrgIdentity = {
   logoUrl: null,
   cachetUrl: null,
   signatureUrl: null,
+  referentHandicapNom: null,
+  referentHandicapContact: null,
   documentsConfig: null,
 };
 
@@ -68,6 +72,8 @@ export async function orgConfigFor(
     logoUrl: o.logoUrl,
     cachetUrl: o.cachetUrl,
     signatureUrl: o.signatureUrl,
+    referentHandicapNom: o.referentHandicapNom,
+    referentHandicapContact: o.referentHandicapContact,
     documentsConfig: o.documentsConfig,
   };
 }

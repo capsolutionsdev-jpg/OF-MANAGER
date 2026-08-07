@@ -5,6 +5,7 @@ import HTMLtoDOCX from "@turbodocx/html-to-docx";
 import { prisma } from "@/lib/prisma";
 import { DOCUMENTS, EMPTY_IMAGE, renderTemplate } from "@/lib/documents/templates";
 import { buildVariables } from "@/lib/documents/resolve";
+import { docContextFromInscription, isDocApplicable } from "@/lib/documents/families";
 import { orgConfigFor } from "@/lib/org-identity";
 import {
   signatureRef,
@@ -95,8 +96,11 @@ export async function buildInscriptionDocsZip(
     .replace(/[^a-zA-Z0-9]+/g, "-");
   const folder = zip.folder(`Documents-${safeName}`) ?? zip;
 
-  const entries = Object.entries(DOCUMENTS).filter(
-    ([type]) => !only || only.includes(type),
+  // Documents applicables à cette inscription (particulier/entreprise, examen,
+  // financement…) — plus de génération en vrac de tout le catalogue.
+  const ctx = docContextFromInscription(inscription);
+  const entries = Object.entries(DOCUMENTS).filter(([type]) =>
+    only ? only.includes(type) : isDocApplicable(type, ctx),
   );
 
   for (const [, doc] of entries) {

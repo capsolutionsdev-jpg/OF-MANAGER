@@ -19,6 +19,7 @@ import {
 } from "@/lib/documents/signature-proof";
 import { buildCertificatPdf } from "@/lib/documents/certificat-signature";
 import { htmlToPdf, htmlToPdfMany } from "@/lib/pdf";
+import { docContextFromInscription, isDocApplicable } from "@/lib/documents/families";
 
 const SIGNED_DOC_LABELS = [
   "Fiche d'inscription",
@@ -124,8 +125,12 @@ export async function buildInscriptionPdf(
       .split("/cap-competences-logo.png").join(logo64)
       .split("/signature-cap-competences.png").join(stamp64);
 
-  const entries = Object.entries(DOCUMENTS).filter(
-    ([type]) => !opts?.only || opts.only.includes(type),
+  // Sélection des documents : soit une liste explicite (opts.only), soit
+  // l'ensemble APPLICABLE à cette inscription (particulier/entreprise, examen,
+  // financement…). On ne génère plus tout le catalogue en vrac.
+  const ctx = docContextFromInscription(inscription);
+  const entries = Object.entries(DOCUMENTS).filter(([type]) =>
+    opts?.only ? opts.only.includes(type) : isDocApplicable(type, ctx),
   );
 
   const htmls = entries.map(([, doc]) => {

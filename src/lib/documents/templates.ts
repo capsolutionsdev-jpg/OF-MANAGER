@@ -99,6 +99,7 @@ export const DOCUMENTS: Record<string, { label: string; html: string }> = {
         <tr><td>Lieu / modalité</td><td>{{lieu}} — {{modalite}}</td></tr>
       </table>
       <p>Merci de vous présenter muni(e) d'une pièce d'identité. Pour toute question : {{organisme_telephone}} — {{organisme_email}}.</p>
+      <p><strong>Accessibilité (situation de handicap) :</strong> pour toute adaptation nécessaire, contactez notre référent handicap : {{referent_handicap}}.</p>
       <p>Cordialement,<br/>{{organisme_representant}} — {{organisme}}</p>
       ${orgStampBlock}`,
     ),
@@ -115,12 +116,13 @@ export const DOCUMENTS: Record<string, { label: string; html: string }> = {
         <tr><td>Formation</td><td><strong>{{formation}}</strong></td></tr>
         <tr><td>Certification</td><td>{{certification}}</td></tr>
         <tr><td>Référence session</td><td>{{session_reference}}</td></tr>
-        <tr><td>Date de l'examen</td><td>le {{date_fin}}</td></tr>
+        <tr><td>Date de l'examen</td><td>{{date_examen}}</td></tr>
         <tr><td>Horaires</td><td>{{horaires}}</td></tr>
-        <tr><td>Lieu / modalité</td><td>{{lieu}} — {{modalite}}</td></tr>
+        <tr><td>Lieu de l'examen</td><td>{{lieu_examen}}</td></tr>
       </table>
       <p>Vous devez vous présenter <strong>muni(e) d'une pièce d'identité en cours de validité</strong>. Tout retard ou absence non justifié(e) pourra entraîner l'impossibilité de passer l'épreuve.</p>
       <p>Pour toute question : {{organisme_telephone}} — {{organisme_email}}.</p>
+      <p><strong>Accessibilité (situation de handicap) :</strong> pour toute adaptation nécessaire, contactez notre référent handicap : {{referent_handicap}}.</p>
       <p>Cordialement,<br/>{{organisme_representant}} — {{organisme}}</p>
       ${orgStampBlock}`,
     ),
@@ -338,7 +340,7 @@ export const DOCUMENTS: Record<string, { label: string; html: string }> = {
         <tr><td>Durée prévue</td><td>{{duree}}</td></tr>
       </table>
       <p>Attestation délivrée le {{date_jour}} pour servir et valoir ce que de droit.</p>
-      ${signatures}`,
+      ${orgStampBlock}`,
     ),
   },
 
@@ -354,7 +356,7 @@ export const DOCUMENTS: Record<string, { label: string; html: string }> = {
         <tr><td>Modalité</td><td>{{modalite}}</td></tr>
       </table>
       <p>Cette formation prépare à la certification {{certification}}.</p>
-      ${signatures}`,
+      ${orgStampBlock}`,
     ),
   },
 
@@ -370,7 +372,7 @@ export const DOCUMENTS: Record<string, { label: string; html: string }> = {
         <tr><td>Résultat</td><td><strong>Admis(e)</strong></td></tr>
       </table>
       <p>Attestation de réussite délivrée le {{date_jour}} pour servir et valoir ce que de droit.</p>
-      ${signatures}`,
+      ${orgStampBlock}`,
     ),
   },
 
@@ -420,7 +422,7 @@ export const DOCUMENTS: Record<string, { label: string; html: string }> = {
         <tr><td>Modalité</td><td>{{modalite}}</td></tr>
       </table>
       <p>Certificat établi le {{date_jour}} pour faire valoir ce que de droit (financeur, OPCO, CPF…).</p>
-      ${signatures}`,
+      ${orgStampBlock}`,
     ),
   },
 
@@ -833,11 +835,8 @@ export const DOCUMENT_MENU = [
   "REGLEMENT_INTERIEUR",
   "ATTESTATION_ENTREE",
   "EVALUATION_ACQUIS",
-  "REMISE_SUPPORTS",
   "ATTESTATION_FIN",
   "ATTESTATION_REUSSITE",
-  "ATTESTATION_RECYCLAGE",
-  "ATTESTATION_REMISE_NIVEAU",
   "CERTIFICAT_REALISATION",
   "SATISFACTION_STAGIAIRE",
   "SATISFACTION_ENTREPRISE",

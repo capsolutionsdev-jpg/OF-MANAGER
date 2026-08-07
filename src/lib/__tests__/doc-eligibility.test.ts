@@ -1,0 +1,54 @@
+import { describe, it, expect } from "vitest";
+import { isDocApplicable, type DocContext } from "@/lib/documents/families";
+
+// Éligibilité des documents selon l'inscription (particulier/entreprise, examen,
+// financement). Garde-fou : le dossier ne doit plus générer tout le catalogue.
+describe("isDocApplicable — documents selon l'inscription", () => {
+  const particulierExamen: DocContext = {
+    formation: { reference: "SSIAP1", titre: "SSIAP 1 initial", examen: true },
+    hasEntreprise: false,
+    financementType: "CPF",
+  };
+  const entrepriseRecyclageOpco: DocContext = {
+    formation: { reference: "SSIAP2-REC", titre: "SSIAP 2 recyclage", examen: false },
+    hasEntreprise: true,
+    financementType: "OPCO",
+  };
+
+  it("particulier → contrat, pas de convention", () => {
+    expect(isDocApplicable("CONTRAT_FORMATION", particulierExamen)).toBe(true);
+    expect(isDocApplicable("CONVENTION_FORMATION", particulierExamen)).toBe(false);
+    expect(isDocApplicable("CONVENTION_ENTREPRISE", particulierExamen)).toBe(false);
+  });
+
+  it("entreprise → convention, pas de contrat", () => {
+    expect(isDocApplicable("CONTRAT_FORMATION", entrepriseRecyclageOpco)).toBe(false);
+    expect(isDocApplicable("CONVENTION_FORMATION", entrepriseRecyclageOpco)).toBe(true);
+  });
+
+  it("convocation d'examen seulement si la formation a un examen", () => {
+    expect(isDocApplicable("CONVOCATION_EXAMEN", particulierExamen)).toBe(true);
+    expect(isDocApplicable("CONVOCATION_EXAMEN", entrepriseRecyclageOpco)).toBe(false);
+  });
+
+  it("satisfaction entreprise/OPCO seulement si concerné", () => {
+    expect(isDocApplicable("SATISFACTION_ENTREPRISE", particulierExamen)).toBe(false);
+    expect(isDocApplicable("SATISFACTION_OPCO", particulierExamen)).toBe(false);
+    expect(isDocApplicable("SATISFACTION_ENTREPRISE", entrepriseRecyclageOpco)).toBe(true);
+    expect(isDocApplicable("SATISFACTION_OPCO", entrepriseRecyclageOpco)).toBe(true);
+  });
+
+  it("attestations recyclage/RAN et remise des supports jamais dans le dossier", () => {
+    for (const ctx of [particulierExamen, entrepriseRecyclageOpco]) {
+      expect(isDocApplicable("ATTESTATION_RECYCLAGE", ctx)).toBe(false);
+      expect(isDocApplicable("ATTESTATION_REMISE_NIVEAU", ctx)).toBe(false);
+      expect(isDocApplicable("REMISE_SUPPORTS", ctx)).toBe(false);
+    }
+  });
+
+  it("documents communs toujours inclus", () => {
+    for (const t of ["FICHE_INSCRIPTION", "CONVOCATION", "REGLEMENT_INTERIEUR", "ATTESTATION_FIN"]) {
+      expect(isDocApplicable(t, particulierExamen)).toBe(true);
+    }
+  });
+});

@@ -109,6 +109,13 @@ export function buildVariables(
         : `du ${d(s.dateDebut)} au ${d(s.dateFin)}`,
     horaires: s.horaires ?? "—",
     lieu: s.lieu ?? "—",
+    // Examen : date et lieu dédiés (repli sur la session si non renseignés).
+    date_examen: s.dateExamen ? d(s.dateExamen) : d(s.dateFin),
+    lieu_examen: s.lieuExamen ?? s.lieu ?? "—",
+    // Référent handicap (Qualiopi ind. 26) — figure sur les convocations.
+    referent_handicap:
+      [org.referentHandicapNom, org.referentHandicapContact].filter(Boolean).join(" — ") ||
+      `${org.name} (${org.email})`,
     // Diplôme SSIAP détenu (attestation de recyclage / remise à niveau).
     // Niveau : celui du candidat, sinon déduit de la formation, sinon vide
     // (ne JAMAIS défaulter à « 1 » — sortait un SSIAP 1 sur des formations non SSIAP).

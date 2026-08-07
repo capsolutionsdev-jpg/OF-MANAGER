@@ -57,3 +57,67 @@ export function filterDocMenu<T extends { type: string }>(menu: T[], f: Formatio
   const fams = formationDocFamilies(f);
   return menu.filter((d) => fams.has(docFamily(d.type)));
 }
+
+// =============================================================
+//  ÉLIGIBILITÉ CONTEXTUELLE — quels documents pour CETTE inscription ?
+//
+//  La liste des documents à générer dépend de l'inscription :
+//   - formation initiale AVEC examen → convocation d'examen ; sinon non ;
+//   - particulier → contrat de formation ; entreprise → convention ;
+//   - satisfaction entreprise / OPCO uniquement si concerné ;
+//   - certaines pièces ne sont plus générées ici (voir SESSION_ONLY_DOCS).
+//  Source unique de vérité, appliquée au dossier PDF, au ZIP et à l'aperçu.
+// =============================================================
+
+export type DocContext = {
+  formation: FormationLike & { examen?: boolean | null };
+  /** L'inscription est-elle rattachée à une entreprise (B2B) ? */
+  hasEntreprise: boolean;
+  /** Type de financement de l'inscription (ex. "OPCO"). */
+  financementType?: string | null;
+};
+
+// Documents retirés de la génération « dossier candidat » : soit gérés ailleurs
+// (attestations recyclage/RAN → générées depuis la page session), soit supprimés.
+export const SESSION_ONLY_DOCS = new Set<string>([
+  "ATTESTATION_RECYCLAGE",
+  "ATTESTATION_REMISE_NIVEAU",
+  "REMISE_SUPPORTS",
+]);
+
+// Conditions d'inclusion des documents SPÉCIFIQUES (absents ici = toujours inclus,
+// sous réserve de compatibilité de famille).
+const DOC_CONDITIONS: Record<string, (c: DocContext) => boolean> = {
+  // Convocation d'examen uniquement si la formation est sanctionnée par un examen
+  // (initial), jamais pour un recyclage / une remise à niveau.
+  CONVOCATION_EXAMEN: (c) => !!c.formation.examen,
+  // Contrat = particulier ; Convention = entreprise (mutuellement exclusifs).
+  CONTRAT_FORMATION: (c) => !c.hasEntreprise,
+  CONVENTION_FORMATION: (c) => c.hasEntreprise,
+  CONVENTION_ENTREPRISE: (c) => c.hasEntreprise,
+  // Enquêtes réservées à leur destinataire.
+  SATISFACTION_ENTREPRISE: (c) => c.hasEntreprise,
+  SATISFACTION_OPCO: (c) => (c.financementType ?? "").toUpperCase() === "OPCO",
+};
+
+/** Un document doit-il être généré pour CETTE inscription ? */
+export function isDocApplicable(type: string, ctx: DocContext): boolean {
+  if (SESSION_ONLY_DOCS.has(type)) return false;
+  if (!isDocAllowedForFormation(type, ctx.formation)) return false;
+  const cond = DOC_CONDITIONS[type];
+  return cond ? cond(ctx) : true;
+}
+
+/** Contexte d'éligibilité à partir d'une inscription chargée. */
+export function docContextFromInscription(i: {
+  financementType?: string | null;
+  candidat?: { entreprise?: unknown | null } | null;
+  entrepriseId?: string | null;
+  session: { formation: FormationLike & { examen?: boolean | null } };
+}): DocContext {
+  return {
+    formation: i.session.formation,
+    hasEntreprise: !!i.candidat?.entreprise || !!i.entrepriseId,
+    financementType: i.financementType ?? null,
+  };
+}
