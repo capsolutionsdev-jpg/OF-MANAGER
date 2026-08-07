@@ -101,6 +101,10 @@ const nextConfig: NextConfig = {
     "/api/convention": [
       "./node_modules/@sparticuz/chromium/bin/**",
     ],
+    // Attestation de réussite (générée après certification) → PDF via puppeteer.
+    "/api/inscriptions/[id]/attestation-reussite": [
+      "./node_modules/@sparticuz/chromium/bin/**",
+    ],
     "/mes-cours/[coursId]/attestation": [
       "./node_modules/@sparticuz/chromium/bin/**",
     ],
