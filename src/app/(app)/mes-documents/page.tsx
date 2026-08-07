@@ -62,9 +62,9 @@ export default async function MesDocumentsPage() {
     select: { id: true, label: true, url: true, mimeType: true, statut: true, motifRefus: true },
   });
   const piecePill: Record<string, string> = {
-    EN_ATTENTE: "bg-amber-500/10 text-amber-700",
-    VALIDEE: "bg-emerald-500/10 text-emerald-700",
-    REFUSEE: "bg-red-500/10 text-red-700",
+    EN_ATTENTE: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
+    VALIDEE: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+    REFUSEE: "bg-red-500/10 text-red-700 dark:text-red-300",
   };
   const pieceLabel: Record<string, string> = { EN_ATTENTE: "À vérifier", VALIDEE: "Validée", REFUSEE: "Refusée" };
 
