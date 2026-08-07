@@ -601,6 +601,7 @@ model Formation {
   programme           String?  @db.Text
   duree               String? // ex. "21h (14h distanciel + 7h présentiel)"
   dureeHeures         Int?
+  dureeJours          Int? // durée en jours (fait foi pour le calcul du contrat, sans les week-ends)
   tarif               Decimal? @db.Decimal(10, 2)
   modalite            Modalite @default(MIXTE)
   academy             Academy?

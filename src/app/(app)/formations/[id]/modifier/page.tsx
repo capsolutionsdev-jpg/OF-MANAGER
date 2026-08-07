@@ -44,6 +44,7 @@ export default async function ModifierFormationPage({
             certification: f.certification ?? "",
             duree: f.duree ?? "",
             dureeHeures: f.dureeHeures != null ? String(f.dureeHeures) : "",
+            dureeJours: f.dureeJours != null ? String(f.dureeJours) : "",
             tarif: f.tarif != null ? String(f.tarif) : "",
             modalite: f.modalite,
             academy: f.academy ?? "",

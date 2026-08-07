@@ -59,6 +59,7 @@ export function FormationForm({
       certification: "",
       duree: "",
       dureeHeures: "",
+      dureeJours: "",
       tarif: "",
       modalite: "MIXTE",
       vitrineStatut: "MASQUEE",
@@ -158,6 +159,10 @@ export function FormationForm({
           <div className="grid gap-2">
             <Label htmlFor="dureeHeures">Durée (heures)</Label>
             <Input id="dureeHeures" type="number" placeholder="21" {...register("dureeHeures")} />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="dureeJours">Durée (jours)</Label>
+            <Input id="dureeJours" type="number" placeholder="3" {...register("dureeJours")} />
           </div>
           <div className="grid gap-2">
             <Label htmlFor="tarif">Tarif (€ HT)</Label>

@@ -25,6 +25,7 @@ function champsDuModele(m: ModeleFormation) {
   return {
     titre: m.titre,
     dureeHeures: m.dureeHeures,
+    dureeJours: Math.max(1, Math.ceil(m.dureeHeures / 7)), // standard 7h/jour
     duree: m.duree,
     objectifs: m.objectifs,
     prerequis: m.prerequis,

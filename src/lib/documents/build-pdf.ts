@@ -63,6 +63,21 @@ const DOC_STYLE = `<style>
 
 export type PdfResult = { data: Uint8Array; filename: string } | null;
 
+/** Nombre de jours OUVRÉS (lun→ven) entre deux dates, bornes incluses. */
+function businessDaysBetween(debut: Date, fin: Date): number {
+  const d = new Date(debut);
+  d.setHours(0, 0, 0, 0);
+  const end = new Date(fin);
+  end.setHours(0, 0, 0, 0);
+  let n = 0;
+  while (d <= end) {
+    const jour = d.getDay(); // 0 = dimanche, 6 = samedi
+    if (jour !== 0 && jour !== 6) n++;
+    d.setDate(d.getDate() + 1);
+  }
+  return Math.max(1, n);
+}
+
 function safeName(s: string) {
   return (s || "candidat")
     .normalize("NFD")
@@ -267,9 +282,10 @@ export async function buildContratFormateurPdf(
   if (!f) return null;
 
   const fmtD = (d: Date) => d.toLocaleDateString("fr-FR");
-  const msPerDay = 1000 * 60 * 60 * 24;
-  const nbJours =
-    Math.round((s.dateFin.getTime() - s.dateDebut.getTime()) / msPerDay) + 1;
+  // Nombre de jours : la durée de la formation fait foi (dureeJours). À défaut,
+  // on compte les jours OUVRÉS entre les dates (sans les week-ends) plutôt que
+  // le simple écart calendaire, qui gonflait le total (ex. 2 j → 12 j).
+  const nbJours = s.formation.dureeJours ?? businessDaysBetween(s.dateDebut, s.dateFin);
 
   const tarif =
     s.tarifFormateurJour != null

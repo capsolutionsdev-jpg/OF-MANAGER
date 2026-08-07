@@ -9,6 +9,7 @@ export const formationFormSchema = z.object({
   certification: optionalText,
   duree: optionalText,
   dureeHeures: optionalText, // saisi en texte, converti côté serveur
+  dureeJours: optionalText, // durée en jours (texte → Int côté serveur)
   tarif: optionalText,
   modalite: z.nativeEnum(Modalite),
   academy: z.nativeEnum(Academy).or(z.literal("")).optional(),
