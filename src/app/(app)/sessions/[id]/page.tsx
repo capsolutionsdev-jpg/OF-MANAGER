@@ -89,18 +89,18 @@ export default async function SessionDetailPage({
   // Pièces justificatives déposées par les candidats de la session (dépôt via le
   // parcours, e-mail, ou scan à l'accueil) — regroupées par candidat pour la
   // carte « Documents de la session ».
-  const piecesParCandidat = new Map<string, { id: string; label: string; url: string; statut: string }[]>();
+  const piecesParCandidat = new Map<string, { id: string; label: string; statut: string }[]>();
   if (s) {
     const candidatIds = s.inscriptions.map((i) => i.candidatId);
     if (candidatIds.length > 0) {
       const pieces = await db.pieceJointe.findMany({
         where: { candidatId: { in: candidatIds } },
         orderBy: { createdAt: "desc" },
-        select: { id: true, candidatId: true, label: true, url: true, statut: true },
+        select: { id: true, candidatId: true, label: true, statut: true },
       });
       for (const p of pieces) {
         const liste = piecesParCandidat.get(p.candidatId) ?? [];
-        liste.push({ id: p.id, label: p.label, url: p.url, statut: p.statut });
+        liste.push({ id: p.id, label: p.label, statut: p.statut });
         piecesParCandidat.set(p.candidatId, liste);
       }
     }
@@ -485,7 +485,7 @@ export default async function SessionDetailPage({
                           {pieces.map((p) => (
                             <a
                               key={p.id}
-                              href={p.url}
+                              href={`/api/public/piece/${p.id}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className={
