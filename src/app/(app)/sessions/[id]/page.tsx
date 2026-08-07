@@ -113,7 +113,8 @@ export default async function SessionDetailPage({
   const diplomeSsiapNiv = ssiapDiplomeNiveau(s.formation);
   // Attestation délivrable (recyclage/RAN SSIAP, VTC, Taxi, H0B0, BS-BE) → bouton.
   const attCode = attestationCodeForFormation(s.formation);
-  const attestationForDocs = attCode ? { code: attCode, label: getTitreDef(attCode)!.label } : null;
+  const attDef = attCode ? getTitreDef(attCode) : null;
+  const attestationForDocs = attCode && attDef ? { code: attCode, label: attDef.label } : null;
   // Prérequis & spécificités de la formation (SSIAP, CNAPS, carte pro…) pour l'inscription.
   const prereq = formationPrereq(s.formation);
 
