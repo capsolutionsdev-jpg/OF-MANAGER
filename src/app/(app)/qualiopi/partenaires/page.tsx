@@ -3,12 +3,10 @@ import { ArrowLeft } from "lucide-react";
 import { getTenantDb } from "@/lib/tenant";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { PageHeader } from "@/components/ui/page-header";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -20,7 +18,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { creerPartenaire, supprimerPartenaire } from "@/lib/actions/registre-actions";
+import { supprimerPartenaire } from "@/lib/actions/registre-actions";
+import { NewPartenaireDialog } from "@/components/qualiopi/new-partenaire-dialog";
 
 export const dynamic = "force-dynamic";
 
@@ -32,67 +31,20 @@ export default async function PartenairesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
+      <div className="space-y-1">
         <Link
           href="/qualiopi"
-          className="mb-1 inline-flex items-center gap-1 text-xs text-muted-foreground hover:underline"
+          className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:underline"
         >
           <ArrowLeft className="h-3 w-3" /> Conformité Qualiopi
         </Link>
-        <h1 className="text-2xl font-bold tracking-tight">Registre des partenaires</h1>
-        <p className="text-sm text-muted-foreground">
-          Réseau socio-économique et partenaires handicap (indicateurs 26-27) :
-          Agefiph, Cap emploi, France Travail, entreprises, branches…
-        </p>
+        <PageHeader
+          title="Registre des partenaires"
+          subtitle="Réseau socio-économique et partenaires handicap (indicateurs 26-27) : Agefiph, Cap emploi, France Travail, entreprises, branches…"
+        >
+          <NewPartenaireDialog />
+        </PageHeader>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Ajouter un partenaire</CardTitle>
-          <CardDescription>
-            Conseil : renseignez au minimum les partenaires handicap de votre département
-            (Agefiph, Cap emploi, MDPH) et vos partenaires emploi/entreprises.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form action={creerPartenaire} className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="nom">Nom</Label>
-              <Input id="nom" name="nom" required placeholder="ex. Cap emploi 95" />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="categorie">Catégorie</Label>
-              <select id="categorie" name="categorie" className="h-9 w-full rounded-md border bg-transparent px-3 text-sm">
-                <option>Handicap</option>
-                <option>Emploi / insertion</option>
-                <option>Entreprise</option>
-                <option>Institutionnel / financeur</option>
-                <option>Branche professionnelle</option>
-                <option>Autre</option>
-              </select>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="contact">Contact (nom)</Label>
-              <Input id="contact" name="contact" />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="telephone">Téléphone</Label>
-              <Input id="telephone" name="telephone" />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="email">E-mail</Label>
-              <Input id="email" name="email" type="email" />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="objet">Nature du partenariat</Label>
-              <Input id="objet" name="objet" placeholder="ex. Accompagnement des stagiaires en situation de handicap" />
-            </div>
-            <div className="sm:col-span-2">
-              <Button type="submit">Ajouter au registre</Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
 
       <Card>
         <CardHeader>
