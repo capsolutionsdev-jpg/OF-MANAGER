@@ -37,48 +37,46 @@ const securityHeaders = [
 // génèrent un PDF — sinon « Could not find Chromium » sur Vercel.
 const CHROMIUM_BIN = ["./node_modules/@sparticuz/chromium/bin/**"];
 
-// Toutes les entrées (routes ET pages) dont le code — directement ou via une
-// server action déclenchée depuis la page — lance Chromium. Une server action
-// s'exécute dans la fonction de la PAGE qui la déclenche : cette page doit donc
-// aussi embarquer le binaire (cas du plant « envoi du lien d'inscription »).
+// Entrées (routes ET pages) dont le code — directement ou via une server action
+// déclenchée depuis la page — lance Chromium. Une server action s'exécute dans la
+// fonction de la PAGE qui la déclenche : cette page doit donc aussi embarquer le
+// binaire (cas du plant « envoi du lien d'inscription »).
+//
+// ⚠️ Les clés sont matchées en GLOB : un segment dynamique entre crochets
+// (`[id]`, `[token]`) est interprété comme une CLASSE DE CARACTÈRES et ne matche
+// donc PAS la route littérale → le binaire n'est pas injecté (vérifié via les
+// `.nft.json` du build : `/sessions/[id]` échouait, `/candidats` réussissait).
+// On utilise donc des PRÉFIXES SANS CROCHETS, qui couvrent tout le sous-arbre.
 const PDF_ENTRYPOINTS = [
-  // Routes qui renvoient un PDF (contenu ou pièce jointe)
-  "/api/candidats/[id]/expression-besoin",
-  "/api/inscriptions/[id]/attestation-reussite",
+  // API PDF
+  "/api/pdf-test",
   "/api/convention",
   "/api/cron/parcours",
-  "/api/pdf-test",
-  "/parcours/[token]/documents",
-  "/compte-rendu/[token]/document",
-  "/contrat-formateur/[token]/document",
-  "/satisfaction/[token]/document",
-  "/suivi/[token]/document",
-  "/documents/[inscriptionId]/pdf",
-  "/documents/[inscriptionId]/satisfaction",
-  "/documents/contrat-formateur/[sessionId]",
-  "/titres/[id]",
-  "/diplomes/[id]/officiel",
-  "/diplomes/[id]/attestation",
-  "/examen-civique/facture/[id]",
-  "/jurys/affectation/[id]/defraiement",
-  "/mes-cours/[coursId]/attestation",
+  "/api/candidats", // expression-besoin
+  "/api/inscriptions", // attestation-reussite
+  // Routes PDF publiques (liens tokenisés)
+  "/parcours",
+  "/compte-rendu",
+  "/contrat-formateur",
+  "/satisfaction",
+  "/suivi",
+  // Routes PDF back-office (dossier, titres, diplômes, factures, défraiement…)
+  "/documents",
+  "/titres",
+  "/diplomes",
+  "/jurys/affectation",
+  "/examen-civique/facture",
+  "/examen-civique/export",
+  "/mes-cours",
+  "/formations",
   // Exports (PDF conditionnel ?format=pdf → tableToPdf → Chromium)
-  "/candidats/export",
-  "/sessions/export",
-  "/sessions/[id]/candidats/export",
-  "/comptabilite/export",
-  "/tresorerie/export/recap",
-  "/tresorerie/export/charges",
-  "/tresorerie/export/ca",
-  "/formations/[id]/diplomes/export",
-  "/rapports/pedagogique",
-  "/examen-civique/export/comptable",
-  "/examen-civique/export/pedagogique",
+  "/comptabilite",
+  "/tresorerie",
+  "/rapports",
   // PAGES dont une server action génère un PDF (startParcours → buildSingleDocPdf,
-  // certification, etc.) — le binaire doit être présent dans la fonction de la page.
-  "/sessions/[id]",
+  // certification…) — le binaire doit être présent dans la fonction de la page.
+  "/sessions",
   "/candidats",
-  "/candidats/[id]",
   "/crm",
   "/signatures",
 ];
