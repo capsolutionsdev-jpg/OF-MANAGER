@@ -19,10 +19,10 @@ export const dynamic = "force-dynamic";
 
 const STATUT: Record<string, { label: string; cls: string }> = {
   BROUILLON: { label: "Brouillon", cls: "bg-muted text-muted-foreground" },
-  ENVOYEE: { label: "Envoyé", cls: "bg-blue-500/10 text-blue-700" },
-  PAYEE: { label: "Accepté", cls: "bg-emerald-500/10 text-emerald-700" },
-  PARTIELLE: { label: "Partiel", cls: "bg-amber-500/10 text-amber-700" },
-  ANNULEE: { label: "Refusé", cls: "bg-rose-500/10 text-rose-700" },
+  ENVOYEE: { label: "Envoyé", cls: "bg-blue-500/10 text-blue-700 dark:text-blue-300" },
+  PAYEE: { label: "Accepté", cls: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" },
+  PARTIELLE: { label: "Partiel", cls: "bg-amber-500/10 text-amber-700 dark:text-amber-300" },
+  ANNULEE: { label: "Refusé", cls: "bg-rose-500/10 text-rose-700 dark:text-rose-300" },
   AVOIR: { label: "Avoir", cls: "bg-muted text-muted-foreground" },
 };
 
