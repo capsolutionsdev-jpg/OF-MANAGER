@@ -189,12 +189,12 @@ export default async function FeuilleEmargementPage({
                 Cachet et signature de l&apos;organisme — {org.representant}
               </div>
               <div className="sig-box">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={org.cachetUrl ?? "/signature-cap-competences.png"}
-                  alt={`Cachet ${org.name}`}
-                  className="doc-stamp"
-                />
+                {/* Cachet du tenant uniquement — jamais l'asset CAP (marque
+                    blanche). Box vide tant qu'il n'a pas été chargé. */}
+                {org.cachetUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={org.cachetUrl} alt={`Cachet ${org.name}`} className="doc-stamp" />
+                )}
               </div>
             </div>
           </div>
