@@ -74,14 +74,18 @@ export default async function DashboardPage() {
     sessionsActives, enAttente, enAttenteTotal, prochaines, logs,
     reclamationsOuvertes, inscriptionsDossier, weekSessions,
   ] = await Promise.all([
-    db.candidat.count(),
+    db.candidat.count({ where: { statut: { not: "ARCHIVE" } } }),
     db.apprenant.count(),
     db.formation.count({ where: { isArchived: false } }),
     db.session.count({ where: { dateDebut: { gte: now } } }),
     db.session.findMany({
       where: { statut: { not: "ANNULEE" }, dateFin: { gte: now } },
       orderBy: { dateDebut: "asc" },
-      include: { formation: { select: { titre: true } }, _count: { select: { inscriptions: true } } },
+      include: {
+        formation: { select: { titre: true } },
+        // Jauge de remplissage : on ne compte QUE les inscriptions non annulées.
+        _count: { select: { inscriptions: { where: { statut: { not: "ANNULEE" } } } } },
+      },
     }),
     db.inscription.findMany({
       where: { statut: "EN_ATTENTE" },
@@ -99,9 +103,10 @@ export default async function DashboardPage() {
     db.auditLog.findMany({ orderBy: { createdAt: "desc" }, take: 5, include: { user: { select: { name: true } } } }),
     db.reclamation.count({ where: { statut: { not: "CLOTUREE" } } }),
     db.inscription.findMany({
+      // Compteur « dossiers à compléter » : inscriptions actives/à venir seulement
+      // (ensemble borné) → pas de plafond silencieux.
       where: { statut: { not: "ANNULEE" }, session: { dateFin: { gte: now } } },
       select: { piecesRecues: true, session: { select: { formation: { select: { piecesAttendues: true } } } } },
-      take: 600,
     }),
     db.session.findMany({
       where: { statut: { not: "ANNULEE" }, dateDebut: { lte: weekEnd }, dateFin: { gte: weekStart } },

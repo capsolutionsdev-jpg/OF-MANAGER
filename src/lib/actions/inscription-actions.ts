@@ -6,7 +6,6 @@ import {
   InscriptionStatut,
   PaiementStatut,
   CertificationResultat,
-  EmailStatut,
 } from "@prisma/client";
 import { getTenantDb } from "@/lib/tenant";
 import { auth } from "@/auth";
@@ -17,14 +16,13 @@ import {
 import { startParcours } from "@/lib/actions/parcours-actions";
 import { genererDiplomeSsiap } from "@/lib/actions/titre-actions";
 import { ssiapDiplomeNiveau } from "@/lib/documents/titres";
-import { sendEmail, toBase64 } from "@/lib/email";
+import { sendEmail } from "@/lib/email";
 import { orgConfigFor } from "@/lib/org-identity";
 import { generateToken, appBaseUrl } from "@/lib/token";
-import { buildSingleDocPdf } from "@/lib/documents/build-pdf";
 import { hasStrictFeature } from "@/lib/feature-guard";
 
 export type ActionResult =
-  | { ok: true; inscriptionId: string }
+  | { ok: true; inscriptionId: string; warning?: string }
   | { ok: false; error: string };
 
 export type SimpleResult = { ok: boolean; error?: string };
@@ -76,7 +74,15 @@ export async function setInscriptionStatut(
       data: { statut: "INSCRIT" },
     });
     // Démarre le parcours automatisé seulement s'il n'a jamais été lancé.
-    if (!insc.accessToken) await startParcours(inscriptionId);
+    // Best-effort : une panne d'e-mail/PDF ne doit pas faire échouer le
+    // changement de statut (sinon plant de rendu, digest en prod).
+    if (!insc.accessToken) {
+      try {
+        await startParcours(inscriptionId);
+      } catch (e) {
+        console.error("setInscriptionStatut: startParcours échoué (ignoré)", e);
+      }
+    }
   }
 
   await db.auditLog.create({
@@ -126,7 +132,7 @@ export async function setInscriptionPaiement(
 export async function setCertification(
   inscriptionId: string,
   resultat: CertificationResultat,
-): Promise<SimpleResult> {
+): Promise<SimpleResult & { attestationPending?: boolean }> {
   const db = await getTenantDb();
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Non autorisé." };
@@ -199,48 +205,16 @@ export async function setCertification(
     },
   });
 
-  // Certifié → attestation de réussite + félicitations (une seule fois).
-  if (resultat === "CERTIFIE" && !insc.attestationReussiteSentAt) {
-    const org = await orgConfigFor(insc.organismeId);
-    const titre = insc.session.formation.titre;
-    const subject = `Félicitations — vous avez obtenu « ${titre} »`;
-    const body = `Bonjour ${insc.candidat.prenom},
-
-Toutes nos félicitations ! Vous avez satisfait aux épreuves d'évaluation et obtenu la certification « ${titre} ».
-
-Vous trouverez ci-joint votre attestation de réussite (PDF).
-
-Votre diplôme officiel vous sera transmis dès sa réception par nos services : nous vous enverrons un e-mail à ce moment-là pour organiser sa remise.
-
-Encore bravo, et à bientôt,
-${org.representant} — ${org.name}`;
-    const pdf = await buildSingleDocPdf(inscriptionId, "ATTESTATION_REUSSITE");
-    const res = await sendEmail({
-      to: insc.candidat.email,
-      subject,
-      body,
-      attachments: pdf ? [{ name: "Attestation-reussite.pdf", content: toBase64(pdf.data) }] : undefined,
-      organismeId: insc.organismeId,
-    });
-    await db.emailLog.create({
-      data: {
-        destinataire: insc.candidat.email,
-        sujet: subject,
-        corps: body,
-        statut: res.sent ? EmailStatut.ENVOYE : EmailStatut.EN_ATTENTE,
-        sentAt: res.sent ? new Date() : null,
-        sessionId: insc.sessionId,
-      },
-    });
-    await db.inscription.update({
-      where: { id: inscriptionId },
-      data: { attestationReussiteSentAt: new Date() },
-    });
-  }
+  // Attestation de réussite : générée (PDF via Chromium) + envoyée par e-mail via
+  // la ROUTE dédiée /api/inscriptions/[id]/attestation-reussite (runtime nodejs +
+  // maxDuration 60), déclenchée en arrière-plan par le client après certification.
+  // On ne génère PLUS le PDF ici : Chromium n'est pas fiable dans une server action
+  // (c'était la cause du crash « Server Components render » à chaque validation).
+  const attestationPending = resultat === "CERTIFIE" && !insc.attestationReussiteSentAt;
 
   revalidatePath(`/sessions/${insc.sessionId}`);
   revalidatePath("/bpf");
-  return { ok: true };
+  return { ok: true, attestationPending };
 }
 
 /**
@@ -352,7 +326,14 @@ export async function createInscription(
       });
       // Démarre le parcours automatisé (e-mail + lien de finalisation), SAUF si
       // l'inscription est traitée sur place (positionnement/documents en présentiel).
-      if (!opts?.positionnementSurPlace) await startParcours(created.id);
+      // Best-effort : une panne d'e-mail/PDF ne doit pas annuler l'inscription.
+      if (!opts?.positionnementSurPlace) {
+        try {
+          await startParcours(created.id);
+        } catch (e) {
+          console.error("createInscription: startParcours échoué (ignoré)", e);
+        }
+      }
     }
 
     // Traçabilité Qualiopi : vérification des prérequis par le collaborateur.
@@ -380,7 +361,22 @@ export async function createInscription(
     revalidatePath(`/candidats/${v.candidatId}`);
     revalidatePath("/crm");
     revalidatePath("/candidats");
-    return { ok: true, inscriptionId: created.id };
+
+    // Avertissement de capacité (n'empêche pas l'inscription — listes d'attente
+    // fréquentes en OF). nbPlaces n'était jusqu'ici qu'informatif.
+    let warning: string | undefined;
+    const sess = await db.session.findUnique({
+      where: { id: v.sessionId },
+      select: { nbPlaces: true },
+    });
+    if (sess) {
+      const inscrits = await db.inscription.count({
+        where: { sessionId: v.sessionId, statut: { not: "ANNULEE" } },
+      });
+      if (inscrits > sess.nbPlaces)
+        warning = `Session complète : ${inscrits}/${sess.nbPlaces} inscrits (capacité dépassée).`;
+    }
+    return { ok: true, inscriptionId: created.id, warning };
   } catch (e) {
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
       return { ok: false, error: "Ce candidat est déjà inscrit à cette session." };

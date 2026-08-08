@@ -3,6 +3,7 @@ import { hasStrictFeature } from "@/lib/feature-guard";
 import { buildDefraiementPdf } from "@/lib/documents/defraiement";
 
 export const runtime = "nodejs";
+export const maxDuration = 60; // génération PDF (Chromium serverless)
 const STAFF = ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"];
 
 /** Télécharge la note de défraiement (PDF) d'un membre de jury. Module `jurys`. */

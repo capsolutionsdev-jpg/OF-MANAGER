@@ -9,6 +9,9 @@ import { type SessionOption } from "@/components/inscriptions/quick-enroll-modal
 import { CrmTable, type CrmRow } from "@/components/crm/crm-table";
 
 export const dynamic = "force-dynamic";
+// QuickEnrollModal → createInscription → startParcours → PDF (Chromium).
+export const runtime = "nodejs";
+export const maxDuration = 60;
 
 export default async function CrmPage() {
   const db = await getTenantDb();

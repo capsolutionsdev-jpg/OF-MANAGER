@@ -25,6 +25,10 @@ function Field({ label, value }: { label: string; value?: string | null }) {
   );
 }
 
+// Actions serveur générant des PDF (Chromium) → budget de durée serverless.
+export const runtime = "nodejs";
+export const maxDuration = 60;
+
 export default async function SessionDetailPage({
   params,
 }: {

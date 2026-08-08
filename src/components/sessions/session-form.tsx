@@ -121,6 +121,7 @@ export function SessionForm({
 
       if (res.ok) {
         toast.success(sessionId ? "Session mise à jour." : "Session créée.");
+        if (res.warning) toast.warning(res.warning);
         router.push(`/sessions/${res.id}`);
         router.refresh();
       } else {

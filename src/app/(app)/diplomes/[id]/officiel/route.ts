@@ -14,6 +14,7 @@ import {
 } from "@/lib/documents/titres";
 
 export const runtime = "nodejs";
+export const maxDuration = 60; // génération PDF (Chromium serverless)
 
 const STAFF = ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"];
 const safe = (s: string) =>

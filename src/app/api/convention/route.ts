@@ -10,6 +10,7 @@ import { FINANCEMENT_LABELS } from "@/lib/validators/candidat";
 import type { FinancementType } from "@prisma/client";
 
 export const runtime = "nodejs";
+export const maxDuration = 60; // N générations PDF (Chromium) par candidat
 
 const DOC_STYLE = `<style>
   * { box-sizing: border-box; }

@@ -13,6 +13,10 @@ import {
 import { SendSatisfactionButton } from "@/components/sessions/send-satisfaction-button";
 import { DossierChecklist } from "@/components/inscriptions/dossier-checklist";
 
+// Actions serveur générant des PDF (Chromium) → budget de durée serverless.
+export const runtime = "nodejs";
+export const maxDuration = 60;
+
 export default async function SessionDossiersPage({
   params,
 }: {
@@ -144,7 +148,7 @@ export default async function SessionDossiersPage({
                       {pieces.map((p) => (
                         <a
                           key={p.id}
-                          href={p.url}
+                          href={`/api/public/piece/${p.id}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className={

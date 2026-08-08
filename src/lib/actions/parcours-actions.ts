@@ -60,7 +60,15 @@ Vous trouverez ci-joint le programme de la formation. Ce lien vous est personnel
 Cordialement,
 ${org.representant} — ${org.name}`;
 
-  const progPdf = await buildSingleDocPdf(inscriptionId, "PROGRAMME");
+  // Le programme joint est BEST-EFFORT : une panne de génération PDF (ex. Chromium
+  // serverless indisponible) ne doit JAMAIS faire échouer l'envoi du lien. Sans
+  // ce garde, l'exception remontait jusqu'à un plant de rendu (digest en prod).
+  let progPdf: Awaited<ReturnType<typeof buildSingleDocPdf>> = null;
+  try {
+    progPdf = await buildSingleDocPdf(inscriptionId, "PROGRAMME");
+  } catch (e) {
+    console.error("startParcours: génération du programme PDF échouée (ignorée)", e);
+  }
   const res = await sendEmail({
     to: insc.candidat.email,
     subject,
@@ -86,23 +94,55 @@ ${org.representant} — ${org.name}`;
   return { ok: true };
 }
 
+const PARCOURS_STAFF = ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"];
+
+/**
+ * Vérifie que l'appelant est un collaborateur (staff) de l'organisme propriétaire
+ * de l'inscription. Renvoie null si autorisé, sinon un message d'erreur.
+ * Empêche qu'un compte d'un autre organisme (ou un rôle non-staff) relance un
+ * parcours sur une inscription qui ne lui appartient pas.
+ */
+async function assertStaffOwnsInscription(inscriptionId: string): Promise<string | null> {
+  const session = await auth();
+  const role = session?.user?.role as string | undefined;
+  const organismeId = session?.user?.organismeId;
+  if (!session?.user || !role || !PARCOURS_STAFF.includes(role) || !organismeId)
+    return "Non autorisé.";
+  const insc = await prisma.inscription.findFirst({
+    where: { id: inscriptionId, organismeId },
+    select: { id: true },
+  });
+  return insc ? null : "Inscription introuvable.";
+}
+
 /** Bouton serveur : (re)lance le parcours depuis l'interface admin. */
 export async function resendParcoursAction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) return;
   const inscriptionId = String(formData.get("inscriptionId"));
-  await startParcours(inscriptionId);
+  if (await assertStaffOwnsInscription(inscriptionId)) return;
+  try {
+    await startParcours(inscriptionId);
+  } catch (e) {
+    console.error("resendParcoursAction: échec relance parcours", e);
+  }
 }
 
 /** Relance le lien de parcours/signature et renvoie un résultat (pour le toast). */
 export async function relanceParcours(
   inscriptionId: string,
 ): Promise<{ ok: boolean; demo: boolean; error?: string }> {
-  const session = await auth();
-  if (!session?.user) return { ok: false, demo: true, error: "Non autorisé." };
-  const r = await startParcours(inscriptionId);
-  revalidatePath("/signatures");
-  return { ok: r.ok, demo: !emailConfigured(), error: r.error };
+  const denied = await assertStaffOwnsInscription(inscriptionId);
+  if (denied) return { ok: false, demo: true, error: denied };
+  // On n'autorise AUCUNE exception à remonter : une action serveur qui lève
+  // produit un plant de rendu (« Cette page n'a pas pu s'afficher », digest en
+  // prod). On renvoie toujours un résultat exploitable par le toast.
+  try {
+    const r = await startParcours(inscriptionId);
+    revalidatePath("/signatures");
+    return { ok: r.ok, demo: !emailConfigured(), error: r.error };
+  } catch (e) {
+    console.error("relanceParcours: échec relance parcours", e);
+    return { ok: false, demo: !emailConfigured(), error: "Envoi impossible (erreur serveur). Réessayez ou vérifiez la configuration." };
+  }
 }
 
 export type ParcoursFormValues = {

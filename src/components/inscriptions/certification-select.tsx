@@ -35,6 +35,23 @@ export function CertificationSelect({
       }
       toast.success("Résultat enregistré (reporté au BPF).");
       router.refresh();
+
+      // Certifié → génération + envoi de l'attestation de réussite via la route
+      // dédiée (PDF/Chromium fiable hors server action). En arrière-plan (non
+      // bloquant) : le select se réactive immédiatement, l'envoi suit son cours.
+      if (res.attestationPending) {
+        const t = toast.loading("Envoi de l'attestation de réussite…");
+        fetch(`/api/inscriptions/${inscriptionId}/attestation-reussite`, { method: "POST" })
+          .then(async (r) => {
+            const j = (await r.json().catch(() => ({}))) as { ok?: boolean };
+            if (r.ok && j.ok) {
+              toast.success("Attestation de réussite envoyée au candidat.", { id: t });
+            } else {
+              toast.error("Attestation non envoyée — réessayez depuis la fiche du candidat.", { id: t });
+            }
+          })
+          .catch(() => toast.error("Attestation non envoyée (réseau).", { id: t }));
+      }
     });
   }
 

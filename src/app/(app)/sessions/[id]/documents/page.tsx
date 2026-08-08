@@ -14,6 +14,10 @@ import {
 import { SendCompteRenduButton } from "@/components/sessions/send-compte-rendu-button";
 import { SendContratButton } from "@/components/sessions/send-contrat-button";
 
+// Actions serveur générant des PDF (Chromium) → budget de durée serverless.
+export const runtime = "nodejs";
+export const maxDuration = 60;
+
 export default async function SessionDocumentsPage({
   params,
 }: {

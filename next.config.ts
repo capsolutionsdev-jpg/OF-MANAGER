@@ -33,6 +33,54 @@ const securityHeaders = [
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), browsing-topics=()" },
 ];
 
+// Binaire Chromium (@sparticuz) à embarquer dans les fonctions serverless qui
+// génèrent un PDF — sinon « Could not find Chromium » sur Vercel.
+const CHROMIUM_BIN = ["./node_modules/@sparticuz/chromium/bin/**"];
+
+// Entrées (routes ET pages) dont le code — directement ou via une server action
+// déclenchée depuis la page — lance Chromium. Une server action s'exécute dans la
+// fonction de la PAGE qui la déclenche : cette page doit donc aussi embarquer le
+// binaire (cas du plant « envoi du lien d'inscription »).
+//
+// ⚠️ Les clés sont matchées en GLOB : un segment dynamique entre crochets
+// (`[id]`, `[token]`) est interprété comme une CLASSE DE CARACTÈRES et ne matche
+// donc PAS la route littérale → le binaire n'est pas injecté (vérifié via les
+// `.nft.json` du build : `/sessions/[id]` échouait, `/candidats` réussissait).
+// On utilise donc des PRÉFIXES SANS CROCHETS, qui couvrent tout le sous-arbre.
+const PDF_ENTRYPOINTS = [
+  // API PDF
+  "/api/pdf-test",
+  "/api/convention",
+  "/api/cron/parcours",
+  "/api/candidats", // expression-besoin
+  "/api/inscriptions", // attestation-reussite
+  // Routes PDF publiques (liens tokenisés)
+  "/parcours",
+  "/compte-rendu",
+  "/contrat-formateur",
+  "/satisfaction",
+  "/suivi",
+  // Routes PDF back-office (dossier, titres, diplômes, factures, défraiement…)
+  "/documents",
+  "/titres",
+  "/diplomes",
+  "/jurys/affectation",
+  "/examen-civique/facture",
+  "/examen-civique/export",
+  "/mes-cours",
+  "/formations",
+  // Exports (PDF conditionnel ?format=pdf → tableToPdf → Chromium)
+  "/comptabilite",
+  "/tresorerie",
+  "/rapports",
+  // PAGES dont une server action génère un PDF (startParcours → buildSingleDocPdf,
+  // certification…) — le binaire doit être présent dans la fonction de la page.
+  "/sessions",
+  "/candidats",
+  "/crm",
+  "/signatures",
+];
+
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   // Épingle la racine du projet : évite que Next infère un mauvais workspace root
@@ -65,46 +113,10 @@ const nextConfig: NextConfig = {
   ],
   // Force l'inclusion du binaire Chromium (@sparticuz) dans les fonctions
   // serverless qui génèrent des PDF — sinon « Could not find Chromium » sur Vercel.
-  outputFileTracingIncludes: {
-    // Route « Fiche d'expression du besoin » : génère un PDF via puppeteer
-    // → embarquer le binaire Chromium dans cette fonction.
-    "/api/candidats/[id]/expression-besoin": [
-      "./node_modules/@sparticuz/chromium/bin/**",
-    ],
-    "/parcours/[token]/documents": [
-      "./node_modules/@sparticuz/chromium/bin/**",
-    ],
-    "/compte-rendu/[token]/document": [
-      "./node_modules/@sparticuz/chromium/bin/**",
-    ],
-    "/contrat-formateur/[token]/document": [
-      "./node_modules/@sparticuz/chromium/bin/**",
-    ],
-    "/satisfaction/[token]/document": [
-      "./node_modules/@sparticuz/chromium/bin/**",
-    ],
-    "/documents/[inscriptionId]/pdf": [
-      "./node_modules/@sparticuz/chromium/bin/**",
-    ],
-    "/documents/[inscriptionId]/satisfaction": [
-      "./node_modules/@sparticuz/chromium/bin/**",
-    ],
-    "/documents/contrat-formateur/[sessionId]": [
-      "./node_modules/@sparticuz/chromium/bin/**",
-    ],
-    "/api/cron/parcours": [
-      "./node_modules/@sparticuz/chromium/bin/**",
-    ],
-    "/api/pdf-test": [
-      "./node_modules/@sparticuz/chromium/bin/**",
-    ],
-    "/api/convention": [
-      "./node_modules/@sparticuz/chromium/bin/**",
-    ],
-    "/mes-cours/[coursId]/attestation": [
-      "./node_modules/@sparticuz/chromium/bin/**",
-    ],
-  },
+  // Couvre routes + pages hébergeant une server action PDF (cf. PDF_ENTRYPOINTS).
+  outputFileTracingIncludes: Object.fromEntries(
+    PDF_ENTRYPOINTS.map((p) => [p, CHROMIUM_BIN]),
+  ),
 };
 
 export default nextConfig;

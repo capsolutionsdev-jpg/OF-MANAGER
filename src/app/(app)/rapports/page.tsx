@@ -51,16 +51,30 @@ function Kpi({ label, value, sub, icon: Icon }: { label: string; value: string; 
 export default async function RapportsPage() {
   const db = await getTenantDb();
 
-  const [candidats, devis, factures, sessions] = await Promise.all([
+  const [candidats, devis, factures, sessions, paiementsSum] = await Promise.all([
     db.candidat.findMany({
       where: { statut: { not: "ARCHIVE" } },
       select: { crmStage: true, valeurEstimee: true, statut: true, sourceConnaissance: true, createdAt: true },
     }),
-    db.devis.findMany({ select: { statut: true, montantTTC: true } }),
-    db.facture.findMany({ select: { statut: true, montantTTC: true } }),
-    db.session.findMany({
-      select: { nbPlaces: true, _count: { select: { inscriptions: true } } },
+    // acceptedAt : un devis signé en ligne garde statut=ENVOYEE (le « payé » est
+    // réservé au cycle facture) → c'est acceptedAt qui fait foi pour l'acceptation.
+    db.devis.findMany({ select: { acceptedAt: true } }),
+    // Factures non soldées : reste dû = TTC − règlements réels de la facture.
+    db.facture.findMany({
+      where: { statut: { in: ["ENVOYEE", "PARTIELLE"] } },
+      select: { montantTTC: true, paiements: { select: { montant: true } } },
     }),
+    // Remplissage : sessions actives uniquement (ni archivées ni annulées) et on
+    // ne compte QUE les inscriptions non annulées.
+    db.session.findMany({
+      where: { isArchived: false, statut: { not: "ANNULEE" } },
+      select: {
+        nbPlaces: true,
+        _count: { select: { inscriptions: { where: { statut: { not: "ANNULEE" } } } } },
+      },
+    }),
+    // Encaissé réel = somme de TOUS les règlements (liés facture OU inscription).
+    db.paiement.aggregate({ _sum: { montant: true } }),
   ]);
 
   // ── Funnel pipeline ──
@@ -94,14 +108,17 @@ export default async function RapportsPage() {
 
   // ── Devis ──
   const devisTotal = devis.length;
-  const devisAcceptes = devis.filter((d) => d.statut === "PAYEE").length;
+  const devisAcceptes = devis.filter((d) => d.acceptedAt != null).length;
   const tauxDevis = devisTotal > 0 ? Math.round((devisAcceptes / devisTotal) * 100) : 0;
 
   // ── Revenus (factures) ──
-  const encaisse = factures.filter((f) => f.statut === "PAYEE").reduce((a, f) => a + Number(f.montantTTC), 0);
-  const enAttente = factures
-    .filter((f) => f.statut === "ENVOYEE" || f.statut === "PARTIELLE")
-    .reduce((a, f) => a + Number(f.montantTTC), 0);
+  // Encaissé = somme réelle des règlements. En attente = reste dû sur les factures
+  // non soldées (TTC − règlements de la facture, jamais négatif).
+  const encaisse = Number(paiementsSum._sum.montant ?? 0);
+  const enAttente = factures.reduce((a, f) => {
+    const paye = f.paiements.reduce((s, p) => s + Number(p.montant), 0);
+    return a + Math.max(0, Number(f.montantTTC) - paye);
+  }, 0);
 
   // ── Remplissage des sessions ──
   const totalPlaces = sessions.reduce((a, s) => a + (s.nbPlaces ?? 0), 0);

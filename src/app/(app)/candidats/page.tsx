@@ -13,6 +13,9 @@ import {
 import type { SessionOption } from "@/components/inscriptions/quick-enroll-modal";
 
 export const dynamic = "force-dynamic";
+// createInscription (statut VALIDÉE) déclenche startParcours → PDF (Chromium).
+export const runtime = "nodejs";
+export const maxDuration = 60;
 
 export default async function CandidatsPage() {
   const db = await getTenantDb();

@@ -34,6 +34,10 @@ const STATUT_BADGE_CLS: Record<string, string> = {
   ANNULEE: "bg-destructive/10 text-destructive",
 };
 
+// Actions serveur générant des PDF (Chromium) → budget de durée serverless.
+export const runtime = "nodejs";
+export const maxDuration = 60;
+
 export default async function SessionParticipantsPage({
   params,
 }: {

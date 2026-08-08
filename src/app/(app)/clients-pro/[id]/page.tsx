@@ -18,6 +18,7 @@ import {
   rattacherCandidat,
   detacherCandidat,
 } from "@/lib/actions/client-pro-actions";
+import { ConventionDialog } from "@/components/conventions/convention-dialog";
 
 export const dynamic = "force-dynamic";
 
@@ -53,6 +54,23 @@ export default async function ClientProPage({
   });
 
   const fmt = (d: Date | null) => (d ? d.toLocaleDateString("fr-FR") : "—");
+
+  // Sessions ouvertes + salariés — pour l'inscription groupée (convention).
+  const sessionsOuvertes = await db.session.findMany({
+    where: { isArchived: false, statut: { not: "ANNULEE" } },
+    include: { formation: { select: { titre: true } } },
+    orderBy: { dateDebut: "desc" },
+    take: 100,
+  });
+  const sessionOptions = sessionsOuvertes.map((s) => ({
+    id: s.id,
+    label: `${s.formation.titre} — ${fmt(s.dateDebut)}${s.lieu ? ` (${s.lieu})` : ""}`,
+  }));
+  const salariesExistants = client.candidats.map((c) => ({
+    id: c.id,
+    nom: c.nom,
+    prenom: c.prenom,
+  }));
 
   const stats = [
     { label: "Financeur", value: client.opco || "—", icon: Wallet },
@@ -96,9 +114,20 @@ export default async function ClientProPage({
               );
             })}
           </div>
-          <Button render={<Link href={`/clients-pro/${client.id}/convention`} />}>
-            <FileText className="mr-1.5 h-4 w-4" /> Bon de convention
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <ConventionDialog
+              entrepriseId={client.id}
+              sessions={sessionOptions}
+              candidatsExistants={salariesExistants}
+              triggerLabel="Inscrire des salariés"
+            />
+            <Button
+              variant="outline"
+              render={<Link href={`/clients-pro/${client.id}/convention`} />}
+            >
+              <FileText className="mr-1.5 h-4 w-4" /> Bon de convention (PDF)
+            </Button>
+          </div>
         </CardContent>
       </Card>
 

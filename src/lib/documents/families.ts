@@ -85,16 +85,34 @@ export const SESSION_ONLY_DOCS = new Set<string>([
   "REMISE_SUPPORTS",
 ]);
 
+/**
+ * Le financement fait-il de l'inscription un dossier B2B (entreprise/OPCO paie) ?
+ * C'est le TYPE DE FINANCEMENT qui décide contrat (particulier) vs convention
+ * (entreprise), pas seulement le rattachement à une entreprise : un salarié
+ * rattaché à une société mais qui finance en propre (CPF, autofinancement,
+ * France Travail) relève d'un CONTRAT, pas d'une convention.
+ *  - ENTREPRISE / OPCO → B2B (convention)
+ *  - CPF / AUTOFINANCEMENT / FRANCE_TRAVAIL → particulier (contrat)
+ *  - AUTRE / non renseigné → repli sur le rattachement entreprise (compat historique)
+ */
+export function isB2BFinancement(c: DocContext): boolean {
+  const fin = (c.financementType ?? "").toUpperCase();
+  if (fin === "ENTREPRISE" || fin === "OPCO") return true;
+  if (fin === "CPF" || fin === "AUTOFINANCEMENT" || fin === "FRANCE_TRAVAIL") return false;
+  return c.hasEntreprise;
+}
+
 // Conditions d'inclusion des documents SPÉCIFIQUES (absents ici = toujours inclus,
 // sous réserve de compatibilité de famille).
 const DOC_CONDITIONS: Record<string, (c: DocContext) => boolean> = {
   // Convocation d'examen uniquement si la formation est sanctionnée par un examen
   // (initial), jamais pour un recyclage / une remise à niveau.
   CONVOCATION_EXAMEN: (c) => !!c.formation.examen,
-  // Contrat = particulier ; Convention = entreprise (mutuellement exclusifs).
-  CONTRAT_FORMATION: (c) => !c.hasEntreprise,
-  CONVENTION_FORMATION: (c) => c.hasEntreprise,
-  CONVENTION_ENTREPRISE: (c) => c.hasEntreprise,
+  // Contrat = particulier ; Convention = entreprise (mutuellement exclusifs),
+  // déterminé par le TYPE DE FINANCEMENT (cf. isB2BFinancement).
+  CONTRAT_FORMATION: (c) => !isB2BFinancement(c),
+  CONVENTION_FORMATION: (c) => isB2BFinancement(c),
+  CONVENTION_ENTREPRISE: (c) => isB2BFinancement(c),
   // Enquêtes réservées à leur destinataire.
   SATISFACTION_ENTREPRISE: (c) => c.hasEntreprise,
   SATISFACTION_OPCO: (c) => (c.financementType ?? "").toUpperCase() === "OPCO",
