@@ -181,7 +181,9 @@ Merci de vous présenter muni(e) d'une pièce d'identité.
 
 Cordialement,
 ${org.representant} — ${org.name}`;
-      const sent = await logAndSend({ to, subject, body, sessionId: s.id });
+      // Canal « SMS uniquement » : on n'envoie pas l'e-mail au candidat (le jalon
+      // est déjà réservé ; le SMS part plus bas). L'e-mail à l'entreprise reste envoyé.
+      const sent = convRule.channel === "sms" ? true : await logAndSend({ to, subject, body, sessionId: s.id });
       if (entEmail) {
         await logAndSend({
           to: entEmail,
@@ -229,7 +231,7 @@ Merci de vous présenter à l'heure, muni(e) d'une pièce d'identité.
 
 À demain,
 ${org.representant} — ${org.name}`;
-      const sent = await logAndSend({ to, subject, body, sessionId: s.id });
+      const sent = rappelRule.channel === "sms" ? true : await logAndSend({ to, subject, body, sessionId: s.id });
       if (sent) {
         await maybeSms(
           rappelRule.channel,
@@ -426,7 +428,7 @@ ${base}/reclamer/${satToken}
 
 Cordialement,
 ${org.representant} — ${org.name}`;
-      const sent = await logAndSend({ to, subject, body, sessionId: s.id });
+      const sent = satRule.channel === "sms" ? true : await logAndSend({ to, subject, body, sessionId: s.id });
       if (sent) {
         await maybeSms(
           satRule.channel,
@@ -562,7 +564,7 @@ Vos réponses nous aident à améliorer nos formations.
 
 Cordialement,
 ${org.representant} — ${org.name}`;
-      const sent = await logAndSend({ to, subject, body, sessionId: s.id });
+      const sent = suiviRule.channel === "sms" ? true : await logAndSend({ to, subject, body, sessionId: s.id });
       if (sent) {
         await maybeSms(
           suiviRule.channel,
