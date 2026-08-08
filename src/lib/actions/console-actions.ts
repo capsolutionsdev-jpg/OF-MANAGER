@@ -78,14 +78,6 @@ export async function setSupportStatut(ticketId: string, statut: string): Promis
   revalidatePath("/console");
 }
 
-/** Marque un ticket comme lu côté éditeur (retire le badge « non lu »). */
-export async function markSupportRead(ticketId: string): Promise<void> {
-  await requireSuperAdmin();
-  await prisma.supportTicket.update({ where: { id: ticketId }, data: { nonLuSupport: false } });
-  revalidatePath("/console/support");
-  revalidatePath("/console");
-}
-
 // ── Leads commerciaux (prospects du site vitrine) ────────────────────────────
 
 /** Change le statut d'un lead (Nouveau / À rappeler / Rappelé / Converti / Perdu). */

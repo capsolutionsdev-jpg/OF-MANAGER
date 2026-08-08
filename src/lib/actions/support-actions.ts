@@ -137,11 +137,3 @@ export async function replyTicketClient(formData: FormData) {
 
   revalidatePath("/support");
 }
-
-/** Le client a consulté ses réponses : on retire le badge « non lu » côté client. */
-export async function markTicketReadClient(ticketId: string) {
-  await requireSection("support");
-  const db = await getTenantDb();
-  await db.supportTicket.update({ where: { id: ticketId }, data: { nonLuClient: false } });
-  revalidatePath("/support");
-}

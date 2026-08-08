@@ -103,10 +103,14 @@ export async function acceptDevis(
     return { ok: false, error: "Merci de dessiner votre signature." };
   const d = await prisma.devis.findUnique({
     where: { acceptToken: token },
-    select: { id: true, acceptedAt: true },
+    select: { id: true, acceptedAt: true, validUntil: true },
   });
   if (!d) return { ok: false, error: "Lien invalide ou expiré." };
   if (d.acceptedAt) return { ok: true }; // déjà accepté
+  // Expiration : un devis dont la date de validité est dépassée n'est plus acceptable.
+  if (d.validUntil && d.validUntil < new Date()) {
+    return { ok: false, error: "Ce devis a expiré (date de validité dépassée). Contactez l'organisme pour un nouveau devis." };
+  }
   const hdrs = await headers();
   const ip =
     hdrs.get("x-forwarded-for")?.split(",")[0]?.trim() ?? hdrs.get("x-real-ip") ?? null;

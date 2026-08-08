@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Check, ListTodo, Trash2, CalendarClock, User as UserIcon } from "lucide-react";
+import { requireSection } from "@/lib/section-guard";
 import { getTenantDb } from "@/lib/tenant";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
@@ -21,6 +22,7 @@ type TacheRow = {
 };
 
 export default async function TachesPage() {
+  await requireSection("taches");
   const db = await getTenantDb();
 
   const [taches, candidats] = await Promise.all([

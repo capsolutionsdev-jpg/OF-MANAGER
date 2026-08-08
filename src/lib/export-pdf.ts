@@ -19,6 +19,11 @@ function esc(s: string): string {
     .replace(/>/g, "&gt;");
 }
 
+/** Échappement pour une valeur d'ATTRIBUT HTML (guillemets inclus). */
+function escAttr(s: string): string {
+  return esc(s).replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
 function tableHtml(sheet: SheetData): string {
   const head = sheet.header.map((h) => `<th>${esc(h)}</th>`).join("");
   const body = sheet.rows
@@ -53,7 +58,7 @@ export async function tableToPdf(opts: {
   });
   const org = opts.org;
   const logo = org?.logoUrl
-    ? `<img src="${org.logoUrl}" alt="" class="logo" />`
+    ? `<img src="${escAttr(org.logoUrl)}" alt="" class="logo" />`
     : "";
   const header = `
     <header class="doc-head">

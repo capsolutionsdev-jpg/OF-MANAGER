@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Columns3, Table2 } from "lucide-react";
+import { requireSection } from "@/lib/section-guard";
 import { getTenantDb } from "@/lib/tenant";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -26,6 +27,7 @@ function Kpi({ label, value, sub }: { label: string; value: string; sub?: string
 }
 
 export default async function KanbanPage() {
+  await requireSection("kanban");
   const db = await getTenantDb();
   const candidats = await db.candidat.findMany({
     where: { statut: { not: "ARCHIVE" } },
