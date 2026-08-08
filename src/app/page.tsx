@@ -15,6 +15,13 @@ export const metadata: Metadata = {
   title: "OFManager — Le logiciel des OF en sécurité, incendie & secourisme",
   description:
     "OFManager : le logiciel des organismes de formation en sécurité privée, incendie, secourisme et prévention. SST, TFP APS, SSIAP, habilitation électrique : prérequis CNAPS, recyclages, grilles de certification, conformité Qualiopi. Édité par CAP Compétences.",
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: "OFManager — Le logiciel des OF en sécurité & prévention",
+    description:
+      "Gérez prérequis réglementaires, recyclages, grilles de certification et conformité Qualiopi — à votre marque. Édité par CAP Compétences.",
+    url: "/",
+  },
 };
 
 const NAVY = "#221F19";
@@ -59,8 +66,69 @@ export default async function HomePage() {
     redirect(role === "SUPERADMIN" ? "/console" : role === "APPRENANT" ? "/mon-espace" : "/dashboard");
   }
 
+  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "https://ofmanager.fr";
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": `${base}/#organization`,
+        name: "OFManager",
+        url: base,
+        logo: `${base}/ofmanager-logo.png`,
+        description:
+          "Logiciel de gestion des organismes de formation en sécurité privée, incendie, secourisme et prévention — conforme Qualiopi. Édité par CAP Compétences.",
+      },
+      {
+        "@type": "WebSite",
+        "@id": `${base}/#website`,
+        url: base,
+        name: "OFManager",
+        inLanguage: "fr-FR",
+        publisher: { "@id": `${base}/#organization` },
+      },
+      {
+        "@type": "SoftwareApplication",
+        name: "OFManager",
+        applicationCategory: "BusinessApplication",
+        operatingSystem: "Web",
+        inLanguage: "fr-FR",
+        description:
+          "Logiciel des organismes de formation en sécurité, incendie et secourisme : CRM, sessions, dossiers & signatures, conformité Qualiopi, BPF, e-learning.",
+        offers: {
+          "@type": "AggregateOffer",
+          priceCurrency: "EUR",
+          lowPrice: "79",
+          highPrice: "249",
+          offerCount: 3,
+          offers: plans.map((p) => ({
+            "@type": "Offer",
+            name: p.name,
+            price: p.price.replace(/[^\d]/g, ""),
+            priceCurrency: "EUR",
+          })),
+        },
+        publisher: { "@id": `${base}/#organization` },
+      },
+      {
+        "@type": "FAQPage",
+        mainEntity: faqs.map((f) => ({
+          "@type": "Question",
+          name: f.q,
+          acceptedAnswer: { "@type": "Answer", text: f.a },
+        })),
+      },
+    ],
+  };
+
   return (
     <main className="min-h-screen bg-white text-[#221F19]">
+      {/* Données structurées (SEO) — Organization, WebSite, SoftwareApplication
+          + tarifs, FAQPage. Domaine via NEXT_PUBLIC_SITE_URL. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <ScrollReveal skip={2} />
       {/* Header */}
       <header className="sticky top-0 z-40 border-b border-slate-100 bg-white/85 backdrop-blur-md">
