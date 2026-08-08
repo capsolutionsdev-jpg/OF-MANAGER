@@ -57,23 +57,30 @@ export default async function BpfPage({
 }) {
   const db = await getTenantDb();
   const sp = await searchParams;
-  const nowYear = new Date().getFullYear();
-  const annee = sp.annee ? parseInt(sp.annee, 10) : nowYear;
+  const now = new Date();
+  const nowYear = now.getFullYear();
+  // Année validée (parseInt peut donner NaN → repli sur l'année courante).
+  const parsedAnnee = sp.annee ? parseInt(sp.annee, 10) : nowYear;
+  const annee = Number.isFinite(parsedAnnee) ? parsedAnnee : nowYear;
 
-  // Sessions de l'année choisie (basé sur la date de début), hors annulées
+  // Sessions de l'année choisie (basé sur la date de début), hors annulées.
   const debut = new Date(annee, 0, 1);
   const fin = new Date(annee + 1, 0, 1);
 
   const sessions = await db.session.findMany({
     where: {
       statut: { not: "ANNULEE" },
-      dateDebut: { gte: debut, lt: fin },
+      // Le BPF ne compte que l'activité RÉALISÉE : on exclut les sessions à venir
+      // (non encore démarrées) pour l'année en cours.
+      dateDebut: { gte: debut, lt: fin, ...(annee >= nowYear ? { lte: now } : {}) },
     },
     include: {
       formation: { select: { titre: true, reference: true, dureeHeures: true } },
       formateurs: { select: { id: true, nom: true, prenom: true } },
       inscriptions: {
-        where: { statut: { not: "ANNULEE" } },
+        // Entrées EN FORMATION uniquement : on exclut EN_ATTENTE (prospect non
+        // confirmé, ne doit pas gonfler les heures-stagiaires) et ANNULEE.
+        where: { statut: { notIn: ["EN_ATTENTE", "ANNULEE"] } },
         select: {
           financementType: true,
           montant: true,
@@ -85,6 +92,12 @@ export default async function BpfPage({
     },
     orderBy: { dateDebut: "asc" },
   });
+
+  // Sessions transverses à deux années civiles (déclarées ici à 100 % sur l'année
+  // de début) : signalées pour vérification manuelle (pas de prorata automatique).
+  const sessionsACheval = sessions.filter(
+    (s) => s.dateFin && s.dateFin >= fin,
+  ).length;
 
   // Années disponibles pour le sélecteur
   const allYears = await db.session.findMany({
@@ -117,6 +130,10 @@ export default async function BpfPage({
   // ── Agrégation par financement ──
   const parFinancement = new Map<string, { nb: number; montant: number }>();
 
+  // ── Formations sans durée (heures) renseignée mais avec des stagiaires ──
+  // (sinon 0 h silencieux, incohérent avec un nombre de stagiaires > 0).
+  const missingHours = new Set<string>();
+
   // ── Agrégation certification ──
   const cert = { CERTIFIE: 0, AJOURNE: 0, ABANDON: 0, NON_EVALUE: 0 };
 
@@ -130,6 +147,9 @@ export default async function BpfPage({
   for (const s of sessions) {
     const h = hoursOf(s.formation.dureeHeures);
     const nbStag = s.inscriptions.length;
+    if ((s.formation.dureeHeures ?? null) === null && nbStag > 0) {
+      missingHours.add(s.formation.reference);
+    }
 
     // Formation
     const key = s.formation.reference;
@@ -207,6 +227,24 @@ export default async function BpfPage({
       ? "Non précisé"
       : FINANCEMENT_LABELS[k as keyof typeof FINANCEMENT_LABELS] ?? k;
 
+  // ── Cadre C du CERFA 10443*17 : origine des produits par financeur ──
+  // (montants HT issus des inscriptions entrées en formation, ventilés selon les
+  // lignes du formulaire — à reporter dans le télé-service « Mon activité formation »).
+  const CERFA_C_LABELS: Record<string, string> = {
+    ENTREPRISE: "Des entreprises (formation de leurs salariés)",
+    OPCO: "Des opérateurs de compétences (OPCO)",
+    CPF: "De la Caisse des dépôts (CPF)",
+    FRANCE_TRAVAIL: "Des pouvoirs publics (France Travail)",
+    AUTOFINANCEMENT: "Des contrats conclus avec des particuliers",
+    AUTRE: "Autres produits",
+    NON_PRECISE: "À ventiler (financement non précisé)",
+  };
+  const cadreC = financements
+    .map(([k, v]) => ({ label: CERFA_C_LABELS[k] ?? finLabel(k), montant: v.montant, nb: v.nb }))
+    .filter((r) => r.montant > 0 || r.nb > 0);
+  const totalProduits = cadreC.reduce((a, r) => a + r.montant, 0);
+  const totalFormateursHeures = formateurs.reduce((a, f) => a + f.heures, 0);
+
   return (
     <div className="space-y-6">
       {/* En-tête + sélecteur d'année */}
@@ -270,6 +308,110 @@ export default async function BpfPage({
               sub="heures × stagiaires"
             />
           </div>
+
+          {/* Alertes de fiabilité BPF */}
+          {(missingHours.size > 0 || sessionsACheval > 0) && (
+            <div className="space-y-1 rounded-lg border border-amber-300 bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-200">
+              {missingHours.size > 0 && (
+                <p>
+                  ⚠ {missingHours.size} formation{missingHours.size > 1 ? "s" : ""} sans durée (heures)
+                  renseignée mais avec des stagiaires → leurs heures-stagiaires sont comptées à 0.
+                  Renseignez la durée sur la fiche formation pour un BPF juste.
+                </p>
+              )}
+              {sessionsACheval > 0 && (
+                <p>
+                  ⚠ {sessionsACheval} session{sessionsACheval > 1 ? "s" : ""} à cheval sur deux
+                  années civiles : déclarée{sessionsACheval > 1 ? "s" : ""} ici à 100 % sur {annee}
+                  {" "}(pas de prorata automatique — à vérifier).
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Récapitulatif aligné sur le CERFA 10443*17 */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">
+                Récapitulatif CERFA 10443*17 — à reporter dans « Mon activité formation »
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-5 text-sm">
+              {/* Cadre F — bilan pédagogique */}
+              <div>
+                <p className="mb-1.5 font-semibold">Cadre F — Bilan pédagogique (stagiaires formés directement)</p>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="rounded-lg border bg-muted/30 p-3 text-center">
+                    <p className="text-xl font-bold">{totalStagiaires}</p>
+                    <p className="text-xs text-muted-foreground">Stagiaires (entrées)</p>
+                  </div>
+                  <div className="rounded-lg border bg-muted/30 p-3 text-center">
+                    <p className="text-xl font-bold">{totalHeures} h</p>
+                    <p className="text-xs text-muted-foreground">Heures de formation</p>
+                  </div>
+                  <div className="rounded-lg border bg-muted/30 p-3 text-center">
+                    <p className="text-xl font-bold">{totalHeuresStagiaires} h</p>
+                    <p className="text-xs text-muted-foreground">Heures-stagiaires</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Cadre E — formateurs */}
+              <div>
+                <p className="mb-1.5 font-semibold">Cadre E — Personnes dispensant les heures de formation</p>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  <div className="rounded-lg border bg-muted/30 p-3 text-center">
+                    <p className="text-xl font-bold">{formateurs.length}</p>
+                    <p className="text-xs text-muted-foreground">Formateurs</p>
+                  </div>
+                  <div className="rounded-lg border bg-muted/30 p-3 text-center">
+                    <p className="text-xl font-bold">{totalFormateursHeures} h</p>
+                    <p className="text-xs text-muted-foreground">Heures dispensées</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Cadre C — origine des produits */}
+              <div>
+                <p className="mb-1.5 font-semibold">Cadre C — Origine des produits (financeurs)</p>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Origine</TableHead>
+                      <TableHead className="text-right">Stagiaires</TableHead>
+                      <TableHead className="text-right">Produits</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {cadreC.map((r) => (
+                      <TableRow key={r.label}>
+                        <TableCell>{r.label}</TableCell>
+                        <TableCell className="text-right">{r.nb}</TableCell>
+                        <TableCell className="text-right">
+                          {r.montant > 0 ? `${r.montant.toLocaleString("fr-FR")} €` : "—"}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    <TableRow className="border-t-2 font-semibold">
+                      <TableCell>Total produits</TableCell>
+                      <TableCell className="text-right">{totalStagiaires}</TableCell>
+                      <TableCell className="text-right">
+                        {totalProduits > 0 ? `${totalProduits.toLocaleString("fr-FR")} €` : "—"}
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+
+              <p className="text-xs text-muted-foreground">
+                Valeurs alignées sur les cadres du CERFA 10443*17. La déclaration est
+                dématérialisée sur « Mon activité formation » (MAF) — ce récapitulatif sert à
+                reporter volumes et montants. Imprimez cette page (Ctrl/Cmd + P) pour l&apos;archiver.
+                Les produits sont ventilés d&apos;après le type de financement des inscriptions
+                entrées en formation.
+              </p>
+            </CardContent>
+          </Card>
 
           {/* Par formation */}
           <Card>
@@ -505,7 +647,8 @@ export default async function BpfPage({
           <p className="text-xs text-muted-foreground">
             Les heures sont calculées d&apos;après la durée (heures) renseignée sur
             chaque formation. Les heures-stagiaires correspondent aux heures
-            multipliées par le nombre de stagiaires inscrits (hors annulés).
+            multipliées par le nombre de stagiaires <strong>entrés en formation</strong>
+            {" "}(inscriptions confirmées ; hors « en attente » et annulées).
           </p>
         </>
       )}
