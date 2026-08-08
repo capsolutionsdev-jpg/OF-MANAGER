@@ -15,6 +15,17 @@
 - **[Planning] Conflit de salle + sur-capacité** — avertissement non bloquant (chevauchement de créneau même salle ; nbPlaces > capacité). *(0e983c9)*
 
 > **Reste sur Planning** : la page `/planning` affiche une occupation continue sur tout l'intervalle au lieu des séances réelles (affichage, à raffiner).
+- **[Automatisations] BUG-005 double-envoi** — verrou atomique (compare-and-set du jalon avant envoi) sur les 12 événements + PDF best-effort. *(5af09e5)*
+- **[Tâches]** `toggleTache` : état recalculé serveur ; `createTache` : date validée + `candidatId` vérifié tenant. *(35427d9)*
+- **[Exports]** montant négatif reste numérique (l'anti-injection ne préfixe plus le `-` d'un nombre). *(35427d9)*
+- **[Support]** notification e-mail à l'éditeur quand un client répond à un ticket. *(af71f06)*
+- **[BPF]** cf. RAPPORT dédié / commit 400679c (calculs + récap CERFA).
+
+## Reste (non traité — plus impliqué / décision)
+- **Support — badges « lu »** : `markTicketReadClient`/`markSupportRead` existent mais ne sont pas déclenchés à l'ouverture (câblage UI). *(Mineur)*
+- **Planning — affichage** : occupation continue vs séances réelles (refonte d'affichage). *(Mineur)*
+- **SMS** (quota/canal/journal) : reporté par le PO.
+- **IA** (rate-limit + plafond entrée) : seuils proposés, en attente de validation.
 
 ## Rapports & Dashboard (calculs) — à corriger
 | Sév. | Anomalie | Fichier |
