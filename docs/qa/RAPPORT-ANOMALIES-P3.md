@@ -25,9 +25,14 @@
 - **[Support] Badges « lu »** — marqués lus à la consultation (client + console). *(5ea4c72)*
 - **[Planning] Affichage** — séances réelles au lieu d'une occupation continue. *(e47e722)*
 
-## Reste (non traité)
-- **SMS** (quota `maxSmsMois` / canal / journal `SmsLog`) : **reporté par le PO** (« à voir plus tard »).
-- **[Support]** actions `markTicketReadClient`/`markSupportRead` désormais **superflues** (le marquage se fait au rendu) — dead code inoffensif, à retirer au prochain nettoyage.
+- **[SMS] Quota / journal / numéro invalide** — `sendSms` applique `maxSmsMois`, journalise chaque tentative (ENVOYE/DEMO/ECHEC/QUOTA/INVALIDE) y compris pour les automatismes, `normalizePhone` durci (E.164). *(42e2537)*
+- **[SMS] Canal « SMS uniquement »** — l'e-mail candidat n'est plus envoyé quand le canal est `sms` (convocation/rappel/satisfaction/suivi). *(cf42b62)*
+- **[Tokens] Expiration** — devis via `validUntil` ; liens de parcours (documents + page) expirés 12 mois après la session (`linkExpired`). *(0a008d7)*
+- **[Nettoyage]** dead code `markTicketReadClient`/`markSupportRead` retiré.
+
+## Reste (non traité — assumé)
+- **OBS-1** (étendre le garde-fou « prisma direct » aux server actions) — **volontairement laissé** : un tel test échouerait d'emblée (beaucoup d'actions utilisent légitimement le client brut pour les flux tokenisés/superadmin) ; c'est une recommandation de couverture, pas un défaut. À traiter, si souhaité, avec une allowlist dédiée.
+- **[Tokens]** expiration « complète » via un champ `expiresAt` par token (au lieu de la règle logique 12 mois post-session) — nécessiterait une migration ; non requis (la règle logique couvre le risque de fuite).
 
 ## Rapports & Dashboard (calculs) — à corriger
 | Sév. | Anomalie | Fichier |
