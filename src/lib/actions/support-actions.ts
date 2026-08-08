@@ -37,6 +37,29 @@ async function notifyEditorNewTicket(opts: {
   }
 }
 
+/** Notifie l'éditeur qu'un client a répondu dans un ticket (e-mail, jamais bloquant). */
+async function notifyEditorReply(opts: {
+  orgNom: string; sujet: string; auteur: string | null; corps: string;
+}) {
+  const to = process.env.SUPPORT_NOTIFY_EMAIL;
+  if (!to) return;
+  const url = appUrl();
+  try {
+    await sendEmail({
+      to,
+      subject: `[Support OFManager] Réponse client — ${opts.orgNom} : ${opts.sujet}`,
+      body:
+        `Nouvelle réponse sur un ticket de support.\n\n` +
+        `Organisme : ${opts.orgNom}\n` +
+        `Auteur : ${opts.auteur ?? "—"}\n\n` +
+        `Message :\n${opts.corps}\n\n` +
+        (url ? `Traiter le ticket : ${url}/console/support` : `Connectez-vous à la console OFManager.`),
+    });
+  } catch {
+    /* l'échec d'envoi ne doit pas bloquer la réponse */
+  }
+}
+
 /** Le client ouvre un nouveau ticket de support (depuis sa plateforme). */
 export async function createSupportTicket(formData: FormData) {
   const session = await requireSection("support");
@@ -98,6 +121,18 @@ export async function replyTicketClient(formData: FormData) {
   await db.supportTicket.update({
     where: { id: ticketId },
     data: { nonLuSupport: true, nonLuClient: false, statut: "OUVERT" },
+  });
+
+  // Notifie l'éditeur de la réponse (si SUPPORT_NOTIFY_EMAIL configuré).
+  const org = await prisma.organisme.findUnique({
+    where: { id: ticket.organismeId },
+    select: { nom: true },
+  });
+  await notifyEditorReply({
+    orgNom: org?.nom ?? "Organisme",
+    sujet: ticket.sujet,
+    auteur: session?.user?.name ?? null,
+    corps,
   });
 
   revalidatePath("/support");
