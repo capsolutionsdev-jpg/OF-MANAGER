@@ -37,6 +37,13 @@ export default async function PlanningPage({
       formation: { select: { titre: true } },
       formateurs: { select: { prenom: true, nom: true } },
       salle: { select: { nom: true, couleur: true } },
+      // Séances réellement planifiées de la semaine (pour ne pas afficher une
+      // occupation continue sur tout l'intervalle quand la session est espacée).
+      _count: { select: { seances: true } },
+      seances: {
+        where: { date: { gte: monday, lt: weekEnd } },
+        select: { date: true },
+      },
     },
     orderBy: { dateDebut: "asc" },
   });
@@ -50,6 +57,11 @@ export default async function PlanningPage({
     a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
   const onDay = (d: Date) =>
     sessions.filter((s) => {
+      // Session planifiée par séances → présente uniquement les jours de séance.
+      if (s._count.seances > 0) {
+        return s.seances.some((se) => sameDay(new Date(se.date), d));
+      }
+      // Aucune séance générée → repli sur la plage dateDebut → dateFin.
       const ds = new Date(s.dateDebut);
       ds.setHours(0, 0, 0, 0);
       const df = new Date(s.dateFin);
