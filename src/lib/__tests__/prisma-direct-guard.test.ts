@@ -50,3 +50,79 @@ describe("Garde-fou : pas d'accès prisma direct dans les pages (app)", () => {
     ).toEqual([]);
   });
 });
+
+/**
+ * Même garde-fou pour les SERVER ACTIONS (OBS-1). Une action tenant-facing doit
+ * muter via `getTenantDb()` (scoping auto). Le client brut `@/lib/prisma` reste
+ * légitime pour des cas précis (flux PUBLICS tokenisés sans session, console
+ * SUPERADMIN, facturation/Stripe liée à l'org, seed démo, TOTP du compte courant).
+ * Ces cas sont recensés ci-dessous.
+ *
+ * ⚠️ Ce test échoue si une NOUVELLE action importe `@/lib/prisma`. Avant d'ajouter
+ * un fichier à l'allowlist, VÉRIFIER qu'il applique bien le motif « vérifier-puis-
+ * muter » (`findFirst({ id, organismeId })` avant toute écriture) ou qu'il est
+ * intrinsèquement hors-tenant. Idéalement, réduire cette liste au fil de l'eau.
+ */
+const ACTIONS_ALLOWLIST = new Set([
+  // Flux PUBLICS (résolus par token, pas de session → pas de getTenantDb)
+  "parcours-actions.ts",
+  "public-inscription-actions.ts",
+  "dossier-actions.ts",
+  "prospect-actions.ts",
+  "compte-rendu-actions.ts",
+  "contrat-formateur-actions.ts",
+  "emargement-signature-actions.ts",
+  "apprenant-actions.ts",
+  "manual-send-actions.ts",
+  "document-actions.ts",
+  "session-guard-actions.ts",
+  "session-validation-actions.ts",
+  // Console SUPERADMIN / hors-tenant
+  "console-actions.ts",
+  "superadmin-account-actions.ts",
+  "organisme-actions.ts",
+  "agrements-actions.ts",
+  "demo-actions.ts",
+  "civique-actions.ts",
+  // Compte courant / facturation / paramètres
+  "totp-actions.ts",
+  "billing-actions.ts",
+  "pricing-actions.ts",
+  "notification-actions.ts",
+  // Scopés manuellement par organismeId (updateMany where {id, organismeId})
+  "devis-actions.ts",
+  "support-actions.ts",
+  "depense-actions.ts",
+  "validation-actions.ts",
+  "formateur-actions.ts",
+  "jury-actions.ts",
+]);
+
+const ACTIONS_DIR = path.resolve(__dirname, "../actions");
+
+function walkTs(dir: string): string[] {
+  const out: string[] = [];
+  for (const entry of readdirSync(dir)) {
+    const full = path.join(dir, entry);
+    if (statSync(full).isDirectory()) out.push(...walkTs(full));
+    else if (entry.endsWith(".ts")) out.push(full);
+  }
+  return out;
+}
+
+describe("Garde-fou : pas d'accès prisma direct dans les server actions", () => {
+  it("aucune action hors allowlist n'importe @/lib/prisma", () => {
+    const offenders: string[] = [];
+    for (const file of walkTs(ACTIONS_DIR)) {
+      const rel = path.relative(ACTIONS_DIR, file).replace(/\\/g, "/");
+      const src = readFileSync(file, "utf8");
+      if (/from ["']@\/lib\/prisma["']/.test(src) && !ACTIONS_ALLOWLIST.has(rel)) {
+        offenders.push(rel);
+      }
+    }
+    expect(
+      offenders,
+      `Ces actions doivent utiliser getTenantDb() (ou être ajoutées à l'allowlist si le cas est légitime) :\n${offenders.join("\n")}`,
+    ).toEqual([]);
+  });
+});
