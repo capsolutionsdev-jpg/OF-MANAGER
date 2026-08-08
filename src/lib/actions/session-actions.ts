@@ -12,7 +12,7 @@ import { hasStrictFeature } from "@/lib/feature-guard";
 import type { TenantDb } from "@/lib/tenant";
 
 export type ActionResult =
-  | { ok: true; id: string }
+  | { ok: true; id: string; warning?: string }
   | { ok: false; error: string };
 
 const clean = (s?: string) => (s && s.trim() !== "" ? s.trim() : null);
@@ -96,11 +96,18 @@ async function validateRefs(
   db: TenantDb,
   salleId: string | null,
   formateurIds: string[],
-): Promise<{ salleId: string | null; formateurIds: string[] }> {
+): Promise<{ salleId: string | null; salleCapacite: number | null; formateurIds: string[] }> {
   let validSalle: string | null = null;
+  let salleCapacite: number | null = null;
   if (salleId) {
-    const salle = await db.salle.findFirst({ where: { id: salleId, actif: true }, select: { id: true } });
-    validSalle = salle?.id ?? null;
+    const salle = await db.salle.findFirst({
+      where: { id: salleId, actif: true },
+      select: { id: true, capacite: true },
+    });
+    if (salle) {
+      validSalle = salle.id;
+      salleCapacite = salle.capacite;
+    }
   }
   let validFormateurs = formateurIds;
   if (formateurIds.length) {
@@ -108,7 +115,46 @@ async function validateRefs(
     const ok = new Set(found.map((f) => f.id));
     validFormateurs = formateurIds.filter((fid) => ok.has(fid));
   }
-  return { salleId: validSalle, formateurIds: validFormateurs };
+  return { salleId: validSalle, salleCapacite, formateurIds: validFormateurs };
+}
+
+/**
+ * Avertissements NON bloquants sur la salle (choix produit : avertir mais
+ * autoriser) : sur-capacité (nbPlaces > capacité) et conflit de réservation
+ * (une autre session non annulée occupe la même salle sur un créneau qui
+ * chevauche). Renvoie un message unique ou undefined.
+ */
+async function salleWarnings(
+  db: TenantDb,
+  salleId: string | null,
+  capacite: number | null,
+  nbPlaces: number,
+  dateDebut: Date,
+  dateFin: Date,
+  excludeSessionId?: string,
+): Promise<string | undefined> {
+  if (!salleId) return undefined;
+  const parts: string[] = [];
+  if (capacite != null && nbPlaces > capacite) {
+    parts.push(`la capacité de la salle (${capacite} places) est dépassée (${nbPlaces} prévues)`);
+  }
+  // Chevauchement d'intervalles : debut ≤ finAutre ET finAutre... (a≤bEnd && b≤aEnd).
+  const conflit = await db.session.findFirst({
+    where: {
+      salleId,
+      statut: { not: "ANNULEE" },
+      ...(excludeSessionId ? { id: { not: excludeSessionId } } : {}),
+      dateDebut: { lte: dateFin },
+      dateFin: { gte: dateDebut },
+    },
+    select: { reference: true, dateDebut: true, formation: { select: { titre: true } } },
+  });
+  if (conflit) {
+    const d = conflit.dateDebut.toLocaleDateString("fr-FR");
+    const nom = conflit.formation?.titre ?? conflit.reference ?? "une autre session";
+    parts.push(`la salle est déjà réservée sur ce créneau (${nom} — ${d})`);
+  }
+  return parts.length ? `Attention : ${parts.join(" ; ")}.` : undefined;
 }
 
 export async function createSession(
@@ -124,6 +170,9 @@ export async function createSession(
   try {
     const data = toData(parsed.data);
     const refs = await validateRefs(db, data.salleId, parsed.data.formateurIds ?? []);
+    const warning = await salleWarnings(
+      db, refs.salleId, refs.salleCapacite, data.nbPlaces, data.dateDebut, data.dateFin,
+    );
     const created = await db.session.create({
       data: {
         ...data,
@@ -143,7 +192,7 @@ export async function createSession(
     });
     revalidatePath("/sessions");
     revalidatePath("/jurys");
-    return { ok: true, id: created.id };
+    return { ok: true, id: created.id, warning };
   } catch (e) {
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
       return { ok: false, error: "Cette référence de session est déjà utilisée." };
@@ -166,6 +215,9 @@ export async function updateSession(
   try {
     const data = toData(parsed.data);
     const refs = await validateRefs(db, data.salleId, parsed.data.formateurIds ?? []);
+    const warning = await salleWarnings(
+      db, refs.salleId, refs.salleCapacite, data.nbPlaces, data.dateDebut, data.dateFin, id,
+    );
     await db.session.update({
       where: { id },
       data: {
@@ -186,7 +238,7 @@ export async function updateSession(
     revalidatePath("/sessions");
     revalidatePath(`/sessions/${id}`);
     revalidatePath("/jurys");
-    return { ok: true, id };
+    return { ok: true, id, warning };
   } catch (e) {
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
       return { ok: false, error: "Cette référence de session est déjà utilisée." };
