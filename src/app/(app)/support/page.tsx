@@ -31,6 +31,16 @@ export default async function SupportPage() {
     include: { messages: { orderBy: { createdAt: "asc" } } },
   });
 
+  // Les fils sont affichés dépliés → consulter la page = avoir lu les réponses.
+  // On vide le badge « Nouvelle réponse » pour le prochain affichage (l'objet en
+  // mémoire conserve l'état pour le rendu courant).
+  if (tickets.some((t) => t.nonLuClient)) {
+    await db.supportTicket.updateMany({
+      where: { nonLuClient: true },
+      data: { nonLuClient: false },
+    });
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader

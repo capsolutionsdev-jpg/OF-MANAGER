@@ -35,6 +35,15 @@ export default async function ConsoleSupportPage() {
   const ouverts = tickets.filter((t) => t.statut !== "RESOLU").length;
   const nonLus = tickets.filter((t) => t.nonLuSupport).length;
 
+  // Consulter l'inbox = avoir lu les tickets → on vide le badge « non lu » pour le
+  // prochain affichage (l'objet en mémoire conserve l'état pour le rendu courant).
+  if (nonLus > 0) {
+    await prisma.supportTicket.updateMany({
+      where: { nonLuSupport: true },
+      data: { nonLuSupport: false },
+    });
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader
