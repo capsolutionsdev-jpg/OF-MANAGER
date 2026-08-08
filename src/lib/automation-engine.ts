@@ -1,4 +1,4 @@
-import { EmailStatut, DemiJournee } from "@prisma/client";
+import { EmailStatut, DemiJournee, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { sendEmail, emailConfigured, toBase64, type EmailAttachment } from "@/lib/email";
 import { sendSms } from "@/lib/sms";
@@ -13,6 +13,55 @@ import {
 } from "@/lib/automations";
 
 const fmt = (d: Date) => d.toLocaleDateString("fr-FR");
+
+// Jalons datés de l'inscription utilisés comme VERROUS d'idempotence.
+type InscMilestone =
+  | "convocationSentAt"
+  | "rappelSentAt"
+  | "convocationExamenSentAt"
+  | "attestationEntreeSentAt"
+  | "positionnementSentAt"
+  | "francaisSentAt"
+  | "satisfactionSentAt"
+  | "satisfactionEntrepriseSentAt"
+  | "docsFinSentAt"
+  | "suivi6moisSentAt";
+
+/**
+ * Verrou atomique par jalon : pose le champ à `now` UNIQUEMENT s'il est encore
+ * null (compare-and-set en une requête). Renvoie true si CE run a obtenu le
+ * verrou → empêche deux exécutions concurrentes (cron + bouton manuel) d'envoyer
+ * le même e-mail/SMS. Utilisé comme dernière condition d'éligibilité.
+ */
+async function claimInsc(id: string, field: InscMilestone): Promise<boolean> {
+  const r = await prisma.inscription.updateMany({
+    where: { id, [field]: null } as unknown as Prisma.InscriptionWhereInput,
+    data: { [field]: new Date() } as unknown as Prisma.InscriptionUpdateManyMutationInput,
+  });
+  return r.count === 1;
+}
+
+/** Libère le jalon (remet à null) si l'envoi a échoué → réessai au prochain run. */
+async function releaseInsc(id: string, field: InscMilestone): Promise<void> {
+  await prisma.inscription.updateMany({
+    where: { id },
+    data: { [field]: null } as unknown as Prisma.InscriptionUpdateManyMutationInput,
+  });
+}
+
+/**
+ * Génération PDF best-effort : une panne (Chromium serverless…) ne doit pas faire
+ * échouer tout le run — d'autant que le jalon est déjà réservé (claimInsc). En cas
+ * d'échec, on renvoie null (pièce jointe omise) plutôt que de lever.
+ */
+async function safePdf(inscriptionId: string, type: string) {
+  try {
+    return await buildSingleDocPdf(inscriptionId, type);
+  } catch (e) {
+    console.error(`Automation: génération PDF ${type} échouée (ignorée)`, e);
+    return null;
+  }
+}
 
 type Counts = {
   convocations: number;
@@ -120,7 +169,8 @@ export async function runAutomations(): Promise<Counts> {
       i.signedAt &&
       !i.convocationSentAt &&
       s.dateDebut >= now &&
-      s.dateDebut <= convLimite
+      s.dateDebut <= convLimite &&
+      (await claimInsc(i.id, "convocationSentAt"))
     ) {
       const subject = `Convocation — ${f.titre}`;
       const body = `Bonjour ${prenom},
@@ -146,19 +196,16 @@ ${org.representant} — ${org.name}`,
         });
       }
       if (sent) {
-        // SMS lié au jalon : n'est envoyé QUE si l'e-mail a réussi (ou mode démo),
-        // sinon le bloc serait rejoué au prochain cron → SMS en double.
+        // Jalon déjà posé par le verrou (claimInsc). SMS lié au même jalon.
         await maybeSms(
           convRule.channel,
           i.candidat.telephone,
           convRule.body ||
             `Convocation ${f.titre} le ${fmt(s.dateDebut)}${s.lieu ? ` à ${s.lieu}` : ""}. ${org.name}`,
         );
-        await prisma.inscription.update({
-          where: { id: i.id },
-          data: { convocationSentAt: new Date() },
-        });
         counts.convocations++;
+      } else {
+        await releaseInsc(i.id, "convocationSentAt"); // échec réel → réessai au prochain run
       }
     }
 
@@ -170,7 +217,8 @@ ${org.representant} — ${org.name}`,
       i.signedAt &&
       !i.rappelSentAt &&
       s.dateDebut >= now &&
-      s.dateDebut <= dans24h
+      s.dateDebut <= dans24h &&
+      (await claimInsc(i.id, "rappelSentAt"))
     ) {
       const subject = `Rappel — votre formation « ${f.titre} » commence demain`;
       const body = `Bonjour ${prenom},
@@ -189,11 +237,9 @@ ${org.representant} — ${org.name}`;
           rappelRule.body ||
             `Rappel : « ${f.titre} » débute demain ${fmt(s.dateDebut)}${s.horaires ? ` (${s.horaires})` : ""}${s.lieu ? ` à ${s.lieu}` : ""}. ${org.name}`,
         );
-        await prisma.inscription.update({
-          where: { id: i.id },
-          data: { rappelSentAt: new Date() },
-        });
         counts.rappels++;
+      } else {
+        await releaseInsc(i.id, "rappelSentAt");
       }
     }
 
@@ -210,7 +256,8 @@ ${org.representant} — ${org.name}`;
       i.signedAt &&
       !i.convocationExamenSentAt &&
       s.dateFin >= now &&
-      s.dateFin <= cvxLimite
+      s.dateFin <= cvxLimite &&
+      (await claimInsc(i.id, "convocationExamenSentAt"))
     ) {
       const subject = `Convocation à l'examen — ${f.titre}`;
       const body = `Bonjour ${prenom},
@@ -221,7 +268,7 @@ Vous trouverez votre convocation à l'examen en pièce jointe (PDF). Merci de vo
 
 Cordialement,
 ${org.representant} — ${org.name}`;
-      const cvxPdf = await buildSingleDocPdf(i.id, "CONVOCATION_EXAMEN");
+      const cvxPdf = await safePdf(i.id, "CONVOCATION_EXAMEN");
       const sent = await logAndSend({
         to,
         subject,
@@ -232,11 +279,9 @@ ${org.representant} — ${org.name}`;
           : undefined,
       });
       if (sent) {
-        await prisma.inscription.update({
-          where: { id: i.id },
-          data: { convocationExamenSentAt: new Date() },
-        });
         counts.convocationsExamen++;
+      } else {
+        await releaseInsc(i.id, "convocationExamenSentAt");
       }
     }
 
@@ -246,7 +291,8 @@ ${org.representant} — ${org.name}`;
       i.signedAt &&
       !i.attestationEntreeSentAt &&
       s.dateDebut <= now &&
-      i.accessToken
+      i.accessToken &&
+      (await claimInsc(i.id, "attestationEntreeSentAt"))
     ) {
       const subject = `Attestation d'entrée en formation — ${f.titre}`;
       const body = `Bonjour ${prenom},
@@ -257,7 +303,7 @@ Vous trouverez ci-joint votre attestation d'entrée signée, au format PDF.
 
 Bonne formation,
 ${org.representant} — ${org.name}`;
-      const attPdf = await buildSingleDocPdf(i.id, "ATTESTATION_ENTREE");
+      const attPdf = await safePdf(i.id, "ATTESTATION_ENTREE");
       const attPj = attPdf
         ? [{ name: "Attestation-entree.pdf", content: toBase64(attPdf.data) }]
         : undefined;
@@ -279,17 +325,21 @@ ${org.representant} — ${org.name}`,
         });
       }
       if (sent) {
-        await prisma.inscription.update({
-          where: { id: i.id },
-          data: { attestationEntreeSentAt: new Date() },
-        });
         counts.attestationsEntree++;
+      } else {
+        await releaseInsc(i.id, "attestationEntreeSentAt");
       }
     }
 
     // ── 2ter) TEST DE POSITIONNEMENT (1er jour de formation, lien en ligne) ──
     // Envoyé au passage du cron du matin (~9h) le jour du démarrage de la session.
-    if (auto("positionnement", true).on && !i.positionnementSentAt && s.dateDebut <= now && s.dateFin >= now) {
+    if (
+      auto("positionnement", true).on &&
+      !i.positionnementSentAt &&
+      s.dateDebut <= now &&
+      s.dateFin >= now &&
+      (await claimInsc(i.id, "positionnementSentAt"))
+    ) {
       const posToken = i.positionnementToken ?? generateToken();
       if (!i.positionnementToken) {
         await prisma.inscription.update({
@@ -313,16 +363,17 @@ Vos réponses, signées, seront conservées dans votre dossier de formation.
 Bonne formation,
 ${org.representant} — ${org.name}`;
       const sent = await logAndSend({ to, subject: posSubject, body: posBody, sessionId: s.id });
-      if (sent) {
-        await prisma.inscription.update({
-          where: { id: i.id },
-          data: { positionnementSentAt: new Date() },
-        });
-      }
+      if (!sent) await releaseInsc(i.id, "positionnementSentAt");
     }
 
     // ── 2quater) TEST DE FRANÇAIS (1er jour, lien en ligne) ──
-    if (auto("francais", true).on && !i.francaisSentAt && s.dateDebut <= now && s.dateFin >= now) {
+    if (
+      auto("francais", true).on &&
+      !i.francaisSentAt &&
+      s.dateDebut <= now &&
+      s.dateFin >= now &&
+      (await claimInsc(i.id, "francaisSentAt"))
+    ) {
       const frToken = i.francaisToken ?? generateToken();
       if (!i.francaisToken) {
         await prisma.inscription.update({
@@ -342,17 +393,17 @@ Vos réponses, signées, seront conservées dans votre dossier de formation.
 Bonne formation,
 ${org.representant} — ${org.name}`;
       const sent = await logAndSend({ to, subject: frSubject, body: frBody, sessionId: s.id });
-      if (sent) {
-        await prisma.inscription.update({
-          where: { id: i.id },
-          data: { francaisSentAt: new Date() },
-        });
-      }
+      if (!sent) await releaseInsc(i.id, "francaisSentAt");
     }
 
     // ── 3) ENQUÊTE DE SATISFACTION (formation terminée, pas déjà envoyée) ──
     const satRule = auto("satisfaction", settings.satisfactionActive);
-    if (satRule.on && !i.satisfactionSentAt && s.dateFin < now) {
+    if (
+      satRule.on &&
+      !i.satisfactionSentAt &&
+      s.dateFin < now &&
+      (await claimInsc(i.id, "satisfactionSentAt"))
+    ) {
       const satToken = i.satisfactionToken ?? generateToken();
       if (!i.satisfactionToken) {
         await prisma.inscription.update({
@@ -382,11 +433,9 @@ ${org.representant} — ${org.name}`;
           i.candidat.telephone,
           satRule.body || `${prenom}, merci d'évaluer la formation « ${f.titre} » : ${base}/satisfaction/${satToken}`,
         );
-        await prisma.inscription.update({
-          where: { id: i.id },
-          data: { satisfactionSentAt: new Date() },
-        });
         counts.satisfactions++;
+      } else {
+        await releaseInsc(i.id, "satisfactionSentAt");
       }
     }
 
@@ -395,7 +444,8 @@ ${org.representant} — ${org.name}`;
       auto("satisfaction_entreprise", settings.satisfactionActive).on &&
       entEmail &&
       !i.satisfactionEntrepriseSentAt &&
-      s.dateFin < now
+      s.dateFin < now &&
+      (await claimInsc(i.id, "satisfactionEntrepriseSentAt"))
     ) {
       const entToken = i.satisfactionEntrepriseToken ?? generateToken();
       if (!i.satisfactionEntrepriseToken) {
@@ -423,16 +473,17 @@ Cordialement,
 ${org.representant} — ${org.name}`,
         sessionId: s.id,
       });
-      if (sent) {
-        await prisma.inscription.update({
-          where: { id: i.id },
-          data: { satisfactionEntrepriseSentAt: new Date() },
-        });
-      }
+      if (!sent) await releaseInsc(i.id, "satisfactionEntrepriseSentAt");
     }
 
     // ── 4) DOCUMENTS DE FIN DE FORMATION (terminée, pas déjà envoyés) ──
-    if (auto("docs_fin", settings.docsFinActive).on && !i.docsFinSentAt && s.dateFin < now && i.accessToken) {
+    if (
+      auto("docs_fin", settings.docsFinActive).on &&
+      !i.docsFinSentAt &&
+      s.dateFin < now &&
+      i.accessToken &&
+      (await claimInsc(i.id, "docsFinSentAt"))
+    ) {
       const subject = `Attestation de fin de formation — ${f.titre}`;
       const body = `Bonjour ${prenom},
 
@@ -443,7 +494,7 @@ ${base}/parcours/${i.accessToken}/documents
 
 Cordialement,
 ${org.representant} — ${org.name}`;
-      const finPdf = await buildSingleDocPdf(i.id, "ATTESTATION_FIN");
+      const finPdf = await safePdf(i.id, "ATTESTATION_FIN");
       const sent = await logAndSend({
         to,
         subject,
@@ -455,7 +506,7 @@ ${org.representant} — ${org.name}`;
       });
       if (entEmail) {
         // B2B : attestation de fin + certificat de réalisation à l'entreprise
-        const certPdf = await buildSingleDocPdf(i.id, "CERTIFICAT_REALISATION");
+        const certPdf = await safePdf(i.id, "CERTIFICAT_REALISATION");
         const pj = [
           ...(finPdf ? [{ name: "Attestation-fin.pdf", content: toBase64(finPdf.data) }] : []),
           ...(certPdf ? [{ name: "Certificat-realisation.pdf", content: toBase64(certPdf.data) }] : []),
@@ -476,11 +527,9 @@ ${org.representant} — ${org.name}`,
         });
       }
       if (sent) {
-        await prisma.inscription.update({
-          where: { id: i.id },
-          data: { docsFinSentAt: new Date() },
-        });
         counts.docsFin++;
+      } else {
+        await releaseInsc(i.id, "docsFinSentAt");
       }
     }
 
@@ -488,7 +537,12 @@ ${org.representant} — ${org.name}`,
     const suiviRule = auto("suivi_6mois", true);
     const sixMois = new Date(s.dateFin);
     sixMois.setMonth(sixMois.getMonth() + 6);
-    if (suiviRule.on && !i.suivi6moisSentAt && now >= sixMois) {
+    if (
+      suiviRule.on &&
+      !i.suivi6moisSentAt &&
+      now >= sixMois &&
+      (await claimInsc(i.id, "suivi6moisSentAt"))
+    ) {
       const suiviToken = i.suivi6moisToken ?? generateToken();
       if (!i.suivi6moisToken) {
         await prisma.inscription.update({
@@ -516,10 +570,8 @@ ${org.representant} — ${org.name}`;
           suiviRule.body ||
             `${prenom}, 2 min pour nous dire où vous en êtes 6 mois après « ${f.titre} » : ${base}/suivi/${suiviToken}`,
         );
-        await prisma.inscription.update({
-          where: { id: i.id },
-          data: { suivi6moisSentAt: new Date() },
-        });
+      } else {
+        await releaseInsc(i.id, "suivi6moisSentAt");
       }
     }
   }
@@ -540,6 +592,12 @@ ${org.representant} — ${org.name}`;
     const org = await orgConfigFor(s.organismeId);
     const f = s.formateurs[0];
     if (!f?.email) continue;
+    // Verrou atomique : réserve l'envoi (évite le double envoi concurrent).
+    const crClaimed = (await prisma.session.updateMany({
+      where: { id: s.id, crFormateurSentAt: null },
+      data: { crFormateurSentAt: new Date() },
+    })).count === 1;
+    if (!crClaimed) continue;
     const token = s.crFormateurToken ?? generateToken();
     if (!s.crFormateurToken) {
       await prisma.session.update({
@@ -561,11 +619,9 @@ Cordialement,
 ${org.representant} — ${org.name}`;
     const sent = await logAndSend({ to: f.email, subject, body, sessionId: s.id });
     if (sent) {
-      await prisma.session.update({
-        where: { id: s.id },
-        data: { crFormateurSentAt: new Date() },
-      });
       counts.compteRendus++;
+    } else {
+      await prisma.session.updateMany({ where: { id: s.id }, data: { crFormateurSentAt: null } });
     }
   }
 
@@ -586,6 +642,12 @@ ${org.representant} — ${org.name}`;
     currentOrgId = e.organismeId;
     const emRule = auto("emargement", settings.emargementActive);
     if (!emRule.on) continue;
+    // Verrou atomique : réserve l'envoi (évite le double envoi concurrent).
+    const emClaimed = (await prisma.emargementSignature.updateMany({
+      where: { id: e.id, sentAt: null },
+      data: { sentAt: new Date() },
+    })).count === 1;
+    if (!emClaimed) continue;
     const org = await orgConfigFor(e.organismeId);
     const link = `${base}/emarger/${e.token}`;
     const subject = `Émargement ${demiLabel} — ${e.session.formation.titre}`;
@@ -598,11 +660,9 @@ Cordialement,
 ${org.representant} — ${org.name}`;
     const sent = await logAndSend({ to: e.email, subject, body, sessionId: e.sessionId });
     if (sent) {
-      await prisma.emargementSignature.update({
-        where: { id: e.id },
-        data: { sentAt: new Date() },
-      });
       counts.emargements++;
+    } else {
+      await prisma.emargementSignature.updateMany({ where: { id: e.id }, data: { sentAt: null } });
     }
   }
 
