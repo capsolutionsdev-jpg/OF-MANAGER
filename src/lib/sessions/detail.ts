@@ -36,20 +36,22 @@ export const getSessionDetail = cache(async (id: string) => {
 
   // Pièces justificatives déposées par les candidats de la session (dépôt via le
   // parcours, e-mail, ou scan à l'accueil) — regroupées par candidat.
+  // On ne renvoie PAS `url` (souvent une data-URL base64 volumineuse) : l'accès aux
+  // pièces passe par la route /api/public/piece/[id] (auth + Content-Disposition).
   const piecesParCandidat = new Map<
     string,
-    { id: string; label: string; url: string; statut: string }[]
+    { id: string; label: string; statut: string }[]
   >();
   const candidatIds = s.inscriptions.map((i) => i.candidatId);
   if (candidatIds.length > 0) {
     const pieces = await db.pieceJointe.findMany({
       where: { candidatId: { in: candidatIds } },
       orderBy: { createdAt: "desc" },
-      select: { id: true, candidatId: true, label: true, url: true, statut: true },
+      select: { id: true, candidatId: true, label: true, statut: true },
     });
     for (const p of pieces) {
       const liste = piecesParCandidat.get(p.candidatId) ?? [];
-      liste.push({ id: p.id, label: p.label, url: p.url, statut: p.statut });
+      liste.push({ id: p.id, label: p.label, statut: p.statut });
       piecesParCandidat.set(p.candidatId, liste);
     }
   }
