@@ -88,5 +88,8 @@ export async function enregistrerPaiement(
 
   revalidatePath("/comptabilite");
   revalidatePath(`/candidats/${inscription.candidat.id}`);
+  // La liste des règlements vit désormais dans l'onglet dédié → on revalide
+  // aussi la sous-route pour que l'encaissement s'y reflète immédiatement.
+  revalidatePath(`/candidats/${inscription.candidat.id}/paiements`);
   return { ok: true };
 }

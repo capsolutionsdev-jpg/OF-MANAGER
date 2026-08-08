@@ -1,32 +1,20 @@
 import Link from "next/link";
-import { Globe, ExternalLink, Rocket, EyeOff, PauseCircle, BarChart3, CalendarDays, CalendarPlus, Images } from "lucide-react";
+import {
+  Globe,
+  ExternalLink,
+  BarChart3,
+  CalendarDays,
+  CalendarPlus,
+  Images,
+} from "lucide-react";
 import type { Academy } from "@prisma/client";
 import { getTenantDb } from "@/lib/tenant";
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { VITRINE_STATUT_LABELS, FORMULE_DEFS } from "@/lib/validators/formation";
-import { saveVitrineRowAction } from "@/lib/actions/vitrine-actions";
-
-// Récupère les valeurs (heures/prix) d'une formule stockée dans vitrineFormules (JSON).
-function formuleVal(
-  vf: unknown,
-  key: string,
-): { heures: string; prix: string } {
-  const arr = Array.isArray(vf)
-    ? (vf as { key?: string; heures?: string; prix?: string }[])
-    : [];
-  const row = arr.find((x) => x?.key === key);
-  return { heures: row?.heures ?? "", prix: row?.prix ?? "" };
-}
+import { Card, CardContent } from "@/components/ui/card";
+import { ACADEMY_LABELS } from "@/lib/validators/formation";
+import { VitrineTable, type VitrineRow } from "@/components/site-vitrine/vitrine-table";
 
 export const metadata = { title: "Site vitrine" };
 
@@ -41,17 +29,14 @@ const ACADEMY_TO_CATEGORIE: Record<Academy, string> = {
   LANGUE: "langues",
 };
 
-const selectClass =
-  "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30";
-
-const STATUT_BADGE: Record<
-  string,
-  { variant: "default" | "secondary" | "destructive"; label: string }
-> = {
-  PUBLIEE: { variant: "default", label: "En ligne" },
-  MASQUEE: { variant: "secondary", label: "Brouillon" },
-  SUSPENDUE: { variant: "destructive", label: "Suspendue" },
-};
+// Récupère les valeurs (heures/prix) d'une formule stockée dans vitrineFormules (JSON).
+function formuleVal(vf: unknown, key: string): { heures: string; prix: string } {
+  const arr = Array.isArray(vf)
+    ? (vf as { key?: string; heures?: string; prix?: string }[])
+    : [];
+  const row = arr.find((x) => x?.key === key);
+  return { heures: row?.heures ?? "", prix: row?.prix ?? "" };
+}
 
 export default async function SiteVitrinePage() {
   const db = await getTenantDb();
@@ -71,7 +56,7 @@ export default async function SiteVitrinePage() {
     },
   });
 
-  const nb = {
+  const counts = {
     PUBLIEE: formations.filter((f) => f.vitrineStatut === "PUBLIEE").length,
     MASQUEE: formations.filter((f) => f.vitrineStatut === "MASQUEE").length,
     SUSPENDUE: formations.filter((f) => f.vitrineStatut === "SUSPENDUE").length,
@@ -88,19 +73,37 @@ export default async function SiteVitrinePage() {
     },
   });
 
-  // En ligne d'abord, puis brouillons, puis suspendues ; alpha en second critère.
-  const ordre: Record<string, number> = { PUBLIEE: 0, MASQUEE: 1, SUSPENDUE: 2 };
-  const rows = [...formations].sort(
-    (a, b) =>
-      (ordre[a.vitrineStatut] ?? 9) - (ordre[b.vitrineStatut] ?? 9) ||
-      a.titre.localeCompare(b.titre),
-  );
-
-  const stats = [
-    { key: "PUBLIEE", icon: Rocket, label: "En ligne", value: nb.PUBLIEE },
-    { key: "MASQUEE", icon: EyeOff, label: "Brouillons (non publiés)", value: nb.MASQUEE },
-    { key: "SUSPENDUE", icon: PauseCircle, label: "Suspendues", value: nb.SUSPENDUE },
-  ];
+  const rows: VitrineRow[] = formations.map((f) => {
+    const categorie = f.academy ? ACADEMY_TO_CATEGORIE[f.academy] : null;
+    const ficheUrl =
+      categorie && f.vitrineStatut === "PUBLIEE"
+        ? `${VITRINE_URL}/formations/${categorie}/${f.reference}`
+        : null;
+    const fPres = formuleVal(f.vitrineFormules, "presentiel");
+    const fMixte = formuleVal(f.vitrineFormules, "mixte");
+    const fElearn = formuleVal(f.vitrineFormules, "elearning");
+    return {
+      id: f.id,
+      titre: f.titre,
+      reference: f.reference,
+      editUrl: `/formations/${f.id}`,
+      academy: f.academy,
+      academyLabel: f.academy ? ACADEMY_LABELS[f.academy] : "—",
+      vitrineStatut: f.vitrineStatut,
+      tarif: f.tarif != null ? String(Number(f.tarif)) : "",
+      duree: f.duree ?? "",
+      dureeHeures: f.dureeHeures != null ? String(f.dureeHeures) : "",
+      ficheUrl,
+      formules: {
+        presentielHeures: fPres.heures,
+        presentielPrix: fPres.prix,
+        mixteHeures: fMixte.heures,
+        mixtePrix: fMixte.prix,
+        elearningHeures: fElearn.heures,
+        elearningPrix: fElearn.prix,
+      },
+    };
+  });
 
   return (
     <div className="space-y-6">
@@ -123,53 +126,6 @@ export default async function SiteVitrinePage() {
         </Button>
       </PageHeader>
 
-      {/* Vue d'ensemble */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {stats.map((s) => (
-          <Card key={s.key}>
-            <CardContent className="flex items-center gap-4 py-5">
-              <div className="rounded-xl bg-muted p-2.5">
-                <s.icon className="h-5 w-5 text-muted-foreground" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold">{s.value}</div>
-                <div className="text-sm text-muted-foreground">{s.label}</div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Sessions / planning → alimentent le planning public + les places restantes */}
-      <Card>
-        <CardContent className="flex flex-col gap-4 py-5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4">
-            <div className="rounded-xl bg-muted p-2.5">
-              <CalendarDays className="h-5 w-5 text-muted-foreground" />
-            </div>
-            <div>
-              <div className="font-semibold">Planning des sessions</div>
-              <div className="text-sm text-muted-foreground">
-                {nbSessions} session{nbSessions > 1 ? "s" : ""} à venir — elles
-                s&apos;affichent en direct sur le planning du site (dates, lieu et
-                places restantes).
-              </div>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button render={<Link href="/sessions/nouvelle" />}>
-              <CalendarPlus className="mr-2 h-4 w-4" /> Ajouter une session
-            </Button>
-            <Button variant="outline" render={<Link href="/planning" />}>
-              Voir le planning
-            </Button>
-            <Button variant="outline" render={<Link href="/sessions" />}>
-              Toutes les sessions
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
       {formations.length === 0 ? (
         <Card>
           <EmptyState
@@ -181,165 +137,35 @@ export default async function SiteVitrinePage() {
           />
         </Card>
       ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">
-              Pilotage des fiches ({formations.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="divide-y divide-border">
-              {rows.map((f) => {
-                const badge = STATUT_BADGE[f.vitrineStatut] ?? STATUT_BADGE.MASQUEE;
-                const categorie = f.academy ? ACADEMY_TO_CATEGORIE[f.academy] : null;
-                const ficheUrl =
-                  categorie && f.vitrineStatut === "PUBLIEE"
-                    ? `${VITRINE_URL}/formations/${categorie}/${f.reference}`
-                    : null;
-                const fPres = formuleVal(f.vitrineFormules, "presentiel");
-                const fMixte = formuleVal(f.vitrineFormules, "mixte");
-                const fElearn = formuleVal(f.vitrineFormules, "elearning");
-                return (
-                  <form
-                    key={f.id}
-                    action={saveVitrineRowAction}
-                    className="flex flex-col gap-3 p-4"
-                  >
-                    <input type="hidden" name="id" value={f.id} />
-
-                    <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:gap-4">
-                    {/* Identité de la fiche */}
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Link
-                          href={`/formations/${f.id}`}
-                          className="truncate font-medium hover:underline"
-                        >
-                          {f.titre}
-                        </Link>
-                        <Badge variant={badge.variant}>{badge.label}</Badge>
-                      </div>
-                      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                        <span className="font-mono">slug&nbsp;: {f.reference}</span>
-                        {ficheUrl && (
-                          <a
-                            href={ficheUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-primary hover:underline"
-                          >
-                            Voir la fiche <ExternalLink className="h-3 w-3" />
-                          </a>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Statut */}
-                    <div className="w-full lg:w-52">
-                      <label
-                        htmlFor={`statut-${f.id}`}
-                        className="mb-1 block text-xs font-medium text-muted-foreground"
-                      >
-                        Statut
-                      </label>
-                      <select
-                        id={`statut-${f.id}`}
-                        name="vitrineStatut"
-                        defaultValue={f.vitrineStatut}
-                        className={selectClass}
-                      >
-                        {Object.entries(VITRINE_STATUT_LABELS).map(([v, l]) => (
-                          <option key={v} value={v}>
-                            {l}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Tarif */}
-                    <div className="w-full lg:w-32">
-                      <label
-                        htmlFor={`tarif-${f.id}`}
-                        className="mb-1 block text-xs font-medium text-muted-foreground"
-                      >
-                        Tarif (€ HT)
-                      </label>
-                      <Input
-                        id={`tarif-${f.id}`}
-                        name="tarif"
-                        inputMode="decimal"
-                        placeholder="—"
-                        defaultValue={f.tarif != null ? String(Number(f.tarif)) : ""}
-                        className="h-8"
-                      />
-                    </div>
-
-                    {/* Durée */}
-                    <div className="w-full lg:w-44">
-                      <label
-                        htmlFor={`duree-${f.id}`}
-                        className="mb-1 block text-xs font-medium text-muted-foreground"
-                      >
-                        Durée
-                      </label>
-                      <Input
-                        id={`duree-${f.id}`}
-                        name="duree"
-                        placeholder="ex. 21h"
-                        defaultValue={f.duree ?? ""}
-                        className="h-8"
-                      />
-                      <input
-                        type="hidden"
-                        name="dureeHeures"
-                        value={f.dureeHeures ?? ""}
-                      />
-                    </div>
-
-                    <Button type="submit" variant="secondary" className="shrink-0">
-                      Enregistrer
-                    </Button>
-                    </div>
-
-                    {/* Formules & tarifs (présentiel / mixte / e-learning) — heures + prix par formule */}
-                    <details className="rounded-lg border border-border bg-muted/30 px-3 py-2">
-                      <summary className="cursor-pointer text-xs font-medium text-muted-foreground">
-                        Formules &amp; tarifs — présentiel · mixte · e-learning (optionnel)
-                      </summary>
-                      <div className="mt-3 space-y-3">
-                        {[
-                          { def: FORMULE_DEFS[0], val: fPres, hName: "formulePresentielHeures", pName: "formulePresentielPrix" },
-                          { def: FORMULE_DEFS[1], val: fMixte, hName: "formuleMixteHeures", pName: "formuleMixtePrix" },
-                          { def: FORMULE_DEFS[2], val: fElearn, hName: "formuleElearningHeures", pName: "formuleElearningPrix" },
-                        ].map((r) => (
-                          <div key={r.def.key} className="grid grid-cols-1 gap-2 sm:grid-cols-[10rem_1fr_1fr] sm:items-center">
-                            <span className="text-xs font-semibold">{r.def.label}</span>
-                            <Input
-                              name={r.hName}
-                              placeholder="Heures (ex. 35 h)"
-                              defaultValue={r.val.heures}
-                              className="h-8"
-                            />
-                            <Input
-                              name={r.pName}
-                              placeholder="Prix (ex. 1 490 € ou Sur devis)"
-                              defaultValue={r.val.prix}
-                              className="h-8"
-                            />
-                          </div>
-                        ))}
-                        <p className="text-xs text-muted-foreground">
-                          Laissez tout vide pour conserver les valeurs par défaut du site. Cliquez sur « Enregistrer » ci-dessus pour valider.
-                        </p>
-                      </div>
-                    </details>
-                  </form>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
+        <VitrineTable rows={rows} counts={counts} />
       )}
+
+      {/* Planning des sessions — encart secondaire (ce n'est pas du pilotage de fiche). */}
+      <Card size="sm">
+        <CardContent className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-muted p-2">
+              <CalendarDays className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <div className="text-sm">
+              <span className="font-medium">Planning des sessions</span>
+              <span className="text-muted-foreground">
+                {" "}
+                — {nbSessions} session{nbSessions > 1 ? "s" : ""} à venir s&apos;affichent en direct
+                sur le site (dates, lieu et places restantes).
+              </span>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" render={<Link href="/sessions/nouvelle" />}>
+              <CalendarPlus className="mr-1.5 h-3.5 w-3.5" /> Ajouter une session
+            </Button>
+            <Button size="sm" variant="outline" render={<Link href="/planning" />}>
+              Voir le planning
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

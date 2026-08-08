@@ -4,7 +4,6 @@ import {
   Banknote,
   Hourglass,
   AlertCircle,
-  Receipt,
 } from "lucide-react";
 import { requireSection } from "@/lib/section-guard";
 import { ExportMenu } from "@/components/export-menu";
@@ -24,43 +23,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatCard } from "@/components/ui/stat-card";
 import { RecordPaymentDialog } from "@/components/comptabilite/record-payment-dialog";
+import { DossiersTable, type DossierRow } from "@/components/comptabilite/dossiers-table";
 import { FINANCEMENT_LABELS } from "@/lib/validators/candidat";
+import { euro, MOIS, ETATS, type Etat } from "@/lib/comptabilite/format";
 
 export const dynamic = "force-dynamic";
-
-// Format monétaire FR (sépare les milliers, 0–2 décimales).
-const euro = (n: number) =>
-  n.toLocaleString("fr-FR", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }) + " €";
-
-const MOIS = [
-  "Janvier",
-  "Février",
-  "Mars",
-  "Avril",
-  "Mai",
-  "Juin",
-  "Juillet",
-  "Août",
-  "Septembre",
-  "Octobre",
-  "Novembre",
-  "Décembre",
-];
-
-type Etat = "PAYE" | "PARTIEL" | "IMPAYE" | "A_CHIFFRER";
-
-const ETATS: Record<Etat, { label: string; cls: string }> = {
-  PAYE: { label: "Payé", cls: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" },
-  PARTIEL: { label: "Partiel", cls: "bg-amber-500/10 text-amber-700 dark:text-amber-300" },
-  IMPAYE: { label: "Impayé", cls: "bg-rose-500/10 text-rose-700 dark:text-rose-300" },
-  A_CHIFFRER: { label: "À chiffrer", cls: "bg-muted text-muted-foreground" },
-};
 
 export default async function ComptabilitePage({
   searchParams,
@@ -209,6 +180,7 @@ export default async function ComptabilitePage({
       montant: evs.reduce((s, e) => s + e.montant, 0),
     };
   });
+  const parMoisActifs = parMois.filter((m) => m.nb > 0);
   const totalAnnee = parMois.reduce((s, m) => s + m.montant, 0);
   const nbAnnee = parMois.reduce((s, m) => s + m.nb, 0);
 
@@ -236,10 +208,21 @@ export default async function ComptabilitePage({
   }
   const modes = [...parMode.entries()].sort((a, b) => b[1].du - a[1].du);
 
-  // Détail trié : non soldés d'abord (restant décroissant), puis le reste.
-  const detail = [...lignes].sort(
-    (a, b) => b.restant - a.restant || a.nom.localeCompare(b.nom),
-  );
+  // Détail : dossiers aplatis (sérialisables) pour la table filtrable cliente.
+  // Le tri/filtre/pagination se font côté client sur ces données déjà chargées.
+  const dossierRows: DossierRow[] = lignes.map((l) => ({
+    id: l.id,
+    candidatId: l.candidatId,
+    nom: l.nom,
+    email: l.email,
+    formation: l.formation,
+    dateDebut: l.dateDebut.toISOString(),
+    mode: l.mode,
+    du: l.du,
+    paye: l.paye,
+    restant: l.restant,
+    etat: l.etat,
+  }));
 
   // Derniers règlements saisis (avec le collaborateur qui les a enregistrés).
   const reglements = inscriptions
@@ -257,7 +240,7 @@ export default async function ComptabilitePage({
     .slice(0, 12);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <PageHeader
         title="Suivi comptable"
         subtitle="Encaissements, états de paiement et créances par candidat"
@@ -313,8 +296,8 @@ export default async function ComptabilitePage({
         />
       </div>
 
-      {/* Récap encaissements : par mois + par année */}
-      <div className="grid gap-6 lg:grid-cols-3">
+      {/* Récap encaissements compact : mois actifs + mini-bloc par année */}
+      <div className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader className="py-3">
             <CardTitle className="text-sm text-muted-foreground">
@@ -322,284 +305,244 @@ export default async function ComptabilitePage({
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Mois</TableHead>
-                  <TableHead className="text-right">Règlements</TableHead>
-                  <TableHead className="text-right">Montant encaissé</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {parMois.map((m) => (
-                  <TableRow key={m.label} className={m.montant === 0 ? "text-muted-foreground" : ""}>
-                    <TableCell>{m.label}</TableCell>
-                    <TableCell className="text-right">{m.nb || "—"}</TableCell>
-                    <TableCell className="text-right font-medium">
-                      {m.montant > 0 ? euro(m.montant) : "—"}
-                    </TableCell>
-                  </TableRow>
-                ))}
-                <TableRow className="border-t-2 font-semibold">
-                  <TableCell>Total {annee}</TableCell>
-                  <TableCell className="text-right">{nbAnnee}</TableCell>
-                  <TableCell className="text-right">{euro(totalAnnee)}</TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="py-3">
-            <CardTitle className="text-sm text-muted-foreground">
-              Par année
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Année</TableHead>
-                  <TableHead className="text-right">Encaissé</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {parAnnee.map((a) => (
-                  <TableRow
-                    key={a.annee}
-                    className={a.annee === annee ? "bg-muted/40 font-medium" : ""}
-                  >
-                    <TableCell>
-                      <Link href={`/comptabilite?annee=${a.annee}`} className="hover:underline">
-                        {a.annee}
-                      </Link>
-                    </TableCell>
-                    <TableCell className="text-right">{euro(a.montant)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Clients non soldés (impayés + partiels) */}
-      <section className="space-y-3">
-        <h2 className="flex items-center gap-2 text-lg font-semibold">
-          <AlertCircle className="h-5 w-5 text-rose-600" />
-          Clients non soldés
-          <Badge className="bg-rose-500/10 text-rose-700 dark:text-rose-300">{nonSoldes.length}</Badge>
-        </h2>
-        <Card>
-          <CardContent className="p-0">
-            {nonSoldes.length === 0 ? (
-              <div className="p-10 text-center text-sm text-muted-foreground">
-                Aucune créance : tous les dossiers sont réglés. 🎉
-              </div>
+            {parMoisActifs.length === 0 ? (
+              <p className="px-4 pb-4 text-sm text-muted-foreground">
+                Aucun encaissement enregistré en {annee}.
+              </p>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Candidat</TableHead>
-                    <TableHead className="hidden md:table-cell">Formation</TableHead>
-                    <TableHead>Mode</TableHead>
-                    <TableHead className="text-right">Dû</TableHead>
-                    <TableHead className="text-right">Payé</TableHead>
-                    <TableHead className="text-right">Restant</TableHead>
-                    <TableHead className="hidden lg:table-cell text-right">Ancienneté</TableHead>
-                    <TableHead>État</TableHead>
-                    <TableHead className="text-right">Action</TableHead>
+                    <TableHead>Mois</TableHead>
+                    <TableHead className="text-right">Règlements</TableHead>
+                    <TableHead className="text-right">Montant encaissé</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {nonSoldes.map((l) => (
-                    <TableRow key={l.id} className="hover:bg-muted/40">
-                      <TableCell className="font-medium">
-                        <Link href={`/candidats/${l.candidatId}`} className="hover:underline">
-                          {l.nom}
-                        </Link>
-                        <div className="text-xs text-muted-foreground">{l.email}</div>
-                      </TableCell>
-                      <TableCell className="hidden text-muted-foreground md:table-cell">
-                        {l.formation}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">{l.mode}</Badge>
-                      </TableCell>
-                      <TableCell className="text-right">{euro(l.du)}</TableCell>
-                      <TableCell className="text-right text-emerald-700 dark:text-emerald-300">{euro(l.paye)}</TableCell>
-                      <TableCell className="text-right font-semibold text-rose-700 dark:text-rose-300">
-                        {euro(l.restant)}
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell text-right text-muted-foreground">
-                        {l.ancienneteJours} j
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={ETATS[l.etat].cls}>{ETATS[l.etat].label}</Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <RecordPaymentDialog
-                          inscriptionId={l.id}
-                          candidatNom={l.nom}
-                          formation={l.formation}
-                          restant={l.restant}
-                          defaultMode={l.mode}
-                        />
-                      </TableCell>
+                  {parMoisActifs.map((m) => (
+                    <TableRow key={m.label}>
+                      <TableCell>{m.label}</TableCell>
+                      <TableCell className="text-right">{m.nb}</TableCell>
+                      <TableCell className="text-right font-medium">{euro(m.montant)}</TableCell>
                     </TableRow>
                   ))}
+                  <TableRow className="border-t-2 font-semibold">
+                    <TableCell>Total {annee}</TableCell>
+                    <TableCell className="text-right">{nbAnnee}</TableCell>
+                    <TableCell className="text-right">{euro(totalAnnee)}</TableCell>
+                  </TableRow>
                 </TableBody>
               </Table>
             )}
           </CardContent>
         </Card>
-      </section>
 
-      {/* Détail comptable par candidat */}
-      <section className="space-y-3">
-        <h2 className="flex items-center gap-2 text-lg font-semibold">
-          <Receipt className="h-5 w-5" />
-          Détail par candidat
-          <Badge variant="secondary">{detail.length}</Badge>
-        </h2>
         <Card>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Candidat</TableHead>
-                  <TableHead className="hidden md:table-cell">Formation</TableHead>
-                  <TableHead className="hidden lg:table-cell">Démarrage</TableHead>
-                  <TableHead>Mode</TableHead>
-                  <TableHead className="text-right">Dû</TableHead>
-                  <TableHead className="text-right">Payé</TableHead>
-                  <TableHead className="text-right">Restant</TableHead>
-                  <TableHead>État</TableHead>
-                  <TableHead className="text-right">Action</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {detail.map((l) => (
-                  <TableRow key={l.id} className="hover:bg-muted/40">
-                    <TableCell className="font-medium">
-                      <Link href={`/candidats/${l.candidatId}`} className="hover:underline">
-                        {l.nom}
-                      </Link>
-                    </TableCell>
-                    <TableCell className="hidden text-muted-foreground md:table-cell">
-                      {l.formation}
-                    </TableCell>
-                    <TableCell className="hidden text-muted-foreground lg:table-cell">
-                      {l.dateDebut.toLocaleDateString("fr-FR")}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">{l.mode}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {l.du > 0 ? euro(l.du) : "—"}
-                    </TableCell>
-                    <TableCell className="text-right text-emerald-700 dark:text-emerald-300">
-                      {l.paye > 0 ? euro(l.paye) : "—"}
-                    </TableCell>
-                    <TableCell className="text-right font-medium">
-                      {l.restant > 0 ? euro(l.restant) : "—"}
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={ETATS[l.etat].cls}>{ETATS[l.etat].label}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <RecordPaymentDialog
-                        inscriptionId={l.id}
-                        candidatNom={l.nom}
-                        formation={l.formation}
-                        restant={l.restant}
-                        defaultMode={l.mode}
-                        triggerVariant="ghost"
-                      />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+          <CardHeader className="py-3">
+            <CardTitle className="text-sm text-muted-foreground">Par année</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-2 p-4 pt-0">
+            {parAnnee.map((a) => (
+              <Link
+                key={a.annee}
+                href={`/comptabilite?annee=${a.annee}`}
+                className={`rounded-lg border px-3 py-2 text-sm transition ${
+                  a.annee === annee
+                    ? "border-primary bg-primary/5"
+                    : "border-input hover:bg-muted"
+                }`}
+              >
+                <div className="font-medium">{a.annee}</div>
+                <div className="text-muted-foreground">{euro(a.montant)}</div>
+              </Link>
+            ))}
           </CardContent>
         </Card>
-      </section>
+      </div>
 
-      {/* Derniers règlements enregistrés (traçabilité collaborateur) */}
-      {reglements.length > 0 && (
-        <section className="space-y-3">
-          <h2 className="flex items-center gap-2 text-lg font-semibold">
-            <Banknote className="h-5 w-5 text-emerald-600" />
-            Derniers règlements
-          </h2>
+      {/* Onglets in-page */}
+      <Tabs defaultValue="creances" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="creances">
+            Créances
+            <Count n={nonSoldes.length} tone="rose" />
+          </TabsTrigger>
+          <TabsTrigger value="dossiers">
+            Tous les dossiers
+            <Count n={dossierRows.length} />
+          </TabsTrigger>
+          <TabsTrigger value="reglements">
+            Règlements
+            <Count n={reglements.length} />
+          </TabsTrigger>
+          <TabsTrigger value="modes">Par mode</TabsTrigger>
+        </TabsList>
+
+        {/* Créances : clients non soldés, actionnables */}
+        <TabsContent value="creances" className="space-y-3">
           <Card>
             <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Candidat</TableHead>
-                    <TableHead>Mode</TableHead>
-                    <TableHead className="text-right">Montant</TableHead>
-                    <TableHead>Enregistré par</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {reglements.map((r) => (
-                    <TableRow key={r.id}>
-                      <TableCell className="text-muted-foreground">
-                        {r.date.toLocaleDateString("fr-FR")}
-                      </TableCell>
-                      <TableCell className="font-medium">{r.candidat}</TableCell>
-                      <TableCell>
-                        {r.mode ? <Badge variant="secondary">{r.mode}</Badge> : "—"}
-                      </TableCell>
-                      <TableCell className="text-right font-medium text-emerald-700 dark:text-emerald-300">
-                        {euro(r.montant)}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">{r.par}</TableCell>
+              {nonSoldes.length === 0 ? (
+                <div className="p-10 text-center text-sm text-muted-foreground">
+                  Aucune créance : tous les dossiers sont réglés. 🎉
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Candidat</TableHead>
+                      <TableHead className="hidden md:table-cell">Formation</TableHead>
+                      <TableHead>Mode</TableHead>
+                      <TableHead className="text-right">Dû</TableHead>
+                      <TableHead className="text-right">Payé</TableHead>
+                      <TableHead className="text-right">Restant</TableHead>
+                      <TableHead className="hidden lg:table-cell text-right">Ancienneté</TableHead>
+                      <TableHead>État</TableHead>
+                      <TableHead className="text-right">Action</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {nonSoldes.map((l) => (
+                      <TableRow key={l.id} className="hover:bg-muted/40">
+                        <TableCell className="font-medium">
+                          <Link href={`/candidats/${l.candidatId}`} className="hover:underline">
+                            {l.nom}
+                          </Link>
+                          <div className="text-xs text-muted-foreground">{l.email}</div>
+                        </TableCell>
+                        <TableCell className="hidden text-muted-foreground md:table-cell">
+                          {l.formation}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">{l.mode}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right">{euro(l.du)}</TableCell>
+                        <TableCell className="text-right text-emerald-700 dark:text-emerald-300">{euro(l.paye)}</TableCell>
+                        <TableCell className="text-right font-semibold text-rose-700 dark:text-rose-300">
+                          {euro(l.restant)}
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell text-right text-muted-foreground">
+                          {l.ancienneteJours} j
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={ETATS[l.etat].cls}>{ETATS[l.etat].label}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <RecordPaymentDialog
+                            inscriptionId={l.id}
+                            candidatNom={l.nom}
+                            formation={l.formation}
+                            restant={l.restant}
+                            defaultMode={l.mode}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
-        </section>
-      )}
+        </TabsContent>
 
-      {/* Répartition par mode de financement */}
-      {modes.length > 0 && (
-        <section className="space-y-3">
-          <h2 className="text-lg font-semibold">Par mode de financement</h2>
+        {/* Tous les dossiers : une seule table filtrable (recherche + filtres + tri + pagination) */}
+        <TabsContent value="dossiers">
+          <DossiersTable rows={dossierRows} />
+        </TabsContent>
+
+        {/* Derniers règlements enregistrés (traçabilité collaborateur) */}
+        <TabsContent value="reglements">
           <Card>
             <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Mode</TableHead>
-                    <TableHead className="text-right">Dossiers</TableHead>
-                    <TableHead className="text-right">Dû</TableHead>
-                    <TableHead className="text-right">Encaissé</TableHead>
-                    <TableHead className="text-right">Reste</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {modes.map(([mode, v]) => (
-                    <TableRow key={mode}>
-                      <TableCell className="font-medium">{mode}</TableCell>
-                      <TableCell className="text-right">{v.nb}</TableCell>
-                      <TableCell className="text-right">{euro(v.du)}</TableCell>
-                      <TableCell className="text-right text-emerald-700 dark:text-emerald-300">{euro(v.paye)}</TableCell>
-                      <TableCell className="text-right">{euro(Math.max(0, v.du - v.paye))}</TableCell>
+              {reglements.length === 0 ? (
+                <div className="p-10 text-center text-sm text-muted-foreground">
+                  Aucun règlement enregistré pour le moment.
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Candidat</TableHead>
+                      <TableHead>Mode</TableHead>
+                      <TableHead className="text-right">Montant</TableHead>
+                      <TableHead>Enregistré par</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {reglements.map((r) => (
+                      <TableRow key={r.id}>
+                        <TableCell className="text-muted-foreground">
+                          {r.date.toLocaleDateString("fr-FR")}
+                        </TableCell>
+                        <TableCell className="font-medium">{r.candidat}</TableCell>
+                        <TableCell>
+                          {r.mode ? <Badge variant="secondary">{r.mode}</Badge> : "—"}
+                        </TableCell>
+                        <TableCell className="text-right font-medium text-emerald-700 dark:text-emerald-300">
+                          {euro(r.montant)}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">{r.par}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
-        </section>
-      )}
+        </TabsContent>
+
+        {/* Répartition par mode de financement */}
+        <TabsContent value="modes">
+          <Card>
+            <CardContent className="p-0">
+              {modes.length === 0 ? (
+                <div className="p-10 text-center text-sm text-muted-foreground">
+                  Aucun dossier à répartir pour le moment.
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Mode</TableHead>
+                      <TableHead className="text-right">Dossiers</TableHead>
+                      <TableHead className="text-right">Dû</TableHead>
+                      <TableHead className="text-right">Encaissé</TableHead>
+                      <TableHead className="text-right">Reste</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {modes.map(([mode, v]) => (
+                      <TableRow key={mode}>
+                        <TableCell className="font-medium">{mode}</TableCell>
+                        <TableCell className="text-right">{v.nb}</TableCell>
+                        <TableCell className="text-right">{euro(v.du)}</TableCell>
+                        <TableCell className="text-right text-emerald-700 dark:text-emerald-300">{euro(v.paye)}</TableCell>
+                        <TableCell className="text-right">{euro(Math.max(0, v.du - v.paye))}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
+  );
+}
+
+/** Petit compteur affiché dans un onglet. */
+function Count({ n, tone }: { n: number; tone?: "rose" }) {
+  return (
+    <span
+      className={`ml-1 rounded-full px-1.5 py-0.5 text-[0.7rem] font-semibold tabular-nums ${
+        tone === "rose"
+          ? "bg-rose-500/10 text-rose-700 dark:text-rose-300"
+          : "bg-muted text-muted-foreground"
+      }`}
+    >
+      {n}
+    </span>
   );
 }

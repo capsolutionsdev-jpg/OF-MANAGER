@@ -1,12 +1,17 @@
-import { Shield, FileDown, Trash2, Clock, Accessibility } from "lucide-react";
+import {
+  Shield,
+  FileDown,
+  Trash2,
+  Clock,
+  Accessibility,
+  ClipboardList,
+  ChevronDown,
+} from "lucide-react";
 import { requireTenant } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Card,
+  CardAction,
   CardContent,
   CardHeader,
   CardTitle,
@@ -19,23 +24,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { PageHeader } from "@/components/ui/page-header";
+import { StatCard } from "@/components/ui/stat-card";
+import { NewDataRequestDialog } from "@/components/rgpd/new-data-request-dialog";
 import {
-  createDataRequest,
-  processDataRequest,
-} from "@/lib/actions/rgpd-actions";
-
-const TYPE_LABELS: Record<string, string> = {
-  EXPORT: "Export des données",
-  SUPPRESSION: "Suppression / anonymisation",
-};
-const STATUT_LABELS: Record<string, string> = {
-  RECUE: "Reçue",
-  EN_COURS: "En cours",
-  TRAITEE: "Traitée",
-  REFUSEE: "Refusée",
-};
-const selectClass =
-  "h-9 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50";
+  DataRequestsTable,
+  type DataRequestRow,
+} from "@/components/rgpd/data-requests-table";
 
 export default async function RgpdPage() {
   const { organismeId, db } = await requireTenant();
@@ -53,198 +48,108 @@ export default async function RgpdPage() {
     db.consentement.count(),
   ]);
 
+  const requestRows: DataRequestRow[] = requests.map((r) => ({
+    id: r.id,
+    subjectEmail: r.subjectEmail,
+    type: r.type,
+    statut: r.statut,
+    requestedAt: r.requestedAt.toISOString(),
+  }));
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">RGPD</h1>
-        <p className="text-sm text-muted-foreground">
-          Consentements, demandes d&apos;accès et de suppression, registre des
-          traitements.
-        </p>
+      <PageHeader
+        title="RGPD"
+        subtitle="Consentements, demandes d'accès et de suppression, registre des traitements."
+      />
+
+      {/* Bande KPI unique (4 tuiles) */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          icon={Clock}
+          label="Durée de conservation"
+          value={`${org?.dureeConservationMois ?? 36} mois`}
+          tint="blue"
+          trend="Anonymisation auto au-delà (purge quotidienne)"
+        />
+        <StatCard
+          icon={Accessibility}
+          label="Référent handicap (Qualiopi 26)"
+          value={org?.referentHandicapNom ?? "À définir"}
+          tint="violet"
+          trend={org?.referentHandicapContact ?? (org?.referentHandicapNom ? undefined : "À définir avec l'éditeur")}
+        />
+        <StatCard
+          icon={Shield}
+          label="Consentements recueillis"
+          value={nbConsent}
+          tint="emerald"
+        />
+        <StatCard
+          icon={ClipboardList}
+          label="Demandes d'exercice des droits"
+          value={requests.length}
+          tint="amber"
+        />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <Clock className="h-4 w-4" /> Durée de conservation
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{org?.dureeConservationMois ?? 36} mois</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Au-delà, sans activité, les données candidats sont anonymisées
-              automatiquement (purge quotidienne). Modifiable par l&apos;éditeur.
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <Accessibility className="h-4 w-4" /> Référent handicap (Qualiopi 26)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {org?.referentHandicapNom ? (
-              <>
-                <p className="font-semibold">{org.referentHandicapNom}</p>
-                {org.referentHandicapContact && (
-                  <p className="mt-0.5 text-sm text-muted-foreground">{org.referentHandicapContact}</p>
-                )}
-              </>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                Non renseigné — à définir avec l&apos;éditeur pour la conformité accessibilité.
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Consentements recueillis
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{nbConsent}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Demandes RGPD
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{requests.length}</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Demandes d'exercice des droits */}
+      {/* Demandes d'exercice des droits : table d'abord + dialog + filtre */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Demandes d&apos;exercice des droits</CardTitle>
+          <CardAction>
+            <NewDataRequestDialog />
+          </CardAction>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <form
-            action={createDataRequest}
-            className="grid grid-cols-1 gap-3 rounded-lg border bg-muted/30 p-4 sm:grid-cols-3 sm:items-end"
-          >
-            <div className="grid gap-1.5">
-              <Label htmlFor="subjectEmail">Email du demandeur</Label>
-              <Input
-                id="subjectEmail"
-                name="subjectEmail"
-                type="email"
-                placeholder="personne@example.com"
-                required
-              />
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="type">Type de demande</Label>
-              <select id="type" name="type" className={selectClass}>
-                {Object.entries(TYPE_LABELS).map(([v, l]) => (
-                  <option key={v} value={v}>
-                    {l}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <Button type="submit">Enregistrer la demande</Button>
-          </form>
-
-          {requests.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Aucune demande enregistrée.</p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Demandeur</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Statut</TableHead>
-                  <TableHead>Reçue le</TableHead>
-                  <TableHead className="text-right">Action</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {requests.map((r) => (
-                  <TableRow key={r.id}>
-                    <TableCell className="font-medium">{r.subjectEmail}</TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {TYPE_LABELS[r.type]}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={r.statut === "TRAITEE" ? "default" : "secondary"}
-                      >
-                        {STATUT_LABELS[r.statut]}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {r.requestedAt.toLocaleDateString("fr-FR")}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {r.statut !== "TRAITEE" ? (
-                        <form action={processDataRequest}>
-                          <input type="hidden" name="id" value={r.id} />
-                          <Button type="submit" size="sm" variant="outline">
-                            Marquer traitée
-                          </Button>
-                        </form>
-                      ) : (
-                        "—"
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
+        <CardContent>
+          <DataRequestsTable rows={requestRows} />
         </CardContent>
       </Card>
 
-      {/* Consentements */}
+      {/* Consentements : repliable (« Voir tout ») */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Shield className="h-4 w-4" /> Derniers consentements
-          </CardTitle>
-        </CardHeader>
         <CardContent className="p-0">
-          {consentements.length === 0 ? (
-            <p className="p-6 text-sm text-muted-foreground">
-              Aucun consentement enregistré.
-            </p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Personne</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Accepté le</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {consentements.map((c) => (
-                  <TableRow key={c.id}>
-                    <TableCell className="font-medium">
-                      {c.candidat
-                        ? `${c.candidat.prenom} ${c.candidat.nom}`
-                        : "—"}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">{c.type}</TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {c.accepteLe.toLocaleDateString("fr-FR")}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
+          <details className="group [&_summary::-webkit-details-marker]:hidden">
+            <summary className="flex cursor-pointer list-none items-center gap-2 p-4 text-base font-medium">
+              <Shield className="h-4 w-4" /> Derniers consentements
+              <span className="ml-1 rounded-full bg-muted px-1.5 py-0.5 text-[0.7rem] font-semibold tabular-nums text-muted-foreground">
+                {nbConsent}
+              </span>
+              <ChevronDown className="ml-auto h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" />
+            </summary>
+            <div className="border-t">
+              {consentements.length === 0 ? (
+                <p className="p-6 text-sm text-muted-foreground">
+                  Aucun consentement enregistré.
+                </p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Personne</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Accepté le</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {consentements.map((c) => (
+                      <TableRow key={c.id}>
+                        <TableCell className="font-medium">
+                          {c.candidat
+                            ? `${c.candidat.prenom} ${c.candidat.nom}`
+                            : "—"}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">{c.type}</TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {c.accepteLe.toLocaleDateString("fr-FR")}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </div>
+          </details>
         </CardContent>
       </Card>
 

@@ -1,8 +1,16 @@
 import Link from "next/link";
-import { FileText, ShieldCheck } from "lucide-react";
+import { FileText, Users, ClipboardCheck, ShieldCheck } from "lucide-react";
+
+export type SessionTabKey =
+  | "details"
+  | "participants"
+  | "dossiers"
+  | "documents"
+  | "validation";
 
 /**
- * Navigation par onglets de la page Session (Détails / Validation).
+ * Navigation par onglets de la page Session
+ * (Vue d'ensemble / Participants / Dossiers / Documents / Validation).
  * Composant serveur : simples liens avec surlignage de l'onglet actif.
  */
 export function SessionTabs({
@@ -11,11 +19,14 @@ export function SessionTabs({
   validationBadge,
 }: {
   sessionId: string;
-  active: "details" | "validation";
+  active: SessionTabKey;
   validationBadge?: { percentage: number; ok: boolean };
 }) {
   const tabs = [
-    { key: "details", label: "Détails", href: `/sessions/${sessionId}`, icon: FileText },
+    { key: "details", label: "Vue d'ensemble", href: `/sessions/${sessionId}`, icon: FileText },
+    { key: "participants", label: "Participants", href: `/sessions/${sessionId}/participants`, icon: Users },
+    { key: "dossiers", label: "Dossiers", href: `/sessions/${sessionId}/dossiers`, icon: ClipboardCheck },
+    { key: "documents", label: "Documents", href: `/sessions/${sessionId}/documents`, icon: FileText },
     {
       key: "validation",
       label: "Validation",

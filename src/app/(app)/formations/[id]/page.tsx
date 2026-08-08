@@ -1,29 +1,13 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Pencil, Copy, Archive } from "lucide-react";
-import { getTenantDb } from "@/lib/tenant";
-import { Button } from "@/components/ui/button";
-import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
-import { Badge } from "@/components/ui/badge";
+import { getFormationDetail } from "@/lib/formations/detail";
+import { FormationDetailHeader } from "@/components/formations/formation-detail-header";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { MODALITE_LABELS } from "@/lib/validators/formation";
-import { ExportMenu } from "@/components/export-menu";
-import {
-  archiveFormationAction,
-  duplicateFormationAction,
-} from "@/lib/actions/formation-actions";
-
-const DIPLOME_STATUT_LABEL: Record<string, string> = {
-  ENVOYE_CERTIFICATEUR: "Envoyé au certificateur",
-  RECU: "Reçu",
-  REMIS: "Remis",
-};
-const fdate = (d: Date | null) => (d ? d.toLocaleDateString("fr-FR") : "—");
 
 function Block({ label, value }: { label: string; value?: string | null }) {
   if (!value) return null;
@@ -42,74 +26,26 @@ export default async function FormationDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const db = await getTenantDb();
   const { id } = await params;
-  const f = await db.formation.findUnique({
-    where: { id },
-    include: { sessions: { orderBy: { dateDebut: "desc" } } },
-  });
-  if (!f) notFound();
+  const detail = await getFormationDetail(id);
+  if (!detail) notFound();
 
-  // Inventaire des diplômes délivrés pour cette formation.
-  const diplomes = await db.diplome.findMany({
-    where: { formationId: id },
-    orderBy: [{ numeroDiplome: "asc" }, { createdAt: "desc" }],
-  });
+  const { f, diplomes } = detail;
 
   return (
     <div className="space-y-6">
-      <div>
-        <Link
-          href="/formations"
-          className="mb-2 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" /> Retour au catalogue
-        </Link>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight">{f.titre}</h1>
-            <Badge variant="secondary">{MODALITE_LABELS[f.modalite]}</Badge>
-            {f.isArchived && <Badge variant="outline">Archivée</Badge>}
-            {f.version > 1 && <Badge variant="outline">v{f.version}</Badge>}
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              render={<Link href={`/formations/${f.id}/positionnement`} />}
-            >
-              Test de positionnement
-            </Button>
-            <Button
-              variant="outline"
-              render={<Link href={`/formations/${f.id}/modifier`} />}
-            >
-              <Pencil className="mr-2 h-4 w-4" /> Modifier
-            </Button>
-            <form action={duplicateFormationAction}>
-              <input type="hidden" name="id" value={f.id} />
-              <Button type="submit" variant="outline">
-                <Copy className="mr-2 h-4 w-4" /> Dupliquer
-              </Button>
-            </form>
-            {!f.isArchived && (
-              <form action={archiveFormationAction}>
-                <input type="hidden" name="id" value={f.id} />
-                <ConfirmSubmitButton
-                  variant="outline"
-                  confirm={{
-                    title: `Archiver « ${f.titre} » ?`,
-                    description:
-                      "La formation sera retirée du catalogue actif. Ses sessions passées restent consultables ; vous pourrez la réactiver plus tard.",
-                    confirmLabel: "Archiver",
-                  }}
-                >
-                  <Archive className="mr-2 h-4 w-4" /> Archiver
-                </ConfirmSubmitButton>
-              </form>
-            )}
-          </div>
-        </div>
-      </div>
+      <FormationDetailHeader
+        formation={{
+          id: f.id,
+          titre: f.titre,
+          modalite: f.modalite,
+          isArchived: f.isArchived,
+          version: f.version,
+        }}
+        active="fiche"
+        diplomesCount={diplomes.length}
+        sessionsCount={f.sessions.length}
+      />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
@@ -168,7 +104,10 @@ export default async function FormationDetailPage({
                 {f.sessions.length} session
                 {f.sessions.length > 1 ? "s" : ""} programmée
                 {f.sessions.length > 1 ? "s" : ""}.{" "}
-                <Link href="/sessions" className="text-primary hover:underline">
+                <Link
+                  href={`/formations/${f.id}/sessions`}
+                  className="text-primary hover:underline"
+                >
                   Voir
                 </Link>
               </p>
@@ -176,61 +115,6 @@ export default async function FormationDetailPage({
           </CardContent>
         </Card>
       </div>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between gap-3">
-          <CardTitle className="text-base">
-            Inventaire des diplômes{" "}
-            <span className="font-normal text-muted-foreground">({diplomes.length})</span>
-          </CardTitle>
-          {diplomes.length > 0 && (
-            <ExportMenu
-              href={`/formations/${f.id}/diplomes/export`}
-              label="Exporter l'inventaire"
-              size="sm"
-            />
-          )}
-        </CardHeader>
-        <CardContent>
-          {diplomes.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Aucun diplôme délivré pour cette formation. Ils apparaîtront ici après génération
-              depuis la fiche session.
-            </p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
-                    <th className="py-2 pr-3 font-medium">N° de diplôme</th>
-                    <th className="py-2 pr-3 font-medium">Nom</th>
-                    <th className="py-2 pr-3 font-medium">Prénom</th>
-                    <th className="py-2 pr-3 font-medium">Naissance</th>
-                    <th className="py-2 pr-3 font-medium">Statut</th>
-                    <th className="py-2 font-medium">Créé le</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {diplomes.map((d) => (
-                    <tr key={d.id} className="border-b last:border-0">
-                      <td className="py-2 pr-3 font-mono text-xs">{d.numeroDiplome ?? "—"}</td>
-                      <td className="py-2 pr-3 font-medium">{d.nom}</td>
-                      <td className="py-2 pr-3">{d.prenom}</td>
-                      <td className="py-2 pr-3">{fdate(d.dateNaissance)}</td>
-                      <td className="py-2 pr-3">
-                        <Badge variant="outline">
-                          {DIPLOME_STATUT_LABEL[d.statut] ?? d.statut}
-                        </Badge>
-                      </td>
-                      <td className="py-2">{fdate(d.createdAt)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 }

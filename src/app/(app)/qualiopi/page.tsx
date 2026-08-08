@@ -8,9 +8,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { CRITERES } from "@/lib/qualiopi-indicateurs";
+import { PageHeader } from "@/components/ui/page-header";
 import { initialiserIndicateurs } from "@/lib/actions/qualiopi-actions";
-import { QualiopiRow } from "@/components/qualiopi/qualiopi-row";
+import { QualiopiCriteres } from "@/components/qualiopi/qualiopi-criteres";
 
 export default async function QualiopiPage() {
   const db = await getTenantDb();
@@ -24,42 +24,35 @@ export default async function QualiopiPage() {
   const applicables = indicateurs.filter((i) => i.statut !== "NON_APPLICABLE").length;
   const pct = applicables > 0 ? Math.round((conformes / applicables) * 100) : 0;
 
-  // On déduit le critère depuis le numéro de l'indicateur (RNQ).
-  const critereDeNumero = (n: number) =>
-    n <= 3 ? 1 : n <= 8 ? 2 : n <= 16 ? 3 : n <= 20 ? 4 : n <= 22 ? 5 : n <= 29 ? 6 : 7;
-  const groupes = new Map<number, typeof indicateurs>();
-  for (const ind of indicateurs) {
-    const c = critereDeNumero(ind.numero);
-    if (!groupes.has(c)) groupes.set(c, []);
-    groupes.get(c)!.push(ind);
-  }
+  const rows = indicateurs.map((i) => ({
+    id: i.id,
+    numero: i.numero,
+    libelle: i.libelle,
+    statut: i.statut,
+    commentaire: i.commentaire,
+  }));
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Conformité Qualiopi</h1>
-          <p className="text-sm text-muted-foreground">
-            Suivi des 32 indicateurs du Référentiel National Qualité (RNQ).
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" render={<Link href="/qualiopi/reclamations" />}>
-            <MessageSquareWarning className="mr-1.5 h-4 w-4" /> Réclamations
+      <PageHeader
+        title="Conformité Qualiopi"
+        subtitle="Suivi des 32 indicateurs du Référentiel National Qualité (RNQ)."
+      >
+        <Button variant="outline" size="sm" render={<Link href="/qualiopi/reclamations" />}>
+          <MessageSquareWarning className="mr-1.5 h-4 w-4" /> Réclamations
+        </Button>
+        <Button variant="outline" size="sm" render={<Link href="/qualiopi/veille" />}>
+          <Newspaper className="mr-1.5 h-4 w-4" /> Veille
+        </Button>
+        <Button variant="outline" size="sm" render={<Link href="/qualiopi/partenaires" />}>
+          <Handshake className="mr-1.5 h-4 w-4" /> Partenaires
+        </Button>
+        {total > 0 && (
+          <Button size="sm" render={<a href="/qualiopi/dossier" />}>
+            <FolderArchive className="mr-1.5 h-4 w-4" /> Exporter le dossier d&apos;audit
           </Button>
-          <Button variant="outline" size="sm" render={<Link href="/qualiopi/veille" />}>
-            <Newspaper className="mr-1.5 h-4 w-4" /> Veille
-          </Button>
-          <Button variant="outline" size="sm" render={<Link href="/qualiopi/partenaires" />}>
-            <Handshake className="mr-1.5 h-4 w-4" /> Partenaires
-          </Button>
-          {total > 0 && (
-            <Button size="sm" render={<a href="/qualiopi/dossier" />}>
-              <FolderArchive className="mr-1.5 h-4 w-4" /> Exporter le dossier d&apos;audit
-            </Button>
-          )}
-        </div>
-      </div>
+        )}
+      </PageHeader>
 
       {total === 0 ? (
         <Card>
@@ -78,7 +71,7 @@ export default async function QualiopiPage() {
         </Card>
       ) : (
         <>
-          {/* Tableau de conformité */}
+          {/* Niveau de conformité */}
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Niveau de conformité</CardTitle>
@@ -108,26 +101,8 @@ export default async function QualiopiPage() {
             </CardContent>
           </Card>
 
-          {/* Indicateurs par critère */}
-          {[...groupes.keys()].sort((a, b) => a - b).map((critere) => (
-            <Card key={critere}>
-              <CardHeader>
-                <CardTitle className="text-sm">{CRITERES[critere]}</CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                {groupes.get(critere)!.map((ind) => (
-                  <QualiopiRow
-                    key={ind.id}
-                    id={ind.id}
-                    numero={ind.numero}
-                    libelle={ind.libelle}
-                    statut={ind.statut}
-                    commentaire={ind.commentaire}
-                  />
-                ))}
-              </CardContent>
-            </Card>
-          ))}
+          {/* Indicateurs par critère : filtre + accordéon */}
+          <QualiopiCriteres indicateurs={rows} />
         </>
       )}
     </div>

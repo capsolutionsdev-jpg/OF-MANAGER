@@ -4,15 +4,13 @@ import {
   BookOpen,
   CalendarClock,
   GraduationCap,
-  PieChart,
   History,
   BellRing,
-  Megaphone,
   ArrowRight,
-  Clock,
-  AlertTriangle,
   FileWarning,
   MessageSquareWarning,
+  AlertTriangle,
+  BarChart3,
 } from "lucide-react";
 import { auth } from "@/auth";
 import { getTenantDb } from "@/lib/tenant";
@@ -24,23 +22,6 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { StatCard } from "@/components/ui/stat-card";
-import { INSCRIPTION_STATUT_LABELS } from "@/lib/validators/inscription";
-import { FINANCEMENT_LABELS } from "@/lib/validators/candidat";
-
-function Bar({ label, value, max, color }: { label: string; value: number; max: number; color: string }) {
-  const pct = max > 0 ? Math.round((value / max) * 100) : 0;
-  return (
-    <div className="space-y-1">
-      <div className="flex justify-between text-xs">
-        <span className="text-muted-foreground">{label}</span>
-        <span className="font-medium">{value}</span>
-      </div>
-      <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-        <div className={`bar-anim h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
-      </div>
-    </div>
-  );
-}
 
 function Gauge({ pct }: { pct: number }) {
   const r = 50;
@@ -90,17 +71,13 @@ export default async function DashboardPage() {
 
   const [
     candidats, apprenants, formations, sessionsAVenir,
-    parStatut, parFinancement, parSource,
-    sessionsActives, enAttente, prochaines, logs,
+    sessionsActives, enAttente, enAttenteTotal, prochaines, logs,
     reclamationsOuvertes, inscriptionsDossier, weekSessions,
   ] = await Promise.all([
     db.candidat.count({ where: { statut: { not: "ARCHIVE" } } }),
     db.apprenant.count(),
     db.formation.count({ where: { isArchived: false } }),
     db.session.count({ where: { dateDebut: { gte: now } } }),
-    db.inscription.groupBy({ by: ["statut"], _count: { _all: true } }),
-    db.inscription.groupBy({ by: ["financementType"], _count: { _all: true } }),
-    db.candidat.groupBy({ by: ["sourceConnaissance"], _count: { _all: true } }),
     db.session.findMany({
       where: { statut: { not: "ANNULEE" }, dateFin: { gte: now } },
       orderBy: { dateDebut: "asc" },
@@ -112,17 +89,18 @@ export default async function DashboardPage() {
     }),
     db.inscription.findMany({
       where: { statut: "EN_ATTENTE" },
-      orderBy: { createdAt: "desc" }, take: 15,
+      orderBy: { createdAt: "desc" }, take: 5,
       include: {
         candidat: { select: { id: true, prenom: true, nom: true, telephone: true, email: true } },
         session: { include: { formation: { select: { titre: true } } } },
       },
     }),
+    db.inscription.count({ where: { statut: "EN_ATTENTE" } }),
     db.session.findMany({
-      where: { dateDebut: { gte: now } }, orderBy: { dateDebut: "asc" }, take: 6,
+      where: { dateDebut: { gte: now } }, orderBy: { dateDebut: "asc" }, take: 5,
       include: { formation: true, _count: { select: { inscriptions: true } } },
     }),
-    db.auditLog.findMany({ orderBy: { createdAt: "desc" }, take: 10, include: { user: { select: { name: true } } } }),
+    db.auditLog.findMany({ orderBy: { createdAt: "desc" }, take: 5, include: { user: { select: { name: true } } } }),
     db.reclamation.count({ where: { statut: { not: "CLOTUREE" } } }),
     db.inscription.findMany({
       // Compteur « dossiers à compléter » : inscriptions actives/à venir seulement
@@ -148,8 +126,6 @@ export default async function DashboardPage() {
     return att.some((p) => !i.piecesRecues.includes(p));
   }).length;
 
-  const finMax = Math.max(1, ...parFinancement.map((s) => s._count._all));
-  const sourceMax = Math.max(1, ...parSource.map((s) => s._count._all));
   const fmt = (d: Date) => d.toLocaleDateString("fr-FR");
   const fmtDateHeure = (d: Date) =>
     d.toLocaleDateString("fr-FR") + " à " + d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
@@ -205,12 +181,20 @@ export default async function DashboardPage() {
           <h1 className="text-2xl font-bold tracking-tight">Bonjour, {prenom}</h1>
           <p className="mt-0.5 text-sm capitalize text-muted-foreground">{aujourdhui} — centre de pilotage</p>
         </div>
-        <Link
-          href="/candidats/nouveau"
-          className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-opacity hover:opacity-90"
-        >
-          <Users className="h-4 w-4" /> Nouveau candidat
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href="/dashboard/statistiques"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium transition-colors hover:bg-muted"
+          >
+            <BarChart3 className="h-4 w-4" /> Statistiques
+          </Link>
+          <Link
+            href="/candidats/nouveau"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-opacity hover:opacity-90"
+          >
+            <Users className="h-4 w-4" /> Nouveau candidat
+          </Link>
+        </div>
       </div>
 
       {/* COCKPIT : jauge + KPIs + à traiter */}
@@ -235,156 +219,68 @@ export default async function DashboardPage() {
           <CardContent className="space-y-2">
             <Link href="#a-relancer" className="flex items-center justify-between rounded-lg bg-rose-50 px-3 py-2 text-sm transition-colors hover:bg-rose-100 dark:bg-rose-500/10 dark:hover:bg-rose-500/20">
               <span className="flex items-center gap-1.5 text-rose-700 dark:text-rose-400"><BellRing className="h-3.5 w-3.5" /> En attente</span>
-              <span className="font-semibold text-rose-700 dark:text-rose-400">{enAttente.length}</span>
+              <span className="flex items-center gap-1 font-semibold text-rose-700 dark:text-rose-400">{enAttenteTotal} <ArrowRight className="h-3.5 w-3.5" /></span>
             </Link>
-            <div className="flex items-center justify-between rounded-lg bg-amber-50 px-3 py-2 text-sm dark:bg-amber-500/10">
+            <Link href="/candidats" className="flex items-center justify-between rounded-lg bg-amber-50 px-3 py-2 text-sm transition-colors hover:bg-amber-100 dark:bg-amber-500/10 dark:hover:bg-amber-500/20">
               <span className="flex items-center gap-1.5 text-amber-700 dark:text-amber-400"><FileWarning className="h-3.5 w-3.5" /> Pièces manquantes</span>
-              <span className="font-semibold text-amber-700 dark:text-amber-400">{piecesManquantes}</span>
-            </div>
+              <span className="flex items-center gap-1 font-semibold text-amber-700 dark:text-amber-400">{piecesManquantes} <ArrowRight className="h-3.5 w-3.5" /></span>
+            </Link>
             <Link href="/qualiopi/reclamations" className="flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors hover:bg-muted">
               <span className="flex items-center gap-1.5 text-muted-foreground"><MessageSquareWarning className="h-3.5 w-3.5" /> Réclamations</span>
-              <span className="font-semibold">{reclamationsOuvertes}</span>
+              <span className="flex items-center gap-1 font-semibold">{reclamationsOuvertes} <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" /></span>
             </Link>
           </CardContent>
         </Card>
       </div>
 
-      {/* PLANNING DE LA SEMAINE */}
-      <Card>
-        <CardHeader className="flex-row items-center justify-between space-y-0">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <CalendarClock className="h-4 w-4" /> Planning de la semaine
-          </CardTitle>
-          <span className="text-xs text-muted-foreground">
-            {fmt(weekStart)} → {fmt(weekEnd)}
-          </span>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="grid grid-cols-2 border-t sm:grid-cols-3 lg:grid-cols-5">
-            {days.map((d, i) => (
-              <div
-                key={i}
-                className={`min-h-[110px] border-b border-r p-2 last:border-r-0 ${d.isToday ? "bg-primary/5" : ""}`}
-              >
-                <div className={`mb-2 text-xs ${d.isToday ? "font-semibold text-primary" : "text-muted-foreground"}`}>
-                  {d.label} {d.num}
-                </div>
-                <div className="space-y-1.5">
-                  {d.sessions.length === 0 ? (
-                    <span className="text-[11px] text-muted-foreground/50">—</span>
-                  ) : (
-                    d.sessions.map((s) => (
-                      <Link
-                        key={s.id}
-                        href={`/sessions/${s.id}`}
-                        className="block rounded-md bg-blue-50 px-2 py-1.5 transition-colors hover:bg-blue-100 dark:bg-blue-500/15 dark:hover:bg-blue-500/25"
-                      >
-                        <div className="truncate text-[11px] font-medium text-blue-700 dark:text-blue-300">
-                          {s.formation.titre}
-                        </div>
-                        <div className="text-[10px] text-blue-600/80 dark:text-blue-400/80">
-                          {s.horaires ? `${s.horaires.split("–")[0].trim()} · ` : ""}
-                          {s._count.inscriptions}/{s.nbPlaces}
-                        </div>
-                      </Link>
-                    ))
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Répartitions */}
+      {/* CETTE SEMAINE : planning (2/3) + prochaines sessions (1/3) */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base"><PieChart className="h-4 w-4" /> Inscriptions par statut</CardTitle>
+        <Card className="lg:col-span-2">
+          <CardHeader className="flex-row items-center justify-between space-y-0">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <CalendarClock className="h-4 w-4" /> Cette semaine
+            </CardTitle>
+            <span className="text-xs text-muted-foreground">
+              {fmt(weekStart)} → {fmt(weekEnd)}
+            </span>
           </CardHeader>
-          <CardContent className="space-y-2">
-            {parStatut.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Aucune inscription.</p>
-            ) : (
-              parStatut.map((s) =>
-                s.statut === "EN_ATTENTE" ? (
-                  <Link key={s.statut} href="#a-relancer" className="flex items-center justify-between rounded-lg bg-amber-50 px-3 py-2 text-sm transition-colors hover:bg-amber-100 dark:bg-amber-500/10 dark:hover:bg-amber-500/20">
-                    <span className="flex items-center gap-1.5 font-medium text-amber-700 dark:text-amber-400"><Clock className="h-3.5 w-3.5" /> En attente</span>
-                    <span className="flex items-center gap-1 text-xs font-medium text-amber-700 dark:text-amber-400">{s._count._all} · à relancer <ArrowRight className="h-3.5 w-3.5" /></span>
-                  </Link>
-                ) : (
-                  <div key={s.statut} className="flex items-center justify-between px-3 py-1.5 text-sm">
-                    <span className="text-muted-foreground">{INSCRIPTION_STATUT_LABELS[s.statut]}</span>
-                    <span className="font-semibold">{s._count._all}</span>
+          <CardContent className="p-0">
+            <div className="grid grid-cols-2 border-t sm:grid-cols-3 lg:grid-cols-5">
+              {days.map((d, i) => (
+                <div
+                  key={i}
+                  className={`min-h-[110px] border-b border-r p-2 last:border-r-0 ${d.isToday ? "bg-primary/5" : ""}`}
+                >
+                  <div className={`mb-2 text-xs ${d.isToday ? "font-semibold text-primary" : "text-muted-foreground"}`}>
+                    {d.label} {d.num}
                   </div>
-                ),
-              )
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader><CardTitle className="text-base">Inscriptions par financement</CardTitle></CardHeader>
-          <CardContent className="space-y-3">
-            {parFinancement.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Aucune inscription.</p>
-            ) : (
-              parFinancement.map((s) => (
-                <Bar key={s.financementType ?? "none"} label={s.financementType ? FINANCEMENT_LABELS[s.financementType] : "Non précisé"} value={s._count._all} max={finMax} color="bg-emerald-500" />
-              ))
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base"><Megaphone className="h-4 w-4" /> Provenance des prospects</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {parSource.filter((s) => s.sourceConnaissance).length === 0 ? (
-              <p className="text-sm text-muted-foreground">Aucune source renseignée.</p>
-            ) : (
-              parSource.filter((s) => s.sourceConnaissance).sort((a, b) => b._count._all - a._count._all).map((s) => (
-                <Bar key={s.sourceConnaissance} label={s.sourceConnaissance!} value={s._count._all} max={sourceMax} color="bg-violet-500" />
-              ))
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* À relancer */}
-      <Card id="a-relancer">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <BellRing className="h-4 w-4 text-amber-600" /> À relancer — inscriptions en attente ({enAttente.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {enAttente.length === 0 ? (
-            <p className="flex items-center gap-2 text-sm text-muted-foreground"><AlertTriangle className="h-4 w-4 text-emerald-600" /> Aucune inscription en attente.</p>
-          ) : (
-            <ul className="divide-y">
-              {enAttente.map((i) => (
-                <li key={i.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
-                  <div className="min-w-0">
-                    <Link href={`/candidats/${i.candidat.id}`} className="font-medium hover:underline">{i.candidat.prenom} {i.candidat.nom}</Link>
-                    <span className="ml-2 text-xs text-muted-foreground">{i.session.formation.titre} · {fmt(i.session.dateDebut)}</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-xs">
-                    {i.candidat.telephone && <a href={`tel:${i.candidat.telephone}`} className="text-primary hover:underline">{i.candidat.telephone}</a>}
-                    {i.candidat.email && (
-                      <a href={`mailto:${i.candidat.email}?subject=${encodeURIComponent(`Votre inscription — ${i.session.formation.titre}`)}`} className="rounded-md border px-2 py-1 font-medium text-primary hover:bg-muted">Relancer par e-mail</a>
+                  <div className="space-y-1.5">
+                    {d.sessions.length === 0 ? (
+                      <span className="text-[11px] text-muted-foreground/50">—</span>
+                    ) : (
+                      d.sessions.map((s) => (
+                        <Link
+                          key={s.id}
+                          href={`/sessions/${s.id}`}
+                          className="block rounded-md bg-blue-50 px-2 py-1.5 transition-colors hover:bg-blue-100 dark:bg-blue-500/15 dark:hover:bg-blue-500/25"
+                        >
+                          <div className="truncate text-[11px] font-medium text-blue-700 dark:text-blue-300">
+                            {s.formation.titre}
+                          </div>
+                          <div className="text-[10px] text-blue-600/80 dark:text-blue-400/80">
+                            {s.horaires ? `${s.horaires.split("–")[0].trim()} · ` : ""}
+                            {s._count.inscriptions}/{s.nbPlaces}
+                          </div>
+                        </Link>
+                      ))
                     )}
                   </div>
-                </li>
+                </div>
               ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
+            </div>
+          </CardContent>
+        </Card>
 
-      {/* Prochaines sessions + activité */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between text-base">
@@ -408,10 +304,49 @@ export default async function DashboardPage() {
             )}
           </CardContent>
         </Card>
+      </div>
+
+      {/* À relancer (compact) + activité récente (en pied) */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <Card id="a-relancer">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between text-base">
+              <span className="flex items-center gap-2">
+                <BellRing className="h-4 w-4 text-amber-600" /> À relancer ({enAttenteTotal})
+              </span>
+              <Link href="/crm" className="text-xs font-normal text-primary hover:underline">Voir tout</Link>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {enAttente.length === 0 ? (
+              <p className="flex items-center gap-2 text-sm text-muted-foreground"><AlertTriangle className="h-4 w-4 text-emerald-600" /> Aucune inscription en attente.</p>
+            ) : (
+              <ul className="divide-y">
+                {enAttente.map((i) => (
+                  <li key={i.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
+                    <div className="min-w-0">
+                      <Link href={`/candidats/${i.candidat.id}`} className="font-medium hover:underline">{i.candidat.prenom} {i.candidat.nom}</Link>
+                      <span className="ml-2 text-xs text-muted-foreground">{i.session.formation.titre} · {fmt(i.session.dateDebut)}</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs">
+                      {i.candidat.telephone && <a href={`tel:${i.candidat.telephone}`} className="text-primary hover:underline">{i.candidat.telephone}</a>}
+                      {i.candidat.email && (
+                        <a href={`mailto:${i.candidat.email}?subject=${encodeURIComponent(`Votre inscription — ${i.session.formation.titre}`)}`} className="rounded-md border px-2 py-1 font-medium text-primary hover:bg-muted">Relancer</a>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base"><History className="h-4 w-4" /> Activité récente</CardTitle>
+            <CardTitle className="flex items-center justify-between text-base">
+              <span className="flex items-center gap-2"><History className="h-4 w-4" /> Activité récente</span>
+              <Link href="/historique" className="text-xs font-normal text-primary hover:underline">Journal complet</Link>
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {logs.length === 0 ? (

@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Building2, Users, FileText } from "lucide-react";
+import { ArrowLeft, Building2, Users, FileText, Wallet, ChevronDown } from "lucide-react";
 import { getTenantDb } from "@/lib/tenant";
-import { ConventionDialog } from "@/components/conventions/convention-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -19,6 +18,7 @@ import {
   rattacherCandidat,
   detacherCandidat,
 } from "@/lib/actions/client-pro-actions";
+import { ConventionDialog } from "@/components/conventions/convention-dialog";
 
 export const dynamic = "force-dynamic";
 
@@ -53,14 +53,15 @@ export default async function ClientProPage({
     take: 300,
   });
 
-  // Sessions ouvertes (pour l'inscription groupée depuis la convention).
+  const fmt = (d: Date | null) => (d ? d.toLocaleDateString("fr-FR") : "—");
+
+  // Sessions ouvertes + salariés — pour l'inscription groupée (convention).
   const sessionsOuvertes = await db.session.findMany({
     where: { isArchived: false, statut: { not: "ANNULEE" } },
     include: { formation: { select: { titre: true } } },
     orderBy: { dateDebut: "desc" },
     take: 100,
   });
-  const fmt = (d: Date | null) => (d ? d.toLocaleDateString("fr-FR") : "—");
   const sessionOptions = sessionsOuvertes.map((s) => ({
     id: s.id,
     label: `${s.formation.titre} — ${fmt(s.dateDebut)}${s.lieu ? ` (${s.lieu})` : ""}`,
@@ -71,119 +72,66 @@ export default async function ClientProPage({
     prenom: c.prenom,
   }));
 
+  const stats = [
+    { label: "Financeur", value: client.opco || "—", icon: Wallet },
+    { label: "Salariés", value: String(client.candidats.length), icon: Users },
+    { label: "Conventions", value: String(client.conventions.length), icon: FileText },
+  ];
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <Link
-            href="/clients-pro"
-            className="mb-1 inline-flex items-center gap-1 text-xs text-muted-foreground hover:underline"
-          >
-            <ArrowLeft className="h-3 w-3" /> Clients pro
-          </Link>
-          <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
-            <Building2 className="h-6 w-6 text-primary" /> {client.raisonSociale}
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            {[client.siret && `SIRET ${client.siret}`, client.opco && `Financeur : ${client.opco}`]
-              .filter(Boolean)
-              .join(" · ") || "Fiche client professionnel"}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <ConventionDialog
-            entrepriseId={client.id}
-            sessions={sessionOptions}
-            candidatsExistants={salariesExistants}
-            triggerLabel="Inscrire des salariés"
-          />
-          <Button variant="outline" render={<Link href={`/clients-pro/${client.id}/convention`} />}>
-            <FileText className="mr-1.5 h-4 w-4" /> Bon de convention (PDF)
-          </Button>
-        </div>
+      {/* En-tête */}
+      <div>
+        <Link
+          href="/clients-pro"
+          className="mb-1 inline-flex items-center gap-1 text-xs text-muted-foreground hover:underline"
+        >
+          <ArrowLeft className="h-3 w-3" /> Clients pro
+        </Link>
+        <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
+          <Building2 className="h-6 w-6 text-primary" /> {client.raisonSociale}
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          {[client.siret && `SIRET ${client.siret}`, client.opco && `Financeur : ${client.opco}`]
+            .filter(Boolean)
+            .join(" · ") || "Fiche client professionnel"}
+        </p>
       </div>
 
-      {/* Coordonnées légales (modifiables) */}
+      {/* Bandeau résumé */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Coordonnées légales</CardTitle>
-          <CardDescription>
-            Ces informations alimentent la convention de formation et les documents envoyés à l&apos;entreprise.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form action={majClientPro} className="grid gap-4 sm:grid-cols-2">
-            <input type="hidden" name="id" value={client.id} />
-            <div className="space-y-1.5 sm:col-span-2">
-              <Label htmlFor="raisonSociale">Raison sociale</Label>
-              <Input id="raisonSociale" name="raisonSociale" defaultValue={client.raisonSociale} required />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="siret">SIRET</Label>
-              <Input id="siret" name="siret" defaultValue={client.siret ?? ""} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="numeroTva">N° TVA</Label>
-              <Input id="numeroTva" name="numeroTva" defaultValue={client.numeroTva ?? ""} />
-            </div>
-            <div className="space-y-1.5 sm:col-span-2">
-              <Label htmlFor="adresse">Adresse</Label>
-              <Input id="adresse" name="adresse" defaultValue={client.adresse ?? ""} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="codePostal">Code postal</Label>
-              <Input id="codePostal" name="codePostal" defaultValue={client.codePostal ?? ""} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="ville">Ville</Label>
-              <Input id="ville" name="ville" defaultValue={client.ville ?? ""} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="representant">Représentant légal</Label>
-              <Input id="representant" name="representant" defaultValue={client.representant ?? ""} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="fonction">Fonction</Label>
-              <Input id="fonction" name="fonction" defaultValue={client.fonction ?? ""} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="contactNom">Contact opérationnel</Label>
-              <Input id="contactNom" name="contactNom" defaultValue={client.contactNom ?? ""} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="contactTel">Téléphone</Label>
-              <Input id="contactTel" name="contactTel" defaultValue={client.contactTel ?? ""} />
-            </div>
-            <div className="space-y-1.5 sm:col-span-2">
-              <Label htmlFor="contactEmail">E-mail (documents)</Label>
-              <Input id="contactEmail" name="contactEmail" type="email" defaultValue={client.contactEmail ?? ""} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="opco">Financeur habituel</Label>
-              <select id="opco" name="opco" defaultValue={client.opco ?? ""} className="h-9 w-full rounded-md border bg-transparent px-3 text-sm">
-                <option value="">—</option>
-                <option>AKTO</option>
-                <option>OPCO Mobilités</option>
-                <option>OPCO EP</option>
-                <option>OPCO 2i</option>
-                <option>Atlas</option>
-                <option>Uniformation</option>
-                <option>Autre OPCO</option>
-                <option>Autofinancement</option>
-              </select>
-            </div>
-            <div className="space-y-1.5 sm:col-span-2">
-              <Label htmlFor="notes">Notes internes</Label>
-              <textarea id="notes" name="notes" rows={2} defaultValue={client.notes ?? ""} className="w-full rounded-md border bg-transparent p-3 text-sm" />
-            </div>
-            <div className="sm:col-span-2">
-              <Button type="submit">Enregistrer</Button>
-            </div>
-          </form>
+        <CardContent className="flex flex-wrap items-center justify-between gap-4 py-4">
+          <div className="grid flex-1 grid-cols-3 gap-4">
+            {stats.map((s) => {
+              const Icon = s.icon;
+              return (
+                <div key={s.label}>
+                  <div className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    <Icon className="h-3.5 w-3.5" /> {s.label}
+                  </div>
+                  <div className="mt-0.5 truncate text-lg font-semibold">{s.value}</div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <ConventionDialog
+              entrepriseId={client.id}
+              sessions={sessionOptions}
+              candidatsExistants={salariesExistants}
+              triggerLabel="Inscrire des salariés"
+            />
+            <Button
+              variant="outline"
+              render={<Link href={`/clients-pro/${client.id}/convention`} />}
+            >
+              <FileText className="mr-1.5 h-4 w-4" /> Bon de convention (PDF)
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
-      {/* Salariés à former */}
+      {/* Salariés à former (usage quotidien → en premier) */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
@@ -267,6 +215,92 @@ export default async function ClientProPage({
             </ul>
           )}
         </CardContent>
+      </Card>
+
+      {/* Coordonnées légales — repliées (lecture par défaut, formulaire à la demande) */}
+      <Card>
+        <details className="group">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-6 [&::-webkit-details-marker]:hidden">
+            <div>
+              <div className="text-base font-semibold">Modifier les informations légales</div>
+              <div className="text-sm text-muted-foreground">
+                Raison sociale, SIRET, adresse, représentant, financeur… — alimentent la
+                convention et les documents envoyés à l&apos;entreprise.
+              </div>
+            </div>
+            <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
+          </summary>
+          <div className="border-t p-6 pt-6">
+            <form action={majClientPro} className="grid gap-4 sm:grid-cols-2">
+              <input type="hidden" name="id" value={client.id} />
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label htmlFor="raisonSociale">Raison sociale</Label>
+                <Input id="raisonSociale" name="raisonSociale" defaultValue={client.raisonSociale} required />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="siret">SIRET</Label>
+                <Input id="siret" name="siret" defaultValue={client.siret ?? ""} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="numeroTva">N° TVA</Label>
+                <Input id="numeroTva" name="numeroTva" defaultValue={client.numeroTva ?? ""} />
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label htmlFor="adresse">Adresse</Label>
+                <Input id="adresse" name="adresse" defaultValue={client.adresse ?? ""} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="codePostal">Code postal</Label>
+                <Input id="codePostal" name="codePostal" defaultValue={client.codePostal ?? ""} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="ville">Ville</Label>
+                <Input id="ville" name="ville" defaultValue={client.ville ?? ""} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="representant">Représentant légal</Label>
+                <Input id="representant" name="representant" defaultValue={client.representant ?? ""} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="fonction">Fonction</Label>
+                <Input id="fonction" name="fonction" defaultValue={client.fonction ?? ""} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="contactNom">Contact opérationnel</Label>
+                <Input id="contactNom" name="contactNom" defaultValue={client.contactNom ?? ""} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="contactTel">Téléphone</Label>
+                <Input id="contactTel" name="contactTel" defaultValue={client.contactTel ?? ""} />
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label htmlFor="contactEmail">E-mail (documents)</Label>
+                <Input id="contactEmail" name="contactEmail" type="email" defaultValue={client.contactEmail ?? ""} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="opco">Financeur habituel</Label>
+                <select id="opco" name="opco" defaultValue={client.opco ?? ""} className="h-9 w-full rounded-md border bg-transparent px-3 text-sm">
+                  <option value="">—</option>
+                  <option>AKTO</option>
+                  <option>OPCO Mobilités</option>
+                  <option>OPCO EP</option>
+                  <option>OPCO 2i</option>
+                  <option>Atlas</option>
+                  <option>Uniformation</option>
+                  <option>Autre OPCO</option>
+                  <option>Autofinancement</option>
+                </select>
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label htmlFor="notes">Notes internes</Label>
+                <textarea id="notes" name="notes" rows={2} defaultValue={client.notes ?? ""} className="w-full rounded-md border bg-transparent p-3 text-sm" />
+              </div>
+              <div className="sm:col-span-2">
+                <Button type="submit">Enregistrer</Button>
+              </div>
+            </form>
+          </div>
+        </details>
       </Card>
     </div>
   );
