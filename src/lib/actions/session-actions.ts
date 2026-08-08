@@ -86,6 +86,31 @@ function toData(v: SessionFormValues) {
   };
 }
 
+/**
+ * Revalide côté serveur que la salle et les formateurs choisis appartiennent à
+ * l'organisme (les FK scalaires ne sont PAS scopées par Prisma → un id d'un autre
+ * tenant passerait sans ce contrôle). Salle inactive ou hors tenant → ignorée ;
+ * formateurs hors tenant → filtrés.
+ */
+async function validateRefs(
+  db: TenantDb,
+  salleId: string | null,
+  formateurIds: string[],
+): Promise<{ salleId: string | null; formateurIds: string[] }> {
+  let validSalle: string | null = null;
+  if (salleId) {
+    const salle = await db.salle.findFirst({ where: { id: salleId, actif: true }, select: { id: true } });
+    validSalle = salle?.id ?? null;
+  }
+  let validFormateurs = formateurIds;
+  if (formateurIds.length) {
+    const found = await db.formateur.findMany({ where: { id: { in: formateurIds } }, select: { id: true } });
+    const ok = new Set(found.map((f) => f.id));
+    validFormateurs = formateurIds.filter((fid) => ok.has(fid));
+  }
+  return { salleId: validSalle, formateurIds: validFormateurs };
+}
+
 export async function createSession(
   values: SessionFormValues,
 ): Promise<ActionResult> {
@@ -97,12 +122,14 @@ export async function createSession(
   if (!parsed.success) return { ok: false, error: "Données invalides." };
 
   try {
-    const ids = parsed.data.formateurIds ?? [];
+    const data = toData(parsed.data);
+    const refs = await validateRefs(db, data.salleId, parsed.data.formateurIds ?? []);
     const created = await db.session.create({
       data: {
-        ...toData(parsed.data),
+        ...data,
+        salleId: refs.salleId,
         createdById: session.user.id,
-        formateurs: { connect: ids.map((fid) => ({ id: fid })) },
+        formateurs: { connect: refs.formateurIds.map((fid) => ({ id: fid })) },
       },
     });
     await syncJuryAffectations(db, created.id, parsed.data.jurys ?? []);
@@ -137,12 +164,14 @@ export async function updateSession(
   if (!parsed.success) return { ok: false, error: "Données invalides." };
 
   try {
-    const ids = parsed.data.formateurIds ?? [];
+    const data = toData(parsed.data);
+    const refs = await validateRefs(db, data.salleId, parsed.data.formateurIds ?? []);
     await db.session.update({
       where: { id },
       data: {
-        ...toData(parsed.data),
-        formateurs: { set: ids.map((fid) => ({ id: fid })) },
+        ...data,
+        salleId: refs.salleId,
+        formateurs: { set: refs.formateurIds.map((fid) => ({ id: fid })) },
       },
     });
     await syncJuryAffectations(db, id, parsed.data.jurys ?? []);
