@@ -30,9 +30,13 @@
 - **[Tokens] Expiration** — devis via `validUntil` ; liens de parcours (documents + page) expirés 12 mois après la session (`linkExpired`). *(0a008d7)*
 - **[Nettoyage]** dead code `markTicketReadClient`/`markSupportRead` retiré.
 
-## Reste (non traité — assumé)
-- **OBS-1** (étendre le garde-fou « prisma direct » aux server actions) — **volontairement laissé** : un tel test échouerait d'emblée (beaucoup d'actions utilisent légitimement le client brut pour les flux tokenisés/superadmin) ; c'est une recommandation de couverture, pas un défaut. À traiter, si souhaité, avec une allowlist dédiée.
+- **OBS-1** — garde-fou « prisma direct » **étendu aux server actions** (test + allowlist des 28 usages légitimes). *(ae1d8f0)*
+
+## Reste (non requis — assumé)
 - **[Tokens]** expiration « complète » via un champ `expiresAt` par token (au lieu de la règle logique 12 mois post-session) — nécessiterait une migration ; non requis (la règle logique couvre le risque de fuite).
+- **[Planning]** affichage `/planning` en occupation continue vs séances réelles — raffinement d'affichage (cosmétique).
+
+> **Campagne QA close** : tous les constats P1/P2/P3 sont traités (correctif ou décision), déployés sur `main`. Reste seulement les 2 points ci-dessus, non-bloquants et documentés.
 
 ## Rapports & Dashboard (calculs) — à corriger
 | Sév. | Anomalie | Fichier |
