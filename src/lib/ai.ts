@@ -54,6 +54,9 @@ export async function aiComplete(params: {
       .trim();
     return { ok: true, text };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : "Erreur de l'assistant IA." };
+    // Ne PAS exposer l'erreur brute du fournisseur au client (fuite d'infos /
+    // messages techniques). On journalise et on renvoie un message générique.
+    console.error("[ai] échec de génération:", e);
+    return { ok: false, error: "L'assistant IA est momentanément indisponible. Réessayez dans quelques instants." };
   }
 }

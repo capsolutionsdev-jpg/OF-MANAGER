@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { aiComplete } from "@/lib/ai";
 import { civicCors, getCandidatFromToken } from "@/lib/civique-api";
+import { checkLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -104,11 +105,28 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Accès réservé aux candidats inscrits." }, { status: 401, headers: civicCors });
   }
 
+  // Rate-limit par candidat (maîtrise des coûts) : 10 requêtes / heure.
+  const rl = await checkLimit(`civai:${candidat.id}`, { limit: 10, windowMs: 60 * 60_000 });
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: `Trop de requêtes. Réessayez dans ${rl.retryAfter} secondes.` },
+      { status: 429, headers: civicCors },
+    );
+  }
+
   let body: Body;
   try {
     body = (await req.json()) as Body;
   } catch {
     return NextResponse.json({ error: "Corps invalide." }, { status: 400, headers: civicCors });
+  }
+
+  // Plafond d'entrée : champs de texte libre limités (évite les prompts géants).
+  const tropLong = [body.texte, body.message, body.contexte, body.enonce].some(
+    (t) => (t?.length ?? 0) > 2000,
+  );
+  if (tropLong) {
+    return NextResponse.json({ error: "Texte trop long (2000 caractères maximum)." }, { status: 400, headers: civicCors });
   }
 
   const built = buildPrompt(body);

@@ -4,6 +4,7 @@ import { requireSection } from "@/lib/section-guard";
 import { getTenantDb } from "@/lib/tenant";
 import { getCurrentOrganisme } from "@/lib/org";
 import { aiComplete, type AiResult } from "@/lib/ai";
+import { checkLimit } from "@/lib/rate-limit";
 import { CRM_STAGE_LABELS } from "@/lib/validators/crm";
 
 export type AiMode = "relance" | "qualification" | "resume" | "libre";
@@ -58,11 +59,28 @@ async function candidatContext(candidatId: string): Promise<string> {
 
 /** Action unique de l'assistant : génère un texte selon le mode + le contexte. */
 export async function runAssistant(formData: FormData): Promise<AiResult> {
-  await requireSection("ia");
+  const session = await requireSection("ia");
 
   const mode = (String(formData.get("mode") ?? "libre")) as AiMode;
   const instruction = String(formData.get("instruction") ?? "").trim();
   const candidatId = String(formData.get("candidatId") ?? "").trim();
+
+  // Plafond d'entrée (maîtrise des coûts) : consigne limitée en taille.
+  if (instruction.length > 6000) {
+    return { ok: false, error: "Consigne trop longue (6000 caractères maximum)." };
+  }
+
+  // Rate-limit : par utilisateur (20 / 10 min) et par organisme (200 / jour).
+  const userId = session?.user?.id ?? "anon";
+  const orgId = session?.user?.organismeId ?? "none";
+  const perUser = await checkLimit(`ai:user:${userId}`, { limit: 20, windowMs: 10 * 60_000 });
+  if (!perUser.ok) {
+    return { ok: false, error: `Limite d'utilisation de l'assistant atteinte. Réessayez dans ${perUser.retryAfter}s.` };
+  }
+  const perOrg = await checkLimit(`ai:org:${orgId}`, { limit: 200, windowMs: 24 * 60 * 60_000 });
+  if (!perOrg.ok) {
+    return { ok: false, error: "Quota IA quotidien de l'organisme atteint. Réessayez demain." };
+  }
 
   // Marque de l'OF pour personnaliser la signature des e-mails.
   const org = await getCurrentOrganisme();
@@ -85,5 +103,5 @@ export async function runAssistant(formData: FormData): Promise<AiResult> {
 
   if (!prompt.trim()) return { ok: false, error: "Indiquez une consigne ou choisissez un prospect." };
 
-  return aiComplete({ system, prompt, maxTokens: 1200, organismeId: org?.id });
+  return aiComplete({ system, prompt, maxTokens: 1024, organismeId: org?.id });
 }
