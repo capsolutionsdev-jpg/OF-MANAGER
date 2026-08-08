@@ -6,10 +6,15 @@
 > appliqués cette passe sont marqués ✅.
 
 ## Corrigé cette passe ✅
-- **[Exports] Injection de formule CSV** — `sessions/[id]/resultats/route.ts` utilisait un `cell()` maison sans neutraliser `=,+,-,@` (nom/prénom/email viennent du formulaire lead **public** → `=HYPERLINK(...)` exécuté à l'ouverture Excel). → réécrit avec `toCsvMatrix`/`csvResponse` (esc durci) **+ garde de rôle STAFF** (manquait).
-- **[SMS] Ré-envoi du SMS quand l'e-mail échoue** — régression de mon correctif BUG-002 : `maybeSms` tournait avant le jalon → rejoué à chaque cron si l'e-mail échouait. → `maybeSms` déplacé **dans** `if (sent)` (convocation, rappel, satisfaction, suivi 6 mois).
-- **[CRM] `requireSection` manquant** — `crm-actions` (7 actions) ne vérifiait que la connexion. → `requireSection("crm")` partout (rôle+section, défense en profondeur).
-- **[CRM] `assignCandidat` cross-tenant** — le `userId` affecté n'était pas validé. → vérifié via le client scopé (rejet si autre organisme).
+- **[Exports] Injection de formule CSV** — `sessions/[id]/resultats/route.ts` utilisait un `cell()` maison sans neutraliser `=,+,-,@` (nom/prénom/email viennent du formulaire lead **public** → `=HYPERLINK(...)` exécuté à l'ouverture Excel). → réécrit avec `toCsvMatrix`/`csvResponse` (esc durci) **+ garde de rôle STAFF** (manquait). *(commit ffa173b)*
+- **[SMS] Ré-envoi du SMS quand l'e-mail échoue** — régression de mon correctif BUG-002 : `maybeSms` tournait avant le jalon → rejoué à chaque cron si l'e-mail échouait. → `maybeSms` déplacé **dans** `if (sent)` (convocation, rappel, satisfaction, suivi 6 mois). *(ffa173b)*
+- **[CRM] `requireSection` manquant** — `crm-actions` (7 actions) ne vérifiait que la connexion. → `requireSection("crm")` partout (rôle+section). *(ffa173b)*
+- **[CRM] `assignCandidat` cross-tenant** — le `userId` affecté n'était pas validé. → vérifié via le client scopé (rejet si autre organisme). *(ffa173b)*
+- **[Rapports] Devis / paiements partiels / remplissage** — acceptation devis basée sur `acceptedAt` ; encaissé = règlements réels (Paiement) et en attente = reste dû (TTC − règlements) ; remplissage sur sessions actives + inscriptions non annulées ; dashboard : candidats hors archivés, jauge non annulée, plafond 600 retiré. *(ee208a2)*
+- **[Planning] Isolation salle/formateurs** — `salleId` et formateurs revalidés côté serveur (appartenance tenant, salle active) — fermait une référence cross-tenant. *(81bb213)*
+- **[Planning] Conflit de salle + sur-capacité** — avertissement non bloquant (chevauchement de créneau même salle ; nbPlaces > capacité). *(0e983c9)*
+
+> **Reste sur Planning** : la page `/planning` affiche une occupation continue sur tout l'intervalle au lieu des séances réelles (affichage, à raffiner).
 
 ## Rapports & Dashboard (calculs) — à corriger
 | Sév. | Anomalie | Fichier |
