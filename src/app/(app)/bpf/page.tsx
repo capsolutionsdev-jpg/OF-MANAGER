@@ -16,6 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { FINANCEMENT_LABELS } from "@/lib/validators/candidat";
 import { SITUATION_LABELS, EMPLOI_KEYS, type Suivi6MoisReponses } from "@/lib/suivi6mois";
 
@@ -329,320 +330,339 @@ export default async function BpfPage({
             </div>
           )}
 
-          {/* Récapitulatif aligné sur le CERFA 10443*17 */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">
-                Récapitulatif CERFA 10443*17 — à reporter dans « Mon activité formation »
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-5 text-sm">
-              {/* Cadre F — bilan pédagogique */}
-              <div>
-                <p className="mb-1.5 font-semibold">Cadre F — Bilan pédagogique (stagiaires formés directement)</p>
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="rounded-lg border bg-muted/30 p-3 text-center">
-                    <p className="text-xl font-bold">{totalStagiaires}</p>
-                    <p className="text-xs text-muted-foreground">Stagiaires (entrées)</p>
-                  </div>
-                  <div className="rounded-lg border bg-muted/30 p-3 text-center">
-                    <p className="text-xl font-bold">{totalHeures} h</p>
-                    <p className="text-xs text-muted-foreground">Heures de formation</p>
-                  </div>
-                  <div className="rounded-lg border bg-muted/30 p-3 text-center">
-                    <p className="text-xl font-bold">{totalHeuresStagiaires} h</p>
-                    <p className="text-xs text-muted-foreground">Heures-stagiaires</p>
-                  </div>
-                </div>
-              </div>
+          <Tabs defaultValue="synthese" className="space-y-6">
+            <TabsList>
+              <TabsTrigger value="synthese">Synthèse</TabsTrigger>
+              <TabsTrigger value="formations">Par formation</TabsTrigger>
+              <TabsTrigger value="ressources">Formateurs &amp; financements</TabsTrigger>
+              <TabsTrigger value="cerfa">CERFA 10443*17</TabsTrigger>
+            </TabsList>
 
-              {/* Cadre E — formateurs */}
-              <div>
-                <p className="mb-1.5 font-semibold">Cadre E — Personnes dispensant les heures de formation</p>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                  <div className="rounded-lg border bg-muted/30 p-3 text-center">
-                    <p className="text-xl font-bold">{formateurs.length}</p>
-                    <p className="text-xs text-muted-foreground">Formateurs</p>
-                  </div>
-                  <div className="rounded-lg border bg-muted/30 p-3 text-center">
-                    <p className="text-xl font-bold">{totalFormateursHeures} h</p>
-                    <p className="text-xs text-muted-foreground">Heures dispensées</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Cadre C — origine des produits */}
-              <div>
-                <p className="mb-1.5 font-semibold">Cadre C — Origine des produits (financeurs)</p>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Origine</TableHead>
-                      <TableHead className="text-right">Stagiaires</TableHead>
-                      <TableHead className="text-right">Produits</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {cadreC.map((r) => (
-                      <TableRow key={r.label}>
-                        <TableCell>{r.label}</TableCell>
-                        <TableCell className="text-right">{r.nb}</TableCell>
-                        <TableCell className="text-right">
-                          {r.montant > 0 ? `${r.montant.toLocaleString("fr-FR")} €` : "—"}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    <TableRow className="border-t-2 font-semibold">
-                      <TableCell>Total produits</TableCell>
-                      <TableCell className="text-right">{totalStagiaires}</TableCell>
-                      <TableCell className="text-right">
-                        {totalProduits > 0 ? `${totalProduits.toLocaleString("fr-FR")} €` : "—"}
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </div>
-
-              <p className="text-xs text-muted-foreground">
-                Valeurs alignées sur les cadres du CERFA 10443*17. La déclaration est
-                dématérialisée sur « Mon activité formation » (MAF) — ce récapitulatif sert à
-                reporter volumes et montants. Imprimez cette page (Ctrl/Cmd + P) pour l&apos;archiver.
-                Les produits sont ventilés d&apos;après le type de financement des inscriptions
-                entrées en formation.
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Par formation */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Sessions par formation</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Formation</TableHead>
-                    <TableHead className="text-right">Sessions</TableHead>
-                    <TableHead className="text-right">Heures</TableHead>
-                    <TableHead className="text-right">Stagiaires</TableHead>
-                    <TableHead className="text-right">Heures-stag.</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {formations.map((f) => (
-                    <TableRow key={f.reference}>
-                      <TableCell className="font-medium">
-                        {f.titre}
-                        <span className="ml-1.5 text-xs text-muted-foreground">
-                          {f.reference}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right">{f.nbSessions}</TableCell>
-                      <TableCell className="text-right">{f.heures} h</TableCell>
-                      <TableCell className="text-right">{f.stagiaires}</TableCell>
-                      <TableCell className="text-right">
-                        {f.heuresStagiaires} h
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  <TableRow className="border-t-2 font-semibold">
-                    <TableCell>Total</TableCell>
-                    <TableCell className="text-right">{sessions.length}</TableCell>
-                    <TableCell className="text-right">{totalHeures} h</TableCell>
-                    <TableCell className="text-right">{totalStagiaires}</TableCell>
-                    <TableCell className="text-right">
-                      {totalHeuresStagiaires} h
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-
-          {/* Résultats de certification */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="flex flex-wrap items-center gap-2 text-base">
-                <GraduationCap className="h-4 w-4" /> Résultats de certification
-                {tauxReussite !== null && (
-                  <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
-                    Taux de réussite : {tauxReussite}%
-                  </Badge>
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <div className="rounded-lg border bg-emerald-500/5 p-3 text-center">
-                  <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">
-                    {cert.CERTIFIE}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Certifiés</p>
-                </div>
-                <div className="rounded-lg border bg-amber-500/5 p-3 text-center">
-                  <p className="text-2xl font-bold text-amber-700 dark:text-amber-300">
-                    {cert.AJOURNE}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Ajournés</p>
-                </div>
-                <div className="rounded-lg border bg-destructive/5 p-3 text-center">
-                  <p className="text-2xl font-bold text-destructive">
-                    {cert.ABANDON}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Abandons</p>
-                </div>
-                <div className="rounded-lg border bg-muted/30 p-3 text-center">
-                  <p className="text-2xl font-bold text-muted-foreground">
-                    {cert.NON_EVALUE}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Non évalués</p>
-                </div>
-              </div>
-              <p className="mt-3 text-xs text-muted-foreground">
-                Le taux de réussite est calculé sur les stagiaires évalués
-                (certifiés / (certifiés + ajournés + abandons)).
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Insertion à 6 mois (suivi Qualiopi indicateur 11) */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="flex flex-wrap items-center gap-2 text-base">
-                <Users className="h-4 w-4" /> Insertion à 6 mois (suivi Qualiopi)
-                {tauxEmploi !== null && (
-                  <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">Taux d&apos;emploi : {tauxEmploi}%</Badge>
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {suivi.repondants === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  Aucune réponse à l&apos;enquête de suivi à 6 mois sur cette période (les enquêtes sont
-                  envoyées automatiquement 6 mois après la fin de chaque session).
-                </p>
-              ) : (
-                <>
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                    <div className="rounded-lg border bg-muted/30 p-3 text-center">
-                      <p className="text-2xl font-bold">{suivi.repondants}</p>
-                      <p className="text-xs text-muted-foreground">Répondants</p>
-                    </div>
-                    <div className="rounded-lg border bg-emerald-500/5 p-3 text-center">
-                      <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">{suivi.enEmploi}</p>
-                      <p className="text-xs text-muted-foreground">En emploi</p>
-                    </div>
-                    <div className="rounded-lg border bg-sky-500/5 p-3 text-center">
-                      <p className="text-2xl font-bold text-sky-700 dark:text-sky-300">{tauxEmploi}%</p>
-                      <p className="text-xs text-muted-foreground">Taux d&apos;emploi</p>
-                    </div>
-                    <div className="rounded-lg border bg-primary/5 p-3 text-center">
-                      <p className="text-2xl font-bold text-primary">{tauxLien ?? "—"}{tauxLien !== null ? "%" : ""}</p>
-                      <p className="text-xs text-muted-foreground">En lien avec la formation</p>
+            {/* Récapitulatif aligné sur le CERFA 10443*17 */}
+            <TabsContent value="cerfa">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">
+                    Récapitulatif CERFA 10443*17 — à reporter dans « Mon activité formation »
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-5 text-sm">
+                  {/* Cadre F — bilan pédagogique */}
+                  <div>
+                    <p className="mb-1.5 font-semibold">Cadre F — Bilan pédagogique (stagiaires formés directement)</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="rounded-lg border bg-muted/30 p-3 text-center">
+                        <p className="text-xl font-bold">{totalStagiaires}</p>
+                        <p className="text-xs text-muted-foreground">Stagiaires (entrées)</p>
+                      </div>
+                      <div className="rounded-lg border bg-muted/30 p-3 text-center">
+                        <p className="text-xl font-bold">{totalHeures} h</p>
+                        <p className="text-xs text-muted-foreground">Heures de formation</p>
+                      </div>
+                      <div className="rounded-lg border bg-muted/30 p-3 text-center">
+                        <p className="text-xl font-bold">{totalHeuresStagiaires} h</p>
+                        <p className="text-xs text-muted-foreground">Heures-stagiaires</p>
+                      </div>
                     </div>
                   </div>
-                  <div className="mt-3">
+
+                  {/* Cadre E — formateurs */}
+                  <div>
+                    <p className="mb-1.5 font-semibold">Cadre E — Personnes dispensant les heures de formation</p>
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                      <div className="rounded-lg border bg-muted/30 p-3 text-center">
+                        <p className="text-xl font-bold">{formateurs.length}</p>
+                        <p className="text-xs text-muted-foreground">Formateurs</p>
+                      </div>
+                      <div className="rounded-lg border bg-muted/30 p-3 text-center">
+                        <p className="text-xl font-bold">{totalFormateursHeures} h</p>
+                        <p className="text-xs text-muted-foreground">Heures dispensées</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Cadre C — origine des produits */}
+                  <div>
+                    <p className="mb-1.5 font-semibold">Cadre C — Origine des produits (financeurs)</p>
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Situation à 6 mois</TableHead>
-                          <TableHead className="text-right">Bénéficiaires</TableHead>
+                          <TableHead>Origine</TableHead>
+                          <TableHead className="text-right">Stagiaires</TableHead>
+                          <TableHead className="text-right">Produits</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {suiviSituations.map(([k, n]) => (
+                        {cadreC.map((r) => (
+                          <TableRow key={r.label}>
+                            <TableCell>{r.label}</TableCell>
+                            <TableCell className="text-right">{r.nb}</TableCell>
+                            <TableCell className="text-right">
+                              {r.montant > 0 ? `${r.montant.toLocaleString("fr-FR")} €` : "—"}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        <TableRow className="border-t-2 font-semibold">
+                          <TableCell>Total produits</TableCell>
+                          <TableCell className="text-right">{totalStagiaires}</TableCell>
+                          <TableCell className="text-right">
+                            {totalProduits > 0 ? `${totalProduits.toLocaleString("fr-FR")} €` : "—"}
+                          </TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  <p className="text-xs text-muted-foreground">
+                    Valeurs alignées sur les cadres du CERFA 10443*17. La déclaration est
+                    dématérialisée sur « Mon activité formation » (MAF) — ce récapitulatif sert à
+                    reporter volumes et montants. Imprimez cette page (Ctrl/Cmd + P) pour l&apos;archiver.
+                    Les produits sont ventilés d&apos;après le type de financement des inscriptions
+                    entrées en formation.
+                  </p>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Par formation */}
+            <TabsContent value="formations">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base">Sessions par formation</CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Formation</TableHead>
+                        <TableHead className="text-right">Sessions</TableHead>
+                        <TableHead className="text-right">Heures</TableHead>
+                        <TableHead className="text-right">Stagiaires</TableHead>
+                        <TableHead className="text-right">Heures-stag.</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {formations.map((f) => (
+                        <TableRow key={f.reference}>
+                          <TableCell className="font-medium">
+                            {f.titre}
+                            <span className="ml-1.5 text-xs text-muted-foreground">
+                              {f.reference}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-right">{f.nbSessions}</TableCell>
+                          <TableCell className="text-right">{f.heures} h</TableCell>
+                          <TableCell className="text-right">{f.stagiaires}</TableCell>
+                          <TableCell className="text-right">
+                            {f.heuresStagiaires} h
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      <TableRow className="border-t-2 font-semibold">
+                        <TableCell>Total</TableCell>
+                        <TableCell className="text-right">{sessions.length}</TableCell>
+                        <TableCell className="text-right">{totalHeures} h</TableCell>
+                        <TableCell className="text-right">{totalStagiaires}</TableCell>
+                        <TableCell className="text-right">
+                          {totalHeuresStagiaires} h
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Synthèse — certification & insertion */}
+            <TabsContent value="synthese" className="space-y-6">
+              {/* Résultats de certification */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex flex-wrap items-center gap-2 text-base">
+                    <GraduationCap className="h-4 w-4" /> Résultats de certification
+                    {tauxReussite !== null && (
+                      <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+                        Taux de réussite : {tauxReussite}%
+                      </Badge>
+                    )}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    <div className="rounded-lg border bg-emerald-500/5 p-3 text-center">
+                      <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">
+                        {cert.CERTIFIE}
+                      </p>
+                      <p className="text-xs text-muted-foreground">Certifiés</p>
+                    </div>
+                    <div className="rounded-lg border bg-amber-500/5 p-3 text-center">
+                      <p className="text-2xl font-bold text-amber-700 dark:text-amber-300">
+                        {cert.AJOURNE}
+                      </p>
+                      <p className="text-xs text-muted-foreground">Ajournés</p>
+                    </div>
+                    <div className="rounded-lg border bg-destructive/5 p-3 text-center">
+                      <p className="text-2xl font-bold text-destructive">
+                        {cert.ABANDON}
+                      </p>
+                      <p className="text-xs text-muted-foreground">Abandons</p>
+                    </div>
+                    <div className="rounded-lg border bg-muted/30 p-3 text-center">
+                      <p className="text-2xl font-bold text-muted-foreground">
+                        {cert.NON_EVALUE}
+                      </p>
+                      <p className="text-xs text-muted-foreground">Non évalués</p>
+                    </div>
+                  </div>
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    Le taux de réussite est calculé sur les stagiaires évalués
+                    (certifiés / (certifiés + ajournés + abandons)).
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Insertion à 6 mois (suivi Qualiopi indicateur 11) */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex flex-wrap items-center gap-2 text-base">
+                    <Users className="h-4 w-4" /> Insertion à 6 mois (suivi Qualiopi)
+                    {tauxEmploi !== null && (
+                      <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">Taux d&apos;emploi : {tauxEmploi}%</Badge>
+                    )}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {suivi.repondants === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      Aucune réponse à l&apos;enquête de suivi à 6 mois sur cette période (les enquêtes sont
+                      envoyées automatiquement 6 mois après la fin de chaque session).
+                    </p>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                        <div className="rounded-lg border bg-muted/30 p-3 text-center">
+                          <p className="text-2xl font-bold">{suivi.repondants}</p>
+                          <p className="text-xs text-muted-foreground">Répondants</p>
+                        </div>
+                        <div className="rounded-lg border bg-emerald-500/5 p-3 text-center">
+                          <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">{suivi.enEmploi}</p>
+                          <p className="text-xs text-muted-foreground">En emploi</p>
+                        </div>
+                        <div className="rounded-lg border bg-sky-500/5 p-3 text-center">
+                          <p className="text-2xl font-bold text-sky-700 dark:text-sky-300">{tauxEmploi}%</p>
+                          <p className="text-xs text-muted-foreground">Taux d&apos;emploi</p>
+                        </div>
+                        <div className="rounded-lg border bg-primary/5 p-3 text-center">
+                          <p className="text-2xl font-bold text-primary">{tauxLien ?? "—"}{tauxLien !== null ? "%" : ""}</p>
+                          <p className="text-xs text-muted-foreground">En lien avec la formation</p>
+                        </div>
+                      </div>
+                      <div className="mt-3">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Situation à 6 mois</TableHead>
+                              <TableHead className="text-right">Bénéficiaires</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {suiviSituations.map(([k, n]) => (
+                              <TableRow key={k}>
+                                <TableCell>{SITUATION_LABELS[k] ?? k}</TableCell>
+                                <TableCell className="text-right">{n}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                      <p className="mt-3 text-xs text-muted-foreground">
+                        Le taux d&apos;emploi rapporte les bénéficiaires en emploi (CDI, CDD/intérim, indépendant,
+                        alternance) au nombre de répondants. « En lien avec la formation » est calculé parmi les
+                        répondants en emploi.
+                      </p>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Formateurs & financements */}
+            <TabsContent value="ressources">
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                {/* Par formateur */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Users className="h-4 w-4" /> Formateurs
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    {formateurs.length === 0 ? (
+                      <p className="p-4 text-sm text-muted-foreground">
+                        Aucun formateur affecté sur cette période.
+                      </p>
+                    ) : (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Formateur</TableHead>
+                            <TableHead className="text-right">Sessions</TableHead>
+                            <TableHead className="text-right">Heures</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {formateurs.map((f) => (
+                            <TableRow key={f.nom}>
+                              <TableCell className="font-medium">{f.nom}</TableCell>
+                              <TableCell className="text-right">
+                                {f.nbSessions}
+                              </TableCell>
+                              <TableCell className="text-right">{f.heures} h</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Par financement */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Wallet className="h-4 w-4" /> Modes de financement
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Mode</TableHead>
+                          <TableHead className="text-right">Stagiaires</TableHead>
+                          <TableHead className="text-right">Montant</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {financements.map(([k, v]) => (
                           <TableRow key={k}>
-                            <TableCell>{SITUATION_LABELS[k] ?? k}</TableCell>
-                            <TableCell className="text-right">{n}</TableCell>
+                            <TableCell>
+                              <Badge variant="secondary">{finLabel(k)}</Badge>
+                            </TableCell>
+                            <TableCell className="text-right">{v.nb}</TableCell>
+                            <TableCell className="text-right">
+                              {v.montant > 0
+                                ? `${v.montant.toLocaleString("fr-FR")} €`
+                                : "—"}
+                            </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
                     </Table>
-                  </div>
-                  <p className="mt-3 text-xs text-muted-foreground">
-                    Le taux d&apos;emploi rapporte les bénéficiaires en emploi (CDI, CDD/intérim, indépendant,
-                    alternance) au nombre de répondants. « En lien avec la formation » est calculé parmi les
-                    répondants en emploi.
-                  </p>
-                </>
-              )}
-            </CardContent>
-          </Card>
-
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            {/* Par formateur */}
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Users className="h-4 w-4" /> Formateurs
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                {formateurs.length === 0 ? (
-                  <p className="p-4 text-sm text-muted-foreground">
-                    Aucun formateur affecté sur cette période.
-                  </p>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Formateur</TableHead>
-                        <TableHead className="text-right">Sessions</TableHead>
-                        <TableHead className="text-right">Heures</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {formateurs.map((f) => (
-                        <TableRow key={f.nom}>
-                          <TableCell className="font-medium">{f.nom}</TableCell>
-                          <TableCell className="text-right">
-                            {f.nbSessions}
-                          </TableCell>
-                          <TableCell className="text-right">{f.heures} h</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Par financement */}
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Wallet className="h-4 w-4" /> Modes de financement
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Mode</TableHead>
-                      <TableHead className="text-right">Stagiaires</TableHead>
-                      <TableHead className="text-right">Montant</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {financements.map(([k, v]) => (
-                      <TableRow key={k}>
-                        <TableCell>
-                          <Badge variant="secondary">{finLabel(k)}</Badge>
-                        </TableCell>
-                        <TableCell className="text-right">{v.nb}</TableCell>
-                        <TableCell className="text-right">
-                          {v.montant > 0
-                            ? `${v.montant.toLocaleString("fr-FR")} €`
-                            : "—"}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+          </Tabs>
 
           <p className="text-xs text-muted-foreground">
             Les heures sont calculées d&apos;après la durée (heures) renseignée sur

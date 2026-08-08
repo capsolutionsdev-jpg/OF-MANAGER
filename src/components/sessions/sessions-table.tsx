@@ -1,0 +1,368 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import Link from "next/link";
+import {
+  Search,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
+import type { Modalite, SessionStatut } from "@prisma/client";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MODALITE_LABELS } from "@/lib/validators/formation";
+import { SESSION_STATUT_LABELS } from "@/lib/validators/session";
+import { cn } from "@/lib/utils";
+
+export type SessionEtat = "AVENIR" | "ENCOURS" | "PASSEE" | "ARCHIVEE";
+
+/** Une session aplatie en données sérialisables (pas de Date/objets). */
+export type SessionRow = {
+  id: string;
+  formationTitre: string;
+  academyKey: string; // "DIGITAL" | "SAFETY" | ... | "AUTRE"
+  academyLabel: string;
+  dateDebut: string; // ISO
+  dateFin: string; // ISO
+  formateurs: string; // noms joints, "" si aucun
+  lieu: string | null;
+  modalite: Modalite;
+  nbPlaces: number;
+  inscriptions: number;
+  statut: SessionStatut;
+  etat: SessionEtat;
+};
+
+type SortKey = "formation" | "academy" | "dateDebut" | "places" | "statut";
+const TEXT_KEYS: SortKey[] = ["formation", "academy", "statut"];
+
+const ETATS: { key: SessionEtat; label: string; badge: string }[] = [
+  { key: "AVENIR", label: "À venir", badge: "bg-blue-500/10 text-blue-700 dark:text-blue-300" },
+  { key: "ENCOURS", label: "En cours", badge: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" },
+  { key: "PASSEE", label: "Passées", badge: "bg-muted text-muted-foreground" },
+  { key: "ARCHIVEE", label: "Archivées", badge: "bg-red-500/10 text-red-700 dark:text-red-300" },
+];
+
+const ACADEMY_RANK: Record<string, number> = {
+  DIGITAL: 0,
+  SAFETY: 1,
+  TRANSPORT: 2,
+  LANGUE: 3,
+  AUTRE: 9,
+};
+
+const PAGE_SIZE = 20;
+
+const selectCx =
+  "h-8 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30";
+const headCx = "sticky top-0 z-10 bg-background";
+
+export function SessionsTable({ rows }: { rows: SessionRow[] }) {
+  const [etat, setEtat] = useState<SessionEtat>(() => {
+    for (const e of ETATS) if (rows.some((r) => r.etat === e.key)) return e.key;
+    return "AVENIR";
+  });
+  const [q, setQ] = useState("");
+  const [academy, setAcademy] = useState("");
+  const [statut, setStatut] = useState<SessionStatut | "">("");
+  const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" }>({
+    key: "dateDebut",
+    dir: "asc",
+  });
+  const [page, setPage] = useState(0);
+
+  // Académies réellement présentes (pour le filtre), ordonnées par domaine.
+  const academies = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const r of rows) map.set(r.academyKey, r.academyLabel);
+    return [...map.entries()]
+      .map(([key, label]) => ({ key, label }))
+      .sort((a, b) => (ACADEMY_RANK[a.key] ?? 5) - (ACADEMY_RANK[b.key] ?? 5));
+  }, [rows]);
+
+  // Statuts réellement présents (pour le filtre).
+  const statuts = useMemo(
+    () => [...new Set(rows.map((r) => r.statut))],
+    [rows],
+  );
+
+  // Filtres transverses (hors onglet d'état) : servent aussi aux compteurs d'onglets.
+  const matched = useMemo(() => {
+    const needle = q.trim().toLowerCase();
+    return rows.filter((r) => {
+      if (
+        needle &&
+        !`${r.formationTitre} ${r.lieu ?? ""} ${r.formateurs}`
+          .toLowerCase()
+          .includes(needle)
+      )
+        return false;
+      if (academy && r.academyKey !== academy) return false;
+      if (statut && r.statut !== statut) return false;
+      return true;
+    });
+  }, [rows, q, academy, statut]);
+
+  const countByEtat = useMemo(() => {
+    const c: Record<SessionEtat, number> = {
+      AVENIR: 0,
+      ENCOURS: 0,
+      PASSEE: 0,
+      ARCHIVEE: 0,
+    };
+    for (const r of matched) c[r.etat] += 1;
+    return c;
+  }, [matched]);
+
+  const sorted = useMemo(() => {
+    const { key, dir } = sort;
+    const mul = dir === "asc" ? 1 : -1;
+    const inEtat = matched.filter((r) => r.etat === etat);
+    return inEtat.sort((a, b) => {
+      let cmp: number;
+      if (key === "formation") cmp = a.formationTitre.localeCompare(b.formationTitre, "fr");
+      else if (key === "academy") cmp = a.academyLabel.localeCompare(b.academyLabel, "fr");
+      else if (key === "statut")
+        cmp = SESSION_STATUT_LABELS[a.statut].localeCompare(SESSION_STATUT_LABELS[b.statut], "fr");
+      else if (key === "dateDebut") cmp = a.dateDebut.localeCompare(b.dateDebut);
+      else cmp = a.inscriptions / Math.max(1, a.nbPlaces) - b.inscriptions / Math.max(1, b.nbPlaces);
+      if (cmp === 0) cmp = a.dateDebut.localeCompare(b.dateDebut);
+      return cmp * mul;
+    });
+  }, [matched, etat, sort]);
+
+  const pageCount = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+  const current = Math.min(page, pageCount - 1);
+  const pageRows = sorted.slice(current * PAGE_SIZE, current * PAGE_SIZE + PAGE_SIZE);
+
+  function reset() {
+    setPage(0);
+  }
+  function toggleSort(key: SortKey) {
+    setSort((s) =>
+      s.key === key
+        ? { key, dir: s.dir === "asc" ? "desc" : "asc" }
+        : { key, dir: TEXT_KEYS.includes(key) ? "asc" : "desc" },
+    );
+    reset();
+  }
+
+  const fmt = (iso: string) => new Date(iso).toLocaleDateString("fr-FR");
+
+  return (
+    <div className="space-y-3">
+      {/* Barre de filtres */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative w-full sm:max-w-xs">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={q}
+            onChange={(e) => {
+              setQ(e.target.value);
+              reset();
+            }}
+            placeholder="Rechercher une formation, un lieu, un formateur…"
+            className="h-8 pl-8"
+            aria-label="Rechercher une session"
+          />
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={academy}
+            onChange={(e) => {
+              setAcademy(e.target.value);
+              reset();
+            }}
+            className={selectCx}
+            aria-label="Filtrer par académie"
+          >
+            <option value="">Toutes les académies</option>
+            {academies.map((a) => (
+              <option key={a.key} value={a.key}>
+                {a.label}
+              </option>
+            ))}
+          </select>
+          <select
+            value={statut}
+            onChange={(e) => {
+              setStatut(e.target.value as SessionStatut | "");
+              reset();
+            }}
+            className={selectCx}
+            aria-label="Filtrer par statut"
+          >
+            <option value="">Tous les statuts</option>
+            {statuts.map((s) => (
+              <option key={s} value={s}>
+                {SESSION_STATUT_LABELS[s]}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Onglets d'état */}
+      <Tabs
+        value={etat}
+        onValueChange={(v) => {
+          setEtat(v as SessionEtat);
+          reset();
+        }}
+      >
+        <TabsList>
+          {ETATS.map((e) => (
+            <TabsTrigger key={e.key} value={e.key}>
+              {e.label}
+              <Count n={countByEtat[e.key]} />
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
+
+      {/* Table dense (en-têtes collants + défilement vertical interne) */}
+      <div className="rounded-lg border [&_[data-slot=table-container]]:max-h-[70vh] [&_[data-slot=table-container]]:overflow-auto">
+        <Table className="stagger-rows">
+          <TableHeader>
+            <TableRow>
+              <SortHead label="Formation" sortKey="formation" sort={sort} onToggle={toggleSort} />
+              <SortHead label="Académie" sortKey="academy" sort={sort} onToggle={toggleSort} className="hidden sm:table-cell" />
+              <SortHead label="Dates" sortKey="dateDebut" sort={sort} onToggle={toggleSort} />
+              <TableHead className={cn(headCx, "hidden md:table-cell")}>Formateur(s)</TableHead>
+              <TableHead className={cn(headCx, "hidden lg:table-cell")}>Lieu</TableHead>
+              <TableHead className={headCx}>Modalité</TableHead>
+              <SortHead label="Places" sortKey="places" sort={sort} onToggle={toggleSort} className="w-36" />
+              <SortHead label="Statut" sortKey="statut" sort={sort} onToggle={toggleSort} />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {pageRows.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={8} className="py-10 text-center text-sm text-muted-foreground">
+                  Aucune session ne correspond à ces filtres.
+                </TableCell>
+              </TableRow>
+            ) : (
+              pageRows.map((s) => {
+                const pct = s.nbPlaces > 0 ? Math.round((s.inscriptions / s.nbPlaces) * 100) : 0;
+                const barColor = pct >= 100 ? "bg-emerald-500" : pct >= 60 ? "bg-blue-500" : "bg-amber-500";
+                return (
+                  <TableRow key={s.id} className="hover:bg-muted/40">
+                    <TableCell className="font-medium">
+                      <Link href={`/sessions/${s.id}`} className="hover:underline">
+                        {s.formationTitre}
+                      </Link>
+                    </TableCell>
+                    <TableCell className="hidden text-muted-foreground sm:table-cell">
+                      {s.academyLabel}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {fmt(s.dateDebut)} → {fmt(s.dateFin)}
+                    </TableCell>
+                    <TableCell className="hidden text-muted-foreground md:table-cell">
+                      {s.formateurs || "—"}
+                    </TableCell>
+                    <TableCell className="hidden text-muted-foreground lg:table-cell">
+                      {s.lieu ?? "—"}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">{MODALITE_LABELS[s.modalite]}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <div className="h-1.5 w-16 overflow-hidden rounded-full bg-muted">
+                          <div className={`h-full rounded-full ${barColor}`} style={{ width: `${Math.min(100, pct)}%` }} />
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {s.inscriptions}/{s.nbPlaces}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{SESSION_STATUT_LABELS[s.statut]}</Badge>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Pagination */}
+      <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+        <span className="text-muted-foreground">
+          {sorted.length} session{sorted.length > 1 ? "s" : ""} dans cet onglet
+        </span>
+        {pageCount > 1 && (
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" disabled={current <= 0} onClick={() => setPage(current - 1)}>
+              <ChevronLeft className="h-4 w-4" /> Précédent
+            </Button>
+            <span className="text-muted-foreground">
+              Page {current + 1} / {pageCount}
+            </span>
+            <Button variant="outline" size="sm" disabled={current >= pageCount - 1} onClick={() => setPage(current + 1)}>
+              Suivant <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Petit compteur affiché dans un onglet. */
+function Count({ n }: { n: number }) {
+  return (
+    <span className="ml-1 rounded-full bg-muted px-1.5 py-0.5 text-[0.7rem] font-semibold tabular-nums text-muted-foreground">
+      {n}
+    </span>
+  );
+}
+
+/** En-tête de colonne triable (flèche selon le sens de tri). */
+function SortHead({
+  label,
+  sortKey,
+  sort,
+  onToggle,
+  className,
+}: {
+  label: string;
+  sortKey: SortKey;
+  sort: { key: SortKey; dir: "asc" | "desc" };
+  onToggle: (key: SortKey) => void;
+  className?: string;
+}) {
+  const active = sort.key === sortKey;
+  const Icon = !active ? ArrowUpDown : sort.dir === "asc" ? ArrowUp : ArrowDown;
+  return (
+    <TableHead className={cn(headCx, className)}>
+      <button
+        type="button"
+        onClick={() => onToggle(sortKey)}
+        className={cn(
+          "-mx-1 inline-flex items-center gap-1 rounded px-1 py-0.5 transition-colors hover:text-foreground",
+          active ? "text-foreground" : "text-muted-foreground",
+        )}
+      >
+        {label}
+        <Icon className="h-3.5 w-3.5 shrink-0" />
+      </button>
+    </TableHead>
+  );
+}
