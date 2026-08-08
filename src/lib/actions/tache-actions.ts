@@ -15,12 +15,23 @@ export async function createTache(formData: FormData) {
   const dueRaw = String(formData.get("dueDate") ?? "").trim();
   const candidatId = String(formData.get("candidatId") ?? "").trim() || null;
 
+  // Date validée (une chaîne invalide → null, plutôt qu'une Invalid Date en base).
+  const due = dueRaw ? new Date(dueRaw) : null;
+  const dueDate = due && !Number.isNaN(due.getTime()) ? due : null;
+
+  // candidatId validé (client scopé → null si l'id vient d'un autre organisme).
+  let validCandidatId: string | null = null;
+  if (candidatId) {
+    const c = await db.candidat.findFirst({ where: { id: candidatId }, select: { id: true } });
+    validCandidatId = c?.id ?? null;
+  }
+
   await db.tache.create({
     data: {
       titre,
       description,
-      dueDate: dueRaw ? new Date(dueRaw) : null,
-      candidatId,
+      dueDate,
+      candidatId: validCandidatId,
       createdById: session?.user?.id ?? null,
     },
   });
@@ -32,8 +43,11 @@ export async function toggleTache(formData: FormData) {
   await requireSection("taches");
   const db = await getTenantDb();
   const id = String(formData.get("id"));
-  const done = String(formData.get("done")) === "true";
-  await db.tache.update({ where: { id }, data: { done: !done } });
+  // État recalculé depuis la BASE (source de vérité), pas depuis la valeur client
+  // (qui peut être périmée → bascule incohérente).
+  const t = await db.tache.findUnique({ where: { id }, select: { done: true } });
+  if (!t) return;
+  await db.tache.update({ where: { id }, data: { done: !t.done } });
   revalidatePath("/taches");
 }
 

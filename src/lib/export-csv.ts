@@ -9,9 +9,11 @@ export type CsvColumn<T> = {
 function esc(v: unknown): string {
   let s = v == null ? "" : String(v);
   // Anti-injection de formule (CSV/Excel/Sheets) : une cellule commençant par
-  // = + - @ (ou tabulation / retour chariot) peut être exécutée à l'ouverture.
-  // On la neutralise en la préfixant d'une apostrophe (affichée comme texte).
-  if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+  // = + @ (ou tabulation / retour chariot) peut être exécutée à l'ouverture.
+  // Le « - » n'est neutralisé QUE s'il ne s'agit pas d'un nombre négatif
+  // (ex. « -40,00 » doit rester numérique/sommable dans Excel).
+  const estNombre = /^-?[\d\s.,]+$/.test(s);
+  if (/^[=+@\t\r]/.test(s) || (s.startsWith("-") && !estNombre)) s = "'" + s;
   return /[";\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
