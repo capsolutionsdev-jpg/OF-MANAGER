@@ -21,11 +21,13 @@
 - **[Support]** notification e-mail à l'éditeur quand un client répond à un ticket. *(af71f06)*
 - **[BPF]** cf. RAPPORT dédié / commit 400679c (calculs + récap CERFA).
 
-## Reste (non traité — plus impliqué / décision)
-- **Support — badges « lu »** : `markTicketReadClient`/`markSupportRead` existent mais ne sont pas déclenchés à l'ouverture (câblage UI). *(Mineur)*
-- **Planning — affichage** : occupation continue vs séances réelles (refonte d'affichage). *(Mineur)*
-- **SMS** (quota/canal/journal) : reporté par le PO.
-- **IA** (rate-limit + plafond entrée) : seuils proposés, en attente de validation.
+- **[IA] Maîtrise des coûts** — rate-limit (20/10min/utilisateur + 200/j/organisme ; 10/h/candidat civique), plafonds d'entrée (6000 / 2000 car.), sortie bornée, erreur fournisseur non exposée. *(589e9d6)*
+- **[Support] Badges « lu »** — marqués lus à la consultation (client + console). *(5ea4c72)*
+- **[Planning] Affichage** — séances réelles au lieu d'une occupation continue. *(e47e722)*
+
+## Reste (non traité)
+- **SMS** (quota `maxSmsMois` / canal / journal `SmsLog`) : **reporté par le PO** (« à voir plus tard »).
+- **[Support]** actions `markTicketReadClient`/`markSupportRead` désormais **superflues** (le marquage se fait au rendu) — dead code inoffensif, à retirer au prochain nettoyage.
 
 ## Rapports & Dashboard (calculs) — à corriger
 | Sév. | Anomalie | Fichier |
