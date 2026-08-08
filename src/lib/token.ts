@@ -5,6 +5,26 @@ export function generateToken(bytes = 24): string {
   return randomBytes(bytes).toString("base64url");
 }
 
+/** Fenêtre de validité par défaut d'un lien tokenisé lié à une session (mois). */
+export const LINK_VALIDITY_MONTHS = 12;
+
+/**
+ * Un lien tokenisé lié à une session est-il EXPIRÉ ? Par défaut, valable jusqu'à
+ * 12 mois après la fin de la session — limite l'exposition d'un lien fuité sans
+ * gêner un usage normal (personne ne complète/consulte 1 an après). Les tokens
+ * étant à 192 bits (non devinables), seule la fuite d'un lien est concernée.
+ * dateFin absente → jamais expiré (on ne bloque pas par défaut).
+ */
+export function linkExpired(
+  sessionDateFin: Date | null | undefined,
+  months = LINK_VALIDITY_MONTHS,
+): boolean {
+  if (!sessionDateFin) return false;
+  const limit = new Date(sessionDateFin);
+  limit.setMonth(limit.getMonth() + months);
+  return new Date() > limit;
+}
+
 /** Domaine public de la plateforme (liens de signature/inscription envoyés par
  * e-mail). Les URL Vercel (`*.vercel.app`) sont protégées par un mur de connexion
  * Vercel → JAMAIS utilisées pour ces liens publics. */

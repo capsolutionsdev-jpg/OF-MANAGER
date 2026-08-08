@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { buildInscriptionPdf, SIGNED_DOC_TYPES } from "@/lib/documents/build-pdf";
+import { linkExpired } from "@/lib/token";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -13,9 +14,13 @@ export async function GET(
   const { token } = await params;
   const insc = await prisma.inscription.findUnique({
     where: { accessToken: token },
-    select: { id: true, signedAt: true },
+    select: { id: true, signedAt: true, session: { select: { dateFin: true } } },
   });
   if (!insc) return new Response("Lien invalide", { status: 404 });
+  // Expiration : un lien fuité ne donne plus accès aux documents 12 mois après la fin.
+  if (linkExpired(insc.session?.dateFin)) {
+    return new Response("Lien expiré", { status: 410 });
+  }
 
   const preview = new URL(req.url).searchParams.get("preview") === "1";
 

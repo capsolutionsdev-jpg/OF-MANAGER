@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { CheckCircle2, Circle, FileSignature, FolderUp, BookOpenCheck } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { orgConfigFor } from "@/lib/org-identity";
+import { linkExpired } from "@/lib/token";
 import {
   Card,
   CardContent,
@@ -69,6 +70,22 @@ export default async function ParcoursPage({
   });
   if (!insc) notFound();
   const org = await orgConfigFor(insc.organismeId);
+
+  // Expiration : au-delà de 12 mois après la fin de session, le lien n'est plus
+  // exploitable (limite l'exposition d'un lien fuité).
+  if (linkExpired(insc.session?.dateFin)) {
+    return (
+      <main className="min-h-screen bg-muted/40 px-4 py-10">
+        <div className="mx-auto max-w-md rounded-lg border bg-background p-8 text-center">
+          <h1 className="text-lg font-bold">Lien expiré</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Ce lien d&apos;inscription n&apos;est plus valide. Contactez{" "}
+            {org.name} pour obtenir un nouveau lien.
+          </p>
+        </div>
+      </main>
+    );
+  }
 
   const c = insc.candidat;
   const formDone = !!insc.formCompletedAt;
