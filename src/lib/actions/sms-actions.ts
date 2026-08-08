@@ -28,21 +28,19 @@ export async function sendSmsAction(formData: FormData): Promise<SmsActionResult
   }
   if (!to) return { ok: false, error: "Aucun numéro de téléphone." };
 
-  const res = await sendSms({ to, body, organismeId });
-  const statut = res.sent ? "ENVOYE" : res.demo ? "DEMO" : "ECHEC";
-
-  await db.smsLog.create({
-    data: {
-      destinataire: to,
-      body,
-      candidatId,
-      statut,
-      providerId: res.providerId ?? null,
-      createdById: session?.user?.id ?? null,
-    },
+  // sendSms journalise lui-même (SmsLog) + applique le quota + gère le numéro
+  // invalide → plus de journalisation en double ici.
+  const res = await sendSms({
+    to,
+    body,
+    organismeId,
+    candidatId,
+    createdById: session?.user?.id ?? null,
   });
 
   revalidatePath("/sms");
-  if (statut === "ECHEC") return { ok: false, error: "Échec de l'envoi (vérifiez la clé Brevo)." };
+  if (!res.sent && !res.demo) {
+    return { ok: false, error: res.error ?? "Échec de l'envoi du SMS." };
+  }
   return { ok: true, demo: res.demo };
 }
