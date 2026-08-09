@@ -5,6 +5,7 @@ import { OrganismeStatut, SupportStatut, LeadStatut } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/superadmin-guard";
 import { sendEmail } from "@/lib/email";
+import { logLeadEvent } from "@/lib/growth/events";
 
 const STATUTS = new Set(Object.values(OrganismeStatut) as string[]);
 const SUPPORT_STATUTS = new Set(Object.values(SupportStatut) as string[]);
@@ -84,6 +85,7 @@ export async function setSupportStatut(ticketId: string, statut: string): Promis
 export async function setLeadStatut(id: string, statut: string): Promise<void> {
   await requireSuperAdmin();
   if (!LEAD_STATUTS.has(statut)) return;
+  const before = await prisma.lead.findUnique({ where: { id }, select: { statut: true } });
   await prisma.lead.update({
     where: { id },
     data: {
@@ -92,7 +94,14 @@ export async function setLeadStatut(id: string, statut: string): Promise<void> {
       ...(statut === "RAPPELE" ? { rappeleAt: new Date() } : {}),
     },
   });
+  if (before && before.statut !== statut) {
+    await logLeadEvent(id, "statut", {
+      titre: `Statut : ${before.statut} → ${statut}`,
+      meta: { de: before.statut, vers: statut },
+    });
+  }
   revalidatePath("/console/prospects");
+  revalidatePath(`/console/prospects/${id}`);
   revalidatePath("/console");
 }
 

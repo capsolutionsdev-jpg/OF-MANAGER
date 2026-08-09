@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { logLeadEventByDemoOrg } from "@/lib/growth/events";
 
 // Durée de vie d'une démo à partir de la 1re connexion (heures). Filet à J+7 côté
 // provisionnement (demoHardExpiresAt) même si l'utilisateur ne se connecte jamais.
@@ -59,5 +60,7 @@ export async function startDemoIfNeeded(orgId: string, org: DemoOrgFields): Prom
     where: { id: orgId },
     data: { demoFirstLoginAt: now, demoExpiresAt },
   });
+  // Timeline growth : signal fort d'engagement (jamais bloquant).
+  await logLeadEventByDemoOrg(orgId, "demo_connexion");
   return { ...org, demoFirstLoginAt: now, demoExpiresAt };
 }

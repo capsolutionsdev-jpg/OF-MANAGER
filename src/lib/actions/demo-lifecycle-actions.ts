@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { DEMO_TTL_HOURS } from "@/lib/demo/lifecycle";
+import { logLeadEventByDemoOrg } from "@/lib/growth/events";
 
 const HARD_TTL_DAYS = Number(process.env.DEMO_HARD_TTL_DAYS ?? 7);
 
@@ -30,6 +31,9 @@ export async function extendDemo(): Promise<{ ok: boolean; error?: string }> {
       demoHardExpiresAt: new Date(now + HARD_TTL_DAYS * 86_400_000),
     },
   });
+
+  // Timeline growth : un prospect qui prolonge est un prospect chaud.
+  await logLeadEventByDemoOrg(orgId, "demo_prolongee");
 
   revalidatePath("/", "layout");
   return { ok: true };

@@ -2,6 +2,7 @@
 
 import { sendEmail } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
+import { logLeadEvent } from "@/lib/growth/events";
 
 export type DemoState = { ok?: boolean; error?: string; demo?: boolean };
 
@@ -36,9 +37,12 @@ export async function submitDemoRequest(
 
   // 1) Enregistrement du prospect dans OFManager (jamais bloquant).
   try {
-    await prisma.lead.create({
+    const lead = await prisma.lead.create({
       data: { nom, organisme: organisme || null, email, telephone: telephone || null, message: message || null, hebergement: hebergement || null, formations, source: "demo" },
+      select: { id: true },
     });
+    await logLeadEvent(lead.id, "creation", { meta: { source: "demo" } });
+    await logLeadEvent(lead.id, "demo_demandee");
   } catch {
     /* la capture du lead ne doit pas casser la confirmation */
   }
@@ -75,9 +79,11 @@ export async function submitContact(
   if (!EMAIL_RE.test(email)) return { error: "E-mail invalide." };
 
   try {
-    await prisma.lead.create({
+    const lead = await prisma.lead.create({
       data: { nom, organisme: organisme || null, email, telephone: telephone || null, message: message || null, source: "contact" },
+      select: { id: true },
     });
+    await logLeadEvent(lead.id, "creation", { meta: { source: "contact" } });
   } catch {
     /* non bloquant */
   }

@@ -1,6 +1,7 @@
 import "server-only";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { logLeadEventByDemoOrg } from "@/lib/growth/events";
 
 /**
  * Purge des tenants de DÉMONSTRATION expirés (RGPD : aucune donnée conservée
@@ -65,7 +66,10 @@ export async function purgeDemoOrganisme(organismeId: string): Promise<void> {
   const others = tenantModelsFromDmmf().filter((n) => !orderedSet.has(n));
   for (let pass = 0; pass < 2; pass++) for (const m of others) await delMany(m, organismeId);
 
-  // 3) Détacher les Leads (demoOrganismeId n'est pas une FK → on nettoie le lien
+  // 3) Timeline growth : tracer l'expiration AVANT de détacher le lead.
+  await logLeadEventByDemoOrg(organismeId, "demo_expiree");
+
+  //    Détacher les Leads (demoOrganismeId n'est pas une FK → on nettoie le lien
   //    pour garder l'historique CRM sans référence morte).
   try {
     await prisma.lead.updateMany({

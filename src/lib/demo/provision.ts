@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { sendEmail } from "@/lib/email";
 import { appBaseUrl } from "@/lib/token";
 import { seedDemoData } from "@/lib/demo/seed";
+import { logLeadEvent } from "@/lib/growth/events";
 
 export type DemoMetier = "securite" | "vtc_taxi" | "les_deux" | "autre";
 
@@ -79,6 +80,8 @@ export async function provisionDemo(input: ProvisionInput): Promise<ProvisionRes
     },
     select: { id: true },
   });
+  await logLeadEvent(lead.id, "creation", { meta: { source: "demo" } });
+  await logLeadEvent(lead.id, "demo_demandee", { meta: { metier: input.metier } });
 
   // 2) Tenant démo isolé.
   const short = randomBytes(3).toString("hex"); // 6 hex
@@ -122,6 +125,9 @@ export async function provisionDemo(input: ProvisionInput): Promise<ProvisionRes
 
   // 5) Lien Lead → démo.
   await prisma.lead.update({ where: { id: lead.id }, data: { demoOrganismeId: org.id } });
+  await logLeadEvent(lead.id, "demo_provisionnee", {
+    meta: { orgId: org.id, academies: academies.join(",") },
+  });
 
   // 6) E-mail d'accès au prospect (mot de passe en clair UNIQUEMENT ici).
   const link = appBaseUrl();
