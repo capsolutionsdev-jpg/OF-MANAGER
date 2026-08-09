@@ -62,6 +62,10 @@
 
 ## Déploiement
 
-1. `npx prisma db push` (nouvelles tables + enums).
-2. Activer la fonctionnalité `parcours-t3p` sur l'organisme (console SUPERADMIN).
+1. **Ne PAS lancer `prisma db push` depuis cette branche** : la base partagée
+   porte aussi le schéma du chantier `feat/commercialisation-demo` (non mergé)
+   qu'un push effacerait. Appliquer la migration additive dédiée :
+   `npx prisma db execute --file scripts/migrate-t3p.sql --schema prisma/schema.prisma`
+2. Activer la fonctionnalité `parcours-t3p` sur l'organisme (console SUPERADMIN,
+   ou `node scripts/activate-feature.cjs parcours-t3p <organismeId>`).
 3. Si RLS actif : rejouer `docs/rls-setup.sql` (idempotent).
