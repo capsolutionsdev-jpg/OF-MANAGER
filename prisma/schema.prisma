@@ -528,6 +528,7 @@ model Candidat {
   pieces       PieceJointe[]
   consentements Consentement[]
   conversations Conversation[]
+  parcoursT3P  ParcoursT3P[]
 
   // ── E-learning examen civique (préparation en ligne, site vitrine) ──
   // Le jeton est PROVISIONNÉ par la plateforme : c'est elle qui crée les
@@ -917,6 +918,7 @@ model Inscription {
   factures   Facture[]
   paiements  Paiement[]
   signatures SignatureRequest[]
+  parcoursT3P ParcoursT3P?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2417,4 +2419,128 @@ model PhotoVitrine {
   createdAt   DateTime  @default(now())
 
   @@index([organismeId, zone, ordre])
+}
+
+// =============================================================
+//  MODULE T3P — PARCOURS EXAMEN TAXI / VTC (CMA)
+//
+//  Suivi complet du parcours d'accès aux professions du transport
+//  public particulier de personnes (T3P) : vérification des
+//  prérequis, inscription à l'examen CMA, paiement des frais,
+//  épreuves théoriques (admissibilité) et pratique (admission),
+//  jusqu'à la carte professionnelle préfectorale.
+//  Règles CMA : admission dans les 2 mois suivant l'admissibilité ;
+//  3 présentations max à l'admission dans un délai d'1 an.
+// =============================================================
+
+// Métier visé par le parcours (les passerelles VTC↔Taxi restent un
+// parcours du métier CIBLE, avec des frais réduits « mobilité »).
+enum T3PMetier {
+  TAXI
+  VTC
+}
+
+enum ParcoursT3PStatut {
+  EN_COURS
+  REUSSI // épreuve pratique admise (carte professionnelle en cours / obtenue)
+  ABANDONNE
+}
+
+enum T3PEpreuveType {
+  THEORIE // épreuves d'admissibilité (QCM/QRC) — CMA
+  PRATIQUE // épreuve d'admission (mise en situation) — CMA
+}
+
+enum T3PEpreuveResultat {
+  EN_ATTENTE
+  ADMIS
+  AJOURNE
+  ABSENT
+}
+
+model ParcoursT3P {
+  id          String  @id @default(cuid())
+  organismeId String? // tenant (multi-OF)
+
+  candidatId String
+  candidat   Candidat @relation(fields: [candidatId], references: [id], onDelete: Cascade)
+  // Inscription à la session de formation (préparation) si elle existe :
+  // permet la synchro du résultat de certification (BPF / taux de réussite).
+  inscriptionId String?      @unique
+  inscription   Inscription? @relation(fields: [inscriptionId], references: [id])
+
+  metier T3PMetier
+  statut ParcoursT3PStatut @default(EN_COURS)
+  // Passerelle Taxi↔VTC (mobilité) : épreuves et frais réduits.
+  mobilite Boolean @default(false)
+
+  // ── Étape 1 : prérequis réglementaires + dossier + financement ──
+  permisBDate         DateTime? // date d'obtention du permis B
+  conduiteAccompagnee Boolean   @default(false) // seuil d'ancienneté 2 ans au lieu de 3
+  permisVerifieLe     DateTime? // permis contrôlé (validité + ancienneté)
+  casierVerifieLe     DateTime? // compatibilité casier confirmée (art. R.3120-8 c. transports)
+  psc1VerifieLe       DateTime? // PSC1 en cours de validité (Taxi uniquement)
+  medicalDate         DateTime? // date de l'avis médical (médecin agréé préfecture, cerfa 14880)
+  medicalVerifieLe    DateTime?
+  dossierCompletLe    DateTime? // dossier administratif complet (pièces + expression de besoin + financement)
+
+  // ── Étape 2 : inscription à l'examen (CMA) ──
+  cmaDepartement   String? // département / CMA d'inscription
+  cmaNumeroDossier String?
+  cmaInscritLe     DateTime?
+
+  // ── Étape 3 : paiement des frais d'examen ──
+  fraisMontant      Decimal?  @db.Decimal(10, 2) // 241 € en 2026 (168 € mobilité) — réévalués au 1er janvier
+  fraisPayesLe      DateTime?
+  fraisAvancesParOF Boolean   @default(false) // frais avancés par l'organisme (à refacturer)
+
+  // ── Étapes 4→10 : convocations, épreuves & résultats (une ligne par tentative) ──
+  epreuves T3PEpreuve[]
+
+  // Jalons de formation (l'assiduité réelle est portée par la session : émargements)
+  formationTheoriqueFaiteLe DateTime?
+  formationPratiqueFaiteLe  DateTime?
+
+  // Publication des résultats d'admissibilité : point de départ des délais
+  // réglementaires (3 présentations à l'admission dans un délai d'1 an).
+  admissibiliteLe DateTime?
+
+  // ── Étape 11 : carte professionnelle (préfecture — Démarches Simplifiées) ──
+  carteProDemandeeLe DateTime?
+  carteProObtenueLe  DateTime?
+  carteProNumero     String?
+
+  commentaire String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([candidatId, metier])
+  @@index([organismeId])
+  @@index([statut])
+}
+
+// Épreuve CMA — une ligne par présentation : convocation, date, résultat.
+model T3PEpreuve {
+  id          String  @id @default(cuid())
+  organismeId String? // tenant (multi-OF)
+
+  parcoursId String
+  parcours   ParcoursT3P @relation(fields: [parcoursId], references: [id], onDelete: Cascade)
+
+  type      T3PEpreuveType
+  tentative Int            @default(1) // n° de présentation (admission : 3 max)
+
+  convocationRecueLe DateTime? // convocation CMA reçue (archivée en pièce jointe candidat)
+  date               DateTime? // date de l'épreuve
+  resultat           T3PEpreuveResultat @default(EN_ATTENTE)
+  resultatLe         DateTime? // date de publication du résultat
+  note               String? // ex. « 14/20 »
+  commentaire        String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([parcoursId, type, tentative])
+  @@index([organismeId])
 }

@@ -31,7 +31,7 @@ export default async function CandidatHistoriquePage({
 
   return (
     <div className="space-y-6">
-      <CandidatDetailHeader candidat={candidat} active="historique" />
+      <CandidatDetailHeader candidat={candidat} active="historique" t3pTab={detail.t3pTab} />
 
       <Card>
         <CardHeader>

@@ -34,7 +34,7 @@ export default async function CandidatInscriptionsPage({
 
   return (
     <div className="space-y-6">
-      <CandidatDetailHeader candidat={candidat} active="inscriptions" />
+      <CandidatDetailHeader candidat={candidat} active="inscriptions" t3pTab={detail.t3pTab} />
 
       <Card>
         <CardHeader>

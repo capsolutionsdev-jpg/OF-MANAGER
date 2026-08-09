@@ -199,6 +199,12 @@ DROP POLICY IF EXISTS tenant_isolation ON "Paiement";
 CREATE POLICY tenant_isolation ON "Paiement"
   USING ("organismeId" = current_setting('app.org', true) OR current_setting('app.org', true) = 'BYPASS');
 
+ALTER TABLE "ParcoursT3P" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "ParcoursT3P" FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS tenant_isolation ON "ParcoursT3P";
+CREATE POLICY tenant_isolation ON "ParcoursT3P"
+  USING ("organismeId" = current_setting('app.org', true) OR current_setting('app.org', true) = 'BYPASS');
+
 ALTER TABLE "Partenaire" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "Partenaire" FORCE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS tenant_isolation ON "Partenaire";
@@ -281,6 +287,12 @@ ALTER TABLE "SupportTicket" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "SupportTicket" FORCE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS tenant_isolation ON "SupportTicket";
 CREATE POLICY tenant_isolation ON "SupportTicket"
+  USING ("organismeId" = current_setting('app.org', true) OR current_setting('app.org', true) = 'BYPASS');
+
+ALTER TABLE "T3PEpreuve" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "T3PEpreuve" FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS tenant_isolation ON "T3PEpreuve";
+CREATE POLICY tenant_isolation ON "T3PEpreuve"
   USING ("organismeId" = current_setting('app.org', true) OR current_setting('app.org', true) = 'BYPASS');
 
 ALTER TABLE "Tache" ENABLE ROW LEVEL SECURITY;

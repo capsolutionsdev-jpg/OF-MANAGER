@@ -20,6 +20,7 @@ import { sendEmail } from "@/lib/email";
 import { orgConfigFor } from "@/lib/org-identity";
 import { generateToken, appBaseUrl } from "@/lib/token";
 import { hasStrictFeature } from "@/lib/feature-guard";
+import { t3pMetierOfFormation, T3P_FRAIS_EXAMEN } from "@/lib/t3p";
 
 export type ActionResult =
   | { ok: true; inscriptionId: string; warning?: string }
@@ -356,6 +357,44 @@ export async function createInscription(
         entityId: created.id,
       },
     });
+
+    // Formation Taxi/VTC → ouvre (ou rattache) automatiquement le parcours
+    // d'examen T3P du candidat. Best-effort : ne bloque jamais l'inscription.
+    if (await hasStrictFeature("parcours-t3p")) {
+      try {
+        const sessT3P = await db.session.findUnique({
+          where: { id: v.sessionId },
+          select: { formation: { select: { titre: true, reference: true } } },
+        });
+        const metier = sessT3P ? t3pMetierOfFormation(sessT3P.formation) : null;
+        if (metier) {
+          const existant = await db.parcoursT3P.findFirst({
+            where: { candidatId: v.candidatId, metier },
+          });
+          if (existant) {
+            if (!existant.inscriptionId) {
+              await db.parcoursT3P.update({
+                where: { id: existant.id },
+                data: { inscriptionId: created.id },
+              });
+            }
+          } else {
+            await db.parcoursT3P.create({
+              data: {
+                candidatId: v.candidatId,
+                metier,
+                inscriptionId: created.id,
+                fraisMontant: T3P_FRAIS_EXAMEN,
+              },
+            });
+          }
+          revalidatePath(`/candidats/${v.candidatId}/parcours-t3p`);
+          revalidatePath("/parcours-t3p");
+        }
+      } catch (e) {
+        console.error("createInscription: parcours T3P (ignoré)", e);
+      }
+    }
 
     revalidatePath(`/sessions/${v.sessionId}`);
     revalidatePath(`/candidats/${v.candidatId}`);

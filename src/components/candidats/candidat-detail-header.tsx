@@ -17,6 +17,7 @@ import { CandidatActionsMenu } from "@/components/candidats/candidat-actions-men
 export function CandidatDetailHeader({
   candidat,
   active,
+  t3pTab = false,
 }: {
   candidat: {
     id: string;
@@ -28,6 +29,8 @@ export function CandidatDetailHeader({
     prospectFormSentAt: Date | null;
   };
   active: CandidatTabKey;
+  /** Affiche l'onglet « Parcours T3P » (candidat Taxi/VTC) — cf. getCandidatDetail. */
+  t3pTab?: boolean;
 }) {
   return (
     <div>
@@ -96,7 +99,7 @@ export function CandidatDetailHeader({
       </div>
 
       <div className="mt-4">
-        <CandidatTabs candidatId={candidat.id} active={active} />
+        <CandidatTabs candidatId={candidat.id} active={active} showT3P={t3pTab} />
       </div>
     </div>
   );
