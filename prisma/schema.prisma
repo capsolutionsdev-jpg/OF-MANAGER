@@ -126,6 +126,15 @@ model Organisme {
   referentHandicapNom    String? // référent handicap désigné par l'OF
   referentHandicapContact String? // e-mail / téléphone du référent handicap
 
+  // Environnement de DÉMONSTRATION (provisionné automatiquement pour un prospect).
+  // Un tenant démo est isolé, pré-rempli, bridé (pas d'envoi réel/facturation) et
+  // expire : 48 h après la 1re connexion (demoExpiresAt, fixé au 1er login), avec
+  // un filet de sécurité à J+7 (demoHardExpiresAt) si jamais connecté.
+  isDemo            Boolean   @default(false)
+  demoFirstLoginAt  DateTime? // 1re connexion → démarre le compteur 48 h
+  demoExpiresAt     DateTime? // = demoFirstLoginAt + 48 h (null tant que jamais connecté)
+  demoHardExpiresAt DateTime? // = createdAt + 7 j (filet de sécurité)
+
   users          User[]
   supportTickets SupportTicket[]
 
@@ -133,6 +142,7 @@ model Organisme {
   updatedAt DateTime @updatedAt
 
   @@index([statut])
+  @@index([isDemo])
 }
 
 enum Modalite {
@@ -1815,6 +1825,8 @@ model Lead {
   notes       String?    @db.Text // notes internes de l'équipe OFManager
   rappeleAt   DateTime?  // date du rappel effectué
   lu          Boolean    @default(false) // consulté par l'éditeur (badge)
+  // Démo auto-provisionnée pour ce prospect (tenant Organisme isDemo=true).
+  demoOrganismeId String?
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
