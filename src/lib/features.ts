@@ -44,6 +44,7 @@ export const FEATURES: Feature[] = [
   { key: "blog", label: "Blog du site vitrine", description: "Rédiger et publier les articles du site public", group: "Modules avancés" },
   { key: "diplomes", label: "Gestion des diplômes", description: "Suivi des diplômes (certificateur → reçu → remis) + attestation de remise", group: "Modules avancés" },
   { key: "jurys", label: "Gestion de jury", description: "Jurys d'examen, défraiement personnalisé, notes de défraiement", group: "Modules avancés" },
+  { key: "parcours-t3p", label: "Parcours examen Taxi / VTC (T3P)", description: "Suivi du parcours CMA : prérequis, inscription, frais, épreuves, carte professionnelle", group: "Modules avancés" },
 
   // ── Support (inclus dans toutes les formules) ──
   { key: "support", label: "Support technique", description: "Le client contacte l'éditeur depuis sa plateforme (incidents, renseignements)", group: "Support" },

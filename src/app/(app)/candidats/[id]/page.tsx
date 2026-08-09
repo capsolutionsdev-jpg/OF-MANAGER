@@ -39,7 +39,7 @@ export default async function CandidatProfilPage({
 
   return (
     <div className="space-y-6">
-      <CandidatDetailHeader candidat={candidat} active="profil" />
+      <CandidatDetailHeader candidat={candidat} active="profil" t3pTab={detail.t3pTab} />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
