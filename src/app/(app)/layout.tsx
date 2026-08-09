@@ -93,8 +93,12 @@ export default async function AppLayout({
   }
   const demo = computeDemoState(demoFields);
 
-  // Essai expiré → on bloque l'accès à l'application (le gérant doit souscrire).
-  if (trial.expired) {
+  // Essai expiré OU organisme suspendu (essai échu basculé SUSPENDU par le cron,
+  // suspension manuelle…) → on bloque l'accès (le gérant doit souscrire).
+  // NB : la connexion d'un tenant SUSPENDU est déjà refusée (auth) ; ce garde
+  // couvre les sessions déjà ouvertes au moment de la suspension.
+  const suspended = org?.statut === "SUSPENDU";
+  if (trial.expired || suspended) {
     const isAdmin = session.user.role === "ADMIN";
     const { plans, popular } = await getResolvedPlans();
     const ordered = PLAN_ORDER.map((k) => plans[k]);
@@ -104,10 +108,13 @@ export default async function AppLayout({
           <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full bg-amber-500/10 text-amber-600">
             <Clock className="h-6 w-6" />
           </div>
-          <h1 className="text-xl font-bold">Période d&apos;essai terminée</h1>
+          <h1 className="text-xl font-bold">
+            {suspended ? "Compte suspendu" : "Période d'essai terminée"}
+          </h1>
           <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-            Votre essai gratuit de {branding.nom} est arrivé à échéance. Choisissez une
-            formule pour réactiver votre espace — le support est inclus partout.
+            {suspended
+              ? `L'accès à ${branding.nom} est suspendu. Choisissez une formule pour réactiver votre espace, ou contactez le support.`
+              : `Votre essai gratuit de ${branding.nom} est arrivé à échéance. Choisissez une formule pour réactiver votre espace — le support est inclus partout.`}
           </p>
 
           {isAdmin ? (
