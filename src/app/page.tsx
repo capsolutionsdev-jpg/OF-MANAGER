@@ -9,6 +9,8 @@ import {
   CalendarCheck, GraduationCap, Cloud, Building2,
 } from "lucide-react";
 import { auth } from "@/auth";
+import { getResolvedPlans } from "@/lib/pricing";
+import { PLAN_ORDER } from "@/lib/plans";
 import { ScrollReveal } from "@/components/site/scroll-reveal";
 
 export const metadata: Metadata = {
@@ -38,11 +40,13 @@ const formations: { ic: string; t: string; d: string; href?: string }[] = [
   { ic: "＋", t: "Votre catalogue, illimité", d: "Ajoutez autant de formations que vous voulez, avec leur dossier & prérequis." },
 ];
 
-const plans = [
-  { name: "Basique", price: "79€", color: NAVY, pop: false, tagline: "L'essentiel pour démarrer, conformité incluse.", items: ["Cœur métier (CRM, sessions, candidats)", "Conformité Qualiopi · BPF · RGPD", "Documents & signatures", "Marque blanche"] },
-  { name: "Medium", price: "149€", color: BRAND, pop: true, tagline: "Gestion complète + modules de productivité.", items: ["Tout Basique +", "Gestion étendue (B2B, e-learning, compta)", "Notifications, Tâches, Rapports", "Kanban & scoring"] },
-  { name: "Complet", price: "249€", color: "#7C3AED", pop: false, tagline: "Toute la plateforme, IA & support prioritaire.", items: ["Tout Medium +", "Assistant IA & SMS", "Leads multicanal & portail client", "Support prioritaire"] },
-];
+// Habillage marketing par formule (couleur + points-clés). Le nom, le prix, la
+// tagline et le badge « le plus choisi » viennent de la console (getResolvedPlans).
+const PLAN_MARKETING: Record<string, { color: string; items: string[] }> = {
+  BASIQUE: { color: NAVY, items: ["Cœur métier (CRM, sessions, candidats)", "Conformité Qualiopi · BPF · RGPD", "Documents & signatures", "Marque blanche"] },
+  MEDIUM: { color: BRAND, items: ["Tout Basique +", "Gestion étendue (B2B, e-learning, compta)", "Notifications, Tâches, Rapports", "Kanban & scoring"] },
+  COMPLET: { color: "#7C3AED", items: ["Tout Medium +", "Assistant IA & SMS", "Leads multicanal & portail client", "Support prioritaire"] },
+};
 
 const faqs = [
   { q: "Gère-t-il l'autorisation préalable / la carte pro CNAPS (APS) ?", a: "Oui. Pour le TFP APS et le MAC APS, chaque candidat a un suivi de l'autorisation préalable (non fait → en cours → complètement de dossier → accepté/refusé) ou de sa carte pro, dès l'étape prospect." },
@@ -58,6 +62,18 @@ export default async function HomePage() {
     const role = session.user.role as Role;
     redirect(role === "SUPERADMIN" ? "/console" : role === "APPRENANT" ? "/mon-espace" : "/dashboard");
   }
+
+  // Tarifs LIVE (console éditeur → PlanTarif), fusionnés avec l'habillage
+  // marketing statique ci-dessus. Repli automatique sur les défauts si DB down.
+  const { plans: resolved, popular } = await getResolvedPlans();
+  const plans = PLAN_ORDER.map((key) => ({
+    name: resolved[key].name,
+    price: `${resolved[key].price}€`,
+    tagline: resolved[key].tagline,
+    pop: key === popular,
+    color: PLAN_MARKETING[key]?.color ?? NAVY,
+    items: PLAN_MARKETING[key]?.items ?? [],
+  }));
 
   return (
     <main className="min-h-screen bg-white text-[#221F19]">
