@@ -1,4 +1,5 @@
 // src/app/solutions/qualiopi/page.tsx
+import { SITE_URL } from "@/lib/site-url";
 // Server Component (AUCUN "use client") — mêmes imports que tfp-aps, rien de plus.
 import type { Metadata } from "next";
 import Image from "next/image";
@@ -99,7 +100,7 @@ const otherSolutions = [
 export default function Page() {
   // JSON-LD domaine-agnostique (pattern landing) : base sert UNIQUEMENT ici,
   // jamais dans metadata. Organization déjà déclarée sur la landing → référence par @id.
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "https://ofmanager.fr";
+  const base = SITE_URL;
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [

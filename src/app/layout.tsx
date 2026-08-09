@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { SITE_URL } from "@/lib/site-url";
 import {
   Geist_Mono,
   Inter,
@@ -43,7 +44,7 @@ const fontVars = [
 ].join(" ");
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://ofmanager.fr"),
+  metadataBase: new URL(SITE_URL),
   title: "OFManager — Logiciel des organismes de formation",
   description:
     "OFManager : le logiciel des organismes de formation (sécurité privée, incendie, secourisme, prévention) — conforme Qualiopi, à votre marque. Édité par CAP Compétences.",

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SITE_URL } from "@/lib/site-url";
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -358,7 +359,7 @@ export default async function HomePage() {
   // JSON-LD domaine-agnostique : le domaine vient de NEXT_PUBLIC_SITE_URL, le
   // canonical reste "/" (cf. metadata). Organization + WebSite +
   // SoftwareApplication (AggregateOffer) + FAQPage (identique à la FAQ visible).
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "https://ofmanager.fr";
+  const base = SITE_URL;
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [

@@ -1,4 +1,5 @@
 // Page « solution » SEO : logiciel pour les formations VTC & Taxi (examen T3P).
+import { SITE_URL } from "@/lib/site-url";
 // Server Component — même structure que /solutions/tfp-aps, palette v2 de la
 // landing (accent ambre = domaine VTC/Taxi, bleu = CTA, vert = conformité).
 import type { Metadata } from "next";
@@ -100,7 +101,7 @@ const otherSolutions = [
 export default function VtcTaxiPage() {
   // JSON-LD domaine-agnostique : base sert UNIQUEMENT ici, jamais dans metadata.
   // L'Organization est déclarée sur la landing → référencée par @id.
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "https://ofmanager.fr";
+  const base = SITE_URL;
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
