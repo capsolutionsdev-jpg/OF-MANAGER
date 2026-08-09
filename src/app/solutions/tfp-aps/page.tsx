@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SITE_URL } from "@/lib/site-url";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Check } from "lucide-react";
@@ -47,7 +48,7 @@ const faqs = [
 export default function TfpApsPage() {
   // JSON-LD domaine-agnostique : base sert UNIQUEMENT ici, jamais dans metadata.
   // L'Organization est déclarée sur la landing → référencée par @id.
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "https://ofmanager.fr";
+  const base = SITE_URL;
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [

@@ -1,8 +1,9 @@
 import type { MetadataRoute } from "next";
+import { SITE_URL } from "@/lib/site-url";
 
 // robots.txt généré. Le domaine vient de NEXT_PUBLIC_SITE_URL (défaut ofmanager.fr) —
 // changer de domaine = 1 variable d'env, sans toucher au code.
-const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://ofmanager.fr";
+const BASE = SITE_URL;
 
 export default function robots(): MetadataRoute.Robots {
   return {

@@ -1,4 +1,5 @@
 // Page « solution » SEO : logiciel pour les formations SSIAP (sécurité incendie).
+import { SITE_URL } from "@/lib/site-url";
 // Server Component — même structure que /solutions/sst, palette v2 de la landing
 // (accent orange = domaine SSIAP/incendie, bleu = CTA).
 import type { Metadata } from "next";
@@ -104,7 +105,7 @@ const otherSolutions = [
 export default function SsiapPage() {
   // JSON-LD domaine-agnostique : base sert UNIQUEMENT ici, jamais dans metadata.
   // L'Organization est déclarée sur la landing → référencée par @id.
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "https://ofmanager.fr";
+  const base = SITE_URL;
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
