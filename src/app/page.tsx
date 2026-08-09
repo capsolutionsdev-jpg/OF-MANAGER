@@ -772,10 +772,11 @@ export default async function HomePage() {
             </div>
             <div>
               <h4>Solutions</h4>
-              <a href="#metiers">Sécurité privée</a>
-              <a href="#metiers">VTC / Taxi (T3P)</a>
-              <a href="#qualiopi">Qualiopi</a>
-              <Link href="/demo">Demander une démo</Link>
+              <Link href="/solutions/tfp-aps">TFP APS</Link>
+              <Link href="/solutions/ssiap">SSIAP</Link>
+              <Link href="/solutions/sst">SST</Link>
+              <Link href="/solutions/vtc-taxi">VTC / Taxi</Link>
+              <Link href="/solutions/qualiopi">Qualiopi</Link>
             </div>
             <div>
               <h4>Légal</h4>

@@ -4,10 +4,13 @@ import Link from "next/link";
 import { ArrowRight, Check } from "lucide-react";
 import { ScrollReveal } from "@/components/site/scroll-reveal";
 
+// title < 60 car. ; description < 160 car. ; canonical RELATIF : metadataBase
+// (layout) résout le domaine via NEXT_PUBLIC_SITE_URL.
 export const metadata: Metadata = {
   title: "TFP APS sur OFManager — du CNAPS à la certification",
   description:
-    "Gérez le TFP APS de bout en bout avec OFManager : autorisation préalable CNAPS, dossier réglementaire, convocation d'examen, certification. Pour les organismes de sécurité privée.",
+    "Gérez le TFP APS de bout en bout : autorisation préalable CNAPS, dossier réglementaire, convocation d'examen, certification. Pour les OF de sécurité privée.",
+  alternates: { canonical: "/solutions/tfp-aps" },
 };
 
 const NAVY = "#221F19";
@@ -20,9 +23,65 @@ const steps = [
   { n: 5, t: "Certification & résultats", d: "Résultats consignés, attestations et documents de fin générés à votre charte. Les données alimentent votre BPF et votre dossier Qualiopi.", chips: ["Attestation", "Résultat certif.", "Alimente le BPF"] },
 ];
 
+// FAQ = SOURCE UNIQUE : alimente la FAQ visible ET le JSON-LD FAQPage
+// (les deux doivent rester identiques pour les rich snippets Google).
+const faqs = [
+  {
+    q: "Comment OFManager gère-t-il l'autorisation préalable CNAPS ?",
+    a: "Dès l'étape prospect, chaque candidat au TFP APS porte le statut de son autorisation préalable CNAPS (demande en cours, dossier à compléter, accepté, refusé). La formation ne peut pas démarrer tant que l'autorisation n'est pas accordée.",
+  },
+  {
+    q: "Quelles pièces composent le dossier réglementaire TFP APS ?",
+    a: "À l'inscription, la checklist du dossier se génère automatiquement : pièce d'identité, autorisation CNAPS, deux photos sur fond gris, justificatif de domicile, casier judiciaire et niveau B1 pour les candidats étrangers. Vous cochez les pièces reçues et relancez en un clic celles qui manquent.",
+  },
+  {
+    q: "Comment se passe l'examen du TFP APS dans OFManager ?",
+    a: "Le TFP APS étant soumis à examen, la convocation de chaque candidat est générée automatiquement avec la date et le lieu (votre organisme ou un autre centre). Les résultats sont ensuite consignés et les attestations de fin générées à votre charte.",
+  },
+  {
+    q: "OFManager m'aide-t-il pour Qualiopi et le BPF ?",
+    a: "Oui. Émargements horodatés à valeur légale, conventions et suivi pédagogique sont rattachés aux indicateurs Qualiopi, le BPF est pré-rempli automatiquement et le dossier d'audit s'exporte en 1 clic.",
+  },
+];
+
 export default function TfpApsPage() {
+  // JSON-LD domaine-agnostique : base sert UNIQUEMENT ici, jamais dans metadata.
+  // L'Organization est déclarée sur la landing → référencée par @id.
+  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "https://ofmanager.fr";
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Accueil", item: base },
+          { "@type": "ListItem", position: 2, name: "TFP APS — du CNAPS à la certification", item: `${base}/solutions/tfp-aps` },
+        ],
+      },
+      {
+        "@type": "Service",
+        name: "Gestion du TFP APS pour organismes de formation en sécurité privée",
+        serviceType: "Logiciel de gestion de formations TFP APS (sécurité privée)",
+        description:
+          "OFManager pilote le TFP APS de bout en bout : autorisation préalable CNAPS suivie dès l'étape prospect, dossier réglementaire en checklist, convocations d'examen générées, résultats et attestations, preuves Qualiopi et BPF alimentés automatiquement.",
+        provider: { "@id": `${base}/#organization` },
+        areaServed: "FR",
+        inLanguage: "fr-FR",
+      },
+      {
+        "@type": "FAQPage",
+        mainEntity: faqs.map((f) => ({
+          "@type": "Question",
+          name: f.q,
+          acceptedAnswer: { "@type": "Answer", text: f.a },
+        })),
+      },
+    ],
+  };
+
   return (
     <main className="min-h-screen bg-white text-[#221F19]">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <ScrollReveal skip={1} />
       <header className="sticky top-0 z-40 border-b border-slate-100 bg-white/90 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-5xl items-center gap-4 px-4 sm:px-6">
@@ -75,6 +134,19 @@ export default function TfpApsPage() {
         </div>
       </section>
 
+      {/* ===== FAQ (même tableau que le JSON-LD — ne jamais diverger) ===== */}
+      <section className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
+        <h2 className="text-center text-3xl font-extrabold">Questions fréquentes</h2>
+        <div className="mt-10 space-y-3">
+          {faqs.map((f) => (
+            <details key={f.q} className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+              <summary className="cursor-pointer list-none px-5 py-4 font-semibold">{f.q}</summary>
+              <p className="px-5 pb-4 text-sm text-slate-600">{f.a}</p>
+            </details>
+          ))}
+        </div>
+      </section>
+
       <section className="text-white" style={{ background: `linear-gradient(135deg, #2C53C0, #2A2740)` }}>
         <div className="mx-auto max-w-3xl px-4 py-16 text-center sm:px-6">
           <h2 className="text-3xl font-extrabold">Voyez OFManager gérer un TFP APS en direct</h2>
@@ -83,6 +155,16 @@ export default function TfpApsPage() {
             <Link href="/demo" className="rounded-xl bg-white px-7 py-3 font-semibold text-[#221F19] hover:bg-slate-100">Demander une démo <ArrowRight className="inline h-4 w-4" /></Link>
             <Link href="/" className="rounded-xl border border-white/40 px-7 py-3 font-semibold hover:bg-white/10">← Retour au site</Link>
           </div>
+        </div>
+      </section>
+
+      <section className="border-t border-slate-100 bg-white py-8">
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-center gap-x-6 gap-y-2 px-4 text-sm text-slate-500 sm:px-6">
+          <span className="font-semibold text-[#221F19]">Voir aussi :</span>
+          <Link href="/solutions/ssiap" className="hover:text-[#2C53C0]">SSIAP</Link>
+          <Link href="/solutions/sst" className="hover:text-[#2C53C0]">SST</Link>
+          <Link href="/solutions/vtc-taxi" className="hover:text-[#2C53C0]">VTC / Taxi</Link>
+          <Link href="/solutions/qualiopi" className="hover:text-[#2C53C0]">Qualiopi</Link>
         </div>
       </section>
 
