@@ -8,9 +8,32 @@
 
 import { prisma } from "@/lib/prisma";
 import { decryptSecret } from "@/lib/crypto";
+import { getCurrentOrganisme } from "@/lib/org";
 
 export function emailConfigured(): boolean {
   return Boolean(process.env.RESEND_API_KEY || process.env.BREVO_API_KEY);
+}
+
+/**
+ * Vrai si l'e-mail émane d'un tenant de DÉMONSTRATION : soit l'organisme passé
+ * explicitement est une démo, soit (à défaut) l'utilisateur connecté appartient à
+ * une démo. Best-effort et sans échec : les contextes publics/cron (provisionnement
+ * de démo, notifications éditeur…) n'ont pas de session → renvoie false → envoi normal.
+ */
+async function isDemoSender(organismeId?: string | null): Promise<boolean> {
+  try {
+    if (organismeId) {
+      const o = await prisma.organisme.findUnique({
+        where: { id: organismeId },
+        select: { isDemo: true },
+      });
+      return Boolean(o?.isDemo);
+    }
+    const org = await getCurrentOrganisme();
+    return Boolean(org?.isDemo);
+  } catch {
+    return false;
+  }
 }
 
 export type EmailAttachment = {
@@ -82,6 +105,12 @@ export async function sendEmail(params: {
   /** Tenant émetteur (utilise son compte Brevo si configuré). */
   organismeId?: string | null;
 }): Promise<{ sent: boolean }> {
+  // Bac à sable démo : un tenant de démonstration n'émet JAMAIS de vrai e-mail.
+  // On simule un envoi réussi (expérience réaliste côté prospect) sans rien transmettre.
+  if (await isDemoSender(params.organismeId)) {
+    return { sent: true };
+  }
+
   const sender = await resolveSender(params.organismeId);
 
   // Priorité à Resend si configuré (recommandé sur Vercel : aucune restriction IP).
