@@ -84,6 +84,7 @@ const ACTIONS_ALLOWLIST = new Set([
   "agrements-actions.ts",
   "demo-actions.ts",
   "civique-actions.ts",
+  "growth-actions.ts",
   // Compte courant / facturation / paramètres
   "totp-actions.ts",
   "billing-actions.ts",

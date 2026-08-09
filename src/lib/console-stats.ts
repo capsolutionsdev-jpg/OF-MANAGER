@@ -52,6 +52,43 @@ export type ConsoleOverview = {
 
 const MONTHS = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
 
+export type GrowthFunnel = {
+  /** Nombre total de leads. */
+  leads: number;
+  /** Leads issus d'une demande de démo (source = "demo"). */
+  demandesDemos: number;
+  /** Leads pour lesquels un organisme de démo a été provisionné. */
+  demosProvisionnees: number;
+  /** Leads distincts s'étant connectés au moins une fois à leur démo. */
+  demosConnectees: number;
+  /** Leads convertis en clients. */
+  convertis: number;
+  /** Taux de conversion global (convertis / leads), en %. */
+  tauxConversion: number;
+};
+
+// Funnel d'acquisition (leads → démos → conversions). Fonction séparée de
+// getConsoleOverview() pour ne pas alourdir ni risquer de casser l'existant.
+export async function getGrowthFunnel(): Promise<GrowthFunnel> {
+  const [leads, demandesDemos, demosProvisionnees, connexionsParLead, convertis] = await Promise.all([
+    prisma.lead.count(),
+    prisma.lead.count({ where: { source: "demo" } }),
+    prisma.lead.count({ where: { demoOrganismeId: { not: null } } }),
+    // Leads DISTINCTS ayant au moins un événement de connexion à la démo.
+    prisma.leadEvent.groupBy({ by: ["leadId"], where: { type: "demo_connexion" } }),
+    prisma.lead.count({ where: { statut: "CONVERTI" } }),
+  ]);
+
+  return {
+    leads,
+    demandesDemos,
+    demosProvisionnees,
+    demosConnectees: connexionsParLead.length,
+    convertis,
+    tauxConversion: leads > 0 ? Math.round((convertis / leads) * 100) : 0,
+  };
+}
+
 export async function getConsoleOverview(): Promise<ConsoleOverview> {
   const [organismes, candByOrg, sessByOrg, { plans: planMap }] = await Promise.all([
     prisma.organisme.findMany({
