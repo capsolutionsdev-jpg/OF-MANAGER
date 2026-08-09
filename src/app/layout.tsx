@@ -59,7 +59,8 @@ export const metadata: Metadata = {
     type: "website",
     siteName: "OFManager",
     locale: "fr_FR",
-    images: [{ url: "/ofmanager-logo.png", width: 1200, height: 630, alt: "OFManager" }],
+    // L'image OG est générée par app/opengraph-image.tsx (bannière 1200×630) —
+    // le fichier-convention prime sur toute entrée `images` déclarée ici.
   },
   twitter: { card: "summary_large_image" },
 };
