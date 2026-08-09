@@ -2,7 +2,7 @@ import type { CSSProperties } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Clock, AlertTriangle } from "lucide-react";
+import { Clock, AlertTriangle, FlaskConical } from "lucide-react";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { AppSidebar } from "@/components/app-sidebar";
@@ -14,6 +14,13 @@ import { designVars, getDesign } from "@/lib/themes";
 import { hasFeature } from "@/lib/features";
 import { getNotifications } from "@/lib/notifications";
 import { trialStatus } from "@/lib/trial";
+import {
+  computeDemoState,
+  startDemoIfNeeded,
+  formatDemoLeft,
+  type DemoOrgFields,
+} from "@/lib/demo/lifecycle";
+import { extendDemoAction } from "@/lib/actions/demo-lifecycle-actions";
 import { getResolvedPlans } from "@/lib/pricing";
 import { PLAN_ORDER } from "@/lib/plans";
 import { isStripeConfigured } from "@/lib/stripe";
@@ -71,8 +78,27 @@ export default async function AppLayout({
   // Cycle de vie de l'essai gratuit.
   const trial = trialStatus(org?.statut, org?.createdAt);
 
-  // Essai expiré → on bloque l'accès à l'application (le gérant doit souscrire).
-  if (trial.expired) {
+  // Cycle de vie de la DÉMO : on démarre le compteur 48 h à la 1re connexion,
+  // puis on évalue l'état (bandeau ou écran d'expiration selon le temps restant).
+  let demoFields: DemoOrgFields | null = org
+    ? {
+        isDemo: org.isDemo,
+        demoFirstLoginAt: org.demoFirstLoginAt,
+        demoExpiresAt: org.demoExpiresAt,
+        demoHardExpiresAt: org.demoHardExpiresAt,
+      }
+    : null;
+  if (org && demoFields?.isDemo && !demoFields.demoFirstLoginAt) {
+    demoFields = await startDemoIfNeeded(org.id, demoFields);
+  }
+  const demo = computeDemoState(demoFields);
+
+  // Essai expiré OU organisme suspendu (essai échu basculé SUSPENDU par le cron,
+  // suspension manuelle…) → on bloque l'accès (le gérant doit souscrire).
+  // NB : la connexion d'un tenant SUSPENDU est déjà refusée (auth) ; ce garde
+  // couvre les sessions déjà ouvertes au moment de la suspension.
+  const suspended = org?.statut === "SUSPENDU";
+  if (trial.expired || suspended) {
     const isAdmin = session.user.role === "ADMIN";
     const { plans, popular } = await getResolvedPlans();
     const ordered = PLAN_ORDER.map((k) => plans[k]);
@@ -82,10 +108,13 @@ export default async function AppLayout({
           <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full bg-amber-500/10 text-amber-600">
             <Clock className="h-6 w-6" />
           </div>
-          <h1 className="text-xl font-bold">Période d&apos;essai terminée</h1>
+          <h1 className="text-xl font-bold">
+            {suspended ? "Compte suspendu" : "Période d'essai terminée"}
+          </h1>
           <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-            Votre essai gratuit de {branding.nom} est arrivé à échéance. Choisissez une
-            formule pour réactiver votre espace — le support est inclus partout.
+            {suspended
+              ? `L'accès à ${branding.nom} est suspendu. Choisissez une formule pour réactiver votre espace, ou contactez le support.`
+              : `Votre essai gratuit de ${branding.nom} est arrivé à échéance. Choisissez une formule pour réactiver votre espace — le support est inclus partout.`}
           </p>
 
           {isAdmin ? (
@@ -99,6 +128,45 @@ export default async function AppLayout({
           )}
 
           <div className="mt-6">
+            <Link href="/deconnexion" prefetch={false} className="text-xs text-muted-foreground hover:text-foreground">
+              Se déconnecter
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Démo expirée → écran de fin de démonstration (prolongation ou prise de contact).
+  if (demo.expired) {
+    const demoContact = process.env.DEMO_CONTACT_EMAIL || process.env.LEAD_NOTIF_EMAIL || null;
+    return (
+      <div className="grid min-h-screen place-items-center bg-muted/40 p-6" style={brandStyle}>
+        <div data-slot="card" className="w-full max-w-lg rounded-2xl border bg-card p-8 text-center shadow-sm">
+          <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full bg-violet-500/10 text-violet-600">
+            <FlaskConical className="h-6 w-6" />
+          </div>
+          <h1 className="text-xl font-bold">Votre démonstration est terminée</h1>
+          <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
+            Merci d&apos;avoir testé {branding.nom} ! Votre environnement de démonstration a
+            expiré. Prolongez-le de 48 h pour continuer votre exploration, ou parlons de la mise
+            en place de votre compte définitif.
+          </p>
+
+          <div className="mt-6 flex flex-col items-center gap-3">
+            <form action={extendDemoAction}>
+              <button
+                type="submit"
+                className="inline-flex h-10 items-center rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-sm hover:opacity-90"
+              >
+                Prolonger la démo (48 h)
+              </button>
+            </form>
+            {demoContact && (
+              <a href={`mailto:${demoContact}`} className="text-sm font-medium text-primary hover:underline">
+                Parler à un conseiller
+              </a>
+            )}
             <Link href="/deconnexion" prefetch={false} className="text-xs text-muted-foreground hover:text-foreground">
               Se déconnecter
             </Link>
@@ -147,6 +215,16 @@ export default async function AppLayout({
               Essai gratuit — il vous reste{" "}
               <span className="font-bold">{Math.max(0, trial.daysLeft)} jour{trial.daysLeft > 1 ? "s" : ""}</span>.
               <Link href="/tarifs" className="ml-1 underline hover:no-underline">Choisir une formule</Link>
+            </div>
+          )}
+          {demo.isDemo && !demo.expired && (
+            <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 bg-violet-500/10 px-4 py-2 text-center text-xs font-medium text-violet-700 dark:text-violet-300">
+              <FlaskConical className="h-3.5 w-3.5 shrink-0" />
+              Environnement de démonstration — expire dans{" "}
+              <span className="font-bold">{formatDemoLeft(demo.msLeft)}</span>.
+              <form action={extendDemoAction} className="contents">
+                <button type="submit" className="underline hover:no-underline">Prolonger 48 h</button>
+              </form>
             </div>
           )}
           <main className="mx-auto w-full max-w-[1400px] flex-1 p-4 md:p-6">

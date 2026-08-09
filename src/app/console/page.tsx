@@ -1,7 +1,7 @@
 import Link from "next/link";
 import {
   Plus, Palette, Building2, Users, GraduationCap, CalendarDays,
-  Wallet, TrendingUp, AlertTriangle, MoonStar, ArrowRight, Sparkles,
+  Wallet, TrendingUp, AlertTriangle, MoonStar, ArrowRight, Sparkles, Filter,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatCard } from "@/components/ui/stat-card";
 import { ConvertButton } from "@/components/console/statut-actions";
-import { getConsoleOverview } from "@/lib/console-stats";
+import { getConsoleOverview, getGrowthFunnel } from "@/lib/console-stats";
 import { euros } from "@/lib/plans";
 import { cn } from "@/lib/utils";
 
@@ -22,8 +22,18 @@ const STATUT_BADGE: Record<string, string> = {
 };
 
 export default async function ConsoleDashboard() {
-  const o = await getConsoleOverview();
+  const [o, funnel] = await Promise.all([getConsoleOverview(), getGrowthFunnel()]);
   const { totals, byStatut, growth, mrrByPlan, adoption, alerts, rows } = o;
+
+  // Étapes du funnel d'acquisition (barres dégressives, largeur relative aux leads).
+  const funnelSteps = [
+    { label: "Leads", value: funnel.leads },
+    { label: "Démos demandées", value: funnel.demandesDemos },
+    { label: "Démos provisionnées", value: funnel.demosProvisionnees },
+    { label: "Démos connectées", value: funnel.demosConnectees },
+    { label: "Convertis", value: funnel.convertis },
+  ];
+  const funnelMax = Math.max(1, funnel.leads);
 
   const growthMax = Math.max(1, ...growth.map((g) => g.count));
   const statutTotal = Math.max(1, byStatut.actif + byStatut.essai + byStatut.suspendu);
@@ -142,8 +152,35 @@ export default async function ConsoleDashboard() {
         </Card>
       </div>
 
-      {/* Adoption + Alertes */}
-      <div className="grid gap-4 lg:grid-cols-2">
+      {/* Funnel + Adoption + Alertes */}
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Card>
+          <CardHeader className="py-3">
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <Filter className="h-4 w-4 text-primary" /> Funnel d&apos;acquisition
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2.5">
+            {funnelSteps.map((s) => (
+              <div key={s.label} className="flex items-center gap-3">
+                <span className="w-36 shrink-0 truncate text-xs text-muted-foreground" title={s.label}>
+                  {s.label}
+                </span>
+                <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="h-full rounded-full bg-primary"
+                    style={{ width: `${Math.max(4, (s.value / funnelMax) * 100)}%` }}
+                  />
+                </div>
+                <span className="w-8 shrink-0 text-right text-xs font-medium">{s.value}</span>
+              </div>
+            ))}
+            <p className="border-t pt-2 text-[11px] text-muted-foreground">
+              Taux de conversion global : <span className="font-semibold text-foreground">{funnel.tauxConversion}%</span>
+            </p>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader className="py-3">
             <CardTitle className="flex items-center gap-2 text-sm">

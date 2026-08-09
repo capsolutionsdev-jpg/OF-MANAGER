@@ -12,6 +12,9 @@ export type BillingState = { error?: string; url?: string };
 const NOT_CONFIGURED =
   "Le paiement en ligne n'est pas encore activé. Contactez-nous pour souscrire — nous activons votre compte manuellement.";
 
+const DEMO_BLOCKED =
+  "Vous êtes dans un environnement de démonstration : la souscription est désactivée. Contactez-nous pour ouvrir votre compte définitif.";
+
 /** Garde commune : seul le gérant (ADMIN) d'un organisme peut gérer la facturation. */
 async function requireAdminOrg() {
   const session = await auth();
@@ -36,6 +39,7 @@ export async function createCheckout(formule: FormuleKey): Promise<BillingState>
 
   const org = await prisma.organisme.findUnique({ where: { id: ctx.organismeId } });
   if (!org) return { error: "Organisme introuvable." };
+  if (org.isDemo) return { error: DEMO_BLOCKED };
 
   const { plans } = await getResolvedPlans();
   const plan = plans[formule];
@@ -86,8 +90,9 @@ export async function openBillingPortal(): Promise<BillingState> {
 
   const org = await prisma.organisme.findUnique({
     where: { id: ctx.organismeId },
-    select: { stripeCustomerId: true },
+    select: { stripeCustomerId: true, isDemo: true },
   });
+  if (org?.isDemo) return { error: DEMO_BLOCKED };
   if (!org?.stripeCustomerId) return { error: "Aucun abonnement à gérer pour le moment." };
 
   const portal = await stripe.billingPortal.sessions.create({

@@ -49,9 +49,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const user = await prisma.user.findUnique({
           where: { email },
-          include: { organisme: { select: { fonctionnalites: true } } },
+          include: { organisme: { select: { fonctionnalites: true, statut: true } } },
         });
         if (!user || !user.isActive) return null;
+
+        // Organisme suspendu (essai échu passé en SUSPENDU par le cron, ou
+        // suspension manuelle en console) → connexion refusée pour tout le tenant.
+        if (user.organisme?.statut === "SUSPENDU") return null;
 
         const valid = await bcrypt.compare(password, user.passwordHash);
         if (!valid) return null;

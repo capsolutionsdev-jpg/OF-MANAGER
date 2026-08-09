@@ -4,6 +4,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { Role } from "@prisma/client";
 import { auth } from "@/auth";
+import { getResolvedPlans } from "@/lib/pricing";
+import { PLAN_ORDER } from "@/lib/plans";
 import { ScrollReveal } from "@/components/site/scroll-reveal";
 
 export const metadata: Metadata = {
@@ -39,14 +41,12 @@ export const metadata: Metadata = {
   },
 };
 
-// Tarifs — rendus côté serveur (source de vérité unique, aucune injection JS).
-const plans = [
-  {
-    name: "Basique",
-    price: "79€",
+// Habillage marketing statique par formule (période + puces). Le nom, le prix,
+// la tagline (desc) et le badge « le plus choisi » sont pilotés depuis la console
+// (PlanTarif) et résolus côté serveur via getResolvedPlans (cf. HomePage).
+const PLAN_MARKETING: Record<string, { period: string; features: string[] }> = {
+  BASIQUE: {
     period: "/ mois",
-    desc: "L'essentiel pour démarrer, conformité incluse.",
-    pop: false,
     features: [
       "Cœur métier (CRM, sessions, candidats)",
       "Conformité Qualiopi · BPF · RGPD",
@@ -54,12 +54,8 @@ const plans = [
       "Marque blanche",
     ],
   },
-  {
-    name: "Medium",
-    price: "149€",
+  MEDIUM: {
     period: "/ mois",
-    desc: "Gestion complète + modules de productivité.",
-    pop: true,
     features: [
       "Tout Basique +",
       "Gestion étendue (B2B, e-learning, compta)",
@@ -67,12 +63,8 @@ const plans = [
       "Kanban & scoring",
     ],
   },
-  {
-    name: "Complet",
-    price: "249€",
+  COMPLET: {
     period: "/ mois",
-    desc: "Toute la plateforme, IA & support prioritaire.",
-    pop: false,
     features: [
       "Tout Medium +",
       "Assistant IA & SMS",
@@ -80,7 +72,7 @@ const plans = [
       "Support prioritaire",
     ],
   },
-];
+};
 
 // FAQ — source unique : alimente à la fois la FAQ visible ET le JSON-LD FAQPage
 // (les deux doivent rester identiques pour les rich snippets Google).
@@ -349,6 +341,20 @@ export default async function HomePage() {
     redirect(role === "SUPERADMIN" ? "/console" : role === "APPRENANT" ? "/mon-espace" : "/dashboard");
   }
 
+  // Tarifs LIVE (console éditeur → PlanTarif) fusionnés avec l'habillage marketing
+  // statique (période + puces). Repli automatique sur les défauts si la BD est
+  // indisponible (getResolvedPlans est tolérant aux pannes).
+  const { plans: resolved, popular } = await getResolvedPlans();
+  const plans = PLAN_ORDER.map((key) => ({
+    name: resolved[key].name,
+    price: `${resolved[key].price}€`,
+    period: PLAN_MARKETING[key]?.period ?? "/ mois",
+    desc: resolved[key].tagline,
+    pop: key === popular,
+    features: PLAN_MARKETING[key]?.features ?? [],
+  }));
+  const prixNums = plans.map((p) => Number(p.price.replace(/[^\d]/g, "")));
+
   // JSON-LD domaine-agnostique : le domaine vient de NEXT_PUBLIC_SITE_URL, le
   // canonical reste "/" (cf. metadata). Organization + WebSite +
   // SoftwareApplication (AggregateOffer) + FAQPage (identique à la FAQ visible).
@@ -384,9 +390,9 @@ export default async function HomePage() {
         offers: {
           "@type": "AggregateOffer",
           priceCurrency: "EUR",
-          lowPrice: "79",
-          highPrice: "249",
-          offerCount: 3,
+          lowPrice: String(Math.min(...prixNums)),
+          highPrice: String(Math.max(...prixNums)),
+          offerCount: plans.length,
           offers: plans.map((p) => ({
             "@type": "Offer",
             name: p.name,
