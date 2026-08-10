@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OFManager — E-mails candidats retravaillés</title>
+<style>
+  body{margin:0;font-family:'Segoe UI',system-ui,sans-serif;background:#eef1f7;color:#0f1729}
+  .top{background:#0D1B3E;color:#fff;padding:28px 22px}
+  .top h1{margin:0 0 6px;font-size:1.4rem}
+  .top p{margin:0;color:#aab8d8;font-size:.92rem;max-width:820px}
+  .wrap{max-width:860px;margin:0 auto;padding:0 16px}
+  .tip{margin:26px auto 8px;padding:16px 20px;background:#fff;border:1px dashed #cfd9ef;border-radius:12px;font-size:.88rem;color:#44526d;line-height:1.6}
+  .tip b{color:#0D1B3E}
+  .tip code{background:#eef2fb;padding:1px 6px;border-radius:5px;font-size:.85em;color:#2954d4}
+  .sech{margin:34px 0 4px;font-size:1.05rem;color:#0D1B3E;font-weight:800;letter-spacing:.2px}
+  .secd{margin:0 0 6px;font-size:.85rem;color:#5b6b86}
+  .card{background:#fff;border-radius:14px;box-shadow:0 10px 30px -18px rgba(13,27,62,.4);margin:18px 0 30px;overflow:hidden;border:1px solid #e3e9f4}
+  .card-h{padding:16px 20px;border-bottom:1px solid #eef1f7;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+  .card-h .meta{font-size:.8rem;color:#5b6b86}
+  .card-h .name{font-weight:700;font-size:1.02rem;color:#0D1B3E}
+  .subj{background:#f5f8fd;padding:10px 20px;font-size:.86rem;color:#33415c;border-bottom:1px solid #eef1f7}
+  .subj b{color:#0D1B3E}
+  .copy{background:#3B6EF5;color:#fff;border:none;padding:.5rem .9rem;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;white-space:nowrap}
+  .copy:hover{background:#2954d4}
+  .copy.done{background:#12B886}
+  iframe{width:100%;border:none;display:block;background:#fff}
+  .foot{max-width:860px;margin:10px auto 50px;padding:0 16px;font-size:.8rem;color:#7d89a3}
+</style>
+</head>
+<body>
+<div class="top">
+  <h1>📧 E-mails candidats OFManager — retravaillés (design + commercial)</h1>
+  <p>Les 27 modèles envoyés aux stagiaires, habillés dans la charte OFManager et white-label pour l'organisme. Cliquez « Copier le HTML », collez dans le code / la console Automatisations, gardez les variables.</p>
+</div>
+
+<div class="wrap">
+<div class="tip">
+  <b>Variables (format ${…}, à câbler côté code) :</b>
+  <code>${prenom}</code> <code>${nom}</code> <code>${formation}</code> <code>${date_debut}</code> <code>${date_fin}</code> <code>${horaires}</code> <code>${lieu}</code> <code>${date_examen}</code> <code>${lieu_examen}</code> <code>${organisme}</code> <code>${representant}</code> <code>${lien}</code> <code>${identifiant}</code> <code>${mot_de_passe}</code> <code>${liste_pieces}</code> <code>${liste_documents}</code> <code>${document}</code> <code>${code_acces}</code> <code>${email}</code> <code>${montant}</code> <code>${mention}</code> <code>${date_signature}</code>.
+  <br><b>Note :</b> les segments conditionnels (horaires, lieu…) sont écrits en clair — réintégrez vos ternaires <code>&#36;{...}</code> côté <code>.ts</code>. L'en-tête affiche <code>${organisme}</code> et le pied de page reste discret (« Propulsé par OFManager »).
+</div>
+<div id="grid"></div>
+</div>
+
+<div class="foot">Astuce délivrabilité : ces HTML sont en tables + styles inline (compatibles Gmail / Outlook / Apple Mail). Gardez un objet clair, un seul CTA principal par e-mail, et testez l'aperçu mobile.</div>
+
+<script>
+/* ==========================================================================
+   Charte OFManager, appliquée aux e-mails candidats (white-label organisme).
+   Chaque e-mail = HTML autonome (tables + inline). Les variables candidat
+   sont écrites \${...} (échappées ici pour ne PAS être interprétées en JS) :
+   à la copie, elles ressortent littéralement en ${...}.
+   ========================================================================== */
+const NAVY="#0D1B3E", PRIMARY="#3B6EF5", AMBER="#E8A33D", GREEN="#12B886",
+      MUTED="#5b6b86", LINE="#e3e9f4", PAPER="#f5f8fd", INK="#33415c";
+
+function shell(inner, accent){
+  accent = accent || PRIMARY;
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;background:#eef1f7;font-family:Arial,Helvetica,sans-serif;color:#0f1729">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eef1f7;padding:24px 12px">
+<tr><td align="center">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:14px;overflow:hidden;border:1px solid ${LINE}">
+  <tr><td style="background:${NAVY};padding:20px 30px">
+    <table role="presentation" width="100%"><tr>
+      <td style="font-size:19px;font-weight:bold;color:#ffffff;font-family:Arial">
+        <span style="display:inline-block;width:30px;height:30px;background:${accent};border-radius:7px;text-align:center;line-height:30px;font-size:15px;margin-right:9px">🎓</span>\${organisme}
+      </td>
+      <td align="right" style="color:#aab8d8;font-size:12px">Espace formation</td>
+    </tr></table>
+  </td></tr>
+  ${inner}
+  <tr><td style="background:${PAPER};padding:20px 30px;border-top:1px solid ${LINE}">
+    <p style="margin:0 0 6px;font-size:12px;color:${MUTED};line-height:1.6">
+      <b style="color:${NAVY}">\${organisme}</b> — \${representant}<br>
+      Cet e-mail vous est adressé dans le cadre de votre formation. Une question ? Répondez simplement à ce message.
+    </p>
+    <p style="margin:0;font-size:11px;color:#9aa7c2">🔒 Données traitées conformément au RGPD · Propulsé par OFManager</p>
+  </td></tr>
+</table>
+</td></tr></table></body></html>`;
+}
+
+function btn(txt,href,color){ color = color || PRIMARY;
+  return `<table role="presentation" cellpadding="0" cellspacing="0" align="center"><tr><td style="border-radius:10px;background:${color}">
+    <a href="${href}" style="display:inline-block;padding:14px 30px;font-family:Arial;font-size:15px;font-weight:bold;color:#ffffff;text-decoration:none;border-radius:10px">${txt}</a>
+  </td></tr></table>`;
+}
+/* boîte d'info claire (dates, identifiants, pièces jointes…) */
+function box(inner,accent){ accent = accent || PRIMARY;
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${PAPER};border:1px solid ${LINE};border-left:4px solid ${accent};border-radius:10px;margin:6px 0 22px">
+    <tr><td style="padding:16px 20px;font-size:14px;color:${INK};line-height:1.6">${inner}</td></tr></table>`;
+}
+const P  = 'margin:0 0 16px;font-size:15px;line-height:1.65;color:#33415c';
+const OPN = `<tr><td style="padding:32px 30px 4px">`;
+const CLS = `</td></tr>`;
+
+const EMAILS=[];
+const S=(name,meta,subject,html,tag)=>EMAILS.push({name,meta,subject,html,tag});
+
+/* ======================= A · AUTOMATISATIONS ======================= */
+
+/* A1 — Convocation session */
+S("A1 · Convocation à la session","Auto · J-n avant le début · e-mail/SMS",
+"Votre convocation — \${formation} 📅",
+shell(`${OPN}
+  <h1 style="margin:0 0 14px;font-size:22px;color:${NAVY};font-family:Arial">C'est confirmé, \${prenom} 👍</h1>
+  <p style="${P}">Vous êtes officiellement convoqué(e) à la formation <b>« \${formation} »</b>. Voici l'essentiel à retenir&nbsp;:</p>
+  ${box(`📅 <b>Dates</b> : du \${date_debut} au \${date_fin}<br>🕘 <b>Horaires</b> : \${horaires}<br>📍 <b>Lieu</b> : \${lieu}`)}
+  <p style="${P}">👉 Merci de vous présenter <b>à l'heure</b>, muni(e) d'une <b>pièce d'identité en cours de validité</b>.</p>
+  <p style="margin:6px 0 0;font-size:15px;color:${INK}">À très vite,<br><b>\${representant}</b></p>
+${CLS}`));
+
+/* A2 — Rappel J-1 */
+S("A2 · Rappel J-1","Auto · 24 h avant · e-mail/SMS",
+"⏰ Demain, c'est le grand jour : \${formation}",
+shell(`${OPN}
+  <h1 style="margin:0 0 14px;font-size:22px;color:${NAVY};font-family:Arial">Petit rappel, \${prenom} 🙂</h1>
+  <p style="${P}">Votre formation <b>« \${formation} »</b> démarre <b>demain</b>. On a hâte de vous accueillir&nbsp;!</p>
+  ${box(`📅 <b>Début</b> : \${date_debut}<br>🕘 <b>Horaires</b> : \${horaires}<br>📍 <b>Lieu</b> : \${lieu}`, AMBER)}
+  <p style="${P}">N'oubliez pas votre <b>pièce d'identité</b>. Un empêchement de dernière minute&nbsp;? Répondez à cet e-mail, on s'organise.</p>
+  <p style="margin:6px 0 0;font-size:15px;color:${INK}">À demain,<br><b>\${representant}</b></p>
+${CLS}`, AMBER));
+
+/* A3 — Convocation examen */
+S("A3 · Convocation à l'examen","Auto · avant l'examen (formations à examen) · e-mail + PJ",
+"🎯 Convocation à votre examen — \${formation}",
+shell(`${OPN}
+  <h1 style="margin:0 0 14px;font-size:22px;color:${NAVY};font-family:Arial">Dernière ligne droite, \${prenom} 🎯</h1>
+  <p style="${P}">Vous êtes convoqué(e) à l'<b>épreuve de certification</b> de la formation <b>« \${formation} »</b>.</p>
+  ${box(`📅 <b>Date de l'examen</b> : \${date_examen}<br>🕘 <b>Horaires</b> : \${horaires}<br>📍 <b>Lieu</b> : \${lieu_examen}`, GREEN)}
+  <p style="${P}">📎 Votre <b>convocation officielle (PDF)</b> est en pièce jointe. Présentez-vous muni(e) d'une <b>pièce d'identité en cours de validité</b> — sans elle, l'accès à l'épreuve peut être refusé.</p>
+  <p style="${P}">Vous êtes prêt(e). Faites-vous confiance&nbsp;!</p>
+  <p style="margin:6px 0 0;font-size:15px;color:${INK}">Bon courage,<br><b>\${representant}</b></p>
+${CLS}`, GREEN));
+
+/* A4 — Attestation d'entrée */
+S("A4 · Attestation d'entrée en formation","Auto · 1er jour · e-mail + PJ",
+"✅ Votre entrée en formation est confirmée — \${formation}",
+shell(`${OPN}
+  <h1 style="margin:0 0 14px;font-size:22px;color:${NAVY};font-family:Arial">Bienvenue, \${prenom} 👋</h1>
+  <p style="${P}">Nous confirmons votre <b>entrée en formation « \${formation} »</b> le <b>\${date_debut}</b>. C'est parti&nbsp;!</p>
+  ${box(`📎 <b>En pièce jointe</b> : votre attestation d'entrée en formation, signée (PDF).<br>Conservez-la, elle peut vous être demandée (financeur, employeur…).`)}
+  <p style="${P}">Toute l'équipe vous souhaite une excellente formation.</p>
+  <p style="margin:6px 0 0;font-size:15px;color:${INK}">Bonne formation,<br><b>\${representant}</b></p>
+${CLS}`));
+
+/* A5 — Test de positionnement */
+S("A5 · Test de positionnement","Auto · 1er jour · e-mail",
+"⏱️ 5 minutes pour personnaliser votre formation — \${formation}",
+shell(`${OPN}
+  <h1 style="margin:0 0 14px;font-size:22px;color:${NAVY};font-family:Arial">Bienvenue dans « \${formation} », \${prenom} 🎉</h1>
+  <p style="${P}">Avant de démarrer, un <b>court test de positionnement</b> — une dizaine de questions, <b>5 minutes</b> chrono. Il nous permet d'<b>adapter le contenu et le rythme</b> à votre profil.</p>
+  <div style="text-align:center;margin:0 0 22px">${btn("Faire le test (5 min) →","\${lien}")}</div>
+  ${box(`✍️ Vos réponses, <b>signées</b>, seront conservées dans votre dossier de formation.`)}
+  <p style="margin:6px 0 0;font-size:15px;color:${INK}">Bonne formation,<br><b>\${representant}</b></p>
+${CLS}`));
+
+/* A6 — Test de français */
+S("A6 · Test de français","Auto · 1er jour · e-mail",
+"📝 Petit test de français (10 min) — \${formation}",
+shell(`${OPN}
+  <h1 style="margin:0 0 14px;font-size:22px;color:${NAVY};font-family:Arial">Une dernière étape, \${prenom}</h1>
+  <p style="${P}">Dans le cadre de votre entrée en <b>« \${formation} »</b>, merci de compléter ce <b>court test de français</b> — une quinzaine de questions, environ <b>10 minutes</b>.</p>
+  <div style="text-align:center;margin:0 0 22px">${btn("Commencer le test →","\${lien}")}</div>
+  ${box(`✍️ Vos réponses, <b>signées</b>, seront conservées dans votre dossier de formation.`)}
+  <p style="margin:6px 0 0;font-size:15px;color:${INK}">Bonne formation,<br><b>\${representant}</b></p>
+${CLS}`));
+
+/* A7 — Satisfaction */
+S("A7 · Enquête de satisfaction","Auto · fin de formation · e-mail/SMS",
+"💬 Votre avis compte — \${formation}",
+shell(`${OPN}
+  <h1 style="margin:0 0 14px;font-size:22px;color:${NAVY};font-family:Arial">Merci d'avoir suivi « \${formation} », \${prenom} 🙏</h1>
+  <p style="${P}">Votre retour nous est <b>précieux</b> : il nous aide à améliorer nos formations pour les prochains stagiaires. 2 minutes suffisent.</p>
+  <div style="text-align:center;margin:0 0 22px">${btn("Donner mon avis (2 min) →","\${lien}")}</div>
+  ${box(`Une remarque ou une difficulté à signaler&nbsp;? Vous pouvez déposer une <b>réclamation</b> ici (traitée sous 15 jours ouvrés)&nbsp;:<br><a href="\${lien}" style="color:${PRIMARY};font-weight:bold">Déposer une réclamation</a>`, AMBER)}
+  <p style="margin:6px 0 0;font-size:15px;color:${INK}">Merci encore,<br><b>\${representant}</b></p>
+${CLS}`));
+
+/* A8 — Documents de fin */
+S("A8 · Documents de fin (attestation)","Auto · fin de formation · e-mail + PJ",
+"🎓 Bravo ! Voici votre attestation — \${formation}",
+shell(`${OPN}
+  <h1 style="margin:0 0 14px;font-size:22px;color:${NAVY};font-family:Arial">Félicitations, \${prenom} 🎓</h1>
+  <p style="${P}">Vous venez de terminer la formation <b>« \${formation} »</b> (du \${date_debut} au \${date_fin}). Beau parcours&nbsp;!</p>
+  ${box(`📎 <b>En pièce jointe</b> : votre attestation de fin de formation (PDF).<br>📂 Tous vos documents restent disponibles ici&nbsp;: <a href="\${lien}" style="color:${PRIMARY};font-weight:bold">Accéder à mes documents</a>`, GREEN)}
+  <p style="margin:6px 0 0;font-size:15px;color:${INK}">Encore bravo,<br><b>\${representant}</b></p>
+${CLS}`, GREEN));
+
+/* A9 — Suivi 6 mois */
+S("A9 · Suivi à 6 mois (Qualiopi ind. 11)","Auto · +6 mois · e-mail/SMS",
+"👋 6 mois après « \${formation} » — où en êtes-vous ?",
+shell(`${OPN}
+  <h1 style="margin:0 0 14px;font-size:22px;color:${NAVY};font-family:Arial">Prenons de vos nouvelles, \${prenom}</h1>
+  <p style="${P}">Il y a environ 6 mois, vous terminiez <b>« \${formation} »</b>. Dans le cadre de notre démarche qualité, nous aimerions savoir <b>où vous en êtes</b> aujourd'hui (situation professionnelle, lien avec la formation…).</p>
+  <div style="text-align:center;margin:0 0 22px">${btn("Répondre (2 min) →","\${lien}")}</div>
+  ${box(`✍️ Un court questionnaire à compléter et signer. Vos réponses nous aident à améliorer nos formations.`)}
+  <p style="margin:6px 0 0;font-size:15px;color:${INK}">Merci pour votre temps,<br><b>\${representant}</b></p>
+${CLS}`));
+
+/* A10 — Émargement du jour */
+S("A10 · Émargement du jour","Auto · chaque demi-journée · e-mail",
+"✍️ Signez votre présence (\${demi}) — \${formation}",
+shell(`${OPN}
+  <p style="${P}">Bonjour \${nom},</p>
+  <p style="${P}">Merci de <b>signer votre présence</b> (\${demi}) à la formation <b>« \${formation} »</b>. Un clic suffit&nbsp;:</p>
+  <div style="text-align:center;margin:0 0 22px">${btn("Signer mon émargement →","\${lien}")}</div>
+  ${box(`👆 La signature se fait directement avec votre <b>doigt</b> (mobile) ou votre <b>souris</b> (ordinateur).`)}
+  <p style="margin:6px 0 0;font-size:15px;color:${INK}">Merci,<br><b>\${representant}</b></p>
+${CLS}`));
+
+/* ======================= B · INSCRIPTION & E-SIGNATURE ======================= */
+
+/* B1 — Invitation parcours */
+S("B1 · Invitation au parcours (dossier + signature)","Auto · à l'inscription · e-mail + PJ",
+"📋 Finalisez votre inscription — \${formation}",
+shell(`${OPN}
+  <h1 style="margin:0 0 14px;font-size:22px;color:${NAVY};font-family:Arial">Votre inscription est bien reçue, \${prenom} ✅</h1>
+  <p style="${P}">Votre inscription à <b>« \${formation} »</b> est enregistrée. Il ne reste qu'une étape&nbsp;: <b>compléter votre dossier et signer vos documents</b> en ligne.</p>
+  <div style="text-align:center;margin:0 0 22px">${btn("Compléter & signer mon dossier →","\${lien}")}</div>
+  ${box(`🔒 Ce lien est <b>personnel et sécurisé</b>.<br>📎 Le <b>programme de la formation</b> est en pièce jointe.<br>À l'issue, vous recevrez une copie de vos documents signés.`)}
+  <p style="margin:6px 0 0;font-size:15px;color:${INK}">À très vite,<br><b>\${representant}</b></p>
+${CLS}`));
+
+/* B2 — Confirmation signature */
+S("B2 · Confirmation de signature","Auto · à la signature · e-mail + PJ",
+"✅ Vos documents signés sont prêts — \${formation}",
+shell(`${OPN}
+  <h1 style="margin:0 0 14px;font-size:22px;color:${NAVY};font-family:Arial">C'est signé, \${prenom} 🖊️</h1>
+  <p style="${P}">Nous confirmons la <b>signature de vos documents d'inscription</b> le <b>\${date_signature}</b>. Tout est en ordre.</p>
+  ${box(`📎 <b>En pièce jointe</b> (PDF)&nbsp;: fiche d'inscription, contrat, convention, règlement intérieur, ainsi que votre <b>certificat de signature électronique</b>.`, GREEN)}
+  <p style="${P}">Vous recevez par ailleurs votre <b>convocation à la formation</b> dans un e-mail séparé.</p>
+  <p style="margin:6px 0 0;font-size:15px;color:${INK}">À bientôt,<br><b>\${representant}</b></p>
+${CLS}`, GREEN));
+
+/* B3 — Bienvenue & confirmation (convocation) */
+S("B3 · Bienvenue & confirmation d'inscription","Auto · après signature · e-mail + PJ",
+"🎉 Bienvenue chez \${organisme} — votre inscription est confirmée",
+shell(`${OPN}
+  <h1 style="margin:0 0 14px;font-size:22px;color:${NAVY};font-family:Arial">Bienvenue, \${prenom} 🎉</h1>
+  <p style="${P}">Nous avons le plaisir de confirmer votre inscription à <b>« \${formation} »</b>. Voici votre récapitulatif&nbsp;:</p>
+  ${box(`📅 <b>Dates</b> : du \${date_debut} au \${date_fin}<br>🕘 <b>Horaires</b> : \${horaires}<br>📍 <b>Lieu</b> : \${lieu}`)}
+  <p style="${P}">📎 Votre <b>convocation</b> et le <b>programme</b> sont en pièce jointe (PDF). Pensez à votre <b>pièce d'identité</b> le jour J.</p>
+  <p style="margin:6px 0 0;font-size:15px;color:${INK}">Excellente formation à vous,<br><b>\${representant}</b></p>
+${CLS}`));
+
+/* B4 — Bienvenue espace candidat */
+S("B4 · Bienvenue dans l'espace candidat","Auto · après signature · e-mail",
+"🔑 Votre espace candidat est prêt — \${organisme}",
+shell(`${OPN}
+  <h1 style="margin:0 0 14px;font-size:22px;color:${NAVY};font-family:Arial">Votre espace est ouvert, \${prenom} 🚀</h1>
+  <p style="${P}">Depuis votre <b>espace candidat</b>, vous pourrez suivre vos formations, consulter et signer vos documents, déposer vos justificatifs et échanger avec nous — tout au même endroit.</p>
+  <div style="text-align:center;margin:0 0 22px">${btn("Accéder à mon espace →","\${lien}")}</div>
+  ${box(`🔑 <b>Identifiant</b> : \${identifiant}<br>🔒 <b>Mot de passe provisoire</b> : \${mot_de_passe}<br><span style="color:${MUTED}">À votre première connexion, vous choisirez votre propre mot de passe.</span>`)}
+  <p style="margin:6px 0 0;font-size:15px;color:${INK}">À bientôt,<br><b>\${representant}</b></p>
+${CLS}`));
+
+/* B5 — Pièces manquantes */
+S("B5 · Pièces manquantes (relance dossier)","Manuel · e-mail",
+"📄 Il manque quelques pièces à votre dossier — \${formation}",
+shell(`${OPN}
+  <p style="${P}">Bonjour \${prenom},</p>
+  <p style="${P}">Pour <b>finaliser votre dossier</b> d'inscription à <b>« \${formation} »</b>, il nous manque encore les pièces suivantes&nbsp;:</p>
+  ${box(`\${liste_pieces}`, AMBER)}
+  <p style="${P}">Merci de nous les transmettre <b>dès que possible</b> pour valider votre place. Un doute sur un document&nbsp;? Répondez simplement à cet e-mail.</p>
+  <p style="margin:6px 0 0;font-size:15px;color:${INK}">Merci d'avance,<br><b>\${representant}</b></p>
+${CLS}`, AMBER));
+
+/* ======================= C · ENVOIS MANUELS ======================= */
+
+/* C1 — Convocation manuel */
+S("C1 · Convocation (manuel)","Manuel · variante de A1",
+"Votre convocation — \${formation} 📅",
+shell(`${OPN}
+  <p style="${P}">Bonjour \${prenom},</p>
+  <p style="${P}">Vous êtes convoqué(e) à la formation <b>« \${formation} »</b>&nbsp;:</p>
+  ${box(`📅 <b>Dates</b> : du \${date_debut} au \${date_fin}<br>🕘 <b>Horaires</b> : \${horaires}<br>📍 <b>Lieu</b> : \${lieu}`)}
+  <p style="${P}">👉 Merci de vous présenter muni(e) d'une <b>pièce d'identité</b> en cours de validité.</p>
+  <p style="margin:6px 0 0;font-size:15px;color:${INK}">Cordialement,<br><b>\${representant}</b></p>
+${CLS}`));
+
+/* C2 — Attestation d'entrée manuel */
+S("C2 · Attestation d'entrée (manuel)","Manuel · variante de A4 · e-mail + PJ",
+"✅ Votre attestation d'entrée — \${formation}",
+shell(`${OPN}
+  <p style="${P}">Bonjour \${prenom},</p>
+  <p style="${P}">Nous confirmons votre <b>entrée en formation « \${formation} »</b> le <b>\${date_debut}</b>.</p>
+  ${box(`📎 <b>En pièce jointe</b> : votre attestation d'entrée en formation (PDF).`)}
+  <p style="margin:6px 0 0;font-size:15px;color:${INK}">Bonne formation,<br><b>\${representant}</b></p>
+${CLS}`));
+
+/* C3 — Attestation de fin manuel */
+S("C3 · Attestation de fin (manuel)","Manuel · variante de A8 · e-mail + PJ",
+"🎓 Votre attestation de fin de formation — \${formation}",
+shell(`${OPN}
+  <p style="${P}">Bonjour \${prenom},</p>
+  <p style="${P}"><b>Félicitations</b> pour avoir suivi la formation <b>« \${formation} »</b>&nbsp;!</p>
+  ${box(`📎 <b>En pièce jointe</b> : votre attestation de fin de formation (PDF).<br>📂 Vos documents restent disponibles ici&nbsp;: <a href="\${lien}" style="color:${PRIMARY};font-weight:bold">Mes documents</a>`, GREEN)}
+  <p style="margin:6px 0 0;font-size:15px;color:${INK}">Encore bravo,<br><b>\${representant}</b></p>
+${CLS}`, GREEN));
+
+/* C4 — Test positionnement manuel */
+S("C4 · Test de positionnement (manuel)","Manuel · variante de A5",
+"⏱️ 5 minutes pour préparer votre formation — \${formation}",
+shell(`${OPN}
+  <p style="${P}">Bonjour \${prenom},</p>
+  <p style="${P}">Avant de démarrer <b>« \${formation} »</b>, merci de répondre à ce <b>court test de positionnement</b> (5 minutes)&nbsp;:</p>
+  <div style="text-align:center;margin:0 0 22px">${btn("Faire le test (5 min) →","\${lien}")}</div>
+  <p style="margin:6px 0 0;font-size:15px;color:${INK}">Cordialement,<br><b>\${representant}</b></p>
+${CLS}`));
+
+/* C5 — Votre avis manuel */
+S("C5 · « Votre avis » (manuel)","Manuel · variante de A7",
+"💬 Votre avis sur « \${formation} » (2 min)",
+shell(`${OPN}
+  <p style="${P}">Bonjour \${prenom},</p>
+  <p style="${P}">Vous avez suivi <b>« \${formation} »</b>. Votre retour est <b>précieux</b> — merci de compléter ce court questionnaire de satisfaction&nbsp;:</p>
+  <div style="text-align:center;margin:0 0 22px">${btn("Donner mon avis (2 min) →","\${lien}")}</div>
+  <p style="margin:6px 0 0;font-size:15px;color:${INK}">Merci beaucoup,<br><b>\${representant}</b></p>
+${CLS}`));
+
+/* C6 — Convocation groupée */
+S("C6 · Convocation (envoi groupé de session)","Manuel · variante de A1",
+"Votre convocation — \${formation} 📅",
+shell(`${OPN}
+  <p style="${P}">Bonjour \${prenom},</p>
+  <p style="${P}">Vous êtes convoqué(e) à la formation <b>« \${formation} »</b>, qui se déroulera&nbsp;:</p>
+  ${box(`📅 <b>Dates</b> : du \${date_debut} au \${date_fin}<br>🕘 <b>Horaires</b> : \${horaires}<br>📍 <b>Lieu</b> : \${lieu}`)}
+  <p style="${P}">👉 Merci de vous présenter muni(e) d'une <b>pièce d'identité</b> en cours de validité.</p>
+  <p style="margin:6px 0 0;font-size:15px;color:${INK}">Cordialement,<br><b>\${representant}</b></p>
+${CLS}`));
+
+/* C7 — Satisfaction signable */
+S("C7 · Enquête de satisfaction (signable)","Manuel · variante de A7",
+"💬 Votre avis sur « \${formation} » — à compléter et signer",
+shell(`${OPN}
+  <p style="${P}">Bonjour \${prenom} \${nom},</p>
+  <p style="${P}">Vous venez de suivre <b>« \${formation} »</b>. Merci de prendre quelques minutes pour <b>compléter et signer</b> ce court questionnaire de satisfaction&nbsp;:</p>
+  <div style="text-align:center;margin:0 0 22px">${btn("Compléter & signer →","\${lien}")}</div>
+  ${box(`Votre retour nous aide à <b>améliorer la qualité</b> de nos formations.`)}
+  <p style="margin:6px 0 0;font-size:15px;color:${INK}">Merci,<br><b>\${representant}</b></p>
+${CLS}`));
+
+/* ======================= D · DOCUMENTS & ATTESTATIONS ======================= */
+
+/* D1 — Envoi d'un document */
+S("D1 · Envoi d'un document","Manuel · e-mail + PJ",
+"📎 Votre document : \${document}",
+shell(`${OPN}
+  <p style="${P}">Bonjour \${prenom},</p>
+  <p style="${P}">Vous trouverez ci-joint le document suivant&nbsp;:</p>
+  ${box(`📄 <b>\${document}</b>`)}
+  <p style="${P}"><i>(Un message personnalisé peut s'insérer ici avant la signature.)</i></p>
+  <p style="margin:6px 0 0;font-size:15px;color:${INK}">Cordialement,<br><b>\${representant}</b></p>
+${CLS}`));
+
+/* D2 — Envoi de plusieurs documents */
+S("D2 · Envoi de plusieurs documents","Manuel · e-mail + PJ",
+"📎 Vos documents — \${formation}",
+shell(`${OPN}
+  <p style="${P}">Bonjour \${prenom},</p>
+  <p style="${P}">Vous trouverez ci-joint les documents suivants&nbsp;:</p>
+  ${box(`\${liste_documents}`)}
+  <p style="${P}"><i>(Un message personnalisé peut s'insérer ici avant la signature.)</i></p>
+  <p style="margin:6px 0 0;font-size:15px;color:${INK}">Cordialement,<br><b>\${representant}</b></p>
+${CLS}`));
+
+/* D3 — Félicitations + réussite */
+S("D3 · Félicitations + attestation de réussite","Auto (certification obtenue) · e-mail + PJ",
+"🏆 Félicitations \${prenom}, vous avez obtenu « \${formation} » !",
+shell(`${OPN}
+  <h1 style="margin:0 0 14px;font-size:23px;color:${NAVY};font-family:Arial">Toutes nos félicitations, \${prenom} ! 🏆</h1>
+  <p style="${P}">Vous avez <b>satisfait aux épreuves d'évaluation</b> et obtenu la certification <b>« \${formation} »</b>. Un vrai accomplissement — bravo pour votre engagement&nbsp;!</p>
+  ${box(`📎 <b>En pièce jointe</b> : votre attestation de réussite (PDF).<br>🎓 Votre <b>diplôme officiel</b> vous sera transmis dès sa réception par nos services — nous vous écrirons à ce moment-là pour organiser sa remise.`, GREEN)}
+  <p style="margin:6px 0 0;font-size:15px;color:${INK}">Encore bravo, et à bientôt,<br><b>\${representant}</b></p>
+${CLS}`, GREEN));
+
+/* ======================= E · PROSPECTION & ÉMARGEMENT ======================= */
+
+/* E1 — Fiche d'inscription prospect */
+S("E1 · Lien de la fiche d'inscription (prospect)","Manuel · CRM · e-mail",
+"📝 Votre fiche d'inscription — \${organisme}",
+shell(`${OPN}
+  <p style="${P}">Bonjour \${prenom} \${nom},</p>
+  <p style="${P}">Suite à votre demande, merci de <b>compléter et signer votre fiche d'inscription</b> en ligne&nbsp;:</p>
+  <div style="text-align:center;margin:0 0 22px">${btn("Remplir ma fiche d'inscription →","\${lien}")}</div>
+  ${box(`Vous renseignez vos informations et la formation souhaitée, puis vous signez directement avec votre <b>doigt</b> (mobile) ou votre <b>souris</b> (ordinateur). 👆`)}
+  <p style="margin:6px 0 0;font-size:15px;color:${INK}">Cordialement,<br><b>\${representant}</b></p>
+${CLS}`));
+
+/* E2 — Signature émargement manuel */
+S("E2 · Demande de signature d'émargement","Manuel · variante de A10",
+"✍️ Signez votre présence du \${date_debut} (\${demi}) — \${formation}",
+shell(`${OPN}
+  <p style="${P}">Bonjour \${nom},</p>
+  <p style="${P}">Merci de <b>signer votre présence</b> du \${date_debut} (\${demi}) à la formation <b>« \${formation} »</b>&nbsp;:</p>
+  <div style="text-align:center;margin:0 0 22px">${btn("Signer mon émargement →","\${lien}")}</div>
+  ${box(`👆 Signature directe avec votre <b>doigt</b> (mobile) ou votre <b>souris</b> (ordinateur).`)}
+  <p style="margin:6px 0 0;font-size:15px;color:${INK}">Merci,<br><b>\${representant}</b></p>
+${CLS}`));
+
+/* ======================= F · EXAMEN CIVIQUE ======================= */
+
+/* F1 — Accès prépa civique (Stripe) */
+S("F1 · Accès prépa civique (paiement en ligne)","Auto (paiement Stripe) · e-mail",
+"🔓 Votre accès à la prépa examen civique est actif",
+shell(`${OPN}
+  <h1 style="margin:0 0 14px;font-size:22px;color:${NAVY};font-family:Arial">Merci pour votre inscription, \${prenom} 🎉</h1>
+  <p style="${P}">Bienvenue dans la <b>préparation à l'examen civique — \${mention}</b>. Votre paiement de <b>\${montant} €</b> est confirmé (reçu disponible sur votre tableau de bord).</p>
+  ${box(`🔑 <b>Votre code d'accès</b> : <span style="font-family:monospace;font-size:16px;color:${NAVY};font-weight:bold">\${code_acces}</span><br><span style="color:${MUTED}">Conservez-le précieusement : il vous permet de retrouver votre progression sur tous vos appareils.</span>`, AMBER)}
+  <p style="${P}">Pour démarrer, connectez-vous avec votre e-mail (<b>\${email}</b>) et ce code, onglet <b>« Code d'accès »</b>&nbsp;:</p>
+  <div style="text-align:center;margin:0 0 22px">${btn("Démarrer ma préparation →","\${lien}")}</div>
+  <p style="margin:6px 0 0;font-size:15px;color:${INK}">À bientôt,<br><b>L'équipe CAP Compétences</b></p>
+${CLS}`, AMBER));
+
+/* F2 — Accès prépa civique (guichet) */
+S("F2 · Accès prépa civique (back-office/guichet)","Manuel · e-mail",
+"🔓 Votre accès à la prépa examen civique est activé",
+shell(`${OPN}
+  <p style="${P}">Bonjour \${prenom},</p>
+  <p style="${P}">Votre accès à la <b>préparation à l'examen civique</b> est activé.</p>
+  ${box(`📚 <b>Formation</b> : \${mention}<br>🔑 <b>Code d'accès</b> : <span style="font-family:monospace;font-size:16px;color:${NAVY};font-weight:bold">\${code_acces}</span><br>✉️ <b>E-mail</b> : \${email}`)}
+  <p style="${P}">Pour vous connecter&nbsp;: rendez-vous sur la page de connexion, onglet <b>« Code d'accès »</b>, puis saisissez votre e-mail et votre code.</p>
+  <div style="text-align:center;margin:0 0 22px">${btn("Me connecter →","\${lien}")}</div>
+  ${box(`Avancez à votre rythme : <b>leçons, quiz et examens blancs illimités</b>.`)}
+  <p style="margin:6px 0 0;font-size:15px;color:${INK}">Bonne préparation,<br><b>L'équipe CAP Language Academy</b></p>
+${CLS}`));
+
+/* ============================ RENDU ============================ */
+const SECTIONS=[
+  {t:"A · Automatisations programmées", d:"Envoyées automatiquement par le planificateur. Surchargeables par organisme.", ids:["A1","A2","A3","A4","A5","A6","A7","A8","A9","A10"]},
+  {t:"B · Inscription & e-signature", d:"Au fil du parcours d'inscription.", ids:["B1","B2","B3","B4","B5"]},
+  {t:"C · Envois manuels (fiche session)", d:"Déclenchés à la main — variantes des automatisations.", ids:["C1","C2","C3","C4","C5","C6","C7"]},
+  {t:"D · Documents & attestations", d:"", ids:["D1","D2","D3"]},
+  {t:"E · Prospection & émargement", d:"", ids:["E1","E2"]},
+  {t:"F · Examen civique (produit e-learning)", d:"Signatures spécifiques CAP Compétences / CAP Language Academy.", ids:["F1","F2"]},
+];
+const grid=document.getElementById('grid');
+const byId=n=>EMAILS.find(e=>e.name.startsWith(n+" ")||e.name.startsWith(n+" ·"));
+let idx=0;
+SECTIONS.forEach(sec=>{
+  const h=document.createElement('div'); h.className='sech'; h.textContent=sec.t; grid.appendChild(h);
+  if(sec.d){const dd=document.createElement('div'); dd.className='secd'; dd.textContent=sec.d; grid.appendChild(dd);}
+  sec.ids.forEach(id=>{
+    const e=EMAILS.find(x=>x.name.split(' ')[0]===id); if(!e)return;
+    const i=idx++;
+    const card=document.createElement('div'); card.className='card';
+    card.innerHTML=`
+      <div class="card-h">
+        <div><div class="name">${e.name}</div><div class="meta">${e.meta}</div></div>
+        <button class="copy" data-i="${i}">Copier le HTML</button>
+      </div>
+      <div class="subj">Objet : <b>${e.subject.replace(/</g,'&lt;')}</b></div>
+      <iframe></iframe>`;
+    grid.appendChild(card);
+    e._i=i;
+    const ifr=card.querySelector('iframe'); ifr.srcdoc=e.html;
+    ifr.addEventListener('load',()=>{try{ifr.style.height=(ifr.contentWindow.document.body.scrollHeight+8)+'px'}catch(_){ifr.style.height='620px'}});
+    card.querySelector('.copy').dataset.html=i;
+  });
+});
+const flat=[]; EMAILS.forEach(e=>{ if(e._i!=null) flat[e._i]=e; });
+grid.addEventListener('click',ev=>{
+  const b=ev.target.closest('.copy'); if(!b)return;
+  const e=flat[+b.dataset.i]; if(!e)return;
+  navigator.clipboard.writeText(e.html).then(()=>{b.textContent='Copié ✓';b.classList.add('done');setTimeout(()=>{b.textContent='Copier le HTML';b.classList.remove('done')},1600)});
+});
+</script>
+</body>
+</html>

@@ -10,6 +10,14 @@ import { sendEmail } from "@/lib/email";
 import { orgConfigFor } from "@/lib/org-identity";
 import { generateToken, appBaseUrl } from "@/lib/token";
 import { logProspectEmail } from "@/lib/actions/crm-actions";
+import {
+  emailShell,
+  emailParagraph,
+  emailButton,
+  emailBox,
+  emailSignoff,
+  esc,
+} from "@/lib/email-templates";
 
 export type ProspectFormValues = {
   telephone: string;
@@ -59,18 +67,23 @@ export async function sendProspectIntakeLink(
 
   const org = await orgConfigFor(session.user.organismeId);
   const link = `${appBaseUrl()}/prospect/${token}`;
-  const subject = `Votre fiche d'inscription — ${org.name}`;
-  const body = `Bonjour ${c.prenom} ${c.nom},
+  const subject = `📝 Votre fiche d'inscription — ${org.name}`;
+  const html = emailShell({
+    organisme: org.name,
+    representant: org.representant,
+    body:
+      emailParagraph(`Bonjour ${esc(c.prenom)} ${esc(c.nom)},`) +
+      emailParagraph(
+        `Suite à votre demande, merci de <b>compléter et signer votre fiche d'inscription</b> en ligne&nbsp;:`,
+      ) +
+      emailButton("Remplir ma fiche d'inscription →", link) +
+      emailBox(
+        `Vous renseignez vos informations et la formation souhaitée, puis vous signez directement avec votre <b>doigt</b> (mobile) ou votre <b>souris</b> (ordinateur). 👆`,
+      ) +
+      emailSignoff("Cordialement,", org.representant),
+  });
 
-Suite à votre demande, merci de compléter et signer votre fiche d'inscription en ligne :
-${link}
-
-Vous y renseignez vos informations, la formation souhaitée, puis vous signez directement avec votre doigt (mobile) ou votre souris (ordinateur).
-
-Cordialement,
-${org.representant} — ${org.name}`;
-
-  const res = await sendEmail({ to: c.email, subject, body });
+  const res = await sendEmail({ to: c.email, subject, html });
 
   await db.candidat.update({
     where: { id: candidatId },

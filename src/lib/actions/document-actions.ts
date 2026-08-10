@@ -9,6 +9,7 @@ import { buildSingleDocPdf } from "@/lib/documents/build-pdf";
 import { DOCUMENTS } from "@/lib/documents/templates";
 import { orgConfigFor } from "@/lib/org-identity";
 import { SIGNABLE_DOCS } from "@/lib/signable-docs";
+import { emailShell, emailParagraph, emailBox, emailSignoff, esc } from "@/lib/email-templates";
 
 const STAFF = ["SUPERADMIN", "ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"];
 type Result = { ok: true } | { ok: false; error: string };
@@ -53,18 +54,24 @@ export async function sendDocumentToCandidate(
   if (!pdf) return { ok: false, error: "Impossible de générer ce document." };
 
   const org = await orgConfigFor(insc.organismeId);
-  const titre = insc.session.formation.titre;
-  const subject = `${doc.label} — ${titre}`;
-  const body =
-    `Bonjour ${insc.candidat.prenom},\n\n` +
-    `Vous trouverez ci-joint le document suivant : ${doc.label}.` +
-    (messagePerso && messagePerso.trim() ? `\n\n${messagePerso.trim()}` : "") +
-    `\n\nCordialement,\n${org.representant} — ${org.name}`;
+  const subject = `📎 Votre document : ${doc.label}`;
+  const html = emailShell({
+    organisme: org.name,
+    representant: org.representant,
+    body:
+      emailParagraph(`Bonjour ${esc(insc.candidat.prenom)},`) +
+      emailParagraph("Vous trouverez ci-joint le document suivant&nbsp;:") +
+      emailBox(`📄 <b>${esc(doc.label)}</b>`) +
+      (messagePerso && messagePerso.trim()
+        ? emailParagraph(esc(messagePerso.trim()).replace(/\n/g, "<br>"))
+        : "") +
+      emailSignoff("Cordialement,", org.representant),
+  });
 
   const res = await sendEmail({
     to: insc.candidat.email,
     subject,
-    body,
+    html,
     attachments: [{ name: pdf.filename || `${type}.pdf`, content: toBase64(pdf.data) }],
     organismeId,
   });
@@ -74,7 +81,7 @@ export async function sendDocumentToCandidate(
       organismeId,
       destinataire: insc.candidat.email,
       sujet: subject,
-      corps: body,
+      corps: html,
       statut: res.sent ? EmailStatut.ENVOYE : EmailStatut.EN_ATTENTE,
       sentAt: res.sent ? new Date() : null,
       sessionId: insc.sessionId,
@@ -128,21 +135,30 @@ export async function sendDocumentsToCandidate(
   const org = await orgConfigFor(insc.organismeId);
   const titre = insc.session.formation.titre;
   const subject =
-    attachments.length === 1 ? `${labels[0]} — ${titre}` : `Vos documents — ${titre}`;
-  const liste = labels.map((l) => `• ${l}`).join("\n");
-  const body =
-    `Bonjour ${insc.candidat.prenom},\n\n` +
-    `Vous trouverez ci-joint ${attachments.length > 1 ? "les documents suivants" : "le document suivant"} :\n${liste}` +
-    (messagePerso && messagePerso.trim() ? `\n\n${messagePerso.trim()}` : "") +
-    `\n\nCordialement,\n${org.representant} — ${org.name}`;
+    attachments.length === 1 ? `📎 Votre document : ${labels[0]}` : `📎 Vos documents — ${titre}`;
+  const listeDocuments = labels.map((l) => `📄 <b>${esc(l)}</b>`).join("<br>");
+  const html = emailShell({
+    organisme: org.name,
+    representant: org.representant,
+    body:
+      emailParagraph(`Bonjour ${esc(insc.candidat.prenom)},`) +
+      emailParagraph(
+        `Vous trouverez ci-joint ${attachments.length > 1 ? "les documents suivants" : "le document suivant"}&nbsp;:`,
+      ) +
+      emailBox(listeDocuments) +
+      (messagePerso && messagePerso.trim()
+        ? emailParagraph(esc(messagePerso.trim()).replace(/\n/g, "<br>"))
+        : "") +
+      emailSignoff("Cordialement,", org.representant),
+  });
 
-  const res = await sendEmail({ to: insc.candidat.email, subject, body, attachments, organismeId });
+  const res = await sendEmail({ to: insc.candidat.email, subject, html, attachments, organismeId });
   await prisma.emailLog.create({
     data: {
       organismeId,
       destinataire: insc.candidat.email,
       sujet: subject,
-      corps: body,
+      corps: html,
       statut: res.sent ? EmailStatut.ENVOYE : EmailStatut.EN_ATTENTE,
       sentAt: res.sent ? new Date() : null,
       sessionId: insc.sessionId,

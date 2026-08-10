@@ -5,6 +5,14 @@ import { getTenantDb } from "@/lib/tenant";
 import { sendEmail, toBase64 } from "@/lib/email";
 import { orgConfigFor } from "@/lib/org-identity";
 import { buildSingleDocPdf } from "@/lib/documents/build-pdf";
+import {
+  emailShell,
+  emailHeading,
+  emailParagraph,
+  emailBox,
+  emailSignoff,
+  esc,
+} from "@/lib/email-templates";
 
 // Génère l'attestation de réussite (PDF via Chromium) puis l'envoie par e-mail
 // au candidat certifié — isolé dans une ROUTE (runtime nodejs + maxDuration 60)
@@ -59,23 +67,29 @@ export async function POST(
   try {
     const org = await orgConfigFor(insc.organismeId);
     const titre = insc.session.formation.titre;
-    const subject = `Félicitations — vous avez obtenu « ${titre} »`;
-    const body = `Bonjour ${insc.candidat.prenom},
-
-Toutes nos félicitations ! Vous avez satisfait aux épreuves d'évaluation et obtenu la certification « ${titre} ».
-
-Vous trouverez ci-joint votre attestation de réussite (PDF).
-
-Votre diplôme officiel vous sera transmis dès sa réception par nos services : nous vous enverrons un e-mail à ce moment-là pour organiser sa remise.
-
-Encore bravo, et à bientôt,
-${org.representant} — ${org.name}`;
+    const prenom = insc.candidat.prenom;
+    const subject = `🏆 Félicitations ${prenom}, vous avez obtenu « ${titre} » !`;
+    const html = emailShell({
+      organisme: org.name,
+      representant: org.representant,
+      accent: "green",
+      body:
+        emailHeading(`Toutes nos félicitations, ${esc(prenom)} ! 🏆`) +
+        emailParagraph(
+          `Vous avez <b>satisfait aux épreuves d'évaluation</b> et obtenu la certification <b>« ${esc(titre)} »</b>. Un vrai accomplissement — bravo pour votre engagement&nbsp;!`,
+        ) +
+        emailBox(
+          `📎 <b>En pièce jointe</b> : votre attestation de réussite (PDF).<br>🎓 Votre <b>diplôme officiel</b> vous sera transmis dès sa réception par nos services — nous vous écrirons à ce moment-là pour organiser sa remise.`,
+          "green",
+        ) +
+        emailSignoff("Encore bravo, et à bientôt,", org.representant),
+    });
 
     const pdf = await buildSingleDocPdf(id, "ATTESTATION_REUSSITE");
     const res = await sendEmail({
       to: insc.candidat.email,
       subject,
-      body,
+      html,
       attachments: pdf
         ? [{ name: "Attestation-reussite.pdf", content: toBase64(pdf.data) }]
         : undefined,
@@ -86,7 +100,7 @@ ${org.representant} — ${org.name}`;
       data: {
         destinataire: insc.candidat.email,
         sujet: subject,
-        corps: body,
+        corps: html,
         statut: res.sent ? EmailStatut.ENVOYE : EmailStatut.EN_ATTENTE,
         sentAt: res.sent ? new Date() : null,
         sessionId: insc.sessionId,

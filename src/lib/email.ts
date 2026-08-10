@@ -66,7 +66,7 @@ async function resolveSender(organismeId?: string | null): Promise<Sender> {
 
 /** Envoi via Resend (api.resend.com) — provider serverless, sans restriction IP. */
 async function sendViaResend(
-  params: { to: string; subject: string; body: string; attachments?: EmailAttachment[] },
+  params: { to: string; subject: string; body?: string; html?: string; attachments?: EmailAttachment[] },
   sender: Sender,
 ): Promise<{ sent: boolean }> {
   const fromEmail = process.env.RESEND_SENDER || sender.email;
@@ -74,7 +74,8 @@ async function sendViaResend(
     from: `${sender.name} <${fromEmail}>`,
     to: [params.to],
     subject: params.subject,
-    text: params.body,
+    // HTML prioritaire (e-mails candidats habillés) ; texte pour les envois legacy.
+    ...(params.html ? { html: params.html } : { text: params.body ?? "" }),
   };
   if (params.attachments && params.attachments.length > 0) {
     payload.attachments = params.attachments.map((a) => ({
@@ -100,7 +101,10 @@ async function sendViaResend(
 export async function sendEmail(params: {
   to: string;
   subject: string;
-  body: string;
+  /** Corps texte brut (envois legacy / non-candidat). Ignoré à l'envoi si `html` est fourni. */
+  body?: string;
+  /** Corps HTML (e-mails candidats habillés). Prioritaire sur `body` — envoi HTML seul. */
+  html?: string;
   attachments?: EmailAttachment[];
   /** Tenant émetteur (utilise son compte Brevo si configuré). */
   organismeId?: string | null;
@@ -128,7 +132,7 @@ export async function sendEmail(params: {
       sender: { name: sender.name, email: sender.email },
       to: [{ email: params.to }],
       subject: params.subject,
-      textContent: params.body,
+      ...(params.html ? { htmlContent: params.html } : { textContent: params.body ?? "" }),
     };
     if (params.attachments && params.attachments.length > 0) {
       payload.attachment = params.attachments.map((a) => ({

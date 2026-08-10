@@ -8,6 +8,15 @@ import { orgConfigFor } from "@/lib/org-identity";
 import { generateToken, appBaseUrl } from "@/lib/token";
 import { buildSingleDocPdf } from "@/lib/documents/build-pdf";
 import type { ManualEvent } from "@/lib/manual-events";
+import {
+  emailShell,
+  emailParagraph,
+  emailButton,
+  emailBox,
+  emailSignoff,
+  esc,
+  PRIMARY,
+} from "@/lib/email-templates";
 
 const STAFF = ["SUPERADMIN", "ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"];
 type Result = { ok: true } | { ok: false; error: string };
@@ -26,7 +35,9 @@ async function logAndSend(opts: {
   organismeId: string | null;
   to: string;
   subject: string;
-  body: string;
+  body?: string;
+  /** Corps HTML habillé (e-mails candidats). Prioritaire sur `body` à l'envoi. */
+  html?: string;
   sessionId: string;
   attachments?: { name: string; content: string }[];
 }) {
@@ -34,6 +45,7 @@ async function logAndSend(opts: {
     to: opts.to,
     subject: opts.subject,
     body: opts.body,
+    html: opts.html,
     attachments: opts.attachments,
     organismeId: opts.organismeId,
   });
@@ -42,7 +54,7 @@ async function logAndSend(opts: {
       organismeId: opts.organismeId,
       destinataire: opts.to,
       sujet: opts.subject,
-      corps: opts.body,
+      corps: opts.html ?? opts.body ?? "",
       statut: res.sent ? EmailStatut.ENVOYE : EmailStatut.EN_ATTENTE,
       sentAt: res.sent ? new Date() : null,
       sessionId: opts.sessionId,
@@ -71,26 +83,40 @@ export async function sendAutomationEventNow(inscriptionId: string, event: Manua
   const f = s.formation;
   const prenom = i.candidat.prenom;
   const base = appBaseUrl();
-  const sign = `\n\nCordialement,\n${org.representant} — ${org.name}`;
 
   if (event === "convocation") {
-    const body = `Bonjour ${prenom},
-
-Vous êtes convoqué(e) à la formation « ${f.titre} », du ${fmt(s.dateDebut)} au ${fmt(s.dateFin)}${s.horaires ? ` (${s.horaires})` : ""}${s.lieu ? `, à ${s.lieu}` : ""}.
-
-Merci de vous présenter muni(e) d'une pièce d'identité.${sign}`;
-    const sent = await logAndSend({ organismeId, to, subject: `Convocation — ${f.titre}`, body, sessionId: s.id });
+    const dates =
+      `📅 <b>Dates</b> : du ${esc(fmt(s.dateDebut))} au ${esc(fmt(s.dateFin))}` +
+      (s.horaires ? `<br>🕘 <b>Horaires</b> : ${esc(s.horaires)}` : "") +
+      (s.lieu ? `<br>📍 <b>Lieu</b> : ${esc(s.lieu)}` : "");
+    const html = emailShell({
+      organisme: org.name,
+      representant: org.representant,
+      body:
+        emailParagraph(`Bonjour ${esc(prenom)},`) +
+        emailParagraph(`Vous êtes convoqué(e) à la formation <b>« ${esc(f.titre)} »</b>&nbsp;:`) +
+        emailBox(dates) +
+        emailParagraph(`👉 Merci de vous présenter muni(e) d'une <b>pièce d'identité</b> en cours de validité.`) +
+        emailSignoff("Cordialement,", org.representant),
+    });
+    const sent = await logAndSend({ organismeId, to, subject: `Votre convocation — ${f.titre} 📅`, html, sessionId: s.id });
     await prisma.inscription.update({ where: { id: i.id }, data: { convocationSentAt: new Date() } });
     return sent ? { ok: true } : { ok: false, error: "E-mail non envoyé (config e-mail ?)." };
   }
 
   if (event === "attestation_entree") {
     const pdf = await buildSingleDocPdf(i.id, "ATTESTATION_ENTREE");
-    const body = `Bonjour ${prenom},
-
-Nous confirmons votre entrée en formation « ${f.titre} » le ${fmt(s.dateDebut)}. Vous trouverez ci-joint votre attestation d'entrée (PDF).${sign}`;
+    const html = emailShell({
+      organisme: org.name,
+      representant: org.representant,
+      body:
+        emailParagraph(`Bonjour ${esc(prenom)},`) +
+        emailParagraph(`Nous confirmons votre <b>entrée en formation « ${esc(f.titre)} »</b> le <b>${esc(fmt(s.dateDebut))}</b>.`) +
+        emailBox(`📎 <b>En pièce jointe</b> : votre attestation d'entrée en formation (PDF).`) +
+        emailSignoff("Bonne formation,", org.representant),
+    });
     const sent = await logAndSend({
-      organismeId, to, subject: `Attestation d'entrée — ${f.titre}`, body, sessionId: s.id,
+      organismeId, to, subject: `✅ Votre attestation d'entrée — ${f.titre}`, html, sessionId: s.id,
       attachments: pdf ? [{ name: "Attestation-entree.pdf", content: toBase64(pdf.data) }] : undefined,
     });
     await prisma.inscription.update({ where: { id: i.id }, data: { attestationEntreeSentAt: new Date() } });
@@ -99,12 +125,24 @@ Nous confirmons votre entrée en formation « ${f.titre} » le ${fmt(s.dateDebut
 
   if (event === "docs_fin") {
     const pdf = await buildSingleDocPdf(i.id, "ATTESTATION_FIN");
-    const lien = i.accessToken ? `\n\nVos documents restent disponibles ici : ${base}/parcours/${i.accessToken}/documents` : "";
-    const body = `Bonjour ${prenom},
-
-Félicitations pour avoir suivi la formation « ${f.titre} ». Vous trouverez ci-joint votre attestation de fin de formation (PDF).${lien}${sign}`;
+    const docsUrl = i.accessToken ? `${base}/parcours/${i.accessToken}/documents` : "";
+    const boxInner =
+      `📎 <b>En pièce jointe</b> : votre attestation de fin de formation (PDF).` +
+      (i.accessToken
+        ? `<br>📂 Vos documents restent disponibles ici&nbsp;: <a href="${esc(docsUrl)}" style="color:${PRIMARY};font-weight:bold">Mes documents</a>`
+        : "");
+    const html = emailShell({
+      organisme: org.name,
+      representant: org.representant,
+      accent: "green",
+      body:
+        emailParagraph(`Bonjour ${esc(prenom)},`) +
+        emailParagraph(`<b>Félicitations</b> pour avoir suivi la formation <b>« ${esc(f.titre)} »</b>&nbsp;!`) +
+        emailBox(boxInner, "green") +
+        emailSignoff("Encore bravo,", org.representant),
+    });
     const sent = await logAndSend({
-      organismeId, to, subject: `Attestation de fin — ${f.titre}`, body, sessionId: s.id,
+      organismeId, to, subject: `🎓 Votre attestation de fin de formation — ${f.titre}`, html, sessionId: s.id,
       attachments: pdf ? [{ name: "Attestation-fin.pdf", content: toBase64(pdf.data) }] : undefined,
     });
     await prisma.inscription.update({ where: { id: i.id }, data: { docsFinSentAt: new Date() } });
@@ -116,11 +154,16 @@ Félicitations pour avoir suivi la formation « ${f.titre} ». Vous trouverez ci
     if (!i.positionnementToken) {
       await prisma.inscription.update({ where: { id: i.id }, data: { positionnementToken: token } });
     }
-    const body = `Bonjour ${prenom},
-
-Avant de commencer la formation « ${f.titre} », merci de répondre à ce court test de positionnement (5 min) :
-${base}/positionnement/${token}${sign}`;
-    const sent = await logAndSend({ organismeId, to, subject: `Test de positionnement — ${f.titre}`, body, sessionId: s.id });
+    const html = emailShell({
+      organisme: org.name,
+      representant: org.representant,
+      body:
+        emailParagraph(`Bonjour ${esc(prenom)},`) +
+        emailParagraph(`Avant de démarrer <b>« ${esc(f.titre)} »</b>, merci de répondre à ce <b>court test de positionnement</b> (5 minutes)&nbsp;:`) +
+        emailButton("Faire le test (5 min) →", `${base}/positionnement/${token}`) +
+        emailSignoff("Cordialement,", org.representant),
+    });
+    const sent = await logAndSend({ organismeId, to, subject: `⏱️ 5 minutes pour préparer votre formation — ${f.titre}`, html, sessionId: s.id });
     await prisma.inscription.update({ where: { id: i.id }, data: { positionnementSentAt: new Date() } });
     return sent ? { ok: true } : { ok: false, error: "E-mail non envoyé (config e-mail ?)." };
   }
@@ -130,11 +173,16 @@ ${base}/positionnement/${token}${sign}`;
   if (!i.satisfactionToken) {
     await prisma.inscription.update({ where: { id: i.id }, data: { satisfactionToken: token } });
   }
-  const body = `Bonjour ${prenom},
-
-Vous avez suivi la formation « ${f.titre} ». Votre retour est précieux — merci de compléter ce court questionnaire de satisfaction :
-${base}/satisfaction/${token}${sign}`;
-  const sent = await logAndSend({ organismeId, to, subject: `Votre avis — ${f.titre}`, body, sessionId: s.id });
+  const html = emailShell({
+    organisme: org.name,
+    representant: org.representant,
+    body:
+      emailParagraph(`Bonjour ${esc(prenom)},`) +
+      emailParagraph(`Vous avez suivi <b>« ${esc(f.titre)} »</b>. Votre retour est <b>précieux</b> — merci de compléter ce court questionnaire de satisfaction&nbsp;:`) +
+      emailButton("Donner mon avis (2 min) →", `${base}/satisfaction/${token}`) +
+      emailSignoff("Merci beaucoup,", org.representant),
+  });
+  const sent = await logAndSend({ organismeId, to, subject: `💬 Votre avis sur « ${f.titre} » (2 min)`, html, sessionId: s.id });
   await prisma.inscription.update({ where: { id: i.id }, data: { satisfactionSentAt: new Date() } });
   return sent ? { ok: true } : { ok: false, error: "E-mail non envoyé (config e-mail ?)." };
 }

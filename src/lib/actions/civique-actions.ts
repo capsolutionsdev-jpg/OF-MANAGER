@@ -7,6 +7,15 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { sendEmail } from "@/lib/email";
 import { ensureCivicFactureFor, createCivicAvoir } from "@/lib/civique-api";
+import {
+  emailShell,
+  emailParagraph,
+  emailBox,
+  emailButton,
+  emailSignoff,
+  esc,
+  NAVY,
+} from "@/lib/email-templates";
 
 const STAFF = ["SUPERADMIN", "ADMIN", "RESPONSABLE_FORMATION"];
 
@@ -80,27 +89,28 @@ async function sendCivicAccessEmail(args: {
   code: string;
   mention: CivicMention;
 }) {
-  const body = [
-    `Bonjour ${args.prenom || ""},`.trim(),
-    "",
-    "Votre accès à la préparation à l'examen civique est activé.",
-    `Formation : ${MENTION_LABEL[args.mention]}`,
-    "",
-    "Pour vous connecter :",
-    `1. Rendez-vous sur ${CONNEXION_URL}`,
-    `2. Onglet « Code d'accès »`,
-    `3. E-mail : ${args.email}`,
-    `4. Code d'accès : ${args.code}`,
-    "",
-    "Avancez à votre rythme : leçons, quiz et examens blancs illimités.",
-    "",
-    "Bonne préparation,",
-    "L'équipe CAP Language Academy",
-  ].join("\n");
+  const html = emailShell({
+    organisme: "CAP Language Academy",
+    representant: "L'équipe CAP Language Academy",
+    body:
+      emailParagraph(`Bonjour ${esc(args.prenom || "")},`) +
+      emailParagraph(`Votre accès à la <b>préparation à l'examen civique</b> est activé.`) +
+      emailBox(
+        `📚 <b>Formation</b> : ${esc(MENTION_LABEL[args.mention])}<br>` +
+          `🔑 <b>Code d'accès</b> : <span style="font-family:monospace;font-size:16px;color:${NAVY};font-weight:bold">${esc(args.code)}</span><br>` +
+          `✉️ <b>E-mail</b> : ${esc(args.email)}`,
+      ) +
+      emailParagraph(
+        `Pour vous connecter&nbsp;: rendez-vous sur la page de connexion, onglet <b>« Code d'accès »</b>, puis saisissez votre e-mail et votre code.`,
+      ) +
+      emailButton("Me connecter →", CONNEXION_URL) +
+      emailBox(`Avancez à votre rythme : <b>leçons, quiz et examens blancs illimités</b>.`) +
+      emailSignoff("Bonne préparation,", "L'équipe CAP Language Academy"),
+  });
   await sendEmail({
     to: args.email,
-    subject: "Votre accès à la préparation à l'examen civique",
-    body,
+    subject: "🔓 Votre accès à la prépa examen civique est activé",
+    html,
     organismeId: args.organismeId,
   });
 }
