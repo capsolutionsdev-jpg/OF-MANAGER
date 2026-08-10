@@ -74,6 +74,8 @@ export default async function ExamenCiviqueBIPage() {
   const mentionsTarif: CivicMention[] = [CivicMention.CSP, CivicMention.CR, CivicMention.NATURALISATION];
 
   // ── Comptes élèves (CRUD + suivi) ──
+  // Composant serveur rendu à chaque requête : heure courante volontaire.
+  // eslint-disable-next-line react-hooks/purity
   const now = Date.now();
   const studentRows = await db.candidat.findMany({
     where: { OR: [{ civicToken: { not: null } }, { civicMentions: { isEmpty: false } }] },

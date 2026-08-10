@@ -81,7 +81,6 @@ export function scopedPrisma(organismeId: string) {
           }
           if (operation === "upsert") {
             args.create = { organismeId, ...args.create };
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const existing = await run(
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               (prisma as any)[delegateName(model)].findFirst({
