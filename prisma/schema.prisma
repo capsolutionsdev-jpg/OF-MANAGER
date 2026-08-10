@@ -2512,6 +2512,12 @@ model ParcoursT3P {
 
   commentaire String? @db.Text
 
+  // Validation manuelle des étapes par les collaborateurs (traçabilité Qualiopi).
+  // JSON : { "<etapeKey>": { "nom": "<collaborateur>", "userId": "<id>",
+  //          "date": "<ISO>", "comment"?: "<note>" } }. Indépendant du statut
+  // calculé (dates) : c'est un contrôle/visa explicite porté par un agent.
+  etapesValidation Json?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

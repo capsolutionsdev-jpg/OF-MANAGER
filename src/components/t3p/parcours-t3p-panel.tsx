@@ -10,7 +10,9 @@ import {
   CircleDashed,
   Info,
   Plus,
+  ShieldCheck,
   Trash2,
+  X,
 } from "lucide-react";
 
 import {
@@ -21,6 +23,7 @@ import {
   alertePrincipale,
   epreuvesDuType,
   etapeCourante,
+  etapesValidees,
   parcoursEtapes,
   progression,
   tentativesPratiqueConsommees,
@@ -28,12 +31,15 @@ import {
   type ParcoursT3PComplet,
   type T3PAlerte,
   type T3PEpreuveLike,
+  type T3PEtape,
 } from "@/lib/t3p";
 import {
   ajouterEpreuveT3P,
+  annulerValidationEtapeT3P,
   majEpreuveT3P,
   majParcoursT3P,
   supprimerEpreuveT3P,
+  validerEtapeT3P,
   type ParcoursT3PPatch,
 } from "@/lib/actions/t3p-actions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -174,6 +180,7 @@ export function ParcoursT3PPanel({ parcours }: { parcours: ParcoursDto }) {
   const courante = etapeCourante(etapes);
   const alerte = alertePrincipale(etapes);
   const { faites, total } = progression(etapes);
+  const { validees } = etapesValidees(etapes);
   const thAdmise = theorieAdmise(parcours);
   const tentativesPratique = tentativesPratiqueConsommees(parcours);
 
@@ -237,6 +244,30 @@ export function ParcoursT3PPanel({ parcours }: { parcours: ParcoursDto }) {
     });
   }
 
+  function validerEtape(etape: T3PEtape) {
+    startTransition(async () => {
+      const res = await validerEtapeT3P(parcours.id, etape.key);
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      toast.success(`Étape « ${etape.label} » validée.`);
+      router.refresh();
+    });
+  }
+
+  function annulerEtape(etape: T3PEtape) {
+    startTransition(async () => {
+      const res = await annulerValidationEtapeT3P(parcours.id, etape.key);
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      toast.success("Validation annulée.");
+      router.refresh();
+    });
+  }
+
   const statutBadge =
     parcours.statut === "REUSSI"
       ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
@@ -272,6 +303,12 @@ export function ParcoursT3PPanel({ parcours }: { parcours: ParcoursDto }) {
             <span className="text-xs font-medium text-muted-foreground">
               {faites}/{total} étapes
             </span>
+            <span
+              className="inline-flex items-center gap-1 whitespace-nowrap text-xs font-medium text-emerald-700 dark:text-emerald-300"
+              title="Étapes visées par un collaborateur (contrôle Qualiopi)"
+            >
+              <ShieldCheck className="h-3.5 w-3.5" /> {validees}/{total} validées
+            </span>
           </div>
           {alerte && <AlerteBanner alerte={alerte} />}
           {parcours.inscription && (
@@ -281,20 +318,27 @@ export function ParcoursT3PPanel({ parcours }: { parcours: ParcoursDto }) {
             </p>
           )}
 
-          {/* ── Chronologie des 11 étapes ── */}
+          {/* ── Chronologie des 11 étapes (+ visa collaborateur) ── */}
           <ol className="mt-2 space-y-1.5">
             {etapes.map((e) => (
-              <li key={e.key} className="flex items-start gap-3 rounded-lg px-2 py-1.5 hover:bg-muted/50">
+              <li
+                key={e.key}
+                className={`flex items-start gap-3 rounded-lg px-2 py-1.5 hover:bg-muted/50 ${
+                  e.validation ? "bg-emerald-500/5 ring-1 ring-inset ring-emerald-500/20" : ""
+                }`}
+              >
                 <span
                   className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
-                    e.statut === "fait"
-                      ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
-                      : e.statut === "en_cours"
-                        ? "bg-sky-500/15 text-sky-700 dark:text-sky-300"
-                        : "bg-muted text-muted-foreground"
+                    e.validation
+                      ? "bg-emerald-500 text-white"
+                      : e.statut === "fait"
+                        ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+                        : e.statut === "en_cours"
+                          ? "bg-sky-500/15 text-sky-700 dark:text-sky-300"
+                          : "bg-muted text-muted-foreground"
                   }`}
                 >
-                  {e.statut === "fait" ? <Check className="h-3.5 w-3.5" /> : e.num}
+                  {e.validation || e.statut === "fait" ? <Check className="h-3.5 w-3.5" /> : e.num}
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-baseline gap-2">
@@ -309,7 +353,39 @@ export function ParcoursT3PPanel({ parcours }: { parcours: ParcoursDto }) {
                     )}
                   </div>
                   {e.detail && <p className="text-xs text-muted-foreground">{e.detail}</p>}
+                  {e.validation && (
+                    <p className="mt-0.5 inline-flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-300">
+                      <ShieldCheck className="h-3 w-3" />
+                      Validé par {e.validation.nom} le{" "}
+                      {new Date(e.validation.date).toLocaleDateString("fr-FR")}
+                    </p>
+                  )}
                   {e.alerte && <div className="mt-1"><AlerteBanner alerte={e.alerte} /></div>}
+                </div>
+                {/* Action de validation manuelle par le collaborateur */}
+                <div className="shrink-0 self-center">
+                  {e.validation ? (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 gap-1 text-xs text-muted-foreground"
+                      disabled={isPending}
+                      onClick={() => annulerEtape(e)}
+                      title="Annuler la validation"
+                    >
+                      <X className="h-3.5 w-3.5" /> Annuler
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 gap-1 text-xs"
+                      disabled={isPending}
+                      onClick={() => validerEtape(e)}
+                    >
+                      <ShieldCheck className="h-3.5 w-3.5" /> Valider
+                    </Button>
+                  )}
                 </div>
               </li>
             ))}

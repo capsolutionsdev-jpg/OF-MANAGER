@@ -346,6 +346,129 @@ export async function majEpreuveT3P(epreuveId: string, patch: EpreuveT3PPatch): 
   }
 }
 
+// ─────────────────────────────────────────────────────────────
+//  Validation manuelle des étapes par les collaborateurs (Qualiopi)
+// ─────────────────────────────────────────────────────────────
+
+// Clés d'étapes autorisées (cf. lib/t3p → parcoursEtapes). Garde-fou : on ne
+// valide qu'une étape connue.
+const ETAPE_KEYS = new Set([
+  "prerequis",
+  "cma",
+  "frais",
+  "convoc-theorie",
+  "formation-theorie",
+  "resultat-theorie",
+  "convoc-pratique",
+  "formation-pratique",
+  "examen-pratique",
+  "resultat-pratique",
+  "carte-pro",
+]);
+
+/**
+ * Pose (ou remplace) le visa d'un collaborateur sur une étape du parcours :
+ * enregistre son nom, son id et l'horodatage (+ commentaire optionnel).
+ * Traçabilité Qualiopi — indépendant du statut calculé de l'étape.
+ */
+export async function validerEtapeT3P(
+  parcoursId: string,
+  etapeKey: string,
+  comment?: string,
+): Promise<ActionResult> {
+  const session = await auth();
+  if (!session?.user) return { ok: false, error: "Non autorisé." };
+  if (!ETAPE_KEYS.has(etapeKey)) return { ok: false, error: "Étape inconnue." };
+  const db = await getTenantDb();
+
+  try {
+    const parcours = await db.parcoursT3P.findUnique({
+      where: { id: parcoursId },
+      select: { candidatId: true, etapesValidation: true, inscription: { select: { sessionId: true } } },
+    });
+    if (!parcours) return { ok: false, error: "Parcours introuvable." };
+
+    const nom = session.user.name || session.user.email || "Collaborateur";
+    const visas =
+      parcours.etapesValidation && typeof parcours.etapesValidation === "object"
+        ? { ...(parcours.etapesValidation as Record<string, unknown>) }
+        : {};
+    const cleaned = comment?.trim();
+    visas[etapeKey] = {
+      nom,
+      userId: session.user.id,
+      date: new Date().toISOString(),
+      ...(cleaned ? { comment: cleaned } : {}),
+    };
+
+    await db.parcoursT3P.update({
+      where: { id: parcoursId },
+      data: { etapesValidation: visas },
+    });
+    await db.auditLog.create({
+      data: {
+        userId: session.user.id,
+        action: "VALIDATE_ETAPE",
+        entityType: "ParcoursT3P",
+        entityId: parcoursId,
+        changesJson: { etape: etapeKey },
+      },
+    });
+    revalidateParcours(parcours.candidatId);
+    if (parcours.inscription?.sessionId) {
+      revalidatePath(`/sessions/${parcours.inscription.sessionId}/parcours-t3p`);
+    }
+    return { ok: true, id: parcoursId };
+  } catch (e) {
+    console.error("validerEtapeT3P:", e);
+    return { ok: false, error: "Validation impossible." };
+  }
+}
+
+/** Retire le visa d'une étape (annulation de validation). */
+export async function annulerValidationEtapeT3P(parcoursId: string, etapeKey: string): Promise<ActionResult> {
+  const session = await auth();
+  if (!session?.user) return { ok: false, error: "Non autorisé." };
+  if (!ETAPE_KEYS.has(etapeKey)) return { ok: false, error: "Étape inconnue." };
+  const db = await getTenantDb();
+
+  try {
+    const parcours = await db.parcoursT3P.findUnique({
+      where: { id: parcoursId },
+      select: { candidatId: true, etapesValidation: true, inscription: { select: { sessionId: true } } },
+    });
+    if (!parcours) return { ok: false, error: "Parcours introuvable." };
+
+    const visas =
+      parcours.etapesValidation && typeof parcours.etapesValidation === "object"
+        ? { ...(parcours.etapesValidation as Record<string, unknown>) }
+        : {};
+    delete visas[etapeKey];
+
+    await db.parcoursT3P.update({
+      where: { id: parcoursId },
+      data: { etapesValidation: visas },
+    });
+    await db.auditLog.create({
+      data: {
+        userId: session.user.id,
+        action: "UNVALIDATE_ETAPE",
+        entityType: "ParcoursT3P",
+        entityId: parcoursId,
+        changesJson: { etape: etapeKey },
+      },
+    });
+    revalidateParcours(parcours.candidatId);
+    if (parcours.inscription?.sessionId) {
+      revalidatePath(`/sessions/${parcours.inscription.sessionId}/parcours-t3p`);
+    }
+    return { ok: true, id: parcoursId };
+  } catch (e) {
+    console.error("annulerValidationEtapeT3P:", e);
+    return { ok: false, error: "Annulation impossible." };
+  }
+}
+
 /** Supprime une présentation saisie par erreur (correction). */
 export async function supprimerEpreuveT3P(epreuveId: string): Promise<ActionResult> {
   const session = await auth();
