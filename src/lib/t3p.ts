@@ -112,7 +112,38 @@ export type ParcoursT3PComplet = {
   carteProNumero: string | null;
   commentaire: string | null;
   epreuves: T3PEpreuveLike[];
+  /** Visas manuels des étapes par les collaborateurs (JSON brut Prisma ; parsé
+   * par parcoursEtapes via parseEtapesValidation). */
+  etapesValidation?: unknown;
 };
+
+/** Visa manuel d'une étape par un collaborateur (traçabilité Qualiopi). */
+export type EtapeValidation = {
+  nom: string; // nom du collaborateur ayant validé
+  userId?: string;
+  date: string; // ISO
+  comment?: string;
+};
+
+export type EtapeValidationMap = Record<string, EtapeValidation>;
+
+/** Parse le champ JSON `etapesValidation` (issu de Prisma) en map typée. */
+export function parseEtapesValidation(json: unknown): EtapeValidationMap {
+  if (!json || typeof json !== "object") return {};
+  const out: EtapeValidationMap = {};
+  for (const [k, v] of Object.entries(json as Record<string, unknown>)) {
+    if (v && typeof v === "object" && typeof (v as { date?: unknown }).date === "string") {
+      const rec = v as Record<string, unknown>;
+      out[k] = {
+        nom: typeof rec.nom === "string" ? rec.nom : "—",
+        userId: typeof rec.userId === "string" ? rec.userId : undefined,
+        date: rec.date as string,
+        comment: typeof rec.comment === "string" ? rec.comment : undefined,
+      };
+    }
+  }
+  return out;
+}
 
 /** Épreuves d'un type, triées par n° de tentative croissant. */
 export function epreuvesDuType(p: ParcoursT3PComplet, type: "THEORIE" | "PRATIQUE"): T3PEpreuveLike[] {
@@ -155,6 +186,8 @@ export type T3PEtape = {
   statut: "fait" | "en_cours" | "a_faire";
   faitLe?: Date | null;
   alerte?: T3PAlerte;
+  /** Visa manuel du collaborateur pour cette étape (sinon non validée). */
+  validation?: EtapeValidation;
 };
 
 const fmtDate = (d: Date) => d.toLocaleDateString("fr-FR");
@@ -349,7 +382,18 @@ export function parcoursEtapes(p: ParcoursT3PComplet, now: Date = new Date()): T
     faitLe: p.carteProObtenueLe,
   });
 
+  // Visas manuels des collaborateurs (indépendants du statut calculé).
+  const visas = parseEtapesValidation(p.etapesValidation);
+  for (const e of etapes) {
+    if (visas[e.key]) e.validation = visas[e.key];
+  }
+
   return etapes;
+}
+
+/** Nombre d'étapes explicitement validées par un collaborateur / total. */
+export function etapesValidees(etapes: T3PEtape[]): { validees: number; total: number } {
+  return { validees: etapes.filter((e) => e.validation).length, total: etapes.length };
 }
 
 /** Étape courante = première étape non « faite » (ou la 11ᵉ si tout est fait). */

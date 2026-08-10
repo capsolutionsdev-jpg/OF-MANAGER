@@ -49,10 +49,21 @@
 > Pas de rubrique dédiée dans la barre de navigation : le suivi vit dans la
 > session (pilotage) et, en miroir, sur la fiche du candidat (consultation).
 
+### Validation manuelle des étapes (visa collaborateur)
+
+Chaque étape de la chronologie porte un bouton **« Valider »** : un collaborateur
+appose son visa, horodaté et nominatif (traçabilité Qualiopi). L'étape validée
+passe en vert avec « Validé par <nom> le <date> » ; le visa est réversible
+(« Annuler »). Un compteur « N/11 validées » figure en tête du parcours.
+Le visa est **indépendant du statut calculé** (dates) : c'est un contrôle
+explicite d'un agent, pas une déduction automatique. Journalisé dans `AuditLog`
+(`VALIDATE_ETAPE` / `UNVALIDATE_ETAPE`).
+
 ## Modèle de données
 
 - `ParcoursT3P` (1 par candidat et par métier) : champs d'étapes datés,
-  inscription liée (synchro certification), statut EN_COURS / REUSSI / ABANDONNE.
+  inscription liée (synchro certification), statut EN_COURS / REUSSI / ABANDONNE,
+  `etapesValidation` (JSON : clé d'étape → { nom, userId, date, comment }).
 - `T3PEpreuve` (n par parcours) : type THEORIE/PRATIQUE, n° de présentation,
   convocation, date, résultat, note.
 - Multi-tenant : `organismeId` injecté par `getTenantDb` ; politiques RLS
@@ -63,7 +74,9 @@
 - **Ind. 4** (analyse du besoin) : expression du besoin + financement à l'étape 1.
 - **Ind. 9-11** (suivi, évaluation) : sessions liées (émargements, positionnement, évaluations).
 - **Ind. 2 / BPF** : résultat pratique admis ⇒ `resultatCertification = CERTIFIE` sur l'inscription.
-- **Traçabilité** : chaque création/modification est journalisée (`AuditLog`).
+- **Traçabilité** : chaque création/modification est journalisée (`AuditLog`) ;
+  la validation manuelle des étapes fournit un visa nominatif et horodaté par
+  collaborateur (contrôle du dossier).
 
 ## Déploiement
 
