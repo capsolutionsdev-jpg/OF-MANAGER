@@ -20,6 +20,7 @@ export async function SessionDetailHeader({
   session,
   active,
   validationBadge,
+  showT3P = false,
 }: {
   session: {
     id: string;
@@ -29,6 +30,8 @@ export async function SessionDetailHeader({
   };
   active: SessionTabKey;
   validationBadge?: { percentage: number; ok: boolean };
+  /** Affiche l'onglet « Parcours T3P » (session Taxi/VTC) — cf. getSessionDetail. */
+  showT3P?: boolean;
 }) {
   // Clients professionnels — pour la convention / inscription groupée.
   const db = await getTenantDb();
@@ -80,6 +83,7 @@ export async function SessionDetailHeader({
           sessionId={session.id}
           active={active}
           validationBadge={validationBadge}
+          showT3P={showT3P}
         />
       </div>
     </div>

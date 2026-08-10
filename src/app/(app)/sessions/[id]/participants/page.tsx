@@ -60,6 +60,7 @@ export default async function SessionParticipantsPage({
           nbFormateurs: s.formateurs.length,
         }}
         active="participants"
+        showT3P={detail.t3pTab}
         validationBadge={
           vstate ? { percentage: vstate.percentage, ok: vstate.isValidated } : undefined
         }
