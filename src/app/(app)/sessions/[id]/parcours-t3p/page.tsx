@@ -88,7 +88,7 @@ export default async function SessionParcoursT3PPage({
         <CardContent className="py-4 text-sm text-muted-foreground">
           Parcours d&apos;accès à la profession de{" "}
           <span className="font-medium text-foreground">{T3P_METIER_LABELS[t3pMetier]}</span> (examen
-          CMA) pour les {participants.length} participant(s) de la session. Chaque parcours
+          CMA) pour les {participants.length}&nbsp;participant(s) de la session. Chaque parcours
           couvre les 11 étapes — des prérequis à la carte professionnelle — avec les
           échéances réglementaires (délai d&apos;1 an après l&apos;admissibilité, 3 présentations
           max à l&apos;admission).
