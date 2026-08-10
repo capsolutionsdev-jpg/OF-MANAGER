@@ -9,6 +9,13 @@ import {
 import { getTenantDb } from "@/lib/tenant";
 import { auth } from "@/auth";
 import { sendEmail, emailConfigured } from "@/lib/email";
+import {
+  emailShell,
+  emailParagraph,
+  emailBox,
+  emailSignoff,
+  esc,
+} from "@/lib/email-templates";
 import { orgConfigFor } from "@/lib/org-identity";
 
 const fmt = (d: Date) => d.toLocaleDateString("fr-FR");
@@ -36,22 +43,32 @@ export async function sendConvocationsForSession(
   const demo = !emailConfigured();
   let sent = 0;
   for (const insc of s.inscriptions) {
-    const subject = `Convocation — ${s.formation.titre}`;
-    const body = `Bonjour ${insc.candidat.prenom},
-
-Vous êtes convoqué(e) à la formation « ${s.formation.titre} » qui se déroulera du ${fmt(s.dateDebut)} au ${fmt(s.dateFin)}${s.horaires ? ` (${s.horaires})` : ""}${s.lieu ? `, à ${s.lieu}` : ""}.
-
-Merci de vous présenter muni(e) d'une pièce d'identité.
-
-Cordialement,
-${org.representant} — ${org.name}`;
-    const res = await sendEmail({ to: insc.candidat.email, subject, body });
+    const subject = `Votre convocation — ${s.formation.titre} 📅`;
+    const boxInner =
+      `📅 <b>Dates</b> : du ${esc(fmt(s.dateDebut))} au ${esc(fmt(s.dateFin))}` +
+      (s.horaires ? `<br>🕘 <b>Horaires</b> : ${esc(s.horaires)}` : "") +
+      (s.lieu ? `<br>📍 <b>Lieu</b> : ${esc(s.lieu)}` : "");
+    const html = emailShell({
+      organisme: org.name,
+      representant: org.representant,
+      body:
+        emailParagraph(`Bonjour ${esc(insc.candidat.prenom)},`) +
+        emailParagraph(
+          `Vous êtes convoqué(e) à la formation <b>« ${esc(s.formation.titre)} »</b>, qui se déroulera&nbsp;:`,
+        ) +
+        emailBox(boxInner) +
+        emailParagraph(
+          `👉 Merci de vous présenter muni(e) d'une <b>pièce d'identité</b> en cours de validité.`,
+        ) +
+        emailSignoff("Cordialement,", org.representant),
+    });
+    const res = await sendEmail({ to: insc.candidat.email, subject, html });
     if (res.sent) sent++;
     await db.emailLog.create({
       data: {
         destinataire: insc.candidat.email,
         sujet: subject,
-        corps: body,
+        corps: html,
         statut: res.sent ? EmailStatut.ENVOYE : EmailStatut.EN_ATTENTE,
         sentAt: res.sent ? new Date() : null,
         sessionId,
@@ -78,22 +95,32 @@ export async function sendConvocations(formData: FormData) {
   const org = await orgConfigFor(s.organismeId);
 
   for (const insc of s.inscriptions) {
-    const subject = `Convocation — ${s.formation.titre}`;
-    const body = `Bonjour ${insc.candidat.prenom},
+    const subject = `Votre convocation — ${s.formation.titre} 📅`;
+    const boxInner =
+      `📅 <b>Dates</b> : du ${esc(fmt(s.dateDebut))} au ${esc(fmt(s.dateFin))}` +
+      (s.horaires ? `<br>🕘 <b>Horaires</b> : ${esc(s.horaires)}` : "") +
+      (s.lieu ? `<br>📍 <b>Lieu</b> : ${esc(s.lieu)}` : "");
+    const html = emailShell({
+      organisme: org.name,
+      representant: org.representant,
+      body:
+        emailParagraph(`Bonjour ${esc(insc.candidat.prenom)},`) +
+        emailParagraph(
+          `Vous êtes convoqué(e) à la formation <b>« ${esc(s.formation.titre)} »</b>, qui se déroulera&nbsp;:`,
+        ) +
+        emailBox(boxInner) +
+        emailParagraph(
+          `👉 Merci de vous présenter muni(e) d'une <b>pièce d'identité</b> en cours de validité.`,
+        ) +
+        emailSignoff("Cordialement,", org.representant),
+    });
 
-Vous êtes convoqué(e) à la formation « ${s.formation.titre} » qui se déroulera du ${fmt(s.dateDebut)} au ${fmt(s.dateFin)}${s.horaires ? ` (${s.horaires})` : ""}${s.lieu ? `, à ${s.lieu}` : ""}.
-
-Merci de vous présenter muni(e) d'une pièce d'identité.
-
-Cordialement,
-${org.representant} — ${org.name}`;
-
-    const res = await sendEmail({ to: insc.candidat.email, subject, body });
+    const res = await sendEmail({ to: insc.candidat.email, subject, html });
     await db.emailLog.create({
       data: {
         destinataire: insc.candidat.email,
         sujet: subject,
-        corps: body,
+        corps: html,
         statut: res.sent ? EmailStatut.ENVOYE : EmailStatut.EN_ATTENTE,
         sentAt: res.sent ? new Date() : null,
         sessionId,

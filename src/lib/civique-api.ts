@@ -12,6 +12,17 @@ import { prisma } from "@/lib/prisma";
 import { CivicMention, CivicModuleStatut, CivicPath, Prisma } from "@prisma/client";
 import { nextRef, maxSuffix } from "@/lib/numerotation";
 import { sendEmail } from "@/lib/email";
+import {
+  emailShell,
+  emailHeading,
+  emailParagraph,
+  emailBox,
+  emailButton,
+  emailSignoff,
+  esc,
+  NAVY,
+  MUTED,
+} from "@/lib/email-templates";
 
 const VITRINE_BASE = process.env.VITRINE_URL ?? "https://capacademy.fr";
 const MENTION_NOM_LISIBLE: Record<CivicMention, string> = {
@@ -494,19 +505,33 @@ export async function fulfillCivicCheckout(args: {
     const euros = ((args.amountTotal ?? 0) / 100).toLocaleString("fr-FR", {
       minimumFractionDigits: 2,
     });
+    const connexionUrl = `${VITRINE_BASE}/cap-language-academy/examen-civique/connexion`;
+    const html = emailShell({
+      organisme: "CAP Compétences",
+      representant: "L'équipe CAP Compétences",
+      accent: "amber",
+      body:
+        emailHeading(`Merci pour votre inscription, ${esc(candidat.prenom || "")} 🎉`) +
+        emailParagraph(
+          `Bienvenue dans la <b>préparation à l'examen civique — ${esc(MENTION_NOM_LISIBLE[mention])}</b>. ` +
+            `Votre paiement de <b>${esc(euros)} €</b> est confirmé (reçu disponible sur votre tableau de bord).`,
+        ) +
+        emailBox(
+          `🔑 <b>Votre code d'accès</b> : <span style="font-family:monospace;font-size:16px;color:${NAVY};font-weight:bold">${esc(token)}</span><br>` +
+            `<span style="color:${MUTED}">Conservez-le précieusement : il vous permet de retrouver votre progression sur tous vos appareils.</span>`,
+          "amber",
+        ) +
+        emailParagraph(
+          `Pour démarrer, connectez-vous avec votre e-mail (<b>${esc(candidat.email)}</b>) et ce code, onglet <b>« Code d'accès »</b>&nbsp;:`,
+        ) +
+        emailButton("Démarrer ma préparation →", connexionUrl) +
+        emailSignoff("À bientôt,", "L'équipe CAP Compétences"),
+    });
     await sendEmail({
       to: candidat.email,
       organismeId,
-      subject: "Votre accès à la préparation à l'examen civique",
-      body:
-        `Bonjour ${candidat.prenom || ""},\n\n` +
-        `Merci pour votre inscription à la préparation à l'examen civique — ${MENTION_NOM_LISIBLE[mention]}.\n` +
-        `Votre paiement de ${euros} € est confirmé (reçu également disponible sur votre tableau de bord Stripe).\n\n` +
-        `VOTRE CODE D'ACCÈS : ${token}\n\n` +
-        `Pour démarrer votre parcours, connectez-vous avec votre e-mail (${candidat.email}) et ce code, ` +
-        `onglet « Code d'accès » :\n${VITRINE_BASE}/cap-language-academy/examen-civique/connexion\n\n` +
-        `Conservez ce code précieusement : il vous permet de retrouver votre progression sur tous vos appareils.\n\n` +
-        `À bientôt,\nL'équipe CAP Compétences`,
+      subject: "🔓 Votre accès à la prépa examen civique est actif",
+      html,
     });
   }
 

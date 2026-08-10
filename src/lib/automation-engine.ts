@@ -11,6 +11,16 @@ import {
   parseAutomationsConfig,
   type AutomationsConfig,
 } from "@/lib/automations";
+import {
+  emailShell,
+  emailHeading,
+  emailParagraph,
+  emailButton,
+  emailBox,
+  emailSignoff,
+  esc,
+  PRIMARY,
+} from "@/lib/email-templates";
 
 const fmt = (d: Date) => d.toLocaleDateString("fr-FR");
 
@@ -114,7 +124,9 @@ export async function runAutomations(): Promise<Counts> {
   const logAndSend = async (opts: {
     to: string;
     subject: string;
-    body: string;
+    body?: string;
+    /** Corps HTML habillé (e-mails candidats). Prioritaire sur `body` à l'envoi. */
+    html?: string;
     sessionId: string;
     attachments?: EmailAttachment[];
   }) => {
@@ -122,6 +134,7 @@ export async function runAutomations(): Promise<Counts> {
       to: opts.to,
       subject: opts.subject,
       body: opts.body,
+      html: opts.html,
       attachments: opts.attachments,
       organismeId: currentOrgId,
     });
@@ -130,7 +143,7 @@ export async function runAutomations(): Promise<Counts> {
         organismeId: currentOrgId,
         destinataire: opts.to,
         sujet: opts.subject,
-        corps: opts.body,
+        corps: opts.body ?? opts.html ?? opts.subject,
         statut: res.sent ? EmailStatut.ENVOYE : EmailStatut.EN_ATTENTE,
         sentAt: res.sent ? new Date() : null,
         sessionId: opts.sessionId,
@@ -172,18 +185,31 @@ export async function runAutomations(): Promise<Counts> {
       s.dateDebut <= convLimite &&
       (await claimInsc(i.id, "convocationSentAt"))
     ) {
-      const subject = `Convocation — ${f.titre}`;
-      const body = `Bonjour ${prenom},
-
-Vous êtes convoqué(e) à la formation « ${f.titre} », du ${fmt(s.dateDebut)} au ${fmt(s.dateFin)}${s.horaires ? ` (${s.horaires})` : ""}${s.lieu ? `, à ${s.lieu}` : ""}.
-
-Merci de vous présenter muni(e) d'une pièce d'identité.
-
-Cordialement,
-${org.representant} — ${org.name}`;
+      const subject = `Votre convocation — ${f.titre} 📅`;
+      const infoLines = [
+        `📅 <b>Dates</b> : du ${esc(fmt(s.dateDebut))} au ${esc(fmt(s.dateFin))}`,
+        s.horaires ? `🕘 <b>Horaires</b> : ${esc(s.horaires)}` : "",
+        s.lieu ? `📍 <b>Lieu</b> : ${esc(s.lieu)}` : "",
+      ]
+        .filter(Boolean)
+        .join("<br>");
+      const html = emailShell({
+        organisme: org.name,
+        representant: org.representant,
+        body:
+          emailHeading(`C'est confirmé, ${esc(prenom)} 👍`) +
+          emailParagraph(
+            `Vous êtes officiellement convoqué(e) à la formation <b>« ${esc(f.titre)} »</b>. Voici l'essentiel à retenir&nbsp;:`,
+          ) +
+          emailBox(infoLines) +
+          emailParagraph(
+            `👉 Merci de vous présenter <b>à l'heure</b>, muni(e) d'une <b>pièce d'identité en cours de validité</b>.`,
+          ) +
+          emailSignoff("À très vite,", org.representant),
+      });
       // Canal « SMS uniquement » : on n'envoie pas l'e-mail au candidat (le jalon
       // est déjà réservé ; le SMS part plus bas). L'e-mail à l'entreprise reste envoyé.
-      const sent = convRule.channel === "sms" ? true : await logAndSend({ to, subject, body, sessionId: s.id });
+      const sent = convRule.channel === "sms" ? true : await logAndSend({ to, subject, html, sessionId: s.id });
       if (entEmail) {
         await logAndSend({
           to: entEmail,
@@ -222,16 +248,30 @@ ${org.representant} — ${org.name}`,
       s.dateDebut <= dans24h &&
       (await claimInsc(i.id, "rappelSentAt"))
     ) {
-      const subject = `Rappel — votre formation « ${f.titre} » commence demain`;
-      const body = `Bonjour ${prenom},
-
-Petit rappel : votre formation « ${f.titre} » débute le ${fmt(s.dateDebut)}${s.horaires ? ` (${s.horaires})` : ""}${s.lieu ? `, à ${s.lieu}` : ""}.
-
-Merci de vous présenter à l'heure, muni(e) d'une pièce d'identité.
-
-À demain,
-${org.representant} — ${org.name}`;
-      const sent = rappelRule.channel === "sms" ? true : await logAndSend({ to, subject, body, sessionId: s.id });
+      const subject = `⏰ Demain, c'est le grand jour : ${f.titre}`;
+      const infoLines = [
+        `📅 <b>Début</b> : ${esc(fmt(s.dateDebut))}`,
+        s.horaires ? `🕘 <b>Horaires</b> : ${esc(s.horaires)}` : "",
+        s.lieu ? `📍 <b>Lieu</b> : ${esc(s.lieu)}` : "",
+      ]
+        .filter(Boolean)
+        .join("<br>");
+      const html = emailShell({
+        organisme: org.name,
+        representant: org.representant,
+        accent: "amber",
+        body:
+          emailHeading(`Petit rappel, ${esc(prenom)} 🙂`) +
+          emailParagraph(
+            `Votre formation <b>« ${esc(f.titre)} »</b> démarre <b>demain</b>. On a hâte de vous accueillir&nbsp;!`,
+          ) +
+          emailBox(infoLines, "amber") +
+          emailParagraph(
+            `N'oubliez pas votre <b>pièce d'identité</b>. Un empêchement de dernière minute&nbsp;? Répondez à cet e-mail, on s'organise.`,
+          ) +
+          emailSignoff("À demain,", org.representant),
+      });
+      const sent = rappelRule.channel === "sms" ? true : await logAndSend({ to, subject, html, sessionId: s.id });
       if (sent) {
         await maybeSms(
           rappelRule.channel,
@@ -261,20 +301,36 @@ ${org.representant} — ${org.name}`;
       s.dateFin <= cvxLimite &&
       (await claimInsc(i.id, "convocationExamenSentAt"))
     ) {
-      const subject = `Convocation à l'examen — ${f.titre}`;
-      const body = `Bonjour ${prenom},
-
-Vous êtes convoqué(e) à l'épreuve de certification de la formation « ${f.titre} », prévue le ${fmt(s.dateExamen ?? s.dateFin)}${s.horaires ? ` (${s.horaires})` : ""}${(s.lieuExamen ?? s.lieu) ? `, à ${s.lieuExamen ?? s.lieu}` : ""}.
-
-Vous trouverez votre convocation à l'examen en pièce jointe (PDF). Merci de vous présenter muni(e) d'une pièce d'identité en cours de validité.
-
-Cordialement,
-${org.representant} — ${org.name}`;
+      const subject = `🎯 Convocation à votre examen — ${f.titre}`;
+      const lieuExamen = s.lieuExamen ?? s.lieu;
+      const infoLines = [
+        `📅 <b>Date de l'examen</b> : ${esc(fmt(s.dateExamen ?? s.dateFin))}`,
+        s.horaires ? `🕘 <b>Horaires</b> : ${esc(s.horaires)}` : "",
+        lieuExamen ? `📍 <b>Lieu</b> : ${esc(lieuExamen)}` : "",
+      ]
+        .filter(Boolean)
+        .join("<br>");
+      const html = emailShell({
+        organisme: org.name,
+        representant: org.representant,
+        accent: "green",
+        body:
+          emailHeading(`Dernière ligne droite, ${esc(prenom)} 🎯`) +
+          emailParagraph(
+            `Vous êtes convoqué(e) à l'<b>épreuve de certification</b> de la formation <b>« ${esc(f.titre)} »</b>.`,
+          ) +
+          emailBox(infoLines, "green") +
+          emailParagraph(
+            `📎 Votre <b>convocation officielle (PDF)</b> est en pièce jointe. Présentez-vous muni(e) d'une <b>pièce d'identité en cours de validité</b> — sans elle, l'accès à l'épreuve peut être refusé.`,
+          ) +
+          emailParagraph(`Vous êtes prêt(e). Faites-vous confiance&nbsp;!`) +
+          emailSignoff("Bon courage,", org.representant),
+      });
       const cvxPdf = await safePdf(i.id, "CONVOCATION_EXAMEN");
       const sent = await logAndSend({
         to,
         subject,
-        body,
+        html,
         sessionId: s.id,
         attachments: cvxPdf
           ? [{ name: "Convocation-examen.pdf", content: toBase64(cvxPdf.data) }]
@@ -296,20 +352,26 @@ ${org.representant} — ${org.name}`;
       i.accessToken &&
       (await claimInsc(i.id, "attestationEntreeSentAt"))
     ) {
-      const subject = `Attestation d'entrée en formation — ${f.titre}`;
-      const body = `Bonjour ${prenom},
-
-Nous confirmons votre entrée en formation « ${f.titre} » le ${fmt(s.dateDebut)}.
-
-Vous trouverez ci-joint votre attestation d'entrée signée, au format PDF.
-
-Bonne formation,
-${org.representant} — ${org.name}`;
+      const subject = `✅ Votre entrée en formation est confirmée — ${f.titre}`;
+      const html = emailShell({
+        organisme: org.name,
+        representant: org.representant,
+        body:
+          emailHeading(`Bienvenue, ${esc(prenom)} 👋`) +
+          emailParagraph(
+            `Nous confirmons votre <b>entrée en formation « ${esc(f.titre)} »</b> le <b>${esc(fmt(s.dateDebut))}</b>. C'est parti&nbsp;!`,
+          ) +
+          emailBox(
+            `📎 <b>En pièce jointe</b> : votre attestation d'entrée en formation, signée (PDF).<br>Conservez-la, elle peut vous être demandée (financeur, employeur…).`,
+          ) +
+          emailParagraph(`Toute l'équipe vous souhaite une excellente formation.`) +
+          emailSignoff("Bonne formation,", org.representant),
+      });
       const attPdf = await safePdf(i.id, "ATTESTATION_ENTREE");
       const attPj = attPdf
         ? [{ name: "Attestation-entree.pdf", content: toBase64(attPdf.data) }]
         : undefined;
-      const sent = await logAndSend({ to, subject, body, sessionId: s.id, attachments: attPj });
+      const sent = await logAndSend({ to, subject, html, sessionId: s.id, attachments: attPj });
       if (entEmail) {
         await logAndSend({
           to: entEmail,
@@ -349,22 +411,23 @@ ${org.representant} — ${org.name}`,
           data: { positionnementToken: posToken },
         });
       }
-      const posSubject = `Test de positionnement — ${f.titre}`;
-      const posBody = `Bonjour ${prenom},
-
-Bienvenue dans votre formation « ${f.titre} » !
-
-Avant de commencer, merci de répondre à ce court test de positionnement
-(une dizaine de questions, 5 minutes). Il nous permet d'adapter le contenu
-et le rythme à votre profil :
-
-${base}/positionnement/${posToken}
-
-Vos réponses, signées, seront conservées dans votre dossier de formation.
-
-Bonne formation,
-${org.representant} — ${org.name}`;
-      const sent = await logAndSend({ to, subject: posSubject, body: posBody, sessionId: s.id });
+      const posSubject = `⏱️ 5 minutes pour personnaliser votre formation — ${f.titre}`;
+      const posLink = `${base}/positionnement/${posToken}`;
+      const posHtml = emailShell({
+        organisme: org.name,
+        representant: org.representant,
+        body:
+          emailHeading(`Bienvenue dans « ${esc(f.titre)} », ${esc(prenom)} 🎉`) +
+          emailParagraph(
+            `Avant de démarrer, un <b>court test de positionnement</b> — une dizaine de questions, <b>5 minutes</b> chrono. Il nous permet d'<b>adapter le contenu et le rythme</b> à votre profil.`,
+          ) +
+          emailButton("Faire le test (5 min) →", posLink) +
+          emailBox(
+            `✍️ Vos réponses, <b>signées</b>, seront conservées dans votre dossier de formation.`,
+          ) +
+          emailSignoff("Bonne formation,", org.representant),
+      });
+      const sent = await logAndSend({ to, subject: posSubject, html: posHtml, sessionId: s.id });
       if (!sent) await releaseInsc(i.id, "positionnementSentAt");
     }
 
@@ -383,18 +446,23 @@ ${org.representant} — ${org.name}`;
           data: { francaisToken: frToken },
         });
       }
-      const frSubject = `Test de français — ${f.titre}`;
-      const frBody = `Bonjour ${prenom},
-
-Dans le cadre de votre entrée en formation « ${f.titre} », merci de répondre à ce court test de français (une quinzaine de questions, environ 10 minutes) :
-
-${base}/francais/${frToken}
-
-Vos réponses, signées, seront conservées dans votre dossier de formation.
-
-Bonne formation,
-${org.representant} — ${org.name}`;
-      const sent = await logAndSend({ to, subject: frSubject, body: frBody, sessionId: s.id });
+      const frSubject = `📝 Petit test de français (10 min) — ${f.titre}`;
+      const frLink = `${base}/francais/${frToken}`;
+      const frHtml = emailShell({
+        organisme: org.name,
+        representant: org.representant,
+        body:
+          emailHeading(`Une dernière étape, ${esc(prenom)}`) +
+          emailParagraph(
+            `Dans le cadre de votre entrée en <b>« ${esc(f.titre)} »</b>, merci de compléter ce <b>court test de français</b> — une quinzaine de questions, environ <b>10 minutes</b>.`,
+          ) +
+          emailButton("Commencer le test →", frLink) +
+          emailBox(
+            `✍️ Vos réponses, <b>signées</b>, seront conservées dans votre dossier de formation.`,
+          ) +
+          emailSignoff("Bonne formation,", org.representant),
+      });
+      const sent = await logAndSend({ to, subject: frSubject, html: frHtml, sessionId: s.id });
       if (!sent) await releaseInsc(i.id, "francaisSentAt");
     }
 
@@ -414,21 +482,25 @@ ${org.representant} — ${org.name}`;
         });
         i.satisfactionToken = satToken; // garde l'objet local cohérent (réutilisé en 3bis)
       }
-      const subject = `Votre avis sur la formation — ${f.titre}`;
-      const body = `Bonjour ${prenom},
-
-Vous venez de terminer la formation « ${f.titre} ». Votre retour est précieux !
-
-Merci de compléter ce court questionnaire de satisfaction :
-${base}/satisfaction/${satToken}
-
-Une remarque ou une difficulté à nous signaler ? Vous pouvez déposer une
-réclamation via ce formulaire (traitée sous 15 jours ouvrés) :
-${base}/reclamer/${satToken}
-
-Cordialement,
-${org.representant} — ${org.name}`;
-      const sent = satRule.channel === "sms" ? true : await logAndSend({ to, subject, body, sessionId: s.id });
+      const subject = `💬 Votre avis compte — ${f.titre}`;
+      const satLink = `${base}/satisfaction/${satToken}`;
+      const reclamerLink = `${base}/reclamer/${satToken}`;
+      const html = emailShell({
+        organisme: org.name,
+        representant: org.representant,
+        body:
+          emailHeading(`Merci d'avoir suivi « ${esc(f.titre)} », ${esc(prenom)} 🙏`) +
+          emailParagraph(
+            `Votre retour nous est <b>précieux</b> : il nous aide à améliorer nos formations pour les prochains stagiaires. 2 minutes suffisent.`,
+          ) +
+          emailButton("Donner mon avis (2 min) →", satLink) +
+          emailBox(
+            `Une remarque ou une difficulté à signaler&nbsp;? Vous pouvez déposer une <b>réclamation</b> ici (traitée sous 15 jours ouvrés)&nbsp;:<br><a href="${esc(reclamerLink)}" style="color:${PRIMARY};font-weight:bold">Déposer une réclamation</a>`,
+            "amber",
+          ) +
+          emailSignoff("Merci encore,", org.representant),
+      });
+      const sent = satRule.channel === "sms" ? true : await logAndSend({ to, subject, html, sessionId: s.id });
       if (sent) {
         await maybeSms(
           satRule.channel,
@@ -486,21 +558,28 @@ ${org.representant} — ${org.name}`,
       i.accessToken &&
       (await claimInsc(i.id, "docsFinSentAt"))
     ) {
-      const subject = `Attestation de fin de formation — ${f.titre}`;
-      const body = `Bonjour ${prenom},
-
-Félicitations pour avoir suivi la formation « ${f.titre} » (du ${fmt(s.dateDebut)} au ${fmt(s.dateFin)}).
-
-Vous trouverez ci-joint votre attestation de fin de formation (PDF). L'ensemble de vos documents reste disponible ici :
-${base}/parcours/${i.accessToken}/documents
-
-Cordialement,
-${org.representant} — ${org.name}`;
+      const subject = `🎓 Bravo ! Voici votre attestation — ${f.titre}`;
+      const docsLink = `${base}/parcours/${i.accessToken}/documents`;
+      const html = emailShell({
+        organisme: org.name,
+        representant: org.representant,
+        accent: "green",
+        body:
+          emailHeading(`Félicitations, ${esc(prenom)} 🎓`) +
+          emailParagraph(
+            `Vous venez de terminer la formation <b>« ${esc(f.titre)} »</b> (du ${esc(fmt(s.dateDebut))} au ${esc(fmt(s.dateFin))}). Beau parcours&nbsp;!`,
+          ) +
+          emailBox(
+            `📎 <b>En pièce jointe</b> : votre attestation de fin de formation (PDF).<br>📂 Tous vos documents restent disponibles ici&nbsp;: <a href="${esc(docsLink)}" style="color:${PRIMARY};font-weight:bold">Accéder à mes documents</a>`,
+            "green",
+          ) +
+          emailSignoff("Encore bravo,", org.representant),
+      });
       const finPdf = await safePdf(i.id, "ATTESTATION_FIN");
       const sent = await logAndSend({
         to,
         subject,
-        body,
+        html,
         sessionId: s.id,
         attachments: finPdf
           ? [{ name: "Attestation-fin.pdf", content: toBase64(finPdf.data) }]
@@ -552,19 +631,23 @@ ${org.representant} — ${org.name}`,
           data: { suivi6moisToken: suiviToken },
         });
       }
-      const subject = `Et 6 mois après ? Votre suivi — ${f.titre}`;
-      const body = `Bonjour ${prenom},
-
-Il y a environ 6 mois, vous terminiez la formation « ${f.titre} ». Dans le cadre de notre démarche qualité (Qualiopi), nous aimerions savoir où vous en êtes aujourd'hui (situation professionnelle, lien avec la formation…).
-
-Merci de répondre à ce court questionnaire (2 minutes) et de le signer :
-${base}/suivi/${suiviToken}
-
-Vos réponses nous aident à améliorer nos formations.
-
-Cordialement,
-${org.representant} — ${org.name}`;
-      const sent = suiviRule.channel === "sms" ? true : await logAndSend({ to, subject, body, sessionId: s.id });
+      const subject = `👋 6 mois après « ${f.titre} » — où en êtes-vous ?`;
+      const suiviLink = `${base}/suivi/${suiviToken}`;
+      const html = emailShell({
+        organisme: org.name,
+        representant: org.representant,
+        body:
+          emailHeading(`Prenons de vos nouvelles, ${esc(prenom)}`) +
+          emailParagraph(
+            `Il y a environ 6 mois, vous terminiez <b>« ${esc(f.titre)} »</b>. Dans le cadre de notre démarche qualité, nous aimerions savoir <b>où vous en êtes</b> aujourd'hui (situation professionnelle, lien avec la formation…).`,
+          ) +
+          emailButton("Répondre (2 min) →", suiviLink) +
+          emailBox(
+            `✍️ Un court questionnaire à compléter et signer. Vos réponses nous aident à améliorer nos formations.`,
+          ) +
+          emailSignoff("Merci pour votre temps,", org.representant),
+      });
+      const sent = suiviRule.channel === "sms" ? true : await logAndSend({ to, subject, html, sessionId: s.id });
       if (sent) {
         await maybeSms(
           suiviRule.channel,
@@ -652,15 +735,22 @@ ${org.representant} — ${org.name}`;
     if (!emClaimed) continue;
     const org = await orgConfigFor(e.organismeId);
     const link = `${base}/emarger/${e.token}`;
-    const subject = `Émargement ${demiLabel} — ${e.session.formation.titre}`;
-    const body = `Bonjour ${e.nom},
-
-Merci de signer votre présence (${demiLabel}) à la formation « ${e.session.formation.titre} » en cliquant sur ce lien :
-${link}
-
-Cordialement,
-${org.representant} — ${org.name}`;
-    const sent = await logAndSend({ to: e.email, subject, body, sessionId: e.sessionId });
+    const subject = `✍️ Signez votre présence (${demiLabel}) — ${e.session.formation.titre}`;
+    const html = emailShell({
+      organisme: org.name,
+      representant: org.representant,
+      body:
+        emailParagraph(`Bonjour ${esc(e.nom)},`) +
+        emailParagraph(
+          `Merci de <b>signer votre présence</b> (${esc(demiLabel)}) à la formation <b>« ${esc(e.session.formation.titre)} »</b>. Un clic suffit&nbsp;:`,
+        ) +
+        emailButton("Signer mon émargement →", link) +
+        emailBox(
+          `👆 La signature se fait directement avec votre <b>doigt</b> (mobile) ou votre <b>souris</b> (ordinateur).`,
+        ) +
+        emailSignoff("Merci,", org.representant),
+    });
+    const sent = await logAndSend({ to: e.email, subject, html, sessionId: e.sessionId });
     if (sent) {
       counts.emargements++;
     } else {

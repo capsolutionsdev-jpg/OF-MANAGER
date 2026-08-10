@@ -21,6 +21,16 @@ import {
   buildSingleDocPdf,
   SIGNED_DOC_TYPES,
 } from "@/lib/documents/build-pdf";
+import {
+  emailShell,
+  emailHeading,
+  emailParagraph,
+  emailButton,
+  emailBox,
+  emailSignoff,
+  esc,
+  MUTED,
+} from "@/lib/email-templates";
 
 /**
  * Démarre le parcours candidat : génère un lien unique et envoie l'e-mail
@@ -46,19 +56,21 @@ export async function startParcours(
   }
 
   const link = `${appBaseUrl()}/parcours/${token}`;
-  const subject = `Votre inscription — ${insc.session.formation.titre}`;
-  const body = `Bonjour ${insc.candidat.prenom},
-
-Votre inscription à la formation « ${insc.session.formation.titre} » a bien été enregistrée.
-
-Pour finaliser votre dossier, merci de compléter vos informations et de signer vos documents en cliquant sur le lien sécurisé ci-dessous :
-
-${link}
-
-Vous trouverez ci-joint le programme de la formation. Ce lien vous est personnel ; à l'issue, vous recevrez une copie de vos documents signés.
-
-Cordialement,
-${org.representant} — ${org.name}`;
+  const subject = `📋 Finalisez votre inscription — ${insc.session.formation.titre}`;
+  const html = emailShell({
+    organisme: org.name,
+    representant: org.representant,
+    body:
+      emailHeading(`Votre inscription est bien reçue, ${esc(insc.candidat.prenom)} ✅`) +
+      emailParagraph(
+        `Votre inscription à <b>« ${esc(insc.session.formation.titre)} »</b> est enregistrée. Il ne reste qu'une étape&nbsp;: <b>compléter votre dossier et signer vos documents</b> en ligne.`,
+      ) +
+      emailButton("Compléter & signer mon dossier →", link) +
+      emailBox(
+        `🔒 Ce lien est <b>personnel et sécurisé</b>.<br>📎 Le <b>programme de la formation</b> est en pièce jointe.<br>À l'issue, vous recevrez une copie de vos documents signés.`,
+      ) +
+      emailSignoff("À très vite,", org.representant),
+  });
 
   // Le programme joint est BEST-EFFORT : une panne de génération PDF (ex. Chromium
   // serverless indisponible) ne doit JAMAIS faire échouer l'envoi du lien. Sans
@@ -72,7 +84,7 @@ ${org.representant} — ${org.name}`;
   const res = await sendEmail({
     to: insc.candidat.email,
     subject,
-    body,
+    html,
     attachments: progPdf
       ? [{ name: "Programme-formation.pdf", content: toBase64(progPdf.data) }]
       : undefined,
@@ -82,7 +94,7 @@ ${org.representant} — ${org.name}`;
       organismeId: insc.organismeId,
       destinataire: insc.candidat.email,
       sujet: subject,
-      corps: body,
+      corps: html,
       statut: res.sent ? EmailStatut.ENVOYE : EmailStatut.EN_ATTENTE,
       sentAt: res.sent ? new Date() : null,
       sessionId: insc.sessionId,
@@ -502,22 +514,30 @@ export async function signDocuments(
 
   // Génère le dossier signé en PDF (joint à l'e-mail) : docs signés + certificat
   const dossier = await buildInscriptionPdf(insc.id, { only: SIGNED_DOC_TYPES });
-  const subject = `Vos documents signés — ${insc.session.formation.titre}`;
-  const body = `Bonjour ${insc.candidat.prenom},
-
-Nous vous confirmons la signature de vos documents d'inscription le ${now.toLocaleString("fr-FR")}.
-
-Vous trouverez ci-joint, au format PDF, l'ensemble de vos documents signés (fiche d'inscription, contrat, convention, règlement intérieur) ainsi que votre certificat de signature électronique.
-
-Vous recevez par ailleurs votre convocation à la formation.
-
-Cordialement,
-${org.representant} — ${org.name}`;
+  const subject = `✅ Vos documents signés sont prêts — ${insc.session.formation.titre}`;
+  const html = emailShell({
+    organisme: org.name,
+    representant: org.representant,
+    accent: "green",
+    body:
+      emailHeading(`C'est signé, ${esc(insc.candidat.prenom)} 🖊️`) +
+      emailParagraph(
+        `Nous confirmons la <b>signature de vos documents d'inscription</b> le <b>${esc(now.toLocaleString("fr-FR"))}</b>. Tout est en ordre.`,
+      ) +
+      emailBox(
+        `📎 <b>En pièce jointe</b> (PDF)&nbsp;: fiche d'inscription, contrat, convention, règlement intérieur, ainsi que votre <b>certificat de signature électronique</b>.`,
+        "green",
+      ) +
+      emailParagraph(
+        `Vous recevez par ailleurs votre <b>convocation à la formation</b> dans un e-mail séparé.`,
+      ) +
+      emailSignoff("À bientôt,", org.representant),
+  });
 
   const res = await sendEmail({
     to: insc.candidat.email,
     subject,
-    body,
+    html,
     attachments: dossier
       ? [{ name: dossier.filename, content: toBase64(dossier.data) }]
       : undefined,
@@ -527,7 +547,7 @@ ${org.representant} — ${org.name}`;
       organismeId: insc.organismeId,
       destinataire: insc.candidat.email,
       sujet: subject,
-      corps: body,
+      corps: html,
       statut: res.sent ? EmailStatut.ENVOYE : EmailStatut.EN_ATTENTE,
       sentAt: res.sent ? new Date() : null,
       sessionId: insc.sessionId,
@@ -543,23 +563,30 @@ ${org.representant} — ${org.name}`;
   if (!insc.convocationSentAt) {
     const s = insc.session;
     const f = (d: Date) => d.toLocaleDateString("fr-FR");
-    const subjectConv = `Bienvenue & confirmation de votre inscription — ${s.formation.titre}`;
-    const bodyConv = `Bonjour ${insc.candidat.prenom},
-
-Bienvenue chez ${org.name} ! Nous avons le plaisir de vous confirmer votre inscription à la formation « ${s.formation.titre} », du ${f(s.dateDebut)} au ${f(s.dateFin)}${s.horaires ? ` (${s.horaires})` : ""}${s.lieu ? `, à ${s.lieu}` : ""}.
-
-Vous trouverez ci-joint votre convocation et le programme de la formation (PDF). Merci de vous présenter muni(e) d'une pièce d'identité.
-
-Toute l'équipe vous souhaite une excellente formation.
-
-Cordialement,
-${org.representant} — ${org.name}`;
+    const subjectConv = `🎉 Bienvenue chez ${org.name} — votre inscription est confirmée`;
+    const lignesConv = [`📅 <b>Dates</b> : du ${esc(f(s.dateDebut))} au ${esc(f(s.dateFin))}`];
+    if (s.horaires) lignesConv.push(`🕘 <b>Horaires</b> : ${esc(s.horaires)}`);
+    if (s.lieu) lignesConv.push(`📍 <b>Lieu</b> : ${esc(s.lieu)}`);
+    const htmlConv = emailShell({
+      organisme: org.name,
+      representant: org.representant,
+      body:
+        emailHeading(`Bienvenue, ${esc(insc.candidat.prenom)} 🎉`) +
+        emailParagraph(
+          `Nous avons le plaisir de confirmer votre inscription à <b>« ${esc(s.formation.titre)} »</b>. Voici votre récapitulatif&nbsp;:`,
+        ) +
+        emailBox(lignesConv.join("<br>")) +
+        emailParagraph(
+          `📎 Votre <b>convocation</b> et le <b>programme</b> sont en pièce jointe (PDF). Pensez à votre <b>pièce d'identité</b> le jour J.`,
+        ) +
+        emailSignoff("Excellente formation à vous,", org.representant),
+    });
     const convPdf = await buildSingleDocPdf(insc.id, "CONVOCATION");
     const progPdf = await buildSingleDocPdf(insc.id, "PROGRAMME");
     const resConv = await sendEmail({
       to: insc.candidat.email,
       subject: subjectConv,
-      body: bodyConv,
+      html: htmlConv,
       attachments: [
         ...(convPdf ? [{ name: "Convocation.pdf", content: toBase64(convPdf.data) }] : []),
         ...(progPdf ? [{ name: "Programme-formation.pdf", content: toBase64(progPdf.data) }] : []),
@@ -570,7 +597,7 @@ ${org.representant} — ${org.name}`;
         organismeId: insc.organismeId,
         destinataire: insc.candidat.email,
         sujet: subjectConv,
-        corps: bodyConv,
+        corps: htmlConv,
         statut: resConv.sent ? EmailStatut.ENVOYE : EmailStatut.EN_ATTENTE,
         sentAt: resConv.sent ? new Date() : null,
         sessionId: insc.sessionId,
@@ -678,34 +705,42 @@ async function provisionElearning(inscriptionId: string) {
   // E-mail de BIENVENUE — envoyé systématiquement (accès à l'espace candidat),
   // qu'il y ait des cours en ligne ou non.
   const loginUrl = `${appBaseUrl()}/login`;
-  const listeCours = cours.length
-    ? `\nVos cours en ligne :\n${cours.map((c) => `• ${c.titre}`).join("\n")}\n`
+  // Encadré identifiants : compte neuf (mot de passe provisoire) ou compte existant.
+  const credBox = motDePasse
+    ? emailBox(
+        `🔑 <b>Identifiant</b> : ${esc(email)}<br>🔒 <b>Mot de passe provisoire</b> : ${esc(motDePasse)}<br><span style="color:${MUTED}">À votre première connexion, vous choisirez votre propre mot de passe.</span>`,
+      )
+    : emailBox(
+        `🔑 Connectez-vous avec votre adresse e-mail (<b>${esc(email)}</b>) et votre <b>mot de passe habituel</b>.`,
+      );
+  // Liste des cours en ligne (uniquement s'il y en a).
+  const coursBox = cours.length
+    ? emailBox(
+        `📚 <b>Vos cours en ligne</b>&nbsp;:<br>${cours.map((c) => `• ${esc(c.titre)}`).join("<br>")}`,
+      )
     : "";
-  const ident = motDePasse
-    ? `Identifiant : ${email}\nMot de passe provisoire : ${motDePasse}\n(Il vous sera demandé de le modifier à votre première connexion.)`
-    : `Connectez-vous avec votre adresse e-mail (${email}) et votre mot de passe habituel.`;
-  const subject = `Bienvenue dans votre espace candidat — ${org.name}`;
-  const body = `Bonjour ${insc.candidat.prenom},
+  const subject = `🔑 Votre espace candidat est prêt — ${org.name}`;
+  const html = emailShell({
+    organisme: org.name,
+    representant: org.representant,
+    body:
+      emailHeading(`Votre espace est ouvert, ${esc(insc.candidat.prenom)} 🚀`) +
+      emailParagraph(
+        `Depuis votre <b>espace candidat</b>, vous pourrez suivre vos formations, consulter et signer vos documents, déposer vos justificatifs et échanger avec nous — tout au même endroit.`,
+      ) +
+      emailButton("Accéder à mon espace →", loginUrl) +
+      credBox +
+      coursBox +
+      emailSignoff("À bientôt,", org.representant),
+  });
 
-Bienvenue ! Votre espace candidat est prêt. Vous pourrez y suivre vos formations, consulter et signer vos documents, déposer vos pièces justificatives et échanger avec nous.
-
-Connectez-vous ici :
-${loginUrl}
-
-${ident}
-${listeCours}
-À votre première connexion, vous choisirez votre propre mot de passe.
-
-À bientôt,
-${org.representant} — ${org.name}`;
-
-  const res = await sendEmail({ to: email, subject, body });
+  const res = await sendEmail({ to: email, subject, html });
   await prisma.emailLog.create({
     data: {
       organismeId: insc.organismeId,
       destinataire: email,
       sujet: subject,
-      corps: body,
+      corps: html,
       statut: res.sent ? EmailStatut.ENVOYE : EmailStatut.EN_ATTENTE,
       sentAt: res.sent ? new Date() : null,
       sessionId: insc.sessionId,

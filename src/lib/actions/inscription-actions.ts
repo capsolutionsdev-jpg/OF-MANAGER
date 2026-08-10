@@ -17,6 +17,14 @@ import { startParcours } from "@/lib/actions/parcours-actions";
 import { genererDiplomeSsiap } from "@/lib/actions/titre-actions";
 import { ssiapDiplomeNiveau } from "@/lib/documents/titres";
 import { sendEmail } from "@/lib/email";
+import {
+  emailShell,
+  emailParagraph,
+  emailBox,
+  emailButton,
+  emailSignoff,
+  esc,
+} from "@/lib/email-templates";
 import { orgConfigFor } from "@/lib/org-identity";
 import { generateToken, appBaseUrl } from "@/lib/token";
 import { hasStrictFeature } from "@/lib/feature-guard";
@@ -245,19 +253,23 @@ export async function sendSatisfactionManual(
   }
 
   const link = `${appBaseUrl()}/satisfaction/${token}`;
-  const subject = `Votre avis sur la formation « ${insc.session.formation.titre} »`;
-  const body = `Bonjour ${insc.candidat.prenom} ${insc.candidat.nom},
+  const formationTitre = insc.session.formation.titre;
+  const subject = `💬 Votre avis sur « ${formationTitre} » — à compléter et signer`;
+  const html = emailShell({
+    organisme: org.name,
+    representant: org.representant,
+    body:
+      emailParagraph(`Bonjour ${esc(insc.candidat.prenom)} ${esc(insc.candidat.nom)},`) +
+      emailParagraph(
+        `Vous venez de suivre <b>« ${esc(formationTitre)} »</b>. ` +
+          `Merci de prendre quelques minutes pour <b>compléter et signer</b> ce court questionnaire de satisfaction&nbsp;:`,
+      ) +
+      emailButton("Compléter & signer →", link) +
+      emailBox(`Votre retour nous aide à <b>améliorer la qualité</b> de nos formations.`) +
+      emailSignoff("Merci,", org.representant),
+  });
 
-Vous venez de suivre la formation « ${insc.session.formation.titre} ».
-Merci de prendre quelques minutes pour compléter et signer ce court questionnaire de satisfaction :
-${link}
-
-Votre retour nous aide à améliorer la qualité de nos formations.
-
-Cordialement,
-${org.representant} — ${org.name}`;
-
-  const res = await sendEmail({ to: insc.candidat.email, subject, body });
+  const res = await sendEmail({ to: insc.candidat.email, subject, html });
 
   await db.inscription.update({
     where: { id: inscriptionId },
@@ -491,17 +503,30 @@ export async function relancerDossier(
   if (!email) return { ok: false, error: "Le candidat n'a pas d'e-mail." };
 
   const cfg = await orgConfigFor(insc.organismeId);
-  const liste = manquantes.map((p) => `• ${p}`).join("\n");
+  const formationTitre = insc.session.formation.titre;
+  const listePuces = manquantes.map((p) => `• ${esc(p)}`).join("<br>");
+  const html = emailShell({
+    organisme: cfg.name,
+    representant: cfg.representant,
+    accent: "amber",
+    body:
+      emailParagraph(`Bonjour ${esc(insc.candidat.prenom ?? "")},`) +
+      emailParagraph(
+        `Pour <b>finaliser votre dossier</b> d'inscription à ` +
+          `<b>« ${esc(formationTitre)} »</b>, il nous manque encore les pièces suivantes&nbsp;:`,
+      ) +
+      emailBox(listePuces, "amber") +
+      emailParagraph(
+        `Merci de nous les transmettre <b>dès que possible</b> pour valider votre place. ` +
+          `Un doute sur un document&nbsp;? Répondez simplement à cet e-mail.`,
+      ) +
+      emailSignoff("Merci d'avance,", cfg.representant),
+  });
   const { sent } = await sendEmail({
     to: email,
     organismeId: insc.organismeId,
-    subject: `Pièces manquantes — ${insc.session.formation.titre}`,
-    body:
-      `Bonjour ${insc.candidat.prenom ?? ""},\n\n` +
-      `Pour finaliser votre dossier d'inscription à « ${insc.session.formation.titre} », ` +
-      `il nous manque encore les pièces suivantes :\n\n${liste}\n\n` +
-      `Merci de nous les transmettre dès que possible.\n\n` +
-      `Cordialement,\n${cfg.name}`,
+    subject: `📄 Il manque quelques pièces à votre dossier — ${formationTitre}`,
+    html,
   });
 
   return { ok: true, sent, manquantes: manquantes.length };

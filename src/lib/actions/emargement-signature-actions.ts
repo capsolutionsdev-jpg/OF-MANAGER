@@ -10,6 +10,14 @@ import { generateToken, appBaseUrl } from "@/lib/token";
 import { joursSession, dayKey } from "@/lib/emargement";
 import { sendEmail } from "@/lib/email";
 import { orgConfigFor } from "@/lib/org-identity";
+import {
+  emailShell,
+  emailParagraph,
+  emailButton,
+  emailBox,
+  emailSignoff,
+  esc,
+} from "@/lib/email-templates";
 
 /**
  * Prépare les lignes de signature d'émargement (jour × demi-journée × personne)
@@ -132,18 +140,23 @@ export async function sendEmargementLink(
     month: "long",
   });
   const link = `${appBaseUrl()}/emarger/${e.token}`;
-  const subject = `Signature d'émargement (${demiLabel}) — ${e.session.formation.titre}`;
-  const body = `Bonjour ${e.nom},
+  const subject = `✍️ Signez votre présence du ${jour} (${demiLabel}) — ${e.session.formation.titre}`;
+  const html = emailShell({
+    organisme: org.name,
+    representant: org.representant,
+    body:
+      emailParagraph(`Bonjour ${esc(e.nom)},`) +
+      emailParagraph(
+        `Merci de <b>signer votre présence</b> du ${esc(jour)} (${esc(demiLabel)}) à la formation <b>« ${esc(e.session.formation.titre)} »</b>&nbsp;:`,
+      ) +
+      emailButton("Signer mon émargement →", link) +
+      emailBox(
+        `👆 Signature directe avec votre <b>doigt</b> (mobile) ou votre <b>souris</b> (ordinateur).`,
+      ) +
+      emailSignoff("Merci,", org.representant),
+  });
 
-Merci de signer votre présence du ${jour} (${demiLabel}) à la formation « ${e.session.formation.titre} » en cliquant sur ce lien :
-${link}
-
-Vous signerez directement avec votre doigt (sur mobile) ou votre souris (sur ordinateur).
-
-Cordialement,
-${org.representant} — ${org.name}`;
-
-  const res = await sendEmail({ to: e.email, subject, body });
+  const res = await sendEmail({ to: e.email, subject, html });
 
   await db.emargementSignature.update({
     where: { id: emargementId },
