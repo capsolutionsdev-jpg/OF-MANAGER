@@ -153,6 +153,8 @@ export function CivicStudentsManager({ students }: { students: CivicStudentRow[]
   }, [students]);
 
   const expiringSoon = useMemo(() => {
+    // Seuil glissant à 7 jours : lecture volontaire de l'heure courante.
+    // eslint-disable-next-line react-hooks/purity
     const limit = Date.now() + 7 * 24 * 60 * 60 * 1000;
     return students.filter(
       (s) => s.statut === "ACTIF" && !s.expired && s.accessUntil && new Date(s.accessUntil).getTime() < limit,
