@@ -7,6 +7,8 @@ import {
   getTitreDef,
 } from "@/lib/documents/titres";
 import { formationPrereq } from "@/lib/inscription/prerequis";
+import { hasStrictFeature } from "@/lib/feature-guard";
+import { t3pMetierOfFormation } from "@/lib/t3p";
 
 /**
  * Chargeur partagé des données de la page « Session » et de ses onglets
@@ -74,6 +76,10 @@ export const getSessionDetail = cache(async (id: string) => {
   // Prérequis & spécificités de la formation (SSIAP, CNAPS, carte pro…) pour l'inscription.
   const prereq = formationPrereq(s.formation);
 
+  // Onglet « Parcours T3P » : session Taxi/VTC ET fonctionnalité activée.
+  const t3pMetier = t3pMetierOfFormation(s.formation);
+  const t3pTab = t3pMetier !== null && (await hasStrictFeature("parcours-t3p"));
+
   // ── Garde-fou : ce qu'il reste à compléter pour la session ──
   const pa = s.formation.piecesAttendues;
   const gfDossier: string[] = [];
@@ -111,5 +117,7 @@ export const getSessionDetail = cache(async (id: string) => {
     vstate,
     canArchive,
     dejaArchivee,
+    t3pMetier,
+    t3pTab,
   };
 });

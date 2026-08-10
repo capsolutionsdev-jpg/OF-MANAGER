@@ -38,11 +38,16 @@
   saisie par étape, épreuves (une ligne par présentation), alertes. L'onglet
   apparaît pour les candidats Taxi/VTC (parcours ouvert, inscription ou
   formation souhaitée T3P).
-- **Menu « Parcours T3P »** (groupe Formation) : pilotage global — tous les
-  parcours, étape courante, alertes triées par gravité, filtres métier/statut.
+- **Session Taxi/VTC → onglet « Parcours T3P »** : c'est ICI que la procédure se
+  pilote au quotidien. L'onglet n'apparaît que pour les sessions dont la
+  formation est Taxi/VTC ; il liste les participants, chacun dépliable sur son
+  suivi complet (11 étapes + épreuves + alertes). Un participant sans parcours
+  dispose d'un bouton d'ouverture (métier fixé par la session).
 - **Ouverture automatique** : inscrire un candidat sur une session dont la
   formation contient « VTC » ou « Taxi » ouvre (ou rattache) son parcours.
-  Ouverture manuelle possible depuis l'onglet (dont passerelle « mobilité »).
+
+> Pas de rubrique dédiée dans la barre de navigation : le suivi vit dans la
+> session (pilotage) et, en miroir, sur la fiche du candidat (consultation).
 
 ## Modèle de données
 

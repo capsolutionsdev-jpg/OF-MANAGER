@@ -51,6 +51,7 @@ export default async function SessionDetailPage({
           nbFormateurs: s.formateurs.length,
         }}
         active="details"
+        showT3P={detail.t3pTab}
         validationBadge={
           vstate ? { percentage: vstate.percentage, ok: vstate.isValidated } : undefined
         }
