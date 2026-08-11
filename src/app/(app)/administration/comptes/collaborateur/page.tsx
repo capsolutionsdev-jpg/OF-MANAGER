@@ -21,7 +21,7 @@ export default async function CompteCollaborateurPage() {
   const collaborateurs = await db.user.findMany({
     where: { role: { in: ["ASSISTANT", "RESPONSABLE_FORMATION"] } },
     orderBy: { name: "asc" },
-    select: { id: true, name: true, email: true, role: true, isActive: true, permissions: true },
+    select: { id: true, name: true, email: true, role: true, fonction: true, isActive: true, permissions: true },
   });
 
   return (

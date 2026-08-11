@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { randomUUID } from "crypto";
 import bcrypt from "bcryptjs";
-import { Role } from "@prisma/client";
+import { niveauForPoste, labelForPoste } from "@/lib/postes";
 import { auth } from "@/auth";
 import { getTenantDb } from "@/lib/tenant";
 import { SECTION_KEYS } from "@/lib/permissions";
@@ -39,8 +39,8 @@ export async function createCollaborateur(
   const name = String(formData.get("name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
-  const roleRaw = String(formData.get("role") ?? "ASSISTANT");
-  const role = roleRaw === "RESPONSABLE_FORMATION" ? Role.RESPONSABLE_FORMATION : Role.ASSISTANT;
+  const poste = String(formData.get("poste") ?? "assistant-administratif");
+  const role = niveauForPoste(poste);
 
   if (!name) return { error: "Le nom est requis." };
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { error: "E-mail invalide." };
@@ -67,6 +67,7 @@ export async function createCollaborateur(
       email,
       passwordHash: await bcrypt.hash(password, 10),
       role,
+      fonction: labelForPoste(poste) || null,
       isActive: true,
       permissions: lirePermissions(formData),
     },
@@ -82,12 +83,13 @@ export async function updateCollaborateur(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (!id) return;
   const name = String(formData.get("name") ?? "").trim();
-  const roleRaw = String(formData.get("role") ?? "ASSISTANT");
+  const poste = String(formData.get("poste") ?? "assistant-administratif");
   await db.user.update({
     where: { id },
     data: {
       ...(name ? { name } : {}),
-      role: roleRaw === "RESPONSABLE_FORMATION" ? Role.RESPONSABLE_FORMATION : Role.ASSISTANT,
+      role: niveauForPoste(poste),
+      fonction: labelForPoste(poste) || null,
       permissions: lirePermissions(formData),
       // Rôle/permissions modifiés → on invalide la session active du compte
       // pour que les nouveaux droits prennent effet immédiatement (le token JWT

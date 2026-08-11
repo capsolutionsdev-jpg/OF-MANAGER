@@ -26,7 +26,7 @@ export default async function ModifierSessionPage({
     }),
     db.formateur.findMany({
       orderBy: { nom: "asc" },
-      select: { id: true, nom: true, prenom: true, academies: true },
+      select: { id: true, nom: true, prenom: true, academies: true, typeContrat: true },
     }),
     db.salle.findMany({
       where: { actif: true },

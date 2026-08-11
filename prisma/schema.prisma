@@ -400,6 +400,9 @@ model User {
   mustChangePassword Boolean @default(false)
   name         String
   role         Role     @default(ASSISTANT)
+  /// Intitulé de poste dans l'OF (secrétaire, comptable, référent handicap…),
+  /// purement descriptif : le niveau de permission réel reste porté par `role`.
+  fonction     String?
   isActive     Boolean  @default(true)
   // Tenant : organisme de rattachement. NULL pour le SUPERADMIN (éditeur).
   organismeId  String?
@@ -767,6 +770,11 @@ model Salle {
   @@index([organismeId])
 }
 
+enum FormateurType {
+  INTERNE // salarié de l'école — pas de contrat de sous-traitance
+  EXTERNE // intervenant externe — contrat + tarif journalier
+}
+
 model Formateur {
   id               String  @id @default(cuid())
   organismeId String? // tenant (multi-OF)
@@ -785,6 +793,8 @@ model Formateur {
   adresse          String?
   siret            String?
   tarifJournalier  Decimal? @db.Decimal(10, 2)
+  /// Interne (salarié, pas de contrat) ou externe (sous-traitant à contractualiser).
+  typeContrat      FormateurType @default(EXTERNE)
 
   sessions   Session[]   @relation("SessionFormateurs")
   seances    Seance[]

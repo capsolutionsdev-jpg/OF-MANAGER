@@ -52,6 +52,7 @@ function toData(v: FormateurFormValues) {
     siret: clean(v.siret),
     tarifJournalier: tarif !== null && !Number.isNaN(tarif) ? tarif : null,
     academies: v.academies ?? [],
+    typeContrat: v.typeContrat === "INTERNE" ? ("INTERNE" as const) : ("EXTERNE" as const),
   };
 }
 

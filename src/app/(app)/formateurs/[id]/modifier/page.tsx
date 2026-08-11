@@ -54,6 +54,7 @@ export default async function ModifierFormateurPage({
             tarifJournalier:
               f.tarifJournalier != null ? String(f.tarifJournalier) : "",
             academies: f.academies,
+            typeContrat: f.typeContrat,
             formationIds: f.formations.map((x) => x.id),
           }}
         />
