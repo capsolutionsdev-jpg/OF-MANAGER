@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { Plus, BookOpen } from "lucide-react";
 import { getTenantDb } from "@/lib/tenant";
+import { getCurrentOrganisme } from "@/lib/org";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { ImportCatalogueButton } from "@/components/formations/import-catalogue-button";
+import { ImportCatalogueOfficielButton } from "@/components/formations/import-catalogue-officiel-button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -25,13 +27,19 @@ export default async function FormationsPage() {
     include: { _count: { select: { sessions: true } } },
   });
 
+  // Le catalogue officiel (source capacademy.fr) est propre à CAP Compétences.
+  // Les autres écoles gardent l'import « catalogue sécurité » générique.
+  const org = await getCurrentOrganisme();
+  const capId = process.env.VITRINE_ORGANISME_ID;
+  const estCap = !capId || org?.id === capId;
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="Formations"
         subtitle={`Catalogue — ${formations.length} formation${formations.length > 1 ? "s" : ""} active${formations.length > 1 ? "s" : ""}`}
       >
-        <ImportCatalogueButton />
+        {estCap ? <ImportCatalogueOfficielButton /> : <ImportCatalogueButton />}
         <Button render={<Link href="/formations/nouvelle" />}>
           <Plus className="mr-2 h-4 w-4" />
           Nouvelle formation
