@@ -6,6 +6,7 @@ import type { T3PMetier } from "@prisma/client";
 import { auth } from "@/auth";
 import { getTenantDb } from "@/lib/tenant";
 import {
+  T3P_ETAPE_KEYS,
   T3P_FRAIS_EXAMEN,
   T3P_FRAIS_MOBILITE,
   T3P_MAX_TENTATIVES_PRATIQUE,
@@ -350,25 +351,13 @@ export async function majEpreuveT3P(epreuveId: string, patch: EpreuveT3PPatch): 
 //  Validation manuelle des étapes par les collaborateurs (Qualiopi)
 // ─────────────────────────────────────────────────────────────
 
-// Clés d'étapes autorisées (cf. lib/t3p → parcoursEtapes). Garde-fou : on ne
-// valide qu'une étape connue.
-const ETAPE_KEYS = new Set([
-  "prerequis",
-  "cma",
-  "frais",
-  "convoc-theorie",
-  "formation-theorie",
-  "resultat-theorie",
-  "convoc-pratique",
-  "formation-pratique",
-  "examen-pratique",
-  "resultat-pratique",
-  "carte-pro",
-]);
+/** Index d'une clé d'étape dans l'ordre canonique (-1 si inconnue). */
+const etapeIndex = (key: string) => (T3P_ETAPE_KEYS as readonly string[]).indexOf(key);
 
 /**
  * Pose (ou remplace) le visa d'un collaborateur sur une étape du parcours :
  * enregistre son nom, son id et l'horodatage (+ commentaire optionnel).
+ * Blocage séquentiel : l'étape précédente doit déjà être validée.
  * Traçabilité Qualiopi — indépendant du statut calculé de l'étape.
  */
 export async function validerEtapeT3P(
@@ -378,7 +367,8 @@ export async function validerEtapeT3P(
 ): Promise<ActionResult> {
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Non autorisé." };
-  if (!ETAPE_KEYS.has(etapeKey)) return { ok: false, error: "Étape inconnue." };
+  const idx = etapeIndex(etapeKey);
+  if (idx < 0) return { ok: false, error: "Étape inconnue." };
   const db = await getTenantDb();
 
   try {
@@ -393,6 +383,11 @@ export async function validerEtapeT3P(
       parcours.etapesValidation && typeof parcours.etapesValidation === "object"
         ? { ...(parcours.etapesValidation as Record<string, unknown>) }
         : {};
+
+    // Blocage séquentiel : l'étape précédente doit être validée.
+    if (idx > 0 && !visas[T3P_ETAPE_KEYS[idx - 1]]) {
+      return { ok: false, error: "Validez d'abord l'étape précédente." };
+    }
     const cleaned = comment?.trim();
     visas[etapeKey] = {
       nom,
@@ -425,11 +420,16 @@ export async function validerEtapeT3P(
   }
 }
 
-/** Retire le visa d'une étape (annulation de validation). */
+/**
+ * Retire le visa d'une étape (annulation de validation). Blocage séquentiel :
+ * on ne peut pas « trouer » la séquence, donc l'étape suivante ne doit pas être
+ * validée.
+ */
 export async function annulerValidationEtapeT3P(parcoursId: string, etapeKey: string): Promise<ActionResult> {
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Non autorisé." };
-  if (!ETAPE_KEYS.has(etapeKey)) return { ok: false, error: "Étape inconnue." };
+  const idx = etapeIndex(etapeKey);
+  if (idx < 0) return { ok: false, error: "Étape inconnue." };
   const db = await getTenantDb();
 
   try {
@@ -443,6 +443,11 @@ export async function annulerValidationEtapeT3P(parcoursId: string, etapeKey: st
       parcours.etapesValidation && typeof parcours.etapesValidation === "object"
         ? { ...(parcours.etapesValidation as Record<string, unknown>) }
         : {};
+
+    // Blocage séquentiel : interdit de « trouer » la séquence.
+    if (idx < T3P_ETAPE_KEYS.length - 1 && visas[T3P_ETAPE_KEYS[idx + 1]]) {
+      return { ok: false, error: "Annulez d'abord la validation de l'étape suivante." };
+    }
     delete visas[etapeKey];
 
     await db.parcoursT3P.update({

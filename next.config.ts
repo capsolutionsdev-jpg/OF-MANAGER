@@ -54,6 +54,7 @@ const PDF_ENTRYPOINTS = [
   "/api/cron/parcours",
   "/api/candidats", // expression-besoin
   "/api/inscriptions", // attestation-reussite
+  "/api/parcours-t3p", // fiche de suivi du parcours T3P
   // Routes PDF publiques (liens tokenisés)
   "/parcours",
   "/compte-rendu",

@@ -396,6 +396,50 @@ export function etapesValidees(etapes: T3PEtape[]): { validees: number; total: n
   return { validees: etapes.filter((e) => e.validation).length, total: etapes.length };
 }
 
+/**
+ * Ordre canonique des 11 étapes (clés). Fait foi pour le blocage séquentiel :
+ * une étape ne peut être validée que si la précédente l'est déjà.
+ * DOIT rester aligné sur l'ordre de `parcoursEtapes`.
+ */
+export const T3P_ETAPE_KEYS = [
+  "prerequis",
+  "cma",
+  "frais",
+  "convoc-theorie",
+  "formation-theorie",
+  "resultat-theorie",
+  "convoc-pratique",
+  "formation-pratique",
+  "examen-pratique",
+  "resultat-pratique",
+  "carte-pro",
+] as const;
+
+export type T3PEtapeKey = (typeof T3P_ETAPE_KEYS)[number];
+
+/** Une clé d'étape est-elle connue ? */
+export function estEtapeConnue(key: string): key is T3PEtapeKey {
+  return (T3P_ETAPE_KEYS as readonly string[]).includes(key);
+}
+
+/**
+ * Peut-on valider l'étape d'index `idx` ? (Blocage séquentiel : la précédente
+ * doit être validée.) La 1ʳᵉ étape est toujours validable.
+ */
+export function peutValiderEtape(etapes: T3PEtape[], idx: number): boolean {
+  if (idx <= 0) return true;
+  return !!etapes[idx - 1]?.validation;
+}
+
+/**
+ * Peut-on annuler la validation de l'étape d'index `idx` ? (On ne « troue » pas
+ * la séquence : interdit si l'étape suivante est validée.)
+ */
+export function peutAnnulerEtape(etapes: T3PEtape[], idx: number): boolean {
+  const suivante = etapes[idx + 1];
+  return !suivante || !suivante.validation;
+}
+
 /** Étape courante = première étape non « faite » (ou la 11ᵉ si tout est fait). */
 export function etapeCourante(etapes: T3PEtape[]): T3PEtape {
   return etapes.find((e) => e.statut !== "fait") ?? etapes[etapes.length - 1];
