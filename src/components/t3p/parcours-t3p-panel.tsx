@@ -3,11 +3,13 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import Link from "next/link";
 import {
   AlertTriangle,
   CarTaxiFront,
   Check,
   CircleDashed,
+  FileDown,
   Info,
   Plus,
   ShieldCheck,
@@ -25,6 +27,8 @@ import {
   etapeCourante,
   etapesValidees,
   parcoursEtapes,
+  peutAnnulerEtape,
+  peutValiderEtape,
   progression,
   tentativesPratiqueConsommees,
   theorieAdmise,
@@ -287,8 +291,20 @@ export function ParcoursT3PPanel({ parcours }: { parcours: ParcoursDto }) {
               {parcours.mobilite && <Badge variant="secondary">Passerelle (mobilité)</Badge>}
               <Badge className={statutBadge}>{T3P_STATUT_LABELS[parcours.statut]}</Badge>
             </CardTitle>
-            <div className="text-sm text-muted-foreground">
-              Étape courante : <span className="font-medium text-foreground">{courante.num}. {courante.label}</span>
+            <div className="flex items-center gap-3">
+              <div className="text-sm text-muted-foreground">
+                Étape courante : <span className="font-medium text-foreground">{courante.num}. {courante.label}</span>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1"
+                render={
+                  <Link href={`/api/parcours-t3p/${parcours.id}`} target="_blank" rel="noopener noreferrer" />
+                }
+              >
+                <FileDown className="h-4 w-4" /> Fiche PDF
+              </Button>
             </div>
           </div>
         </CardHeader>
@@ -320,7 +336,7 @@ export function ParcoursT3PPanel({ parcours }: { parcours: ParcoursDto }) {
 
           {/* ── Chronologie des 11 étapes (+ visa collaborateur) ── */}
           <ol className="mt-2 space-y-1.5">
-            {etapes.map((e) => (
+            {etapes.map((e, idx) => (
               <li
                 key={e.key}
                 className={`flex items-start gap-3 rounded-lg px-2 py-1.5 hover:bg-muted/50 ${
@@ -362,16 +378,21 @@ export function ParcoursT3PPanel({ parcours }: { parcours: ParcoursDto }) {
                   )}
                   {e.alerte && <div className="mt-1"><AlerteBanner alerte={e.alerte} /></div>}
                 </div>
-                {/* Action de validation manuelle par le collaborateur */}
+                {/* Action de validation manuelle par le collaborateur
+                    (blocage séquentiel : la précédente doit être validée). */}
                 <div className="shrink-0 self-center">
                   {e.validation ? (
                     <Button
                       size="sm"
                       variant="ghost"
                       className="h-7 gap-1 text-xs text-muted-foreground"
-                      disabled={isPending}
+                      disabled={isPending || !peutAnnulerEtape(etapes, idx)}
                       onClick={() => annulerEtape(e)}
-                      title="Annuler la validation"
+                      title={
+                        peutAnnulerEtape(etapes, idx)
+                          ? "Annuler la validation"
+                          : "Annulez d'abord la validation de l'étape suivante"
+                      }
                     >
                       <X className="h-3.5 w-3.5" /> Annuler
                     </Button>
@@ -380,8 +401,13 @@ export function ParcoursT3PPanel({ parcours }: { parcours: ParcoursDto }) {
                       size="sm"
                       variant="outline"
                       className="h-7 gap-1 text-xs"
-                      disabled={isPending}
+                      disabled={isPending || !peutValiderEtape(etapes, idx)}
                       onClick={() => validerEtape(e)}
+                      title={
+                        peutValiderEtape(etapes, idx)
+                          ? undefined
+                          : "Validez d'abord l'étape précédente"
+                      }
                     >
                       <ShieldCheck className="h-3.5 w-3.5" /> Valider
                     </Button>

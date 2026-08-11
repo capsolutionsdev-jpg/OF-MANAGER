@@ -59,6 +59,21 @@ Le visa est **indépendant du statut calculé** (dates) : c'est un contrôle
 explicite d'un agent, pas une déduction automatique. Journalisé dans `AuditLog`
 (`VALIDATE_ETAPE` / `UNVALIDATE_ETAPE`).
 
+**Blocage séquentiel** : une étape ne peut être validée que si la précédente
+l'est déjà (les boutons sont désactivés sinon, avec tooltip) ; symétriquement,
+on ne peut annuler une étape que si la suivante n'est pas validée (pas de
+« trou » dans la séquence). Garde appliquée aussi côté serveur (source de
+vérité : `T3P_ETAPE_KEYS` dans `lib/t3p`).
+
+### Export PDF (pièce de dossier Qualiopi)
+
+Bouton **« Fiche PDF »** en tête du parcours → `GET /api/parcours-t3p/[id]`
+(route Chromium, `runtime nodejs`) : récapitulatif horodaté — identité du
+candidat, statut, les 11 étapes avec statut/date **et le visa nominatif** de
+chaque contrôle, plus les présentations aux épreuves CMA. Le préfixe
+`/api/parcours-t3p` doit figurer dans `PDF_ENTRYPOINTS` (next.config.ts) pour
+embarquer le binaire Chromium en serverless.
+
 ## Modèle de données
 
 - `ParcoursT3P` (1 par candidat et par métier) : champs d'étapes datés,
