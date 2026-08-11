@@ -24,6 +24,7 @@ import {
   emailButton,
   emailSignoff,
   esc,
+  emailLogoSrc,
 } from "@/lib/email-templates";
 import { orgConfigFor } from "@/lib/org-identity";
 import { generateToken, appBaseUrl } from "@/lib/token";
@@ -258,6 +259,7 @@ export async function sendSatisfactionManual(
   const html = emailShell({
     organisme: org.name,
     representant: org.representant,
+      logoUrl: emailLogoSrc(org.id, org.logoUrl),
     body:
       emailParagraph(`Bonjour ${esc(insc.candidat.prenom)} ${esc(insc.candidat.nom)},`) +
       emailParagraph(
@@ -508,6 +510,7 @@ export async function relancerDossier(
   const html = emailShell({
     organisme: cfg.name,
     representant: cfg.representant,
+      logoUrl: emailLogoSrc(cfg.id, cfg.logoUrl),
     accent: "amber",
     body:
       emailParagraph(`Bonjour ${esc(insc.candidat.prenom ?? "")},`) +

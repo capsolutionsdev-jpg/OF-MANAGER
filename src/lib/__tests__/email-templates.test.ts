@@ -7,6 +7,7 @@ import {
   emailHeading,
   emailParagraph,
   emailSignoff,
+  emailLogoSrc,
 } from "@/lib/email-templates";
 
 describe("esc()", () => {
@@ -41,6 +42,38 @@ describe("emailShell()", () => {
   });
   it("applique la couleur d'accent (green) sur la pastille d'en-tête", () => {
     expect(html).toContain("#12B886");
+  });
+  it("l'en-tête pointe vers l'espace candidat (connexion) et non « Espace formation »", () => {
+    expect(html).toContain("Espace candidat");
+    expect(html).not.toContain("Espace formation");
+    expect(html).toContain("/login");
+  });
+  it("sans logoUrl, affiche la pastille 🎓 (pas d'<img>)", () => {
+    expect(html).toContain("🎓");
+    expect(html).not.toContain("<img");
+  });
+  it("avec logoUrl, affiche le logo en <img> (et pas la pastille)", () => {
+    const withLogo = emailShell({
+      organisme: "AGUYSE",
+      representant: "M. D.",
+      logoUrl: "https://app.capacademy.fr/api/public/organisme/org1/logo",
+      body: emailParagraph("x"),
+    });
+    expect(withLogo).toContain('<img src="https://app.capacademy.fr/api/public/organisme/org1/logo"');
+    expect(withLogo).not.toContain("🎓");
+  });
+});
+
+describe("emailLogoSrc()", () => {
+  it("renvoie l'URL de l'endpoint quand l'organisme a un logo", () => {
+    expect(emailLogoSrc("org1", "data:image/png;base64,AAA")).toMatch(
+      /\/api\/public\/organisme\/org1\/logo$/,
+    );
+  });
+  it("renvoie null si pas de logo ou pas d'id", () => {
+    expect(emailLogoSrc("org1", null)).toBeNull();
+    expect(emailLogoSrc(null, "data:image/png;base64,AAA")).toBeNull();
+    expect(emailLogoSrc(undefined, undefined)).toBeNull();
   });
 });
 

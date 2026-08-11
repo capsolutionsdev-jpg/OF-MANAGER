@@ -17,6 +17,7 @@ import {
   emailBox,
   emailSignoff,
   esc,
+  emailLogoSrc,
 } from "@/lib/email-templates";
 
 /**
@@ -144,6 +145,7 @@ export async function sendEmargementLink(
   const html = emailShell({
     organisme: org.name,
     representant: org.representant,
+      logoUrl: emailLogoSrc(org.id, org.logoUrl),
     body:
       emailParagraph(`Bonjour ${esc(e.nom)},`) +
       emailParagraph(

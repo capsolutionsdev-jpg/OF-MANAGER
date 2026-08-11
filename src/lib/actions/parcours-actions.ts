@@ -30,6 +30,7 @@ import {
   emailSignoff,
   esc,
   MUTED,
+  emailLogoSrc,
 } from "@/lib/email-templates";
 
 /**
@@ -60,6 +61,7 @@ export async function startParcours(
   const html = emailShell({
     organisme: org.name,
     representant: org.representant,
+      logoUrl: emailLogoSrc(org.id, org.logoUrl),
     body:
       emailHeading(`Votre inscription est bien reçue, ${esc(insc.candidat.prenom)} ✅`) +
       emailParagraph(
@@ -518,6 +520,7 @@ export async function signDocuments(
   const html = emailShell({
     organisme: org.name,
     representant: org.representant,
+      logoUrl: emailLogoSrc(org.id, org.logoUrl),
     accent: "green",
     body:
       emailHeading(`C'est signé, ${esc(insc.candidat.prenom)} 🖊️`) +
@@ -570,6 +573,7 @@ export async function signDocuments(
     const htmlConv = emailShell({
       organisme: org.name,
       representant: org.representant,
+      logoUrl: emailLogoSrc(org.id, org.logoUrl),
       body:
         emailHeading(`Bienvenue, ${esc(insc.candidat.prenom)} 🎉`) +
         emailParagraph(
@@ -723,6 +727,7 @@ async function provisionElearning(inscriptionId: string) {
   const html = emailShell({
     organisme: org.name,
     representant: org.representant,
+      logoUrl: emailLogoSrc(org.id, org.logoUrl),
     body:
       emailHeading(`Votre espace est ouvert, ${esc(insc.candidat.prenom)} 🚀`) +
       emailParagraph(

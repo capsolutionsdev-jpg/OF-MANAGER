@@ -17,6 +17,7 @@ import {
   emailBox,
   emailSignoff,
   esc,
+  emailLogoSrc,
 } from "@/lib/email-templates";
 
 export type ProspectFormValues = {
@@ -71,6 +72,7 @@ export async function sendProspectIntakeLink(
   const html = emailShell({
     organisme: org.name,
     representant: org.representant,
+      logoUrl: emailLogoSrc(org.id, org.logoUrl),
     body:
       emailParagraph(`Bonjour ${esc(c.prenom)} ${esc(c.nom)},`) +
       emailParagraph(

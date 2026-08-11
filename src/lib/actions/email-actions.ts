@@ -15,6 +15,7 @@ import {
   emailBox,
   emailSignoff,
   esc,
+  emailLogoSrc,
 } from "@/lib/email-templates";
 import { orgConfigFor } from "@/lib/org-identity";
 
@@ -51,6 +52,7 @@ export async function sendConvocationsForSession(
     const html = emailShell({
       organisme: org.name,
       representant: org.representant,
+      logoUrl: emailLogoSrc(org.id, org.logoUrl),
       body:
         emailParagraph(`Bonjour ${esc(insc.candidat.prenom)},`) +
         emailParagraph(
@@ -103,6 +105,7 @@ export async function sendConvocations(formData: FormData) {
     const html = emailShell({
       organisme: org.name,
       representant: org.representant,
+      logoUrl: emailLogoSrc(org.id, org.logoUrl),
       body:
         emailParagraph(`Bonjour ${esc(insc.candidat.prenom)},`) +
         emailParagraph(

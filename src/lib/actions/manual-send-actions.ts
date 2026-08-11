@@ -16,6 +16,7 @@ import {
   emailSignoff,
   esc,
   PRIMARY,
+  emailLogoSrc,
 } from "@/lib/email-templates";
 
 const STAFF = ["SUPERADMIN", "ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"];
@@ -92,6 +93,7 @@ export async function sendAutomationEventNow(inscriptionId: string, event: Manua
     const html = emailShell({
       organisme: org.name,
       representant: org.representant,
+      logoUrl: emailLogoSrc(org.id, org.logoUrl),
       body:
         emailParagraph(`Bonjour ${esc(prenom)},`) +
         emailParagraph(`Vous êtes convoqué(e) à la formation <b>« ${esc(f.titre)} »</b>&nbsp;:`) +
@@ -109,6 +111,7 @@ export async function sendAutomationEventNow(inscriptionId: string, event: Manua
     const html = emailShell({
       organisme: org.name,
       representant: org.representant,
+      logoUrl: emailLogoSrc(org.id, org.logoUrl),
       body:
         emailParagraph(`Bonjour ${esc(prenom)},`) +
         emailParagraph(`Nous confirmons votre <b>entrée en formation « ${esc(f.titre)} »</b> le <b>${esc(fmt(s.dateDebut))}</b>.`) +
@@ -134,6 +137,7 @@ export async function sendAutomationEventNow(inscriptionId: string, event: Manua
     const html = emailShell({
       organisme: org.name,
       representant: org.representant,
+      logoUrl: emailLogoSrc(org.id, org.logoUrl),
       accent: "green",
       body:
         emailParagraph(`Bonjour ${esc(prenom)},`) +
@@ -157,6 +161,7 @@ export async function sendAutomationEventNow(inscriptionId: string, event: Manua
     const html = emailShell({
       organisme: org.name,
       representant: org.representant,
+      logoUrl: emailLogoSrc(org.id, org.logoUrl),
       body:
         emailParagraph(`Bonjour ${esc(prenom)},`) +
         emailParagraph(`Avant de démarrer <b>« ${esc(f.titre)} »</b>, merci de répondre à ce <b>court test de positionnement</b> (5 minutes)&nbsp;:`) +
@@ -176,6 +181,7 @@ export async function sendAutomationEventNow(inscriptionId: string, event: Manua
   const html = emailShell({
     organisme: org.name,
     representant: org.representant,
+      logoUrl: emailLogoSrc(org.id, org.logoUrl),
     body:
       emailParagraph(`Bonjour ${esc(prenom)},`) +
       emailParagraph(`Vous avez suivi <b>« ${esc(f.titre)} »</b>. Votre retour est <b>précieux</b> — merci de compléter ce court questionnaire de satisfaction&nbsp;:`) +
