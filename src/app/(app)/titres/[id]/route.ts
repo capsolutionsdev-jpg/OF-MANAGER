@@ -92,7 +92,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       nda: org.nda,
       agrement: agrementPourTypeCode(titre.typeCode, readAgrements(org.documentsConfig)),
     },
-    { logoUri, signatureUri: org.signatureUrl, verifUrl: "capacademy.fr/verification", qrDataUri },
+    { logoUri, signatureUri: org.signatureUrl, cachetUri: org.cachetUrl, verifUrl: "capacademy.fr/verification", qrDataUri },
   );
 
   const pdf = await htmlToPdf(html, { landscape: true });

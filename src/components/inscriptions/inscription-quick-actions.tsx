@@ -13,11 +13,11 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DOCUMENT_MENU } from "@/lib/documents/templates";
-import { filterDocMenu, type FormationLike } from "@/lib/documents/families";
+import { filterDocMenu, isRecyclageOuRemiseANiveau, type FormationLike } from "@/lib/documents/families";
 import { attestationCodeForFormation } from "@/lib/documents/titres";
 import { MANUAL_EVENTS, type ManualEvent } from "@/lib/manual-events";
 import { sendDocumentsToCandidate } from "@/lib/actions/document-actions";
-import { sendAutomationEventNow } from "@/lib/actions/manual-send-actions";
+import { sendAutomationEventNow, sendAttestationRecyclage } from "@/lib/actions/manual-send-actions";
 import { DocsSignesChecklist } from "@/components/inscriptions/docs-signes-checklist";
 import { SsiapDiplomeInline } from "@/components/inscriptions/ssiap-diplome-inline";
 
@@ -47,6 +47,10 @@ export function InscriptionQuickActions({
   const attCode = formation ? attestationCodeForFormation(formation) : null;
   const showSsiap =
     !!candidatId && !!attCode && (attCode.endsWith("_RECYCLAGE") || attCode.endsWith("_RAN"));
+  // Recyclage / remise à niveau (SSIAP, MAC…) → action manuelle d'envoi de
+  // l'attestation de recyclage (ces formations n'ont pas d'attestation de
+  // réussite — cf. #13).
+  const isRecyc = formation ? isRecyclageOuRemiseANiveau(formation) : false;
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
@@ -166,6 +170,19 @@ export function InscriptionQuickActions({
                 </button>
               ))}
             </div>
+            {isRecyc && (
+              <button
+                type="button"
+                disabled={isPending}
+                onClick={() => run("att_recyc", sendAttestationRecyclage(inscriptionId), "Attestation de recyclage — envoyée.")}
+                className="mt-1.5 flex w-full items-center justify-between rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-left text-sm font-medium text-emerald-800 transition-colors hover:bg-emerald-100 disabled:opacity-50 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300"
+              >
+                <span className="flex items-center gap-2">
+                  <Award className="h-4 w-4" /> Envoyer l&apos;attestation de recyclage
+                </span>
+                {busy === "att_recyc" ? <Loader2 className="h-4 w-4 animate-spin" /> : <ChevronRight className="h-4 w-4 opacity-50" />}
+              </button>
+            )}
           </section>
 
           {/* ── Validation : documents signés sur place, un par un ── */}

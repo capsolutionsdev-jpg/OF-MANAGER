@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { buildInscriptionPdf, SIGNED_DOC_TYPES } from "@/lib/documents/build-pdf";
+import { buildInscriptionPdf } from "@/lib/documents/build-pdf";
 import { linkExpired } from "@/lib/token";
 
 export const runtime = "nodejs";
@@ -25,13 +25,14 @@ export async function GET(
   const preview = new URL(req.url).searchParams.get("preview") === "1";
 
   try {
-    // Aperçu avant signature : uniquement les documents à signer, sans certificat.
+    // Aperçu/téléchargement : uniquement les documents à signer APPLICABLES au
+    // profil (particulier → contrat ; professionnel → convention), cf. #10.
     const pdf = preview
       ? await buildInscriptionPdf(insc.id, {
-          only: SIGNED_DOC_TYPES,
+          signedOnly: true,
           includeCertificat: false,
         })
-      : await buildInscriptionPdf(insc.id, { only: SIGNED_DOC_TYPES });
+      : await buildInscriptionPdf(insc.id, { signedOnly: true });
 
     if (!pdf) return new Response("Documents introuvables", { status: 404 });
 

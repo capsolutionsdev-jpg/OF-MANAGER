@@ -12,14 +12,7 @@ import {
   signatureMentionHtml,
 } from "@/lib/documents/signature-proof";
 import { buildCertificatPdf } from "@/lib/documents/certificat-signature";
-
-// Documents soumis à la signature du stagiaire (pour le certificat de preuve)
-const SIGNED_DOC_LABELS = [
-  "Fiche d'inscription",
-  "Contrat de formation",
-  "Convention de formation",
-  "Règlement intérieur",
-];
+import { SIGNED_DOC_TYPES } from "@/lib/documents/build-pdf";
 
 const DOC_STYLE = `<style>
   h1 { font-size: 18pt; text-align: center; margin-bottom: 16pt; }
@@ -126,7 +119,11 @@ export async function buildInscriptionDocsZip(
       candidatNom: signed.nom,
       candidatEmail: inscription.candidat.email,
       formation: inscription.session.formation.titre,
-      documents: SIGNED_DOC_LABELS,
+      // Liste réelle des documents signés inclus (contrat XOR convention selon le
+      // profil) — cohérent avec le PDF fusionné, cf. #10.
+      documents: entries
+        .filter(([type]) => SIGNED_DOC_TYPES.includes(type))
+        .map(([, doc]) => doc.label),
       signataire: signed.nom,
       signedAt: signed.at,
       ip: signed.ip,

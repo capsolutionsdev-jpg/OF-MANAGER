@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { checkLimit, clientIp } from "@/lib/rate-limit";
 import { verifyDob, genSel, hashDob } from "@/lib/anti-fraude/hash";
 import { getTitreDef, checkLuhn } from "@/lib/documents/titres";
+import { organismeScope } from "@/lib/public-scope";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -109,7 +110,11 @@ export async function POST(req: Request) {
     return json(GENERIC);
   }
 
-  const organismeId = process.env.VITRINE_ORGANISME_ID || undefined;
+  // Portée multi-tenant : on privilégie le paramètre `?organisme=` envoyé par la
+  // vitrine (comme toutes les autres API publiques), avec repli sur l'env. La
+  // lecture en dur de l'env était la SEULE route publique à ne pas le faire → si
+  // l'env était erroné/périmé, aucune attestation ne correspondait (bug #12).
+  const organismeId = organismeScope(req);
   const rec = await prisma.titreDelivre.findFirst({
     where: { numeroVerification: numero, ...(organismeId ? { organismeId } : {}) },
   });

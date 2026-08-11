@@ -19,7 +19,6 @@ import { generateToken, appBaseUrl } from "@/lib/token";
 import {
   buildInscriptionPdf,
   buildSingleDocPdf,
-  SIGNED_DOC_TYPES,
 } from "@/lib/documents/build-pdf";
 import {
   emailShell,
@@ -512,8 +511,10 @@ export async function signDocuments(
     },
   });
 
-  // Génère le dossier signé en PDF (joint à l'e-mail) : docs signés + certificat
-  const dossier = await buildInscriptionPdf(insc.id, { only: SIGNED_DOC_TYPES });
+  // Génère le dossier signé en PDF (joint à l'e-mail) : docs signés APPLICABLES
+  // au profil + certificat. `signedOnly` applique la règle particulier→contrat /
+  // professionnel→convention (cf. #10) — on n'envoie plus les deux en vrac.
+  const dossier = await buildInscriptionPdf(insc.id, { signedOnly: true });
   const subject = `✅ Vos documents signés sont prêts — ${insc.session.formation.titre}`;
   const html = emailShell({
     organisme: org.name,
@@ -525,7 +526,7 @@ export async function signDocuments(
         `Nous confirmons la <b>signature de vos documents d'inscription</b> le <b>${esc(now.toLocaleString("fr-FR"))}</b>. Tout est en ordre.`,
       ) +
       emailBox(
-        `📎 <b>En pièce jointe</b> (PDF)&nbsp;: fiche d'inscription, contrat, convention, règlement intérieur, ainsi que votre <b>certificat de signature électronique</b>.`,
+        `📎 <b>En pièce jointe</b> (PDF)&nbsp;: vos documents d'inscription signés, ainsi que votre <b>certificat de signature électronique</b>.`,
         "green",
       ) +
       emailParagraph(

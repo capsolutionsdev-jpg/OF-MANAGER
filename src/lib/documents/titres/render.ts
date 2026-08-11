@@ -25,6 +25,9 @@ export type TitreAssets = {
   logoUri: string;
   /** Signature/cachet en data-URI, superposé sur la ligne de signature. */
   signatureUri?: string | null;
+  /** Cachet / tampon officiel de l'organisme (data-URI ou URL), apposé près de
+   *  la signature. Résolu par l'appelant depuis org.cachetUrl. */
+  cachetUri?: string | null;
   /** URL publique de la page de vérification (attestations). */
   verifUrl?: string;
   /** QR code réel (data-URI) encodant l'URL de vérification. À défaut : aperçu. */
@@ -134,6 +137,7 @@ html,body{background:#fff}
 .sig .role{font-family:"Cormorant Garamond",serif;font-weight:700;font-size:12pt;color:var(--navy);}
 .sig .line{height:12mm;border-bottom:0.7px solid #b9b6ad;margin:1mm 3mm 1.5mm;position:relative;}
 .sig .sigimg{position:absolute;bottom:0;left:50%;transform:translateX(-50%);max-height:15mm;max-width:46mm;opacity:.95;}
+.sig .cachet{position:absolute;bottom:-4mm;right:-4mm;max-height:24mm;max-width:34mm;opacity:.88;transform:rotate(-7deg);pointer-events:none;}
 .sig .who{font-size:10pt;color:#3a3f4d;}.sig .who b{color:var(--navy);font-weight:600;}
 .seal{width:29mm;height:29mm;}
 .foot.att{display:flex;align-items:flex-end;justify-content:space-between;gap:10mm;}
@@ -162,6 +166,11 @@ export function renderTitreHtml(
   const sigImg = assets.signatureUri
     ? `<img class="sigimg" src="${assets.signatureUri}" alt="signature" />`
     : "";
+  // Cachet/tampon officiel apposé près de la signature (vide tant que le tenant
+  // ne l'a pas chargé dans org.cachetUrl — marque blanche multi-tenant).
+  const cachetImg = assets.cachetUri
+    ? `<img class="cachet" src="${assets.cachetUri}" alt="cachet de l'organisme" />`
+    : "";
   const corners = ["tl", "tr", "bl", "br"].map((k) => `<div class="corner ${k}">${CORNER}</div>`).join("");
   const photo = def.photo
     ? `<div class="photo"><span class="cap">Photo</span><span class="cap">d'identité</span></div>`
@@ -182,7 +191,7 @@ export function renderTitreHtml(
       ? `${esc(data.president.nom)}${data.president.grade ? ` — ${esc(data.president.grade)}` : ""}`
       : `<b>NOM</b> — Grade`;
     foot = `<div class="foot"><div class="divider"></div><div class="place">${place}</div><div class="signs">
-      <div class="sig"><div class="role">${esc(def.sigRole)}</div><div class="line">${sigImg}</div><div class="who">${esc(
+      <div class="sig"><div class="role">${esc(def.sigRole)}</div><div class="line">${sigImg}${cachetImg}</div><div class="who">${esc(
         org.representant,
       )}</div></div>
       <div class="seal">${sceau}</div>
@@ -199,7 +208,7 @@ export function renderTitreHtml(
       )}</span>, puis saisissez le n° ci-dessus <b>et la date de naissance</b> du titulaire.<br><span style="color:#8a8578">Aucune liste de titulaires n'est consultable.</span></div></div>
       <div class="sigwrap"><div class="seal">${sceau}</div><div><div class="place">${place}</div><div class="sig"><div class="role">${esc(
         def.sigRole,
-      )}</div><div class="line">${sigImg}</div><div class="who">${esc(org.representant)}</div></div></div></div>
+      )}</div><div class="line">${sigImg}${cachetImg}</div><div class="who">${esc(org.representant)}</div></div></div></div>
     </div>`;
   }
 

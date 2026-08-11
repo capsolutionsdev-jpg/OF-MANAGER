@@ -19,13 +19,6 @@ import { buildCertificatPdf } from "@/lib/documents/certificat-signature";
 import { htmlToPdf, htmlToPdfMany } from "@/lib/pdf";
 import { docContextFromInscription, isDocApplicable } from "@/lib/documents/families";
 
-const SIGNED_DOC_LABELS = [
-  "Fiche d'inscription",
-  "Contrat de formation",
-  "Convention de formation",
-  "Règlement intérieur",
-];
-
 // Types de documents à signer par le candidat
 export const SIGNED_DOC_TYPES = [
   "FICHE_INSCRIPTION",
@@ -89,7 +82,7 @@ function safeName(s: string) {
  */
 export async function buildInscriptionPdf(
   inscriptionId: string,
-  opts?: { only?: string[]; includeCertificat?: boolean },
+  opts?: { only?: string[]; includeCertificat?: boolean; signedOnly?: boolean },
 ): Promise<PdfResult> {
   const inscription = await prisma.inscription.findUnique({
     where: { id: inscriptionId },
@@ -139,12 +132,20 @@ export async function buildInscriptionPdf(
       .split("/cap-competences-logo.png").join(logo64)
       .split("/signature-cap-competences.png").join(stamp64);
 
-  // Sélection des documents : soit une liste explicite (opts.only), soit
-  // l'ensemble APPLICABLE à cette inscription (particulier/entreprise, examen,
-  // financement…). On ne génère plus tout le catalogue en vrac.
+  // Sélection des documents :
+  //  - signedOnly : le sous-ensemble « documents à signer » (fiche, règlement,
+  //    et contrat XOR convention selon le profil) RESTREINT à ce qui est
+  //    APPLICABLE — c'est ici que se joue la règle particulier→contrat /
+  //    professionnel→convention (cf. #10) ;
+  //  - only : une liste explicite (génération d'UN document précis, staff) ;
+  //  - sinon : l'ensemble APPLICABLE à cette inscription.
   const ctx = docContextFromInscription(inscription);
   const entries = Object.entries(DOCUMENTS).filter(([type]) =>
-    opts?.only ? opts.only.includes(type) : isDocApplicable(type, ctx),
+    opts?.signedOnly
+      ? SIGNED_DOC_TYPES.includes(type) && isDocApplicable(type, ctx)
+      : opts?.only
+        ? opts.only.includes(type)
+        : isDocApplicable(type, ctx),
   );
 
   const htmls = entries.map(([, doc]) => {
@@ -167,7 +168,12 @@ export async function buildInscriptionPdf(
       candidatNom: signed.nom,
       candidatEmail: inscription.candidat.email,
       formation: inscription.session.formation.titre,
-      documents: SIGNED_DOC_LABELS,
+      // Liste RÉELLE des documents signés inclus (le certificat de preuve ne doit
+      // pas annoncer un document non joint — ex. convention absente pour un
+      // particulier). Cf. #10.
+      documents: entries
+        .filter(([type]) => SIGNED_DOC_TYPES.includes(type))
+        .map(([, doc]) => doc.label),
       signataire: signed.nom,
       signedAt: signed.at,
       ip: signed.ip,

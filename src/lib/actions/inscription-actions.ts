@@ -16,6 +16,7 @@ import {
 import { startParcours } from "@/lib/actions/parcours-actions";
 import { genererDiplomeSsiap } from "@/lib/actions/titre-actions";
 import { ssiapDiplomeNiveau } from "@/lib/documents/titres";
+import { isRecyclageOuRemiseANiveau } from "@/lib/documents/families";
 import { sendEmail } from "@/lib/email";
 import {
   emailShell,
@@ -219,7 +220,13 @@ export async function setCertification(
   // maxDuration 60), déclenchée en arrière-plan par le client après certification.
   // On ne génère PLUS le PDF ici : Chromium n'est pas fiable dans une server action
   // (c'était la cause du crash « Server Components render » à chaque validation).
-  const attestationPending = resultat === "CERTIFIE" && !insc.attestationReussiteSentAt;
+  // Pas d'attestation de RÉUSSITE pour les recyclages / remises à niveau : ces
+  // formations ne sont pas sanctionnées par une évaluation certifiante (cf. #13).
+  // L'attestation de recyclage s'envoie manuellement (bouton dédié).
+  const attestationPending =
+    resultat === "CERTIFIE" &&
+    !insc.attestationReussiteSentAt &&
+    !isRecyclageOuRemiseANiveau(insc.session.formation);
 
   revalidatePath(`/sessions/${insc.sessionId}`);
   revalidatePath("/bpf");

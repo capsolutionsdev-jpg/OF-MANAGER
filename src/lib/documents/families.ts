@@ -40,6 +40,30 @@ export function ssiapNiveauOfFormation(f: FormationLike): 1 | 2 | 3 | null {
   return m ? (Number(m[1]) as 1 | 2 | 3) : null;
 }
 
+/**
+ * Vrai si la formation est un RECYCLAGE ou une REMISE À NIVEAU (SSIAP 1/2/3,
+ * MAC SST / MAC APS…). Ces formations ne sont PAS sanctionnées par une
+ * évaluation certifiante → pas d'attestation de RÉUSSITE (cf. #13). On envoie à
+ * la place une attestation de recyclage via une action manuelle.
+ */
+export function isRecyclageOuRemiseANiveau(f: FormationLike): boolean {
+  return /recycl|remise[-\s]?[àa][-\s]?niveau|\bran\b/i.test(
+    `${f.reference ?? ""} ${f.titre ?? ""}`,
+  );
+}
+
+/** Modèle de document d'attestation à envoyer pour un recyclage / une RAN. */
+export function attestationRecyclageDocType(f: FormationLike): string {
+  const s = `${f.reference ?? ""} ${f.titre ?? ""}`;
+  if (isSsiapFormation(f)) {
+    return /remise[-\s]?[àa][-\s]?niveau|\bran\b/i.test(s)
+      ? "ATTESTATION_REMISE_NIVEAU"
+      : "ATTESTATION_RECYCLAGE";
+  }
+  // MAC SST / MAC APS : pas de modèle SSIAP dédié → attestation de fin de formation.
+  return "ATTESTATION_FIN";
+}
+
 /** Familles de documents autorisées pour une formation (toujours « commun »). */
 export function formationDocFamilies(f: FormationLike): Set<DocFamily> {
   const s = new Set<DocFamily>(["commun"]);

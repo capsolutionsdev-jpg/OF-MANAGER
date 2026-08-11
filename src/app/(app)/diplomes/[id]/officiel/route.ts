@@ -81,7 +81,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       nda: org.nda,
       agrement: readAgrements(org.documentsConfig).ssiap,
     },
-    { logoUri, signatureUri: org.signatureUrl },
+    { logoUri, signatureUri: org.signatureUrl, cachetUri: org.cachetUrl },
   );
 
   const pdf = await htmlToPdf(html, { landscape: true });

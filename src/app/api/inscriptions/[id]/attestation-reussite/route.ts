@@ -5,6 +5,7 @@ import { getTenantDb } from "@/lib/tenant";
 import { sendEmail, toBase64 } from "@/lib/email";
 import { orgConfigFor } from "@/lib/org-identity";
 import { buildSingleDocPdf } from "@/lib/documents/build-pdf";
+import { isRecyclageOuRemiseANiveau } from "@/lib/documents/families";
 import {
   emailShell,
   emailHeading,
@@ -50,11 +51,19 @@ export async function POST(
       resultatCertification: true,
       attestationReussiteSentAt: true,
       candidat: { select: { prenom: true, nom: true, email: true } },
-      session: { select: { formation: { select: { titre: true } } } },
+      session: { select: { formation: { select: { titre: true, reference: true } } } },
     },
   });
   if (!insc) {
     return NextResponse.json({ ok: false, error: "Inscription introuvable." }, { status: 404 });
+  }
+  // Recyclage / remise à niveau : formation non certifiante → pas d'attestation
+  // de réussite (cf. #13). Garde serveur en plus du blocage côté setCertification.
+  if (isRecyclageOuRemiseANiveau(insc.session.formation)) {
+    return NextResponse.json(
+      { ok: false, error: "Formation de recyclage — pas d'attestation de réussite." },
+      { status: 409 },
+    );
   }
   if (insc.resultatCertification !== "CERTIFIE") {
     return NextResponse.json({ ok: false, error: "Candidat non certifié." }, { status: 409 });
