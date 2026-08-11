@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -21,6 +21,7 @@ import { PAYS_NOMS, NATIONALITES } from "@/lib/data/pays";
 import { DEPARTEMENTS } from "@/lib/data/departements";
 import { SITUATIONS_PRO, SITUATION_AUTRE } from "@/lib/data/situations-pro";
 import { formationPrereq } from "@/lib/inscription/prerequis";
+import type { SessionOption } from "@/components/inscriptions/quick-enroll-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,11 +42,14 @@ export function CandidatForm({
   defaultValues,
   formations = [],
   collaborateurs = [],
+  sessions = [],
 }: {
   candidatId?: string;
   defaultValues?: Partial<CandidatFormValues>;
   formations?: FormationOption[];
   collaborateurs?: { id: string; name: string }[];
+  /** Sessions à venir (pour rattacher directement le candidat — #1). */
+  sessions?: SessionOption[];
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -65,6 +69,7 @@ export function CandidatForm({
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<CandidatFormValues>({
     resolver: zodResolver(candidatFormSchema),
@@ -89,6 +94,7 @@ export function CandidatForm({
       assignedToId: "",
       financementType: "",
       formationSouhaiteeId: "",
+      sessionId: "",
       statut: "NOUVEAU",
       cnapsStatut: "",
       carteProNumero: "",
@@ -110,6 +116,13 @@ export function CandidatForm({
   const prereq = selectedFormation ? formationPrereq(selectedFormation) : {};
   const showCnaps = !!(prereq.cnaps || prereq.carteProAlternative);
   const showSsiap = !!prereq.ssiap;
+
+  // Sessions à venir de la formation choisie (rattachement direct — #1).
+  const sessionsPourFormation = sessions.filter((s) => s.formationId === formationId);
+  // Réinitialise la session choisie quand la formation change.
+  useEffect(() => {
+    setValue("sessionId", "");
+  }, [formationId, setValue]);
 
   function onSubmit(values: CandidatFormValues) {
     // « Autre » → reporte le texte libre dans situationPro.
@@ -277,6 +290,23 @@ export function CandidatForm({
               ))}
             </select>
           </div>
+          {formationId && (
+            <div className="grid gap-2 sm:col-span-2">
+              <Label htmlFor="sessionId">Session (rattachement direct)</Label>
+              {sessionsPourFormation.length > 0 ? (
+                <select id="sessionId" className={selectClass} {...register("sessionId")}>
+                  <option value="">— Ne pas rattacher tout de suite —</option>
+                  {sessionsPourFormation.map((s) => (
+                    <option key={s.id} value={s.id}>{s.label}</option>
+                  ))}
+                </select>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Aucune session à venir pour cette formation — vous pourrez rattacher le candidat plus tard depuis la session.
+                </p>
+              )}
+            </div>
+          )}
           <div className="grid gap-2">
             <Label htmlFor="financementType">Financement envisagé</Label>
             <select id="financementType" className={selectClass} {...register("financementType")}>

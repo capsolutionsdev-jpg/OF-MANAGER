@@ -31,6 +31,9 @@ export const candidatFormSchema = z.object({
   // Financement & statut
   financementType: z.nativeEnum(FinancementType).or(z.literal("")).optional(),
   formationSouhaiteeId: optionalText,
+  // Rattachement direct à une session (facultatif) — crée l'inscription (#1).
+  // Ignoré par toData()/updateCandidat : ce n'est pas une colonne du candidat.
+  sessionId: optionalText,
   statut: z.nativeEnum(CandidatStatut),
   // Sécurité privée (TFP APS / MAC APS) : prérequis réglementaires
   cnapsStatut: z.nativeEnum(CnapsStatut).or(z.literal("")).optional(),

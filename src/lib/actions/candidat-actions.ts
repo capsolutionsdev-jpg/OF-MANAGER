@@ -1,13 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { CandidatStatut, CnapsStatut } from "@prisma/client";
+import { CandidatStatut, CnapsStatut, InscriptionStatut } from "@prisma/client";
 import { getTenantDb } from "@/lib/tenant";
 import { auth } from "@/auth";
 import {
   candidatFormSchema,
   type CandidatFormValues,
 } from "@/lib/validators/candidat";
+import { createInscription } from "@/lib/actions/inscription-actions";
 
 export type ActionResult =
   | { ok: true; id: string }
@@ -140,6 +141,24 @@ export async function createCandidat(
       entityId: candidat.id,
     },
   });
+
+  // Rattachement direct à une session choisie (#1) → crée l'inscription en
+  // EN_ATTENTE (pré-rattachement, sans déclencher le parcours/e-mails). Best-effort :
+  // un échec (déjà inscrit, session pleine…) ne doit pas faire échouer la création.
+  const sessionId = parsed.data.sessionId?.trim();
+  if (sessionId && parsed.data.formationSouhaiteeId) {
+    try {
+      await createInscription({
+        candidatId: candidat.id,
+        sessionId,
+        financementType: parsed.data.financementType ?? "",
+        statut: InscriptionStatut.EN_ATTENTE,
+        montant: "",
+      });
+    } catch (e) {
+      console.error("[createCandidat] rattachement à la session échoué", e);
+    }
+  }
 
   revalidatePath("/candidats");
   return { ok: true, id: candidat.id };

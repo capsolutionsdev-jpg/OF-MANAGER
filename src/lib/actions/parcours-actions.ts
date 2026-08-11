@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import bcrypt from "bcryptjs";
 import {
+  CnapsStatut,
   DocumentType,
   EmailStatut,
   FinancementType,
@@ -159,12 +160,28 @@ export async function relanceParcours(
 export type ParcoursFormValues = {
   telephone?: string;
   dateNaissance?: string;
+  nationalite?: string;
+  paysNaissance?: string;
+  departementNaissance?: string;
+  lieuNaissance?: string;
   adresse?: string;
   codePostal?: string;
   ville?: string;
+  pays?: string;
   situationPro?: string;
   employeur?: string;
+  posteOccupe?: string;
+  dernierDiplome?: string;
   financementType?: string;
+  situationHandicap?: boolean;
+  besoinsAdaptation?: string;
+  // Blocs conditionnels (sécurité privée CNAPS / SSIAP), selon la formation.
+  cnapsStatut?: string;
+  carteProNumero?: string;
+  carteProValidite?: string;
+  ssiapNiveau?: string;
+  ssiapDiplomeNumero?: string;
+  ssiapDiplomeDate?: string;
   photoDataUrl?: string; // photo d'identité (data URL JPEG compressée côté client)
   consent: boolean;
 };
@@ -196,11 +213,33 @@ export async function submitParcoursForm(
       dateNaissance: values.dateNaissance
         ? new Date(values.dateNaissance)
         : insc.candidat.dateNaissance,
+      nationalite: clean(values.nationalite) ?? insc.candidat.nationalite,
+      paysNaissance: clean(values.paysNaissance) ?? insc.candidat.paysNaissance,
+      departementNaissance: clean(values.departementNaissance) ?? insc.candidat.departementNaissance,
+      lieuNaissance: clean(values.lieuNaissance) ?? insc.candidat.lieuNaissance,
       adresse: clean(values.adresse) ?? insc.candidat.adresse,
       codePostal: clean(values.codePostal) ?? insc.candidat.codePostal,
       ville: clean(values.ville) ?? insc.candidat.ville,
+      pays: clean(values.pays) ?? insc.candidat.pays,
       situationPro: clean(values.situationPro) ?? insc.candidat.situationPro,
       employeur: clean(values.employeur) ?? insc.candidat.employeur,
+      posteOccupe: clean(values.posteOccupe) ?? insc.candidat.posteOccupe,
+      dernierDiplome: clean(values.dernierDiplome) ?? insc.candidat.dernierDiplome,
+      situationHandicap: values.situationHandicap ?? insc.candidat.situationHandicap,
+      besoinsAdaptation: clean(values.besoinsAdaptation) ?? insc.candidat.besoinsAdaptation,
+      cnapsStatut: values.cnapsStatut ? (values.cnapsStatut as CnapsStatut) : insc.candidat.cnapsStatut,
+      carteProNumero: clean(values.carteProNumero) ?? insc.candidat.carteProNumero,
+      carteProValidite: values.carteProValidite
+        ? new Date(values.carteProValidite)
+        : insc.candidat.carteProValidite,
+      ssiapNiveau:
+        values.ssiapNiveau && /^[123]$/.test(values.ssiapNiveau.trim())
+          ? Number(values.ssiapNiveau.trim())
+          : insc.candidat.ssiapNiveau,
+      ssiapDiplomeNumero: clean(values.ssiapDiplomeNumero) ?? insc.candidat.ssiapDiplomeNumero,
+      ssiapDiplomeDate: values.ssiapDiplomeDate
+        ? new Date(values.ssiapDiplomeDate)
+        : insc.candidat.ssiapDiplomeDate,
       financementType: fin ?? insc.candidat.financementType,
       // Photo d'identité : uniquement si fournie et bien une image encodée
       ...(values.photoDataUrl?.startsWith("data:image/")

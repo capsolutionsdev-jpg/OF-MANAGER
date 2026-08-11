@@ -2,12 +2,13 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { getTenantDb } from "@/lib/tenant";
 import { CandidatForm } from "@/components/candidats/candidat-form";
+import type { SessionOption } from "@/components/inscriptions/quick-enroll-modal";
 
 export const dynamic = "force-dynamic";
 
 export default async function NouveauCandidatPage() {
   const db = await getTenantDb();
-  const [formations, collaborateurs] = await Promise.all([
+  const [formations, collaborateurs, sessions] = await Promise.all([
     db.formation.findMany({
       // Uniquement les formations publiées sur le site vitrine.
       where: { isArchived: false, vitrineStatut: "PUBLIEE" },
@@ -22,7 +23,20 @@ export default async function NouveauCandidatPage() {
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),
+    // Sessions à venir → rattachement direct du candidat à une session (#1).
+    db.session.findMany({
+      where: { statut: { in: ["PLANIFIEE", "OUVERTE"] }, isArchived: false },
+      include: { formation: { select: { id: true, titre: true } } },
+      orderBy: { dateDebut: "asc" },
+    }),
   ]);
+
+  const fmtD = (d: Date) => d.toLocaleDateString("fr-FR");
+  const sessionOptions: SessionOption[] = sessions.map((s) => ({
+    id: s.id,
+    formationId: s.formationId,
+    label: `${s.formation.titre} — ${fmtD(s.dateDebut)} → ${fmtD(s.dateFin)}${s.lieu ? ` (${s.lieu})` : ""}`,
+  }));
 
   return (
     <div className="space-y-6">
@@ -40,7 +54,7 @@ export default async function NouveauCandidatPage() {
       </div>
 
       <div className="max-w-3xl">
-        <CandidatForm formations={formations} collaborateurs={collaborateurs} />
+        <CandidatForm formations={formations} collaborateurs={collaborateurs} sessions={sessionOptions} />
       </div>
     </div>
   );
