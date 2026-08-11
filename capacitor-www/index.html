@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>OFManager</title>
+  <style>
+    :root { --navy:#0D1B3E; --brand:#3B6EF5; }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 22px; background: var(--navy); color: #fff;
+      font-family: -apple-system, "Segoe UI", Roboto, system-ui, sans-serif;
+      text-align: center; padding: 24px;
+    }
+    .logo { font-size: 1.5rem; font-weight: 800; letter-spacing: .3px; }
+    .logo span { color: var(--brand); }
+    .spin {
+      width: 34px; height: 34px; border-radius: 50%;
+      border: 3px solid rgba(255,255,255,.2); border-top-color: var(--brand);
+      animation: r 0.9s linear infinite;
+    }
+    @keyframes r { to { transform: rotate(360deg); } }
+    .msg { color: #aab8d8; font-size: .92rem; max-width: 300px; line-height: 1.5; }
+    .retry {
+      display: none; margin-top: 8px; padding: 12px 22px; border-radius: 12px;
+      background: var(--brand); color: #fff; font-weight: 600; border: 0; font-size: .95rem;
+    }
+    body.offline .spin { display: none; }
+    body.offline .retry { display: inline-block; }
+    body.offline .msg::after { content: " Vérifiez votre connexion internet."; }
+  </style>
+</head>
+<body>
+  <div class="logo">OF<span>Manager</span></div>
+  <div class="spin"></div>
+  <p class="msg">Chargement de votre espace…</p>
+  <button class="retry" onclick="location.reload()">Réessayer</button>
+  <script>
+    // Écran affiché tant que la webview charge https://app.capacademy.fr.
+    // Bascule en mode « hors-ligne » si aucune connexion.
+    function check() {
+      if (!navigator.onLine) document.body.classList.add("offline");
+      else document.body.classList.remove("offline");
+    }
+    window.addEventListener("online", () => location.reload());
+    window.addEventListener("offline", check);
+    check();
+  </script>
+</body>
+</html>

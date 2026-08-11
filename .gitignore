@@ -50,3 +50,11 @@ build-out.txt
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+/android
+/ios
+/capacitor-www/cordova*
+.gradle
+
+# Capacitor (projets natifs générés par `npx cap add`)
+/android
+/ios
