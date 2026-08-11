@@ -4,11 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   Camera, CheckCircle2, Circle, FileText, FolderOpen, ImagePlus,
-  Loader2, Paperclip, Trash2, Upload, X,
+  Loader2, Paperclip, Send, Trash2, Upload, X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-  uploadPieceParcours, attachPieceFromProfil, deletePieceParcours, type PieceDTO,
+  uploadPieceParcours, attachPieceFromProfil, deletePieceParcours,
+  submitDossierParcours, type PieceDTO,
 } from "@/lib/actions/dossier-actions";
 
 /** Lit un fichier en data-URL ; compresse les images > maxW en JPEG. */
@@ -57,6 +58,8 @@ export function DossierUpload({
   const [busy, setBusy] = useState<string | null>(null); // label en cours
   const [camFor, setCamFor] = useState<string | null>(null); // pièce ciblée par la caméra
   const [profilFor, setProfilFor] = useState<string | null>(null); // menu "depuis le profil"
+  const [submitting, setSubmitting] = useState(false);
+  const [sent, setSent] = useState(false);
 
   async function doUpload(file: File, piece?: string) {
     const key = piece ?? "__autre__";
@@ -99,6 +102,45 @@ export function DossierUpload({
 
   const piecesFor = (label: string) => pieces.filter((p) => p.label === label);
   const autres = pieces.filter((p) => !piecesAttendues.includes(p.label));
+
+  // Pièces attendues encore manquantes (aucun fichier déposé).
+  const manquantes = piecesAttendues.filter(
+    (l) => !(recues.has(l) || piecesFor(l).length > 0),
+  );
+
+  async function submitDossier(force: boolean) {
+    setSubmitting(true);
+    try {
+      const res = await submitDossierParcours(token, { force });
+      if (!res.ok) {
+        toast.error(res.error ?? "Envoi impossible.");
+        return;
+      }
+      setSent(true);
+      toast.success(
+        res.incomplete
+          ? "Dossier transmis (avec pièces manquantes). Notre équipe vous recontactera."
+          : "Dossier transmis à notre équipe. Merci !",
+      );
+    } catch {
+      toast.error("Envoi impossible.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  function onSubmitClick() {
+    if (manquantes.length > 0) {
+      const ok = window.confirm(
+        `Il manque ${manquantes.length} pièce(s) :\n\n${manquantes.join("\n")}\n\n` +
+          `Voulez-vous transmettre votre dossier quand même ? Notre équipe vous recontactera pour les pièces manquantes.`,
+      );
+      if (!ok) return;
+      submitDossier(true);
+    } else {
+      submitDossier(false);
+    }
+  }
 
   return (
     <div className="space-y-3">
@@ -209,6 +251,33 @@ export function DossierUpload({
             await doUpload(file, target === "__autre__" ? undefined : target);
           }}
         />
+      )}
+
+      {/* Transmission du dossier au centre (#9) — possible même avec des pièces manquantes. */}
+      {sent ? (
+        <div className="flex items-center gap-2 rounded-lg border border-emerald-300 bg-emerald-50 p-3 text-sm font-medium text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300">
+          <CheckCircle2 className="h-4 w-4 shrink-0" /> Dossier transmis à notre équipe. Merci&nbsp;!
+        </div>
+      ) : (
+        <div className="border-t pt-3">
+          {manquantes.length > 0 && (
+            <p className="mb-2 text-xs text-amber-700 dark:text-amber-300">
+              Il manque {manquantes.length} pièce{manquantes.length > 1 ? "s" : ""} : {manquantes.join(", ")}.
+            </p>
+          )}
+          <Button
+            type="button"
+            className="w-full"
+            variant={manquantes.length > 0 ? "outline" : "default"}
+            disabled={submitting}
+            onClick={onSubmitClick}
+          >
+            {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+            {manquantes.length > 0
+              ? `Envoyer malgré ${manquantes.length} pièce${manquantes.length > 1 ? "s" : ""} manquante${manquantes.length > 1 ? "s" : ""}`
+              : "Envoyer mon dossier"}
+          </Button>
+        </div>
       )}
     </div>
   );

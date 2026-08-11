@@ -1,11 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { PieceStatut } from "@prisma/client";
+import { PieceStatut, EmailStatut } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getTenantDb } from "@/lib/tenant";
 import { auth } from "@/auth";
 import { storeUpload, parseDataUrl, extFromMime, detectFileType, isRasterImage } from "@/lib/blob";
+import { orgConfigFor } from "@/lib/org-identity";
+import { sendEmail } from "@/lib/email";
+import { emailShell, emailParagraph, emailBox, emailSignoff, esc } from "@/lib/email-templates";
 
 const MAX_BYTES = 8 * 1024 * 1024; // 8 Mo / pièce
 const STAFF = ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"];
@@ -35,9 +38,82 @@ async function inscriptionByToken(token: string) {
       organismeId: true,
       candidatId: true,
       piecesRecues: true,
-      session: { select: { formation: { select: { piecesAttendues: true } } } },
+      candidat: { select: { prenom: true, nom: true, email: true } },
+      session: { select: { formation: { select: { titre: true, piecesAttendues: true } } } },
     },
   });
+}
+
+/**
+ * Soumission du dossier par le candidat depuis le lien (#9) : notifie le staff
+ * par e-mail. Si des pièces attendues manquent, on renvoie la liste et on
+ * REFUSE, sauf si `force` (« Envoyer quand même ») — auquel cas on transmet en
+ * signalant les pièces manquantes. Best-effort : un souci d'e-mail ne bloque
+ * jamais. Pas de colonne dédiée : ré-envoyable.
+ */
+export async function submitDossierParcours(
+  token: string,
+  opts?: { force?: boolean },
+): Promise<{ ok: boolean; error?: string; incomplete?: boolean; manquantes?: string[] }> {
+  const insc = await inscriptionByToken(token);
+  if (!insc) return { ok: false, error: "Lien invalide ou expiré." };
+
+  const attendues = insc.session.formation.piecesAttendues ?? [];
+  const manquantes = attendues.filter((p) => !insc.piecesRecues.includes(p));
+
+  // Pièces manquantes + pas de confirmation → on rend la garde explicite (surchargeable).
+  if (manquantes.length > 0 && !opts?.force) {
+    return { ok: false, incomplete: true, manquantes };
+  }
+
+  // Notification staff (best-effort).
+  try {
+    const org = await orgConfigFor(insc.organismeId);
+    const c = insc.candidat;
+    const nom = `${c.prenom} ${c.nom}`.trim();
+    const liste = manquantes.length
+      ? `<br><b>Pièces manquantes (${manquantes.length})</b> : ${manquantes.map((m) => esc(m)).join(", ")}`
+      : "";
+    const html = emailShell({
+      organisme: org.name,
+      representant: org.representant,
+      accent: manquantes.length ? undefined : "green",
+      body:
+        emailParagraph(`Bonjour,`) +
+        emailParagraph(
+          `<b>${esc(nom)}</b> a transmis son dossier d'inscription pour la formation <b>${esc(insc.session.formation.titre)}</b>.`,
+        ) +
+        emailBox(
+          (manquantes.length
+            ? `⚠️ Dossier transmis <b>avec des pièces manquantes</b> — à relancer si besoin.`
+            : `✅ Dossier <b>complet</b>.`) + liste,
+          manquantes.length ? undefined : "green",
+        ) +
+        emailSignoff("Notification automatique", org.name),
+    });
+    if (org.email) {
+      const res = await sendEmail({
+        to: org.email,
+        subject: `📁 Dossier transmis — ${nom}${manquantes.length ? " (incomplet)" : ""}`,
+        html,
+        organismeId: insc.organismeId,
+      });
+      await prisma.emailLog.create({
+        data: {
+          organismeId: insc.organismeId,
+          destinataire: org.email,
+          sujet: `Dossier transmis — ${nom}`,
+          corps: html,
+          statut: res.sent ? EmailStatut.ENVOYE : EmailStatut.EN_ATTENTE,
+          sentAt: res.sent ? new Date() : null,
+        },
+      });
+    }
+  } catch (e) {
+    console.error("[submitDossierParcours] notification staff échouée", e);
+  }
+
+  return { ok: true, incomplete: manquantes.length > 0 };
 }
 
 /** Pièces déjà déposées par le candidat (réutilisables « depuis le profil »). */

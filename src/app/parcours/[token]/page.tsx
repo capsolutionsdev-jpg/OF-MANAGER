@@ -3,6 +3,7 @@ import { CheckCircle2, Circle, FileSignature, FolderUp, BookOpenCheck } from "lu
 import { prisma } from "@/lib/prisma";
 import { orgConfigFor } from "@/lib/org-identity";
 import { linkExpired } from "@/lib/token";
+import { formationPrereq } from "@/lib/inscription/prerequis";
 import {
   Card,
   CardContent,
@@ -88,6 +89,11 @@ export default async function ParcoursPage({
   }
 
   const c = insc.candidat;
+  // Blocs conditionnels du formulaire d'inscription (CNAPS / SSIAP) selon la
+  // formation — même logique que le formulaire interne d'ajout de candidat (#8).
+  const prereq = formationPrereq(insc.session.formation);
+  const showCnaps = !!(prereq.cnaps || prereq.carteProAlternative);
+  const showSsiap = !!prereq.ssiap;
   const formDone = !!insc.formCompletedAt;
   const docsLus = !!insc.docsLusAt;
   const signed = !!insc.signedAt;
@@ -145,17 +151,39 @@ export default async function ParcoursPage({
             <CardContent>
               <ParcoursForm
                 token={token}
+                showCnaps={showCnaps}
+                showSsiap={showSsiap}
+                ssiapNiveau={prereq.ssiap?.niveau}
                 defaults={{
                   telephone: c.telephone ?? "",
                   dateNaissance: c.dateNaissance
                     ? c.dateNaissance.toISOString().slice(0, 10)
                     : "",
+                  nationalite: c.nationalite ?? "",
+                  paysNaissance: c.paysNaissance ?? "",
+                  departementNaissance: c.departementNaissance ?? "",
+                  lieuNaissance: c.lieuNaissance ?? "",
                   adresse: c.adresse ?? "",
                   codePostal: c.codePostal ?? "",
                   ville: c.ville ?? "",
+                  pays: c.pays ?? "France",
                   situationPro: c.situationPro ?? "",
                   employeur: c.employeur ?? "",
+                  posteOccupe: c.posteOccupe ?? "",
+                  dernierDiplome: c.dernierDiplome ?? "",
                   financementType: insc.financementType ?? "",
+                  situationHandicap: c.situationHandicap ?? false,
+                  besoinsAdaptation: c.besoinsAdaptation ?? "",
+                  cnapsStatut: c.cnapsStatut ?? "",
+                  carteProNumero: c.carteProNumero ?? "",
+                  carteProValidite: c.carteProValidite
+                    ? c.carteProValidite.toISOString().slice(0, 10)
+                    : "",
+                  ssiapNiveau: c.ssiapNiveau ? String(c.ssiapNiveau) : "",
+                  ssiapDiplomeNumero: c.ssiapDiplomeNumero ?? "",
+                  ssiapDiplomeDate: c.ssiapDiplomeDate
+                    ? c.ssiapDiplomeDate.toISOString().slice(0, 10)
+                    : "",
                 }}
               />
             </CardContent>
