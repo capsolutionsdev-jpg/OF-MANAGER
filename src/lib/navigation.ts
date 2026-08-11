@@ -316,15 +316,6 @@ export const navItems: NavItem[] = [
     permission: "elearning",
   },
   {
-    label: "Examen civique",
-    href: "/examen-civique",
-    icon: GraduationCap,
-    roles: ["ADMIN", "RESPONSABLE_FORMATION"],
-    permission: "elearning",
-    // Module réservé à CAP Compétences : masqué pour les autres organismes.
-    feature: "examen-civique",
-  },
-  {
     label: "Diplômes",
     href: "/diplomes",
     icon: Award,

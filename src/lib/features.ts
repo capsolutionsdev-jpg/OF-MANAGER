@@ -39,7 +39,6 @@ export const FEATURES: Feature[] = [
   { key: "rapports", label: "Rapports analytiques", description: "Conversion, CA prévisionnel, délais", group: "Modules avancés" },
   { key: "scoring", label: "Scoring & segmentation des prospects", description: "Score d'engagement, tags dynamiques", group: "Modules avancés" },
   { key: "ia", label: "Assistant IA", description: "Rédaction/relance e-mails, résumé, qualification des leads", group: "Modules avancés" },
-  { key: "examen-civique", label: "Examen civique (naturalisation)", description: "Préparation & suivi de l'examen civique — spécifique à CAP Compétences", group: "Modules avancés" },
   { key: "site-vitrine", label: "Site vitrine — pilotage", description: "Publier/piloter les fiches du site public (statut, tarif, durée) + trafic", group: "Modules avancés" },
   { key: "blog", label: "Blog du site vitrine", description: "Rédiger et publier les articles du site public", group: "Modules avancés" },
   { key: "diplomes", label: "Gestion des diplômes", description: "Suivi des diplômes (certificateur → reçu → remis) + attestation de remise", group: "Modules avancés" },

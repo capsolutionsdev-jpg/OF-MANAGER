@@ -1,15 +1,14 @@
 import "server-only";
-import { getCurrentOrganisme } from "@/lib/org";
 
 /**
- * Le module « Examen civique » est RÉSERVÉ aux organismes qui ont explicitement
- * la fonctionnalité `examen-civique` (spécifique à CAP Compétences). Vérif
- * STRICTE : contrairement à `hasFeature`, une liste `fonctionnalites` vide ne
- * donne PAS accès (le module est un opt-in par tenant).
+ * Module « Examen civique » RETIRÉ (CAP Compétences ne l'utilise plus).
+ * La fonction est conservée car elle est référencée par le layout et les routes
+ * d'export du module ; elle refuse désormais l'accès pour tous → menu masqué
+ * (cf. navigation) et routes/API `examen-civique` redirigées vers le tableau
+ * de bord. Réactivation éventuelle = rétablir la vérification par fonctionnalité.
  */
 export const EXAMEN_CIVIQUE_FEATURE = "examen-civique";
 
-export async function hasExamenCivique(): Promise<boolean> {
-  const org = await getCurrentOrganisme();
-  return !!org?.fonctionnalites?.includes(EXAMEN_CIVIQUE_FEATURE);
+export function hasExamenCivique(): Promise<boolean> {
+  return Promise.resolve(false);
 }
