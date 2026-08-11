@@ -7,6 +7,7 @@ import { sendEmail, toBase64 } from "@/lib/email";
 import { orgConfigFor } from "@/lib/org-identity";
 import { generateToken, appBaseUrl } from "@/lib/token";
 import { buildSingleDocPdf } from "@/lib/documents/build-pdf";
+import { isRecyclageOuRemiseANiveau, attestationRecyclageDocType } from "@/lib/documents/families";
 import type { ManualEvent } from "@/lib/manual-events";
 import {
   emailShell,
@@ -184,5 +185,54 @@ export async function sendAutomationEventNow(inscriptionId: string, event: Manua
   });
   const sent = await logAndSend({ organismeId, to, subject: `💬 Votre avis sur « ${f.titre} » (2 min)`, html, sessionId: s.id });
   await prisma.inscription.update({ where: { id: i.id }, data: { satisfactionSentAt: new Date() } });
+  return sent ? { ok: true } : { ok: false, error: "E-mail non envoyé (config e-mail ?)." };
+}
+
+/**
+ * Envoie MANUELLEMENT l'attestation de RECYCLAGE / remise à niveau au candidat,
+ * avec un e-mail COMMERCIAL de remerciement. Réservé aux formations de
+ * recyclage/RAN (non certifiantes, cf. #13) : elles n'ont pas d'attestation de
+ * réussite. Ré-envoyable (pas de jalon d'unicité).
+ */
+export async function sendAttestationRecyclage(inscriptionId: string): Promise<Result> {
+  const organismeId = await staffOrg();
+  const i = await prisma.inscription.findFirst({
+    where: { id: inscriptionId, organismeId },
+    include: { candidat: true, session: { include: { formation: true } } },
+  });
+  if (!i) return { ok: false, error: "Inscription introuvable." };
+  const f = i.session.formation;
+  if (!isRecyclageOuRemiseANiveau(f)) {
+    return { ok: false, error: "Action réservée aux formations de recyclage / remise à niveau." };
+  }
+  const to = i.candidat.email;
+  if (!to || !to.includes("@")) return { ok: false, error: "Le candidat n'a pas d'e-mail valide." };
+
+  const org = await orgConfigFor(i.organismeId);
+  const prenom = i.candidat.prenom;
+  const pdf = await buildSingleDocPdf(i.id, attestationRecyclageDocType(f));
+  const html = emailShell({
+    organisme: org.name,
+    representant: org.representant,
+    accent: "green",
+    body:
+      emailParagraph(`Bonjour ${esc(prenom)},`) +
+      emailParagraph(
+        `Merci d'avoir suivi votre <b>${esc(f.titre)}</b> avec ${esc(org.name)}. Nous vous remercions de votre confiance&nbsp;! 🙏`,
+      ) +
+      emailBox(
+        `📎 <b>En pièce jointe</b> : votre <b>attestation de recyclage</b> (PDF). Conservez-la précieusement : elle atteste du <b>maintien de vos compétences</b>.<br>🔔 Ce recyclage est à renouveler périodiquement — nous serons ravis de vous accompagner à nouveau le moment venu.`,
+        "green",
+      ) +
+      emailSignoff("Au plaisir de vous revoir,", org.representant),
+  });
+  const sent = await logAndSend({
+    organismeId,
+    to,
+    subject: `Votre attestation de recyclage — ${f.titre} ✅`,
+    html,
+    sessionId: i.session.id,
+    attachments: pdf ? [{ name: "Attestation-recyclage.pdf", content: toBase64(pdf.data) }] : undefined,
+  });
   return sent ? { ok: true } : { ok: false, error: "E-mail non envoyé (config e-mail ?)." };
 }

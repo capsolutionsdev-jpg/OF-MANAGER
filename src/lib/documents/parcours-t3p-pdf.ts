@@ -182,7 +182,9 @@ export function buildParcoursT3PHtml(data: ParcoursT3PPdfData, org: OrgIdentity)
         opérés par les collaborateurs (visas nominatifs et horodatés).
       </div>
       <div class="sign">
-        <div class="line">Cachet de l'organisme</div>
+        ${org.cachetUrl
+          ? `<img src="${esc(org.cachetUrl)}" alt="Cachet de l'organisme" style="max-height:26mm;max-width:44mm;" />`
+          : `<div class="line">Cachet de l'organisme</div>`}
       </div>
     </div>
   </body></html>`;

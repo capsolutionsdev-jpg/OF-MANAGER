@@ -79,4 +79,25 @@ describe("isDocApplicable — documents selon l'inscription", () => {
     expect(isDocApplicable("CONTRAT_FORMATION", { ...base, hasEntreprise: false, financementType: null })).toBe(true);
     expect(isDocApplicable("CONVENTION_FORMATION", { ...base, hasEntreprise: true, financementType: null })).toBe(true);
   });
+
+  // #10 : le PDF post-signature (buildInscriptionPdf { signedOnly }) ne joint que
+  // les documents À SIGNER *applicables* — donc contrat XOR convention selon le
+  // profil, jamais les deux. On vérifie l'intersection SIGNED_DOC_TYPES ∩ applicable.
+  it("sous-ensemble « documents signés » : particulier → contrat sans convention ; pro → convention sans contrat (#10)", () => {
+    const SIGNES = ["FICHE_INSCRIPTION", "CONTRAT_FORMATION", "CONVENTION_FORMATION", "REGLEMENT_INTERIEUR"];
+    const signesPour = (ctx: DocContext) => SIGNES.filter((t) => isDocApplicable(t, ctx));
+
+    expect(signesPour(particulierExamen)).toContain("CONTRAT_FORMATION");
+    expect(signesPour(particulierExamen)).not.toContain("CONVENTION_FORMATION");
+
+    expect(signesPour(entrepriseRecyclageOpco)).toContain("CONVENTION_FORMATION");
+    expect(signesPour(entrepriseRecyclageOpco)).not.toContain("CONTRAT_FORMATION");
+
+    // Les communs (fiche + règlement) restent toujours présents dans le dossier signé.
+    for (const ctx of [particulierExamen, entrepriseRecyclageOpco]) {
+      expect(signesPour(ctx)).toEqual(
+        expect.arrayContaining(["FICHE_INSCRIPTION", "REGLEMENT_INTERIEUR"]),
+      );
+    }
+  });
 });
