@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { StatCard } from "@/components/ui/stat-card";
+import { ConventionDialog } from "@/components/conventions/convention-dialog";
 
 function Gauge({ pct }: { pct: number }) {
   const r = 50;
@@ -181,6 +182,30 @@ export default async function DashboardPage() {
   }
   await Promise.all(Object.entries(byType).map(([t, set]) => resolve(t, [...set])));
 
+  // Point d'entrée « Convention entreprise » (inscription groupée B2B) sur l'accueil,
+  // à côté de « Nouveau candidat » — réservé au staff (#15).
+  const estStaff = ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"].includes(
+    (session?.user?.role as string) ?? "",
+  );
+  const entreprisesConv = estStaff
+    ? await db.entreprise.findMany({
+        select: { id: true, raisonSociale: true },
+        orderBy: { raisonSociale: "asc" },
+      })
+    : [];
+  const sessionsConvRaw = estStaff
+    ? await db.session.findMany({
+        where: { isArchived: false, statut: { not: "ANNULEE" } },
+        include: { formation: { select: { titre: true } } },
+        orderBy: { dateDebut: "desc" },
+        take: 100,
+      })
+    : [];
+  const conventionSessions = sessionsConvRaw.map((s) => ({
+    id: s.id,
+    label: `${s.formation.titre} — ${s.dateDebut.toLocaleDateString("fr-FR")}${s.lieu ? ` (${s.lieu})` : ""}`,
+  }));
+
   return (
     <div className="space-y-6">
       {/* En-tête */}
@@ -202,6 +227,9 @@ export default async function DashboardPage() {
           >
             <Users className="h-4 w-4" /> Nouveau candidat
           </Link>
+          {estStaff && (
+            <ConventionDialog entreprises={entreprisesConv} sessions={conventionSessions} />
+          )}
         </div>
       </div>
 

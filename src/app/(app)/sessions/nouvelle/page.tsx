@@ -1,16 +1,18 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { getTenantDb } from "@/lib/tenant";
+import { requireTenant } from "@/lib/tenant";
+import { orgConfigFor } from "@/lib/org-identity";
 import { SessionForm } from "@/components/sessions/session-form";
 import { Card } from "@/components/ui/card";
 
 export default async function NouvelleSessionPage() {
-  const db = await getTenantDb();
+  const { db, organismeId } = await requireTenant();
+  const org = await orgConfigFor(organismeId);
   const [formations, formateurs, salles, jurys] = await Promise.all([
     db.formation.findMany({
       where: { isArchived: false },
       orderBy: { titre: "asc" },
-      select: { id: true, titre: true, reference: true, soumisJury: true, nbJury: true },
+      select: { id: true, titre: true, reference: true, soumisJury: true, nbJury: true, examen: true, academy: true },
     }),
     db.formateur.findMany({
       orderBy: { nom: "asc" },
@@ -49,7 +51,7 @@ export default async function NouvelleSessionPage() {
             </Link>
           </Card>
         ) : (
-          <SessionForm formations={formations} formateurs={formateurs} salles={salles} jurys={jurys} />
+          <SessionForm formations={formations} formateurs={formateurs} salles={salles} jurys={jurys} defaultLieu={org.adresse} />
         )}
       </div>
     </div>

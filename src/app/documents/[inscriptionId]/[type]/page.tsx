@@ -26,7 +26,7 @@ export default async function DocumentPage({
 
   const inscription = await db.inscription.findUnique({
     where: { id: inscriptionId },
-    include: { candidat: { include: { entreprise: true } }, session: { include: { formation: true } } },
+    include: { candidat: { include: { entreprise: true } }, session: { include: { formation: true, salle: true } } },
   });
   if (!inscription) notFound();
 

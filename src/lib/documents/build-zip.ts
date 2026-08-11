@@ -38,7 +38,7 @@ export async function buildInscriptionDocsZip(
 ): Promise<ZipResult> {
   const inscription = await prisma.inscription.findUnique({
     where: { id: inscriptionId },
-    include: { candidat: { include: { entreprise: true } }, session: { include: { formation: true } } },
+    include: { candidat: { include: { entreprise: true } }, session: { include: { formation: true, salle: true } } },
   });
   if (!inscription) return null;
 
