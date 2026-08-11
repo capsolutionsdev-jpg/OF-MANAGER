@@ -485,3 +485,15 @@ summary:focus-visible,
   outline-offset: 2px;
   border-radius: 4px;
 }
+
+/* ============================================================
+   Mode « plein écran » (focus) — piloté par FocusModeToggle.
+   Masque les barres de navigation (rail latéral + barre du haut)
+   et libère toute la largeur pour le contenu. Cf. components/focus-mode-toggle.
+   ============================================================ */
+.focus-mode [data-app-chrome] {
+  display: none !important;
+}
+.focus-mode [data-app-main] {
+  max-width: none !important;
+}

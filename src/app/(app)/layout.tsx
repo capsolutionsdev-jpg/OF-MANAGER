@@ -227,7 +227,7 @@ export default async function AppLayout({
               </form>
             </div>
           )}
-          <main className="mx-auto w-full max-w-[1400px] flex-1 p-4 md:p-6">
+          <main data-app-main className="mx-auto w-full max-w-[1400px] flex-1 p-4 md:p-6">
             <ConfirmProvider>{children}</ConfirmProvider>
           </main>
 

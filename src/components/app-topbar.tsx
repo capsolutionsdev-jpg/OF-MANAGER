@@ -21,6 +21,7 @@ import {
 import { SidebarNav, SidebarBrand } from "@/components/app-sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { NotificationBell } from "@/components/notifications/notification-bell";
+import { FocusModeToggle } from "@/components/focus-mode-toggle";
 import { roleLabels } from "@/lib/navigation";
 import type { NotificationsData } from "@/lib/notifications";
 
@@ -46,7 +47,7 @@ export function AppTopbar({
   const initials = label.slice(0, 2).toUpperCase();
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-card/95 px-3 backdrop-blur-sm md:px-5">
+    <header data-app-chrome className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-card/95 px-3 backdrop-blur-sm md:px-5">
       {/* Tiroir de navigation (mobile / tablette) */}
       <Sheet>
         <SheetTrigger render={<Button variant="ghost" size="icon" className="lg:hidden" />}>
@@ -60,16 +61,32 @@ export function AppTopbar({
         </SheetContent>
       </Sheet>
 
-      {/* Recherche (repère visuel — champ complet à venir) */}
-      <div className="hidden items-center gap-2 rounded-md border border-border bg-background px-2.5 py-1.5 text-muted-foreground sm:flex sm:w-72">
+      {/* Recherche globale (candidats, sessions, clients pro) → /recherche */}
+      <form
+        action="/recherche"
+        className="hidden items-center gap-2 rounded-md border border-border bg-background px-2.5 py-1.5 text-muted-foreground focus-within:ring-1 focus-within:ring-primary sm:flex sm:w-72"
+      >
         <Search className="h-4 w-4 shrink-0" />
-        <span className="text-[13px]">Rechercher un candidat, une session…</span>
-      </div>
+        <input
+          name="q"
+          type="search"
+          placeholder="Rechercher un candidat, une session…"
+          className="w-full min-w-0 bg-transparent text-[13px] text-foreground outline-none placeholder:text-muted-foreground"
+          aria-label="Rechercher"
+        />
+      </form>
 
       <div className="ml-auto flex items-center gap-1.5">
-        <Button variant="ghost" size="icon" className="text-muted-foreground sm:hidden" aria-label="Rechercher">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="text-muted-foreground sm:hidden"
+          aria-label="Rechercher"
+          render={<Link href="/recherche" />}
+        >
           <Search className="h-[18px] w-[18px]" />
         </Button>
+        <FocusModeToggle />
         <ThemeToggle />
         {notifications ? (
           <NotificationBell data={notifications} />

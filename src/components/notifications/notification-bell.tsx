@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import { Bell, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,6 +18,19 @@ const DOT: Record<NotifSeverity, string> = {
   danger: "bg-red-500",
 };
 
+// Clé de stockage local des notifications déjà ouvertes (par navigateur).
+const READ_STORAGE_KEY = "cap:notif-read";
+
+function loadRead(): Set<string> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    const raw = window.localStorage.getItem(READ_STORAGE_KEY);
+    return new Set(raw ? (JSON.parse(raw) as string[]) : []);
+  } catch {
+    return new Set();
+  }
+}
+
 function ago(iso: string) {
   const d = new Date(iso);
   const s = (Date.now() - d.getTime()) / 1000;
@@ -29,8 +43,49 @@ function ago(iso: string) {
 }
 
 export function NotificationBell({ data }: { data: NotificationsData }) {
-  const { items, unread, seenAt } = data;
+  const { items, seenAt } = data;
   const seen = seenAt ? new Date(seenAt) : null;
+
+  // Notifications ouvertes individuellement (persisté en localStorage). Chargé
+  // après le montage pour éviter toute divergence d'hydratation.
+  const [read, setRead] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    // Au montage : on charge l'état et on élague les clés qui ne correspondent
+    // plus à une notification vivante (évite une croissance illimitée).
+    const stored = loadRead();
+    const alive = new Set(items.map((i) => i.key));
+    const pruned = new Set([...stored].filter((k) => alive.has(k)));
+    setRead(pruned);
+    try {
+      window.localStorage.setItem(READ_STORAGE_KEY, JSON.stringify([...pruned]));
+    } catch {
+      /* stockage indisponible — dégradation silencieuse */
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const markOneRead = (key: string) => {
+    setRead((prev) => {
+      if (prev.has(key)) return prev;
+      const next = new Set(prev).add(key);
+      try {
+        window.localStorage.setItem(READ_STORAGE_KEY, JSON.stringify([...next]));
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  };
+
+  const isUnread = (dateIso: string, key: string) =>
+    (!seen || new Date(dateIso) > seen) && !read.has(key);
+
+  // Compteur « non lus » recalculé côté client → réagit au clic instantanément.
+  const unread = useMemo(
+    () => items.filter((n) => isUnread(n.date, n.key)).length,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [items, seen, read],
+  );
 
   return (
     <DropdownMenu>
@@ -55,7 +110,21 @@ export function NotificationBell({ data }: { data: NotificationsData }) {
         <div className="flex items-center justify-between border-b px-3 py-2">
           <span className="text-sm font-semibold">Notifications</span>
           {items.length > 0 && (
-            <form action={markNotificationsRead}>
+            <form
+              action={markNotificationsRead}
+              onSubmit={() => {
+                // Tout marquer comme lu → on vide aussi l'état local.
+                setRead(new Set(items.map((i) => i.key)));
+                try {
+                  window.localStorage.setItem(
+                    READ_STORAGE_KEY,
+                    JSON.stringify(items.map((i) => i.key)),
+                  );
+                } catch {
+                  /* ignore */
+                }
+              }}
+            >
               <button
                 type="submit"
                 className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
@@ -74,21 +143,22 @@ export function NotificationBell({ data }: { data: NotificationsData }) {
             </div>
           ) : (
             items.map((n) => {
-              const isUnread = !seen || new Date(n.date) > seen;
+              const unreadItem = isUnread(n.date, n.key);
               return (
                 <Link
                   key={n.key}
                   href={n.href}
+                  onClick={() => markOneRead(n.key)}
                   className={`flex gap-2.5 border-b px-3 py-2.5 text-sm last:border-0 hover:bg-muted ${
-                    isUnread ? "bg-primary/[0.04]" : ""
+                    unreadItem ? "bg-primary/[0.04]" : ""
                   }`}
                 >
-                  <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${DOT[n.severity]}`} />
+                  <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${DOT[n.severity]} ${unreadItem ? "" : "opacity-30"}`} />
                   <span className="min-w-0 flex-1">
                     <span className="block text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                       {n.category}
                     </span>
-                    <span className="block truncate font-medium">{n.title}</span>
+                    <span className={`block truncate ${unreadItem ? "font-medium" : "text-muted-foreground"}`}>{n.title}</span>
                     {n.detail && (
                       <span className="block truncate text-xs text-muted-foreground">
                         {n.detail}
