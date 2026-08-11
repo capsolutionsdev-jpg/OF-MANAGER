@@ -13,6 +13,8 @@ export const formateurFormSchema = z.object({
   adresse: optionalText,
   siret: optionalText,
   tarifJournalier: optionalText,
+  // Interne (salarié, pas de contrat) ou externe (sous-traitant à contractualiser).
+  typeContrat: z.enum(["INTERNE", "EXTERNE"]).optional(),
   academies: z.array(z.nativeEnum(Academy)).optional(),
   formationIds: z.array(z.string()).optional(),
 });

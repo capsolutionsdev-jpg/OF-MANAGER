@@ -22,6 +22,13 @@ export async function sendContratFormateur(
   });
   if (!s) return { ok: false, demo: true, error: "Session introuvable." };
   const f = s.formateurs[0];
+  // Formateur interne (salarié) → pas de contrat de sous-traitance (#15).
+  if (f?.typeContrat === "INTERNE")
+    return {
+      ok: false,
+      demo: true,
+      error: "Formateur interne (salarié de l'école) — aucun contrat de sous-traitance à envoyer.",
+    };
   if (!f?.email)
     return {
       ok: false,

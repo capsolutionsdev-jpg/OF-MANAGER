@@ -7,6 +7,7 @@ import { SECTIONS } from "@/lib/permissions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { POSTES } from "@/lib/postes";
 
 export function CollaborateurForm() {
   const [state, formAction, isPending] = useActionState<
@@ -27,10 +28,11 @@ export function CollaborateurForm() {
           <Input id="name" name="name" required placeholder="Prénom NOM" />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="role">Rôle</Label>
-          <select id="role" name="role" className="h-9 w-full rounded-md border bg-transparent px-3 text-sm">
-            <option value="ASSISTANT">Assistant administratif</option>
-            <option value="RESPONSABLE_FORMATION">Responsable formation</option>
+          <Label htmlFor="poste">Poste / fonction</Label>
+          <select id="poste" name="poste" defaultValue="assistant-administratif" className="h-9 w-full rounded-md border bg-transparent px-3 text-sm">
+            {POSTES.map((p) => (
+              <option key={p.value} value={p.value}>{p.label}</option>
+            ))}
           </select>
         </div>
         <div className="space-y-1.5">

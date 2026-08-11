@@ -53,7 +53,7 @@ export function SessionForm({
   defaultLieu = "",
 }: {
   formations: FormationOption[];
-  formateurs?: { id: string; nom: string; prenom: string; academies?: string[] }[];
+  formateurs?: { id: string; nom: string; prenom: string; academies?: string[]; typeContrat?: string }[];
   salles?: { id: string; nom: string }[];
   jurys?: JuryOption[];
   sessionId?: string;
@@ -297,6 +297,17 @@ export function SessionForm({
                       {f.academies && f.academies.length > 0 && (
                         <span className="ml-1 text-xs text-muted-foreground">
                           ({f.academies.map((a) => ACA_SHORT[a] ?? a).join(", ")})
+                        </span>
+                      )}
+                      {f.typeContrat && (
+                        <span
+                          className={`ml-1.5 rounded px-1.5 py-0.5 text-[10px] font-medium ${
+                            f.typeContrat === "INTERNE"
+                              ? "bg-blue-500/10 text-blue-700 dark:text-blue-300"
+                              : "bg-amber-500/10 text-amber-700 dark:text-amber-300"
+                          }`}
+                        >
+                          {f.typeContrat === "INTERNE" ? "Interne" : "Externe (contrat)"}
                         </span>
                       )}
                     </span>

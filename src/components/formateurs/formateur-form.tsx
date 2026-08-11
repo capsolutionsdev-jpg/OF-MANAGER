@@ -60,6 +60,7 @@ export function FormateurForm({
       adresse: "",
       siret: "",
       tarifJournalier: "",
+      typeContrat: "EXTERNE",
       academies: [],
       formationIds: [],
       ...defaultValues,
@@ -127,6 +128,17 @@ export function FormateurForm({
           </CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid gap-2 sm:col-span-2">
+            <Label htmlFor="typeContrat">Statut du formateur</Label>
+            <select
+              id="typeContrat"
+              className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
+              {...register("typeContrat")}
+            >
+              <option value="EXTERNE">Externe — sous-traitant (contrat + tarif journalier)</option>
+              <option value="INTERNE">Interne — salarié de l&apos;école (pas de contrat)</option>
+            </select>
+          </div>
           <div className="grid gap-2 sm:col-span-2">
             <Label htmlFor="adresse">Adresse (sous-traitant)</Label>
             <Input

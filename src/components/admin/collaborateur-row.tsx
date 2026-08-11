@@ -12,12 +12,14 @@ import {
   toggleCollaborateurActive,
   deleteCollaborateur,
 } from "@/lib/actions/admin-actions";
+import { POSTES, posteValueFromFonction } from "@/lib/postes";
 
 type Collab = {
   id: string;
   name: string;
   email: string;
   role: string;
+  fonction: string | null;
   isActive: boolean;
   permissions: string[];
 };
@@ -39,7 +41,7 @@ export function CollaborateurRow({ c }: { c: Collab }) {
         </button>
         <div className="flex items-center gap-2">
           <Badge variant="outline">
-            {c.role === "RESPONSABLE_FORMATION" ? "Responsable" : "Assistant"}
+            {c.fonction ?? (c.role === "RESPONSABLE_FORMATION" ? "Responsable" : "Assistant")}
           </Badge>
           {c.isActive ? (
             <Badge variant="secondary" className="bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">Actif</Badge>
@@ -63,10 +65,11 @@ export function CollaborateurRow({ c }: { c: Collab }) {
                 <Input name="name" defaultValue={c.name} />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-medium">Rôle</label>
-                <select name="role" defaultValue={c.role} className="h-9 w-full rounded-md border bg-transparent px-3 text-sm">
-                  <option value="ASSISTANT">Assistant administratif</option>
-                  <option value="RESPONSABLE_FORMATION">Responsable formation</option>
+                <label className="text-xs font-medium">Poste / fonction</label>
+                <select name="poste" defaultValue={posteValueFromFonction(c.fonction, c.role)} className="h-9 w-full rounded-md border bg-transparent px-3 text-sm">
+                  {POSTES.map((p) => (
+                    <option key={p.value} value={p.value}>{p.label}</option>
+                  ))}
                 </select>
               </div>
             </div>
