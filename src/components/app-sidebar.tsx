@@ -168,7 +168,7 @@ export function AppSidebar({
   brand?: { nom: string; logoUrl: string | null };
 }) {
   return (
-    <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground lg:flex">
+    <aside data-app-chrome className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground lg:flex">
       <SidebarBrand brand={brand} />
       <SidebarNav user={user} />
     </aside>

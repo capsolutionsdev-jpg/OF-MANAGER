@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { auth } from "@/auth";
 import { getTenantDb } from "@/lib/tenant";
+import { getCurrentOrganisme } from "@/lib/org";
 import {
   Card,
   CardContent,
@@ -58,7 +59,14 @@ export default async function DashboardPage() {
   const db = await getTenantDb();
   const now = new Date();
   const session = await auth();
-  const prenom = (session?.user?.name ?? "").split(" ")[0] || "à vous";
+  // Prénom du titulaire. Pour l'ADMIN (représentant légal de l'OF), le compte est
+  // souvent nommé « Administrateur » (générique) : on retombe alors sur le
+  // représentant de l'organisme pour un accueil personnalisé.
+  const org = await getCurrentOrganisme();
+  const rawName = (session?.user?.name ?? "").trim();
+  const generic = !rawName || /^administrateur$/i.test(rawName);
+  const source = generic ? (org?.representant ?? rawName) : rawName;
+  const prenom = source.trim().split(/\s+/)[0] || "à vous";
   const aujourdhui = now.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
 
   // Bornes de la semaine courante (lundi → dimanche)

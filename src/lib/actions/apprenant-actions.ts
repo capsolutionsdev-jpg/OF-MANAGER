@@ -34,12 +34,26 @@ export async function createApprenantAccount(
     const email = (emailOverride?.trim() || candidat.email).toLowerCase();
     if (!email) return { ok: false, error: "Aucune adresse e-mail." };
 
-    const apprenant = await db.apprenant.upsert({
+    // Apprenant : on passe par le client BRUT (pas le client cloisonné). La garde
+    // d'appartenance de l'`upsert` scopé rejette en effet les lignes Apprenant
+    // héritées à `organismeId` NUL (créées avant le multi-tenant) → « Accès refusé »
+    // → l'accès n'était plus créable. On récupère/crée la ligne et on rattache
+    // l'organisme au passage.
+    let apprenant = await prisma.apprenant.findUnique({
       where: { candidatId },
-      update: {},
-      create: { candidatId },
-      select: { id: true, userId: true },
+      select: { id: true, userId: true, organismeId: true },
     });
+    if (!apprenant) {
+      apprenant = await prisma.apprenant.create({
+        data: { candidatId, organismeId: candidat.organismeId },
+        select: { id: true, userId: true, organismeId: true },
+      });
+    } else if (!apprenant.organismeId && candidat.organismeId) {
+      await prisma.apprenant.update({
+        where: { id: apprenant.id },
+        data: { organismeId: candidat.organismeId },
+      });
+    }
 
     const passwordHash = await bcrypt.hash(password, 10);
     const name = `${candidat.prenom} ${candidat.nom}`.trim();
@@ -62,7 +76,7 @@ export async function createApprenantAccount(
         where: { id: existingUser.id },
         data: { passwordHash, role: "APPRENANT", isActive: true, name },
       });
-      await db.apprenant.update({
+      await prisma.apprenant.update({
         where: { id: apprenant.id },
         data: { userId: existingUser.id },
       });
@@ -70,7 +84,7 @@ export async function createApprenantAccount(
       const user = await prisma.user.create({
         data: { email, name, role: "APPRENANT", passwordHash, organismeId: candidat.organismeId },
       });
-      await db.apprenant.update({
+      await prisma.apprenant.update({
         where: { id: apprenant.id },
         data: { userId: user.id },
       });
