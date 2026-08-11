@@ -22,7 +22,7 @@ export default async function ModifierSessionPage({
     db.formation.findMany({
       where: { isArchived: false },
       orderBy: { titre: "asc" },
-      select: { id: true, titre: true, reference: true, soumisJury: true, nbJury: true },
+      select: { id: true, titre: true, reference: true, soumisJury: true, nbJury: true, examen: true, academy: true },
     }),
     db.formateur.findMany({
       orderBy: { nom: "asc" },

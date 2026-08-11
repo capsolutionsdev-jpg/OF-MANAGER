@@ -1,4 +1,4 @@
-import type { Candidat, Entreprise, Formation, Inscription, Session } from "@prisma/client";
+import type { Candidat, Entreprise, Formation, Inscription, Salle, Session } from "@prisma/client";
 import { DEFAULT_ORG_IDENTITY, type OrgIdentity } from "@/lib/org-identity";
 import { MODALITE_LABELS } from "@/lib/validators/formation";
 import { FINANCEMENT_LABELS } from "@/lib/validators/candidat";
@@ -6,7 +6,7 @@ import { ssiapNiveauOfFormation } from "@/lib/documents/families";
 
 export type InscriptionComplete = Inscription & {
   candidat: Candidat & { entreprise?: Entreprise | null };
-  session: Session & { formation: Formation };
+  session: Session & { formation: Formation; salle?: Salle | null };
 };
 
 /**
@@ -109,6 +109,7 @@ export function buildVariables(
         : `du ${d(s.dateDebut)} au ${d(s.dateFin)}`,
     horaires: s.horaires ?? "—",
     lieu: s.lieu ?? "—",
+    salle: s.salle?.nom ?? "—",
     // Examen : date et lieu dédiés (repli sur la session si non renseignés).
     date_examen: s.dateExamen ? d(s.dateExamen) : d(s.dateFin),
     lieu_examen: s.lieuExamen ?? s.lieu ?? "—",

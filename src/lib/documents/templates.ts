@@ -97,6 +97,7 @@ export const DOCUMENTS: Record<string, { label: string; html: string }> = {
         <tr><td>Dates</td><td>du {{date_debut}} au {{date_fin}}</td></tr>
         <tr><td>Horaires</td><td>{{horaires}}</td></tr>
         <tr><td>Lieu / modalité</td><td>{{lieu}} — {{modalite}}</td></tr>
+        <tr><td>Salle</td><td>{{salle}}</td></tr>
       </table>
       <p>Merci de vous présenter muni(e) d'une pièce d'identité. Pour toute question : {{organisme_telephone}} — {{organisme_email}}.</p>
       <p><strong>Accessibilité (situation de handicap) :</strong> pour toute adaptation nécessaire, contactez notre référent handicap : {{referent_handicap}}.</p>

@@ -86,7 +86,7 @@ export async function buildInscriptionPdf(
 ): Promise<PdfResult> {
   const inscription = await prisma.inscription.findUnique({
     where: { id: inscriptionId },
-    include: { candidat: { include: { entreprise: true } }, session: { include: { formation: true } } },
+    include: { candidat: { include: { entreprise: true } }, session: { include: { formation: true, salle: true } } },
   });
   if (!inscription) return null;
 
@@ -211,7 +211,7 @@ export async function buildSatisfactionPdf(
 ): Promise<PdfResult> {
   const i = await prisma.inscription.findUnique({
     where: { id: inscriptionId },
-    include: { candidat: { include: { entreprise: true } }, session: { include: { formation: true } } },
+    include: { candidat: { include: { entreprise: true } }, session: { include: { formation: true, salle: true } } },
   });
   if (!i) return null;
 

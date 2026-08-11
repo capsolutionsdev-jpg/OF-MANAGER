@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -39,7 +39,7 @@ function ErrorText({ msg }: { msg?: string }) {
   return <p className="text-sm text-destructive">{msg}</p>;
 }
 
-type FormationOption = { id: string; titre: string; reference: string; soumisJury?: boolean; nbJury?: number | null };
+type FormationOption = { id: string; titre: string; reference: string; soumisJury?: boolean; nbJury?: number | null; examen?: boolean; academy?: string | null };
 type JuryOption = { id: string; nom: string; prenom: string; qualite: string | null; formationsValidables: string[]; actif: boolean };
 type JurySel = { juryId: string; prixEuros: string; natureExamen: string };
 
@@ -50,6 +50,7 @@ export function SessionForm({
   jurys = [],
   sessionId,
   defaultValues,
+  defaultLieu = "",
 }: {
   formations: FormationOption[];
   formateurs?: { id: string; nom: string; prenom: string; academies?: string[] }[];
@@ -57,6 +58,8 @@ export function SessionForm({
   jurys?: JuryOption[];
   sessionId?: string;
   defaultValues?: Partial<SessionFormValues>;
+  /** Adresse du centre — pré-remplit le lieu (et le lieu d'examen sécurité) en création (#15). */
+  defaultLieu?: string;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -74,6 +77,8 @@ export function SessionForm({
     register,
     handleSubmit,
     watch,
+    setValue,
+    getValues,
     formState: { errors },
   } = useForm<SessionFormValues>({
     resolver: zodResolver(sessionFormSchema),
@@ -83,12 +88,12 @@ export function SessionForm({
       dateDebut: "",
       dateFin: "",
       horaires: "",
-      lieu: "",
+      lieu: defaultLieu,
       dateExamen: "",
       lieuExamen: "",
       salleId: "",
-      modalite: "MIXTE",
-      nbPlaces: "10",
+      modalite: "PRESENTIEL",
+      nbPlaces: "12",
       statut: "PLANIFIEE",
       tarifFormateurJour: "",
       formateurIds: [],
@@ -99,6 +104,22 @@ export function SessionForm({
   const watchedFormationId = watch("formationId");
   const selectedFormation = formations.find((f) => f.id === watchedFormationId);
   const juryActif = !!selectedFormation?.soumisJury;
+  // La formation est-elle sanctionnée par un examen ? (masque date/lieu d'examen sinon)
+  const examenActif = !!selectedFormation?.examen;
+
+  // Lieu d'examen par défaut selon la catégorie, en CRÉATION et si le champ est
+  // vide : sécurité privée → adresse du centre ; SSIAP / VTC-Taxi → laissé libre
+  // (SSIAP = centre d'examen dédié ; VTC/Taxi = géré par la CMA).
+  useEffect(() => {
+    if (sessionId || !examenActif || !defaultLieu) return;
+    if (getValues("lieuExamen")?.trim()) return;
+    const isSsiap = /ssiap/i.test(`${selectedFormation?.reference ?? ""} ${selectedFormation?.titre ?? ""}`);
+    if (selectedFormation?.academy === "SAFETY" && !isSsiap) {
+      setValue("lieuExamen", defaultLieu, { shouldDirty: false });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watchedFormationId]);
+
   // Jurés pouvant valider cette formation (ou sans restriction).
   const jurysEligibles = jurys.filter(
     (j) => j.actif && (j.formationsValidables.length === 0 || j.formationsValidables.includes(watchedFormationId)),
@@ -173,22 +194,29 @@ export function SessionForm({
               {...register("horaires")}
             />
           </div>
-          <div className="grid gap-2">
-            <Label htmlFor="lieu">Lieu</Label>
+          <div className="grid gap-2 sm:col-span-2">
+            <Label htmlFor="lieu">Lieu de la formation</Label>
             <Input
               id="lieu"
-              placeholder="Les Lilas (93) ou 100% en ligne"
+              placeholder="Adresse de la formation"
               {...register("lieu")}
             />
+            <p className="text-xs text-muted-foreground">
+              Adresse du centre par défaut — modifiez-la pour une formation sur un autre site (en entreprise / extra).
+            </p>
           </div>
-          <div className="grid gap-2">
-            <Label htmlFor="dateExamen">Date d&apos;examen <span className="font-normal text-muted-foreground">(si soumise à examen)</span></Label>
-            <Input id="dateExamen" type="date" {...register("dateExamen")} />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="lieuExamen">Lieu d&apos;examen</Label>
-            <Input id="lieuExamen" placeholder="Adresse de l'OF ou autre centre d'examen" {...register("lieuExamen")} />
-          </div>
+          {examenActif && (
+            <>
+              <div className="grid gap-2">
+                <Label htmlFor="dateExamen">Date d&apos;examen</Label>
+                <Input id="dateExamen" type="date" {...register("dateExamen")} />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="lieuExamen">Lieu d&apos;examen</Label>
+                <Input id="lieuExamen" placeholder="Adresse du centre d'examen" {...register("lieuExamen")} />
+              </div>
+            </>
+          )}
 
           {salles.length > 0 && (
             <div className="grid gap-2">
@@ -219,10 +247,9 @@ export function SessionForm({
             <Input id="nbPlaces" type="number" {...register("nbPlaces")} />
           </div>
 
-          <div className="grid gap-2">
-            <Label htmlFor="reference">Référence (optionnel)</Label>
-            <Input id="reference" placeholder="SES-SEO-2026-01" {...register("reference")} />
-          </div>
+          {/* Référence retirée du formulaire (#15) — conservée en base : champ caché
+              pour ne pas effacer la référence d'une session existante en édition. */}
+          <input type="hidden" {...register("reference")} />
           <div className="grid gap-2">
             <Label htmlFor="tarifFormateurJour">
               Tarif formateur / jour (€ HT)
