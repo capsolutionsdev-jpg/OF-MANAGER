@@ -61,9 +61,15 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE O
 - Vérifier la **console SUPERADMIN** (accès cross-OF légitime) : elle doit rester en bypass.
 - Vérifier crons/webhooks Stripe.
 
-## Étape 5 — Rollback rapide
+## Étape 5 — Rollback
 
-En cas d'anomalie : repasser `RLS_ENABLED=false` **et** `DATABASE_URL` sur le rôle owner, redéployer. Les policies peuvent rester en place (inertes pour l'owner).
+**Coupe-circuit INSTANTANÉ (~1 min, recommandé)** : dans Vercel, remettre `DATABASE_URL` sur le rôle **owner** **et** `RLS_ENABLED=false`, puis redéployer. Le owner ignore la RLS → retour immédiat à l'état d'avant. Les policies restent en place (inertes pour l'owner) — rien d'autre à faire.
+
+> ⚠️ Ne PAS se contenter de `RLS_ENABLED=false` en laissant `DATABASE_URL` sur `app_rls` : l'app ne poserait plus `app.org`, et `app_rls` (soumis à la RLS) verrait **0 ligne**. Le vrai coupe-circuit = **repasser DATABASE_URL sur l'owner**.
+
+**Retrait COMPLET de la RLS (abandon définitif)** : exécuter `prisma/sql/rls-rollback.sql` (généré, `DROP POLICY` + `DISABLE ROW LEVEL SECURITY` sur les 70 tables) via le rôle owner.
+
+> Fichier d'activation en un seul bloc (rôle + droits + policies) pour la prod : `prisma/sql/rls-prod-activate.sql`.
 
 ## Points d'attention
 
