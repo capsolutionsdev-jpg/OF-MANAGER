@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
 import { buildSatisfactionPdf } from "@/lib/documents/build-pdf";
 
 export const runtime = "nodejs";
@@ -13,6 +14,18 @@ export async function GET(
   if (!session?.user) return new Response("Non autorisé", { status: 401 });
 
   const { inscriptionId } = await params;
+
+  // Cloisonnement multi-tenant (RGPD/IDOR) : uniquement les inscriptions de
+  // l'organisme de l'utilisateur (SUPERADMIN éditeur excepté).
+  const insc = await prisma.inscription.findUnique({
+    where: { id: inscriptionId },
+    select: { organismeId: true },
+  });
+  if (!insc) return new Response("Introuvable", { status: 404 });
+  if (session.user.role !== "SUPERADMIN" && insc.organismeId !== session.user.organismeId) {
+    return new Response("Non autorisé", { status: 403 });
+  }
+
   const pdf = await buildSatisfactionPdf(inscriptionId);
   if (!pdf) return new Response("Introuvable", { status: 404 });
 
