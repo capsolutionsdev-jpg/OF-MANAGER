@@ -55,6 +55,9 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE O
 
 ## Étape 4 — Tests d'isolation (obligatoires avant d'ouvrir à des tiers)
 
+> **Script automatique** : `node scripts/rls-check.mjs` (avec `RLS_OWNER_URL` + `RLS_APP_URL` = même base, rôles owner et app_rls) vérifie les 4 invariants : deny sans app.org, org A voit A, A ne voit pas B, BYPASS voit tout. À lancer sur une **branche de staging**.
+
+
 - Connecté comme OF A, vérifier qu'aucune donnée d'OF B n'apparaît (candidats, sessions, factures, dashboard, exports).
 - Tenter un accès par identifiant (URL directe) à une ressource d'un autre OF → 404/refus.
 - Vérifier les **flux publics par token** (parcours, signer, satisfaction…) : ils utilisent le client brut (`bypassPrisma`) et filtrent par token — confirmer qu'ils fonctionnent toujours.
