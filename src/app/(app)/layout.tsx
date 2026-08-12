@@ -28,6 +28,7 @@ import { SubscribePanel } from "@/components/billing/subscribe-panel";
 import { ConfirmProvider } from "@/components/ui/confirm-dialog";
 import { cn } from "@/lib/utils";
 import { isNativeApp } from "@/lib/native-app";
+import { PushRegistrar } from "@/components/push/push-registrar";
 
 // Rendu dynamique : ces pages lisent la base de données et la session,
 // elles ne doivent pas être pré-générées au build.
@@ -201,6 +202,8 @@ export default async function AppLayout({
       data-native={native ? "" : undefined}
       style={brandStyle}
     >
+      {/* Enregistrement push — actif seulement dans l'app native. */}
+      <PushRegistrar />
       <div className="flex min-h-screen">
         {/* Rail de navigation vertical (desktop ≥ lg) */}
         <AppSidebar

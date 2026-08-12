@@ -50,6 +50,10 @@ const config: CapacitorConfig = {
       style: "LIGHT",
       backgroundColor: "#0D1B3E",
     },
+    // Notifications push (app mobile) — présentation en avant-plan.
+    PushNotifications: {
+      presentationOptions: ["badge", "sound", "alert"],
+    },
   },
 };
 
