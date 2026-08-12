@@ -19,6 +19,11 @@ export async function GET(
   if (!session?.user) {
     return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
   }
+  // Réservé au personnel (pas aux apprenants) — génère un document interne.
+  const STAFF = ["SUPERADMIN", "ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"];
+  if (!STAFF.includes(session.user.role as string)) {
+    return NextResponse.json({ error: "Accès refusé." }, { status: 403 });
+  }
 
   const { id: candidatId } = await params;
   const c = await prisma.candidat.findUnique({
@@ -27,6 +32,11 @@ export async function GET(
   });
   if (!c) {
     return NextResponse.json({ error: "Candidat introuvable." }, { status: 404 });
+  }
+  // Cloisonnement multi-tenant (RGPD/IDOR) : uniquement les candidats de
+  // l'organisme de l'utilisateur (SUPERADMIN éditeur excepté).
+  if (session.user.role !== "SUPERADMIN" && session.user.organismeId !== c.organismeId) {
+    return NextResponse.json({ error: "Accès refusé (autre organisme)." }, { status: 403 });
   }
 
   const org = await orgConfigFor(c.organismeId);
