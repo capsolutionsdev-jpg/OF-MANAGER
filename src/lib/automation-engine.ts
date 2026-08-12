@@ -13,6 +13,7 @@ import {
 } from "@/lib/automations";
 import {
   emailShell,
+  emailLogoSrc,
   emailHeading,
   emailParagraph,
   emailButton,
@@ -196,6 +197,7 @@ export async function runAutomations(): Promise<Counts> {
       const html = emailShell({
         organisme: org.name,
         representant: org.representant,
+      logoUrl: emailLogoSrc(org.id, org.logoUrl),
         body:
           emailHeading(`C'est confirmé, ${esc(prenom)} 👍`) +
           emailParagraph(
@@ -259,6 +261,7 @@ ${org.representant} — ${org.name}`,
       const html = emailShell({
         organisme: org.name,
         representant: org.representant,
+      logoUrl: emailLogoSrc(org.id, org.logoUrl),
         accent: "amber",
         body:
           emailHeading(`Petit rappel, ${esc(prenom)} 🙂`) +
@@ -313,6 +316,7 @@ ${org.representant} — ${org.name}`,
       const html = emailShell({
         organisme: org.name,
         representant: org.representant,
+      logoUrl: emailLogoSrc(org.id, org.logoUrl),
         accent: "green",
         body:
           emailHeading(`Dernière ligne droite, ${esc(prenom)} 🎯`) +
@@ -356,6 +360,7 @@ ${org.representant} — ${org.name}`,
       const html = emailShell({
         organisme: org.name,
         representant: org.representant,
+      logoUrl: emailLogoSrc(org.id, org.logoUrl),
         body:
           emailHeading(`Bienvenue, ${esc(prenom)} 👋`) +
           emailParagraph(
@@ -416,6 +421,7 @@ ${org.representant} — ${org.name}`,
       const posHtml = emailShell({
         organisme: org.name,
         representant: org.representant,
+      logoUrl: emailLogoSrc(org.id, org.logoUrl),
         body:
           emailHeading(`Bienvenue dans « ${esc(f.titre)} », ${esc(prenom)} 🎉`) +
           emailParagraph(
@@ -451,6 +457,7 @@ ${org.representant} — ${org.name}`,
       const frHtml = emailShell({
         organisme: org.name,
         representant: org.representant,
+      logoUrl: emailLogoSrc(org.id, org.logoUrl),
         body:
           emailHeading(`Une dernière étape, ${esc(prenom)}`) +
           emailParagraph(
@@ -488,6 +495,7 @@ ${org.representant} — ${org.name}`,
       const html = emailShell({
         organisme: org.name,
         representant: org.representant,
+      logoUrl: emailLogoSrc(org.id, org.logoUrl),
         body:
           emailHeading(`Merci d'avoir suivi « ${esc(f.titre)} », ${esc(prenom)} 🙏`) +
           emailParagraph(
@@ -563,6 +571,7 @@ ${org.representant} — ${org.name}`,
       const html = emailShell({
         organisme: org.name,
         representant: org.representant,
+      logoUrl: emailLogoSrc(org.id, org.logoUrl),
         accent: "green",
         body:
           emailHeading(`Félicitations, ${esc(prenom)} 🎓`) +
@@ -636,6 +645,7 @@ ${org.representant} — ${org.name}`,
       const html = emailShell({
         organisme: org.name,
         representant: org.representant,
+      logoUrl: emailLogoSrc(org.id, org.logoUrl),
         body:
           emailHeading(`Prenons de vos nouvelles, ${esc(prenom)}`) +
           emailParagraph(
@@ -739,6 +749,7 @@ ${org.representant} — ${org.name}`;
     const html = emailShell({
       organisme: org.name,
       representant: org.representant,
+      logoUrl: emailLogoSrc(org.id, org.logoUrl),
       body:
         emailParagraph(`Bonjour ${esc(e.nom)},`) +
         emailParagraph(

@@ -9,7 +9,7 @@ import { buildSingleDocPdf } from "@/lib/documents/build-pdf";
 import { DOCUMENTS } from "@/lib/documents/templates";
 import { orgConfigFor } from "@/lib/org-identity";
 import { SIGNABLE_DOCS } from "@/lib/signable-docs";
-import { emailShell, emailParagraph, emailBox, emailSignoff, esc } from "@/lib/email-templates";
+import { emailShell, emailParagraph, emailBox, emailSignoff, esc, emailLogoSrc } from "@/lib/email-templates";
 
 const STAFF = ["SUPERADMIN", "ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"];
 type Result = { ok: true } | { ok: false; error: string };
@@ -58,6 +58,7 @@ export async function sendDocumentToCandidate(
   const html = emailShell({
     organisme: org.name,
     representant: org.representant,
+      logoUrl: emailLogoSrc(org.id, org.logoUrl),
     body:
       emailParagraph(`Bonjour ${esc(insc.candidat.prenom)},`) +
       emailParagraph("Vous trouverez ci-joint le document suivant&nbsp;:") +
@@ -140,6 +141,7 @@ export async function sendDocumentsToCandidate(
   const html = emailShell({
     organisme: org.name,
     representant: org.representant,
+      logoUrl: emailLogoSrc(org.id, org.logoUrl),
     body:
       emailParagraph(`Bonjour ${esc(insc.candidat.prenom)},`) +
       emailParagraph(

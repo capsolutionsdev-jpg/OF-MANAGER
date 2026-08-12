@@ -3,6 +3,8 @@ import { orgConfig } from "@/lib/org-config";
 
 /** Identité d'un organisme telle qu'utilisée dans les documents et e-mails. */
 export type OrgIdentity = {
+  /** Id de l'organisme (pour construire l'URL du logo en e-mail). null = repli. */
+  id: string | null;
   name: string;
   representant: string;
   representantQualite: string;
@@ -24,6 +26,7 @@ export type OrgIdentity = {
 
 /** Repli : valeurs historiques CAP (lib/org-config.ts). */
 export const DEFAULT_ORG_IDENTITY: OrgIdentity = {
+  id: null,
   name: orgConfig.name,
   representant: orgConfig.representant,
   representantQualite: "Gérant",
@@ -58,6 +61,7 @@ export async function orgConfigFor(
     .filter(Boolean)
     .join(", ");
   return {
+    id: o.id,
     name: o.nom || DEFAULT_ORG_IDENTITY.name,
     representant: o.representant || DEFAULT_ORG_IDENTITY.representant,
     representantQualite: o.representantQualite || DEFAULT_ORG_IDENTITY.representantQualite,

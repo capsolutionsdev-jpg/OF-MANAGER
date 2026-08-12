@@ -9,8 +9,10 @@ const L = "https://app.capacademy.fr/parcours/abc123";
 
 const samples: { name: string; html: string }[] = [
   {
-    name: "A1 · Convocation (primary, encadré dates)",
-    html: emailShell({ organisme: org, representant: rep, accent: "primary", body:
+    name: "A1 · Convocation (avec LOGO de l'OF + lien « Espace candidat »)",
+    html: emailShell({ organisme: org, representant: rep, accent: "primary",
+      logoUrl: "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='120'%20height='34'%3E%3Crect%20width='120'%20height='34'%20rx='5'%20fill='%23ffffff'/%3E%3Ctext%20x='60'%20y='23'%20font-family='Arial'%20font-size='15'%20font-weight='bold'%20fill='%230D1B3E'%20text-anchor='middle'%3EAGUYSE%3C/text%3E%3C/svg%3E",
+      body:
       emailHeading(`C'est confirmé, ${esc("Awa")} 👍`) +
       emailParagraph(`Vous êtes officiellement convoqué(e) à la formation <b>« ${esc("SSIAP 1 — Agent de sécurité incendie")} »</b>. Voici l'essentiel&nbsp;:`) +
       emailBox(`📅 <b>Dates</b> : du ${esc("12/03/2026")} au ${esc("20/03/2026")}<br>🕘 <b>Horaires</b> : ${esc("9h00–17h00")}<br>📍 <b>Lieu</b> : ${esc("Les Lilas (93)")}`) +

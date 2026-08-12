@@ -6,6 +6,8 @@
 // passer par esc() avant insertion dans le HTML (sinon un « & » ou « < » casse la
 // mise en page et ouvre une faille d'injection).
 
+import { appBaseUrl } from "@/lib/token";
+
 export const NAVY = "#0D1B3E";
 export const PRIMARY = "#3B6EF5";
 export const AMBER = "#E8A33D";
@@ -67,19 +69,40 @@ export function emailSignoff(closing: string, representant: string): string {
 }
 
 /**
- * Assemble l'e-mail complet : en-tête white-label (🎓 + organisme), contenu, pied
- * de page (organisme — représentant + mention RGPD « Propulsé par OFManager »).
+ * URL HTTPS du logo d'un organisme pour un e-mail (via l'endpoint public qui
+ * décode le logo). `null` si l'organisme n'a pas de logo → l'en-tête retombe sur
+ * la pastille 🎓. NB : on ne met JAMAIS le `data:` base64 brut dans un e-mail
+ * (bloqué par Gmail/Outlook).
+ */
+export function emailLogoSrc(
+  organismeId: string | null | undefined,
+  orgLogoUrl: string | null | undefined,
+): string | null {
+  if (!organismeId || !orgLogoUrl) return null;
+  return `${appBaseUrl()}/api/public/organisme/${organismeId}/logo`;
+}
+
+/**
+ * Assemble l'e-mail complet : en-tête white-label (logo de l'OF ou pastille 🎓 +
+ * organisme, lien « Espace candidat » vers la connexion), contenu, pied de page
+ * (organisme — représentant + mention RGPD « Propulsé par OFManager »).
  */
 export function emailShell(opts: {
   organisme: string;
   representant: string;
   accent?: EmailAccent;
+  /** URL HTTPS du logo (cf. emailLogoSrc). Absent → pastille 🎓. */
+  logoUrl?: string | null;
   /** Contenu HTML (paragraphes, encadrés, boutons…). */
   body: string;
 }): string {
   const accent = ACCENT[opts.accent ?? "primary"];
   const org = esc(opts.organisme);
   const rep = esc(opts.representant);
+  const loginUrl = `${appBaseUrl()}/login`;
+  const brandMark = opts.logoUrl
+    ? `<img src="${esc(opts.logoUrl)}" alt="${org}" height="34" style="height:34px;max-height:34px;width:auto;display:inline-block;vertical-align:middle;border:0;margin-right:10px;background:#ffffff;border-radius:6px;padding:3px 5px">`
+    : `<span style="display:inline-block;width:30px;height:30px;background:${accent};border-radius:7px;text-align:center;line-height:30px;font-size:15px;margin-right:9px">🎓</span>`;
   return (
     `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>` +
     `<body style="margin:0;background:#eef1f7;font-family:Arial,Helvetica,sans-serif;color:#0f1729">` +
@@ -87,8 +110,8 @@ export function emailShell(opts: {
     `<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:14px;overflow:hidden;border:1px solid ${LINE}">` +
     `<tr><td style="background:${NAVY};padding:20px 30px"><table role="presentation" width="100%"><tr>` +
     `<td style="font-size:19px;font-weight:bold;color:#ffffff;font-family:Arial">` +
-    `<span style="display:inline-block;width:30px;height:30px;background:${accent};border-radius:7px;text-align:center;line-height:30px;font-size:15px;margin-right:9px">🎓</span>${org}</td>` +
-    `<td align="right" style="color:#aab8d8;font-size:12px">Espace formation</td></tr></table></td></tr>` +
+    `${brandMark}${org}</td>` +
+    `<td align="right"><a href="${esc(loginUrl)}" style="color:#aab8d8;font-size:12px;text-decoration:none;font-family:Arial">Espace candidat →</a></td></tr></table></td></tr>` +
     `<tr><td style="padding:32px 30px 4px">${opts.body}</td></tr>` +
     `<tr><td style="background:${PAPER};padding:20px 30px;border-top:1px solid ${LINE}">` +
     `<p style="margin:0 0 6px;font-size:12px;color:${MUTED};line-height:1.6"><b style="color:${NAVY}">${org}</b> — ${rep}<br>` +

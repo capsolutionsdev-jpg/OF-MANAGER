@@ -13,6 +13,7 @@ import {
   emailBox,
   emailSignoff,
   esc,
+  emailLogoSrc,
 } from "@/lib/email-templates";
 
 // Génère l'attestation de réussite (PDF via Chromium) puis l'envoie par e-mail
@@ -81,6 +82,7 @@ export async function POST(
     const html = emailShell({
       organisme: org.name,
       representant: org.representant,
+      logoUrl: emailLogoSrc(org.id, org.logoUrl),
       accent: "green",
       body:
         emailHeading(`Toutes nos félicitations, ${esc(prenom)} ! 🏆`) +
