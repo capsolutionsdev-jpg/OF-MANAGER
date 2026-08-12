@@ -933,6 +933,14 @@ model Inscription {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Cache du dossier PDF complet (perf). Régénéré si l'inscription change
+  // (dossierPdfVersion dérivée de updatedAt + version de gabarit) ; sinon servi
+  // depuis la base (évite un démarrage Chromium à chaque ouverture). RGPD : reste
+  // dans le tenant, derrière l'authentification.
+  dossierPdf        Bytes?
+  dossierPdfVersion String?
+  dossierPdfName    String?
+
   @@unique([candidatId, sessionId])
   @@index([statut])
   @@index([organismeId])
