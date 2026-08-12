@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { FormuleAbonnement } from "@prisma/client";
-import { prisma } from "@/lib/prisma";
+import { prismaBase, txWithOrg } from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/superadmin-guard";
 import { PLAN_ORDER, type FormuleKey } from "@/lib/plans";
 import { FEATURE_KEYS } from "@/lib/features";
@@ -55,7 +55,9 @@ export async function updatePlanTarifs(
     return { error: `Formule ${invalid.key} : nom, prix, accroche et niveau de support sont requis.` };
   }
 
-  await prisma.$transaction(
+  // PlanTarif = modèle global (grille éditeur, sans policy RLS) → BYPASS.
+  await txWithOrg(
+    "BYPASS",
     parsed.map((p) => {
       const data = {
         nom: p.nom,
@@ -66,7 +68,7 @@ export async function updatePlanTarifs(
         comptesInclus: p.comptesInclus,
         populaire: p.key === populaire,
       };
-      return prisma.planTarif.upsert({
+      return prismaBase.planTarif.upsert({
         where: { formule: p.key as FormuleAbonnement },
         create: { formule: p.key as FormuleAbonnement, ...data },
         update: data,

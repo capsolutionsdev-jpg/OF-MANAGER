@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getTenantDb } from "@/lib/tenant";
+import { prismaBase, txWithOrg } from "@/lib/prisma";
 import { auth } from "@/auth";
 import {
   coursFormSchema,
@@ -241,9 +242,12 @@ export async function moveModule(
     orderBy: { ordre: dir === "up" ? "desc" : "asc" },
   });
   if (!voisin) return { ok: true };
-  await db.$transaction([
-    db.coursModule.update({ where: { id: m.id }, data: { ordre: voisin.ordre } }),
-    db.coursModule.update({ where: { id: voisin.id }, data: { ordre: m.ordre } }),
+  // Échange atomique des ordres. `m`/`voisin` déjà vérifiés dans l'organisme (lus
+  // via le client cloisonné) → maj par id sur `prismaBase`, dans une transaction
+  // qui pose app.org une seule fois (compatible RLS ; inerte sinon).
+  await txWithOrg(m.organismeId ?? "BYPASS", [
+    prismaBase.coursModule.update({ where: { id: m.id }, data: { ordre: voisin.ordre } }),
+    prismaBase.coursModule.update({ where: { id: voisin.id }, data: { ordre: m.ordre } }),
   ]);
   revalidatePath(`/elearning/${m.coursId}`);
   return { ok: true };
@@ -269,9 +273,10 @@ export async function moveLecon(
     orderBy: { ordre: dir === "up" ? "desc" : "asc" },
   });
   if (!voisin) return { ok: true };
-  await db.$transaction([
-    db.lecon.update({ where: { id: l.id }, data: { ordre: voisin.ordre } }),
-    db.lecon.update({ where: { id: voisin.id }, data: { ordre: l.ordre } }),
+  // Échange atomique des ordres (cf. moveModule) — ops par id vérifiées in-tenant.
+  await txWithOrg(l.organismeId ?? "BYPASS", [
+    prismaBase.lecon.update({ where: { id: l.id }, data: { ordre: voisin.ordre } }),
+    prismaBase.lecon.update({ where: { id: voisin.id }, data: { ordre: l.ordre } }),
   ]);
   revalidatePath(`/elearning/${l.module.coursId}`);
   return { ok: true };
