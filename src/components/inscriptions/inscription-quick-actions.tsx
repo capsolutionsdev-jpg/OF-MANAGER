@@ -14,7 +14,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DOCUMENT_MENU } from "@/lib/documents/templates";
 import { filterDocMenu, isRecyclageOuRemiseANiveau, type FormationLike } from "@/lib/documents/families";
-import { attestationCodeForFormation } from "@/lib/documents/titres";
+// Sous-module PUR (catalog) — pas le barrel `titres` qui ré-exporte `numero`
+// (→ prisma), ce qui ferait planter ce composant CLIENT dans le navigateur.
+import { attestationCodeForFormation } from "@/lib/documents/titres/catalog";
 import { MANUAL_EVENTS, type ManualEvent } from "@/lib/manual-events";
 import { sendDocumentsToCandidate } from "@/lib/actions/document-actions";
 import { sendAutomationEventNow, sendAttestationRecyclage } from "@/lib/actions/manual-send-actions";
