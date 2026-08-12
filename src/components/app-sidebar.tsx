@@ -88,7 +88,7 @@ export function SidebarNav({
               : "text-muted-foreground/80 group-hover/nav:text-foreground",
           )}
         />
-        <span className="truncate">{it.label}</span>
+        <span className="min-w-0 truncate">{it.label}</span>
       </Link>
     );
   };
