@@ -16,11 +16,17 @@ const fmt = (d: Date) => d.toLocaleDateString("fr-FR");
 export async function sendContratFormateur(
   sessionId: string,
 ): Promise<{ ok: boolean; demo: boolean; error?: string }> {
+  // Cette fonction est un point d'entrée server action (exportée) : elle doit se
+  // garder elle-même (auth + cloisonnement tenant), sans dépendre du wrapper.
+  const session = await auth();
+  if (!session?.user) return { ok: false, demo: true, error: "Non autorisé." };
   const s = await prisma.session.findUnique({
     where: { id: sessionId },
     include: { formation: true, formateurs: true },
   });
   if (!s) return { ok: false, demo: true, error: "Session introuvable." };
+  if (session.user.role !== "SUPERADMIN" && s.organismeId !== session.user.organismeId)
+    return { ok: false, demo: true, error: "Accès refusé (autre organisme)." };
   const f = s.formateurs[0];
   // Formateur interne (salarié) → pas de contrat de sous-traitance (#15).
   if (f?.typeContrat === "INTERNE")
