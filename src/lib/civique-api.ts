@@ -8,7 +8,7 @@
 // =============================================================
 
 import { randomBytes } from "crypto";
-import { prisma } from "@/lib/prisma";
+import { prisma, prismaBase, txWithOrg } from "@/lib/prisma";
 import { CivicMention, CivicModuleStatut, CivicPath, Prisma } from "@prisma/client";
 import { nextRef, maxSuffix } from "@/lib/numerotation";
 import { sendEmail } from "@/lib/email";
@@ -353,7 +353,7 @@ export async function applyState(
       date: new Date(a.date),
     };
     ops.push(
-      prisma.civicAssessment.upsert({
+      prismaBase.civicAssessment.upsert({
         where: { candidatId_mention: { candidatId, mention: m } },
         create: { candidatId, organismeId, mention: m, ...data },
         update: data,
@@ -374,7 +374,7 @@ export async function applyState(
       statut: STATUT_TO_DB[p.status] ?? CivicModuleStatut.IN_PROGRESS,
     };
     ops.push(
-      prisma.civicProgress.upsert({
+      prismaBase.civicProgress.upsert({
         where: { candidatId_moduleId: { candidatId, moduleId } },
         create: { candidatId, organismeId, moduleId, ...data },
         update: data,
@@ -384,10 +384,10 @@ export async function applyState(
 
   // Weaknesses & mock exams : remplacement complet (l'état envoyé fait foi).
   if (state.weaknesses) {
-    ops.push(prisma.civicWeakness.deleteMany({ where: { candidatId } }));
+    ops.push(prismaBase.civicWeakness.deleteMany({ where: { candidatId } }));
     if (state.weaknesses.length) {
       ops.push(
-        prisma.civicWeakness.createMany({
+        prismaBase.civicWeakness.createMany({
           data: state.weaknesses.map((w) => ({
             candidatId,
             organismeId,
@@ -416,11 +416,11 @@ export async function applyState(
         date: new Date(e.date),
       }));
     });
-    ops.push(prisma.civicMockExam.deleteMany({ where: { candidatId } }));
-    if (rows.length) ops.push(prisma.civicMockExam.createMany({ data: rows }));
+    ops.push(prismaBase.civicMockExam.deleteMany({ where: { candidatId } }));
+    if (rows.length) ops.push(prismaBase.civicMockExam.createMany({ data: rows }));
   }
 
-  await prisma.$transaction(ops);
+  await txWithOrg(organismeId ?? "BYPASS", ops);
 }
 
 // ---------- Paiement en ligne : fulfillment (idempotent) ----------

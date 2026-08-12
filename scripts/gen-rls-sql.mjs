@@ -2,7 +2,12 @@
  * Génère prisma/sql/rls-policies.sql à partir du schéma Prisma.
  * Sélectionne tous les modèles portant un champ `organismeId` (= tenant), hors
  * GLOBAL_MODELS, et émet pour chacun : ENABLE RLS + policy d'isolation
- * `"organismeId" = current_setting('app.org', true)`.
+ * `"organismeId" = current_setting('app.org', true) OR app.org = 'BYPASS'`.
+ *
+ * Le disjoncteur `'BYPASS'` est INDISPENSABLE : `bypassPrisma()` pose
+ * `app.org='BYPASS'` pour les accès légitimes non cloisonnés (console SUPERADMIN
+ * cross-tenant, flux publics par token, crons). Sans lui, ces chemins
+ * renverraient 0 ligne une fois la RLS active.
  *
  * INERTE tant que l'application se connecte avec le rôle propriétaire (owner)
  * de la table : PostgreSQL fait bypasser la RLS au propriétaire (sauf FORCE).
@@ -43,14 +48,18 @@ const header = `-- ============================================================
 
 `;
 
+// Expression réutilisée en USING et WITH CHECK : la ligne appartient au tenant
+// courant, OU on est en mode contournement légitime (app.org = 'BYPASS').
+const PRED = `("organismeId" = current_setting('app.org', true) OR current_setting('app.org', true) = 'BYPASS')`;
+
 const body = tenantModels
   .map(
     (t) => `-- ${t}
 ALTER TABLE "${t}" ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS tenant_isolation ON "${t}";
 CREATE POLICY tenant_isolation ON "${t}"
-  USING ("organismeId" = current_setting('app.org', true))
-  WITH CHECK ("organismeId" = current_setting('app.org', true));
+  USING ${PRED}
+  WITH CHECK ${PRED};
 `,
   )
   .join("\n");

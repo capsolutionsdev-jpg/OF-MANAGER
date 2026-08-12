@@ -1,5 +1,5 @@
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { prismaBase, withOrgVar } from "@/lib/prisma";
 
 /**
  * Cloisonnement multi-tenant — DOUBLE garantie :
@@ -37,32 +37,11 @@ function delegateName(model: string) {
 
 export type TenantDb = ReturnType<typeof scopedPrisma>;
 
-/**
- * Exécute une opération Prisma dans une transaction qui pose `app.org` = `value`
- * (transaction-local). Compatible pooler Neon (PgBouncer transaction mode).
- * `value` = organismeId (scopé) ou "BYPASS" (console/flux publics/crons).
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function withOrgVar<T>(value: string, op: any): Promise<T> {
-  // INERTE tant que la RLS n'est pas activée : on renvoie l'opération telle quelle
-  // → comportement et perf historiques inchangés. Au jour du rollout RLS, on pose
-  // RLS_ENABLED=true (en même temps que le rôle app_rls + les policies + la bascule
-  // DATABASE_URL) et chaque requête passe alors par set_config('app.org', …).
-  if (process.env.RLS_ENABLED !== "true") return op as Promise<T>;
-  return prisma
-    .$transaction([
-      prisma.$executeRawUnsafe(`SELECT set_config('app.org', $1, true)`, value),
-      op,
-    ])
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .then((r: any[]) => r[1] as T);
-}
-
 export function scopedPrisma(organismeId: string) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const run = (op: any) => withOrgVar(organismeId, op);
+  const run = (op: any) => withOrgVar<any>(organismeId, op);
 
-  return prisma.$extends({
+  return prismaBase.$extends({
     query: {
       $allModels: {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -83,7 +62,7 @@ export function scopedPrisma(organismeId: string) {
             args.create = { organismeId, ...args.create };
             const existing = await run(
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              (prisma as any)[delegateName(model)].findFirst({
+              (prismaBase as any)[delegateName(model)].findFirst({
                 where: args.where,
                 select: { organismeId: true },
               }),
@@ -103,14 +82,14 @@ export function scopedPrisma(organismeId: string) {
           // ── Opérations par identifiant unique : vérification d'appartenance ──
           if (operation === "findUnique" || operation === "findUniqueOrThrow") {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const d = (prisma as any)[delegateName(model)];
+            const d = (prismaBase as any)[delegateName(model)];
             const fargs = { ...args, where: { ...args.where, organismeId } };
             return run(operation === "findUniqueOrThrow" ? d.findFirstOrThrow(fargs) : d.findFirst(fargs));
           }
           if (operation === "update" || operation === "delete") {
             const exists = await run(
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              (prisma as any)[delegateName(model)].findFirst({
+              (prismaBase as any)[delegateName(model)].findFirst({
                 where: { ...args.where, organismeId },
                 select: { id: true },
               }),
@@ -136,7 +115,7 @@ export function scopedPrisma(organismeId: string) {
  * de l'appelant (par token unique, ou volontairement cross-tenant pour la console).
  */
 export function bypassPrisma() {
-  return prisma.$extends({
+  return prismaBase.$extends({
     query: {
       $allModels: {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any

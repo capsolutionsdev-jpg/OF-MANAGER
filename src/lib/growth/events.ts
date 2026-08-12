@@ -1,6 +1,6 @@
 import "server-only";
 import type { Prisma } from "@prisma/client";
-import { prisma } from "@/lib/prisma";
+import { prisma, prismaBase, txWithOrg } from "@/lib/prisma";
 
 /**
  * Timeline & scoring des leads (console growth éditeur).
@@ -37,12 +37,15 @@ export async function logLeadEvent(
   const def = LEAD_EVENT_TYPES[type];
   if (!def) return;
   try {
-    await prisma.$transaction([
-      prisma.leadEvent.create({
+    // Lead/LeadEvent = données éditeur (globales, sans policy RLS) → BYPASS.
+    // Ops sur `prismaBase` : une transaction tableau ne peut pas passer par le
+    // client étendu (chaque op y serait déjà enveloppée).
+    await txWithOrg("BYPASS", [
+      prismaBase.leadEvent.create({
         data: { leadId, type, titre: opts?.titre ?? def.label, meta: opts?.meta },
       }),
       ...(def.score !== 0
-        ? [prisma.lead.update({ where: { id: leadId }, data: { score: { increment: def.score } } })]
+        ? [prismaBase.lead.update({ where: { id: leadId }, data: { score: { increment: def.score } } })]
         : []),
     ]);
   } catch (e) {
