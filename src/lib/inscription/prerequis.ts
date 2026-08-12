@@ -1,4 +1,7 @@
-import { attestationCodeForFormation, ssiapDiplomeNiveau } from "@/lib/documents/titres";
+// Import direct du sous-module PUR (catalog) — pas le barrel `titres` qui
+// ré-exporte `numero`/`render` (côté serveur) et ferait fuiter du code serveur
+// dans les bundles client qui utilisent ce module.
+import { attestationCodeForFormation, ssiapDiplomeNiveau } from "@/lib/documents/titres/catalog";
 
 /**
  * Prérequis & spécificités PAR FORMATION pour l'inscription sur place.
