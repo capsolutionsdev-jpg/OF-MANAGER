@@ -187,20 +187,24 @@ export default async function DashboardPage() {
   const estStaff = ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"].includes(
     (session?.user?.role as string) ?? "",
   );
-  const entreprisesConv = estStaff
-    ? await db.entreprise.findMany({
-        select: { id: true, raisonSociale: true },
-        orderBy: { raisonSociale: "asc" },
-      })
-    : [];
-  const sessionsConvRaw = estStaff
-    ? await db.session.findMany({
-        where: { isArchived: false, statut: { not: "ANNULEE" } },
-        include: { formation: { select: { titre: true } } },
-        orderBy: { dateDebut: "desc" },
-        take: 100,
-      })
-    : [];
+  // Données du dialog « Convention entreprise » (staff) : les deux requêtes sont
+  // indépendantes → un seul aller-retour au lieu de deux en série.
+  const staffData = estStaff
+    ? await Promise.all([
+        db.entreprise.findMany({
+          select: { id: true, raisonSociale: true },
+          orderBy: { raisonSociale: "asc" },
+        }),
+        db.session.findMany({
+          where: { isArchived: false, statut: { not: "ANNULEE" } },
+          include: { formation: { select: { titre: true } } },
+          orderBy: { dateDebut: "desc" },
+          take: 100,
+        }),
+      ])
+    : null;
+  const entreprisesConv = staffData?.[0] ?? [];
+  const sessionsConvRaw = staffData?.[1] ?? [];
   const conventionSessions = sessionsConvRaw.map((s) => ({
     id: s.id,
     label: `${s.formation.titre} — ${s.dateDebut.toLocaleDateString("fr-FR")}${s.lieu ? ` (${s.lieu})` : ""}`,
