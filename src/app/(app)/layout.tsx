@@ -27,6 +27,7 @@ import { isStripeConfigured } from "@/lib/stripe";
 import { SubscribePanel } from "@/components/billing/subscribe-panel";
 import { ConfirmProvider } from "@/components/ui/confirm-dialog";
 import { cn } from "@/lib/utils";
+import { isNativeApp } from "@/lib/native-app";
 
 // Rendu dynamique : ces pages lisent la base de données et la session,
 // elles ne doivent pas être pré-générées au build.
@@ -189,10 +190,15 @@ export default async function AppLayout({
     .filter(Boolean)
     .join(" · ");
 
+  // Mode APPLICATION native (Capacitor) : on masque l'habillage « site vitrine »
+  // (pied de page marketing) pour un ressenti application. Web = inchangé.
+  const native = await isNativeApp();
+
   return (
     <div
       className={cn("min-h-screen bg-background", isDark && "dark")}
       data-design={dataDesign}
+      data-native={native ? "" : undefined}
       style={brandStyle}
     >
       <div className="flex min-h-screen">
@@ -239,6 +245,8 @@ export default async function AppLayout({
             fonctionnalites={navUser.fonctionnalites ?? []}
           />
 
+          {/* Pied de page « site » masqué dans l'app native (ressenti application). */}
+          {!native && (
           <footer className="mt-8 border-t bg-card/40 pb-20 md:pb-0">
             <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-2 px-4 py-5 text-xs text-muted-foreground md:flex-row md:items-center md:justify-between md:px-6">
               <p>{legalLine || branding.nom}</p>
@@ -254,6 +262,7 @@ export default async function AppLayout({
               </nav>
             </div>
           </footer>
+          )}
         </div>
       </div>
     </div>

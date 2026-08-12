@@ -15,12 +15,20 @@ const config: CapacitorConfig = {
   appId: "fr.capacademy.ofmanager",
   appName: "OFManager",
   webDir: "capacitor-www",
+  // Identifie l'app native dans le User-Agent → le serveur active le « mode
+  // application » (masque l'habillage vitrine) via src/lib/native-app.ts.
+  appendUserAgent: "OFManagerApp",
   server: {
-    url: "https://app.capacademy.fr",
+    // Ouvre directement l'APPLICATION (tableau de bord → page de connexion si non connecté),
+    // et NON la page d'accueil vitrine, pour un ressenti « application » et pas « site web ».
+    url: "https://app.capacademy.fr/dashboard",
     // HTTPS uniquement (pas de trafic en clair).
     cleartext: false,
     // Domaines autorisés à s'ouvrir DANS la webview (le reste part au navigateur).
     allowNavigation: ["app.capacademy.fr"],
+    // Si app.capacademy.fr est injoignable au lancement, afficher l'écran de repli
+    // local (capacitor-www/index.html) plutôt que l'erreur réseau brute de la WebView.
+    errorPath: "index.html",
   },
   ios: {
     // Évite que le contenu passe sous la barre d'état / l'encoche.
@@ -32,7 +40,9 @@ const config: CapacitorConfig = {
   plugins: {
     SplashScreen: {
       launchShowDuration: 900,
-      backgroundColor: "#0D1B3E",
+      // Fond blanc = le logo (bleu foncé sur clair) reste lisible sur toutes les
+      // versions d'Android. Assets générés via `npm run gen:mobile-assets` + @capacitor/assets.
+      backgroundColor: "#FFFFFF",
       showSpinner: false,
       androidScaleType: "CENTER_CROP",
     },
