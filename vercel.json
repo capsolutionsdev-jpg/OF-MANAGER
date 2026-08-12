@@ -1,4 +1,12 @@
 {
+  "regions": ["fra1"],
+  "functions": {
+    "src/app/documents/[inscriptionId]/pdf/route.ts": { "memory": 1769, "maxDuration": 60 },
+    "src/app/documents/[inscriptionId]/satisfaction/route.ts": { "memory": 1769, "maxDuration": 60 },
+    "src/app/documents/contrat-formateur/[sessionId]/route.ts": { "memory": 1769, "maxDuration": 60 },
+    "src/app/parcours/[token]/documents/route.ts": { "memory": 1769, "maxDuration": 60 },
+    "src/app/api/candidats/[id]/expression-besoin/route.ts": { "memory": 1769, "maxDuration": 60 }
+  },
   "crons": [
     {
       "path": "/api/cron/parcours",
