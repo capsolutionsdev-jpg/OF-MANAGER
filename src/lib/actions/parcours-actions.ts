@@ -16,6 +16,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { sendEmail, emailConfigured, toBase64 } from "@/lib/email";
 import { orgConfigFor } from "@/lib/org-identity";
+import { sendPushToOrgStaff } from "@/lib/push";
 import { generateToken, appBaseUrl } from "@/lib/token";
 import {
   buildInscriptionPdf,
@@ -659,6 +660,13 @@ export async function signDocuments(
   } catch (e) {
     console.error("[elearning provision]", e);
   }
+
+  // Notification push au staff de l'OF (app mobile) — non bloquant, no-op sans FCM.
+  await sendPushToOrgStaff(insc.organismeId, {
+    title: "✍️ Dossier signé",
+    body: `${insc.candidat.prenom} ${insc.candidat.nom} a signé — ${insc.session.formation.titre}`,
+    data: { type: "signature", inscriptionId: insc.id },
+  }).catch(() => {});
 
   revalidatePath(`/candidats/${insc.candidatId}`);
   return { ok: true };

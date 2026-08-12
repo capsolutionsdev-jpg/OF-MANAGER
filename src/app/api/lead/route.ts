@@ -5,6 +5,7 @@ import { sendEmail } from "@/lib/email";
 import { orgConfig } from "@/lib/org-config";
 import { appBaseUrl } from "@/lib/token";
 import { checkLimit, clientIp } from "@/lib/rate-limit";
+import { sendPushToOrgStaff } from "@/lib/push";
 
 export const runtime = "nodejs";
 
@@ -180,6 +181,11 @@ export async function POST(req: Request) {
         session: besoinData.sessionSouhaitee, objectifs: besoinData.objectifsFormation,
         origine: formOrigine, sourceConnaissance, message, dejaConnu: true,
       });
+      await sendPushToOrgStaff(organismeId, {
+        title: "🆕 Nouvelle demande",
+        body: `${prenom} ${nom}${formationTitre ? ` — ${formationTitre}` : ""} · à rappeler`,
+        data: { type: "prospect", candidatId: existing.id },
+      }).catch(() => {});
       return NextResponse.json({ ok: true, candidatId: existing.id, dedup: true });
     }
 
@@ -211,6 +217,11 @@ export async function POST(req: Request) {
       formationTitre, financement: financementRaw,
       origine: formOrigine, sourceConnaissance, message, dejaConnu: false,
     });
+    await sendPushToOrgStaff(organismeId, {
+      title: "🆕 Nouveau prospect",
+      body: `${prenom} ${nom}${formationTitre ? ` — ${formationTitre}` : ""} · à rappeler`,
+      data: { type: "prospect", candidatId: candidat.id },
+    }).catch(() => {});
     return NextResponse.json({ ok: true, candidatId: candidat.id });
   } catch (e) {
     console.error("[api/lead]", e);
