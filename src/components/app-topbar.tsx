@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { Menu, Search, Bell, LogOut, UserCog, ShieldCheck } from "lucide-react";
 import type { Role } from "@prisma/client";
@@ -45,11 +46,14 @@ export function AppTopbar({
 }) {
   const label = user.name || user.email || "Utilisateur";
   const initials = label.slice(0, 2).toUpperCase();
+  // Tiroir de nav contrôlé → se referme après un tap sur une entrée (sinon il
+  // reste ouvert par-dessus la nouvelle page sur mobile).
+  const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header data-app-chrome className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-card/95 px-3 backdrop-blur-sm md:px-5">
+    <header data-app-chrome className="sticky top-0 z-30 flex min-h-14 items-center gap-3 border-b border-border bg-card/95 px-3 pt-[env(safe-area-inset-top)] backdrop-blur-sm md:px-5">
       {/* Tiroir de navigation (mobile / tablette) */}
-      <Sheet>
+      <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
         <SheetTrigger render={<Button variant="ghost" size="icon" className="lg:hidden" />}>
           <Menu className="h-5 w-5" />
           <span className="sr-only">Ouvrir le menu</span>
@@ -57,7 +61,7 @@ export function AppTopbar({
         <SheetContent side="left" className="flex w-64 flex-col p-0">
           <SheetTitle className="sr-only">Navigation</SheetTitle>
           <SidebarBrand brand={brand} />
-          <SidebarNav user={user} />
+          <SidebarNav user={user} onNavigate={() => setMenuOpen(false)} />
         </SheetContent>
       </Sheet>
 

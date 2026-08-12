@@ -70,7 +70,7 @@ export function MobileTabBar({
                 )}
               >
                 <it.icon className={cn("h-5 w-5", active && "stroke-[2.5]")} />
-                <span className="max-w-full truncate">{it.label}</span>
+                <span className="max-w-full text-center leading-tight line-clamp-2">{it.label}</span>
               </Link>
             </li>
           );
