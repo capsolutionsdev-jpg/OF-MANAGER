@@ -67,3 +67,25 @@ CREATE POLICY tenant_isolation ON "${t}"
 mkdirSync("prisma/sql", { recursive: true });
 writeFileSync("prisma/sql/rls-policies.sql", header + body, "utf8");
 console.log(`OK — ${tenantModels.length} tables → prisma/sql/rls-policies.sql`);
+
+// ── Rollback (coupe-circuit) : retire policies + RLS sur chaque table. ──
+// NB : le rollback INSTANTANÉ en prod = repasser DATABASE_URL sur le rôle owner
+// (le owner ignore la RLS). Ce script sert à RETIRER complètement la RLS.
+const rollbackHeader = `-- ============================================================
+-- RLS ROLLBACK — retire complètement la RLS (${tenantModels.length} tables).
+-- GÉNÉRÉ par scripts/gen-rls-sql.mjs — NE PAS ÉDITER À LA MAIN.
+--
+-- Rollback INSTANTANÉ recommandé en prod : remettre DATABASE_URL sur le rôle
+-- OWNER (il ignore la RLS) + RLS_ENABLED=false, puis redéployer. Ce fichier sert
+-- à DÉSACTIVER la RLS au niveau base (ex. abandon définitif).
+-- ============================================================
+
+`;
+const rollbackBody = tenantModels
+  .map(
+    (t) => `DROP POLICY IF EXISTS tenant_isolation ON "${t}";
+ALTER TABLE "${t}" DISABLE ROW LEVEL SECURITY;`,
+  )
+  .join("\n");
+writeFileSync("prisma/sql/rls-rollback.sql", rollbackHeader + rollbackBody + "\n", "utf8");
+console.log(`OK — ${tenantModels.length} tables → prisma/sql/rls-rollback.sql`);
