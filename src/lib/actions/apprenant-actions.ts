@@ -9,6 +9,11 @@ import { auth } from "@/auth";
 
 type Res = { ok: boolean; error?: string };
 
+// Rôles autorisés à provisionner des comptes / attribuer des cours e-learning.
+// (Sans ce garde, un APPRENANT connecté pourrait cibler un autre élève de son
+// organisme — provisionner/réinitialiser son compte ou lui attribuer des cours.)
+const STAFF = ["SUPERADMIN", "ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"];
+
 /**
  * Crée (ou réinitialise) le compte e-learning d'un candidat : garantit son
  * dossier Apprenant, crée un utilisateur APPRENANT avec mot de passe et le lie.
@@ -20,7 +25,8 @@ export async function createApprenantAccount(
 ): Promise<Res> {
   const db = await getTenantDb();
   const session = await auth();
-  if (!session?.user) return { ok: false, error: "Non autorisé." };
+  if (!session?.user || !STAFF.includes(session.user.role as string))
+    return { ok: false, error: "Non autorisé." };
   if (!password || password.length < 8)
     return { ok: false, error: "Mot de passe : 8 caractères minimum." };
 
@@ -219,7 +225,8 @@ export async function assignCours(
 ): Promise<Res> {
   const db = await getTenantDb();
   const session = await auth();
-  if (!session?.user) return { ok: false, error: "Non autorisé." };
+  if (!session?.user || !STAFF.includes(session.user.role as string))
+    return { ok: false, error: "Non autorisé." };
   await db.coursApprenant.upsert({
     where: { coursId_apprenantId: { coursId, apprenantId } },
     update: {},
@@ -236,7 +243,8 @@ export async function unassignCours(
 ): Promise<Res> {
   const db = await getTenantDb();
   const session = await auth();
-  if (!session?.user) return { ok: false, error: "Non autorisé." };
+  if (!session?.user || !STAFF.includes(session.user.role as string))
+    return { ok: false, error: "Non autorisé." };
   await db.coursApprenant.deleteMany({ where: { coursId, apprenantId } });
   revalidatePath("/elearning/apprenants");
   return { ok: true };
