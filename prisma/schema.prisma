@@ -439,8 +439,25 @@ model User {
   interactionsCrm    CrmInteraction[]
   qualiopiResponsable QualiopiIndicateur[] @relation("IndicateurResponsable")
   dataRequestsTraitees DataRequest[]    @relation("DataRequestTraitePar")
+  // Notifications push (app mobile) : jetons des appareils de l'utilisateur.
+  deviceTokens         DeviceToken[]
 
   @@index([role])
+}
+
+// Jeton d'appareil pour les notifications push de l'app mobile (Capacitor).
+// Un utilisateur peut avoir plusieurs appareils ; `token` = registration token
+// FCM (Android) / APNs (iOS). Alimenté par /api/push/register depuis l'app.
+model DeviceToken {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token      String   @unique
+  platform   String   @default("android")
+  createdAt  DateTime @default(now())
+  lastSeenAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 // =============================================================

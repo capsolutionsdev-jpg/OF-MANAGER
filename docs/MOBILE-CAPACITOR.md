@@ -120,3 +120,35 @@ risque Apple 4.2 + apporter des rappels (session J-1, pièce manquante, signatur
   dossiers candidats, sessions et planning, convocations / attestations / contrats, émargement, signature
   électronique, conformité Qualiopi et suivi commercial — depuis votre mobile, synchronisé avec votre espace web.
 - **Mots-clés** : organisme de formation, OF, Qualiopi, émargement, formation, CRM, gestion
+
+---
+
+## Notifications push — code prêt (branche `feat/mobile-push`)
+
+Le code est en place ; il ne s'**active** qu'une fois tes comptes + la base configurés (sinon no-op sûr).
+
+**Ce qui est codé :**
+- Plugin `@capacitor/push-notifications` + config (`capacitor.config.ts` → `PushNotifications`).
+- `src/components/push/push-registrar.tsx` : demande la permission et envoie le jeton d'appareil au serveur — **app native uniquement**, sans effet sur le web. Monté dans `(app)/layout.tsx`.
+- `POST /api/push/register` : stocke le jeton dans la table **`DeviceToken`** (Prisma).
+- `src/lib/push.ts` → `sendPushToUser(userId, { title, body, data })` : envoi via Firebase (purge les jetons morts).
+
+**⚠️ Avant de merger cette branche : `npx prisma db push` sur la prod** (crée la table `DeviceToken`, sinon la prod casse).
+
+**À toi (comptes / fichiers) :**
+1. Créer un **projet Firebase**, y ajouter l'app Android `fr.capacademy.ofmanager` → télécharger **`google-services.json`** → le placer dans `android/app/`, et brancher le plugin Gradle `google-services` (voir la doc officielle `@capacitor/push-notifications`, section Android).
+2. iOS (plus tard, sur Mac) : clé **APNs `.p8`** (Apple Developer) importée dans Firebase.
+3. Firebase → Paramètres → Comptes de service → **Générer une clé privée** (JSON).
+
+**Variables d'environnement (Vercel + local) :**
+- `PUSH_ENABLED=true`
+- `FIREBASE_SERVICE_ACCOUNT` = le JSON du compte de service (brut, ou encodé en base64).
+
+**Envoyer une notification** (exemple à brancher sur un événement métier) :
+```ts
+import { sendPushToUser } from "@/lib/push";
+await sendPushToUser(userId, {
+  title: "Rappel de session",
+  body: "Votre session commence demain à 9 h.",
+});
+```
