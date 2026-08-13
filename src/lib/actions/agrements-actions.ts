@@ -40,6 +40,7 @@ export async function updateAgrements(
 
   await prisma.auditLog.create({
     data: {
+      organismeId,
       userId: session.user.id,
       action: "UPDATE",
       entityType: "OrganismeAgrements",

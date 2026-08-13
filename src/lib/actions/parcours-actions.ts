@@ -42,11 +42,17 @@ import {
 export async function startParcours(
   inscriptionId: string,
 ): Promise<{ ok: boolean; error?: string }> {
+  // Action exportée (endpoint) : se garde elle-même. Les appels internes
+  // (createInscription, setInscriptionStatut) ont déjà une session même-organisme.
+  const session = await auth();
+  if (!session?.user) return { ok: false, error: "Non autorisé." };
   const insc = await prisma.inscription.findUnique({
     where: { id: inscriptionId },
     include: { candidat: true, session: { include: { formation: true } } },
   });
   if (!insc) return { ok: false, error: "Inscription introuvable." };
+  if (session.user.role !== "SUPERADMIN" && insc.organismeId !== session.user.organismeId)
+    return { ok: false, error: "Accès refusé (autre organisme)." };
   const org = await orgConfigFor(insc.organismeId);
 
   const token = insc.accessToken ?? generateToken();
