@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ShieldCheck, MessageSquareWarning, Newspaper, Handshake, FolderArchive } from "lucide-react";
+import { ShieldCheck, MessageSquareWarning, Newspaper, Handshake, FolderArchive, ClipboardCheck } from "lucide-react";
 import { getTenantDb } from "@/lib/tenant";
 import { Button } from "@/components/ui/button";
 import {
@@ -38,6 +38,9 @@ export default async function QualiopiPage() {
         title="Conformité Qualiopi"
         subtitle="Suivi des 32 indicateurs du Référentiel National Qualité (RNQ)."
       >
+        <Button size="sm" render={<Link href="/qualiopi/audit" />}>
+          <ClipboardCheck className="mr-1.5 h-4 w-4" /> Audit automatique
+        </Button>
         <Button variant="outline" size="sm" render={<Link href="/qualiopi/reclamations" />}>
           <MessageSquareWarning className="mr-1.5 h-4 w-4" /> Réclamations
         </Button>
