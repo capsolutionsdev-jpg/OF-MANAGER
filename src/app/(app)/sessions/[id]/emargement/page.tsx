@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, FileText, CalendarPlus, CheckCircle2, Clock, PenLine } from "lucide-react";
+import { ArrowLeft, FileText, CalendarPlus, CheckCircle2, Clock, PenLine, QrCode } from "lucide-react";
 import { getTenantDb } from "@/lib/tenant";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -77,6 +77,12 @@ export default async function EmargementPage({
           </div>
           <div className="flex flex-wrap gap-2">
             <PrepareSignaturesButton sessionId={s.id} />
+            <Button
+              variant="outline"
+              render={<Link href={`/sessions/${s.id}/emargement/salle`} />}
+            >
+              <QrCode className="mr-2 h-4 w-4" /> Mode salle (QR)
+            </Button>
             <Button
               variant="outline"
               render={

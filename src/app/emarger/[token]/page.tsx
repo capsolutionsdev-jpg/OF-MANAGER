@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
-import { CheckCircle2 } from "lucide-react";
+import Link from "next/link";
+import { CheckCircle2, ArrowLeft } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { orgConfigFor } from "@/lib/org-identity";
+import { salleToken } from "@/lib/emargement-salle";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmargerSignButton } from "@/components/emargement/emarger-sign-button";
 
@@ -9,16 +11,26 @@ export const dynamic = "force-dynamic";
 
 export default async function EmargerPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ token: string }>;
+  searchParams: Promise<{ s?: string }>;
 }) {
   const { token } = await params;
+  const { s: fromSession } = await searchParams;
   const row = await prisma.emargementSignature.findUnique({
     where: { token },
     include: { session: { include: { formation: true } } },
   });
   if (!row) notFound();
   const org = await orgConfigFor(row.organismeId);
+
+  // Mode « borne en salle » : si on vient de la page salle de CETTE session,
+  // on propose de revenir à la liste pour la personne suivante.
+  const salleUrl =
+    fromSession && fromSession === row.sessionId
+      ? `/emarger/salle/${row.sessionId}/${salleToken(row.sessionId)}`
+      : null;
 
   const demiLabel = row.demi === "MATIN" ? "Matin" : "Après-midi";
   const jour = row.date.toLocaleDateString("fr-FR", {
@@ -84,6 +96,20 @@ export default async function EmargerPage({
             )}
           </CardContent>
         </Card>
+
+        {salleUrl && (
+          <Link
+            href={salleUrl}
+            className={`flex items-center justify-center gap-1.5 rounded-xl px-4 py-3 text-sm font-medium ${
+              row.signedAt
+                ? "bg-primary text-primary-foreground hover:opacity-90"
+                : "border bg-card text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <ArrowLeft className="h-4 w-4" />
+            {row.signedAt ? "Personne suivante" : "Retour à la liste"}
+          </Link>
+        )}
 
         <p className="text-center text-xs text-muted-foreground">
           {org.name} — {org.email}
