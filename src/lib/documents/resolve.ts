@@ -4,7 +4,9 @@ import { MODALITE_LABELS } from "@/lib/validators/formation";
 import { FINANCEMENT_LABELS } from "@/lib/validators/candidat";
 import { ssiapNiveauOfFormation } from "@/lib/documents/families";
 
-export type InscriptionComplete = Inscription & {
+// `dossierPdf` (Bytes) est exclu par défaut des requêtes (cf. PRISMA_OMIT) et
+// n'est pas utilisé pour construire les documents → on l'ôte du type attendu.
+export type InscriptionComplete = Omit<Inscription, "dossierPdf"> & {
   candidat: Candidat & { entreprise?: Entreprise | null };
   session: Session & { formation: Formation; salle?: Salle | null };
 };
