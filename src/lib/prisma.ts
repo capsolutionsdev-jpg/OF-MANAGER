@@ -27,12 +27,17 @@ const rlsOn = () => process.env.RLS_ENABLED === "true";
 // que RLS_STRICT !== "true" → comportement historique (BYPASS par défaut).
 const rlsStrict = () => process.env.RLS_STRICT === "true";
 
-// Modèles cross-tenant PAR NATURE (authentification) : e-mail unique toutes
-// organisations confondues, lus/écrits « par e-mail » lors du login et de la
-// création de comptes apprenant → restent en BYPASS même en mode strict, sinon
-// ces recherches globales renverraient 0 ligne. (Les GLOBAL_MODELS — Organisme,
-// PlanTarif, SupportMessage — n'ont AUCUNE policy RLS, donc non concernés.)
-const STRICT_GLOBAL_MODELS = new Set<string>(["User", "Apprenant"]);
+// Modèles GLOBAUX PAR NATURE, restés en BYPASS même en mode strict (sinon ces
+// accès globaux renverraient 0 ligne ou casseraient le WITH CHECK) :
+//  - User / Apprenant : entités d'auth cross-tenant (e-mail unique toutes
+//    organisations confondues ; lues/écrites « par e-mail » au login et à la
+//    création de compte apprenant ; lignes legacy à organismeId NULL).
+//  - AutomationSettings : singleton PLATEFORME (id="singleton", organismeId NULL) ;
+//    scopé sur la session, son upsert violerait le WITH CHECK (la sauvegarde des
+//    automatismes planterait pour chaque tenant).
+// (Les GLOBAL_MODELS — Organisme, PlanTarif, SupportMessage — n'ont AUCUNE policy
+//  RLS, donc ne passent jamais par ce chemin.)
+const STRICT_GLOBAL_MODELS = new Set<string>(["User", "Apprenant", "AutomationSettings"]);
 
 const SET_ORG = `SELECT set_config('app.org', $1, true)`;
 
