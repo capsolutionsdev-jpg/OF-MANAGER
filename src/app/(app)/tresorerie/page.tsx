@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { ExportMenu } from "@/components/export-menu";
 import { ChargesManager, type ChargeRow } from "@/components/finance/charges-manager";
 import { FinanceRecap, type RecapRow } from "@/components/finance/finance-recap";
+import { FecExport } from "@/components/finance/fec-export";
 
 export const dynamic = "force-dynamic";
 
@@ -77,6 +78,12 @@ export default async function TresoreriePage() {
   const allMonths = [...new Set([...caByMonth.keys(), ...chargesByMonth.keys()])].sort().reverse();
   const monthOptions = allMonths.map((m) => ({ value: m, label: monthLabel(m) }));
 
+  // Années disponibles pour l'export FEC (données présentes + année en cours).
+  const fecYears = [...new Set([
+    new Date().getFullYear(),
+    ...allMonths.map((m) => Number(m.split("-")[0])),
+  ])].sort((a, b) => b - a);
+
   const recap: RecapRow[] = allMonths.map((m) => {
     const ca = caByMonth.get(m) ?? 0;
     const ch = chargesByMonth.get(m) ?? 0;
@@ -108,7 +115,8 @@ export default async function TresoreriePage() {
           <TabsTrigger value="charges">Charges</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="recap">
+        <TabsContent value="recap" className="space-y-4">
+          <FecExport years={fecYears} />
           <FinanceRecap rows={recap} />
         </TabsContent>
 
