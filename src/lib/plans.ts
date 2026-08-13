@@ -39,6 +39,10 @@ export type Plan = {
   features: string[];
   supportLevel: string;
   maxComptes: number | null; // comptes back-office inclus ; null = illimité
+  // Quotas de VOLUME mensuels inclus (null = illimité). Base de la facturation au
+  // volume : e-mails envoyés + inscriptions (élèves) sur le mois. Cf. lib/usage.ts.
+  emailsMois: number | null;
+  inscriptionsMois: number | null;
 };
 
 // Prix d'un compte back-office supplémentaire au-delà de l'inclus (€ HT / mois).
@@ -49,16 +53,19 @@ export const PLANS: Record<FormuleKey, Plan> = {
     key: "BASIQUE", name: "Basique", price: 79, color: "#64748b",
     tagline: "L'essentiel pour démarrer, conformité incluse",
     features: BASIQUE_FEATURES, supportLevel: "Support e-mail (48 h)", maxComptes: 3,
+    emailsMois: 500, inscriptionsMois: 30,
   },
   MEDIUM: {
     key: "MEDIUM", name: "Medium", price: 149, color: "#2C53C0",
     tagline: "Gestion complète + modules de productivité",
     features: MEDIUM_FEATURES, supportLevel: "Support e-mail (24 h)", maxComptes: 5,
+    emailsMois: 3000, inscriptionsMois: 80,
   },
   COMPLET: {
     key: "COMPLET", name: "Complet", price: 249, color: "#7C3AED",
     tagline: "Toute la plateforme, IA & marque blanche",
     features: COMPLET_FEATURES, supportLevel: "Support prioritaire", maxComptes: null,
+    emailsMois: null, inscriptionsMois: null,
   },
 };
 

@@ -25,6 +25,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { StatCard } from "@/components/ui/stat-card";
 import { ConventionDialog } from "@/components/conventions/convention-dialog";
+import { UsageCard } from "@/components/facturation/usage-card";
+import { getOrgUsage } from "@/lib/usage";
 
 function Gauge({ pct }: { pct: number }) {
   const r = 50;
@@ -75,6 +77,11 @@ export default async function DashboardPage() {
   const source = generic ? (org?.representant ?? rawName) : rawName;
   const prenom = source.trim().split(/\s+/)[0] || "à vous";
   const aujourdhui = now.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+
+  // Consommation facturable du mois (quotas de la formule) — réservée à l'ADMIN,
+  // titulaire qui pilote l'abonnement. cf. lib/usage.ts (facturation au volume).
+  const usage =
+    session?.user?.role === "ADMIN" && org ? await getOrgUsage(org.id, org.formule) : null;
 
   // Bornes de la semaine courante (lundi → dimanche)
   const weekStart = new Date(now);
@@ -278,6 +285,12 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {usage && (
+        <div className="lg:max-w-md">
+          <UsageCard usage={usage} title="Ma consommation du mois" />
+        </div>
+      )}
 
       {/* CETTE SEMAINE : planning (2/3) + prochaines sessions (1/3) */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
