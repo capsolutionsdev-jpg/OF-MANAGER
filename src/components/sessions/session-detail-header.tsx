@@ -6,8 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { SESSION_STATUT_LABELS } from "@/lib/validators/session";
 import { SendConvocationsButton } from "@/components/sessions/send-convocations-button";
 import { SessionTabs, type SessionTabKey } from "@/components/sessions/session-tabs";
-import { ConventionDialog } from "@/components/conventions/convention-dialog";
-import { getTenantDb } from "@/lib/tenant";
 
 /**
  * En-tête partagé des onglets de la page Session.
@@ -16,7 +14,7 @@ import { getTenantDb } from "@/lib/tenant";
  * d'onglets. Chaque page d'onglet le rend UNE fois (pas de layout.tsx, sinon
  * double en-tête avec les sous-pages validation/emargement/modifier).
  */
-export async function SessionDetailHeader({
+export function SessionDetailHeader({
   session,
   active,
   validationBadge,
@@ -33,12 +31,6 @@ export async function SessionDetailHeader({
   /** Affiche l'onglet « Parcours T3P » (session Taxi/VTC) — cf. getSessionDetail. */
   showT3P?: boolean;
 }) {
-  // Clients professionnels — pour la convention / inscription groupée.
-  const db = await getTenantDb();
-  const entreprises = await db.entreprise.findMany({
-    select: { id: true, raisonSociale: true },
-    orderBy: { raisonSociale: "asc" },
-  });
   return (
     <div>
       <Link
@@ -53,7 +45,6 @@ export async function SessionDetailHeader({
           <Badge variant="outline">{SESSION_STATUT_LABELS[session.statut]}</Badge>
         </div>
         <div className="flex flex-wrap gap-2">
-          <ConventionDialog sessionId={session.id} entreprises={entreprises} />
           <SendConvocationsButton sessionId={session.id} />
           <Button
             variant="outline"

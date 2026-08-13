@@ -58,6 +58,19 @@ export const authConfig = {
         return ok ? true : Response.redirect(new URL("/mon-espace", nextUrl));
       }
 
+      // Espace FORMATEUR : confiné à ses propres pages (ses sessions, sa
+      // facturation, ses contrats, l'e-learning qu'il anime). JAMAIS le tableau
+      // de bord ni les pages staff. Toute autre URL → /mes-sessions.
+      if (role === "FORMATEUR") {
+        const extras = ["/bienvenue", "/elearning", "/compte-rendu"];
+        const ok =
+          path.startsWith("/mes-") ||
+          path.startsWith("/mon-") ||
+          path.startsWith("/ma-") ||
+          extras.some((p) => path === p || path.startsWith(`${p}/`));
+        return ok ? true : Response.redirect(new URL("/mes-sessions", nextUrl));
+      }
+
       // Administration (gestion des comptes) : réservée au gérant (ADMIN).
       if (path.startsWith("/administration") && role !== "ADMIN") {
         return Response.redirect(new URL("/dashboard", nextUrl));

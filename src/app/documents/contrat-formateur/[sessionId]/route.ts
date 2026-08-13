@@ -28,7 +28,7 @@ export async function GET(
   const pdf = await buildContratFormateurPdf(sessionId);
   if (!pdf)
     return new Response(
-      "Contrat indisponible (vérifiez qu'un formateur est affecté).",
+      "Contrat indisponible : un formateur EXTERNE doit être affecté (un formateur interne / salarié n'a pas de contrat de sous-traitance).",
       { status: 400 },
     );
 

@@ -286,6 +286,10 @@ export async function buildContratFormateurPdf(
   if (!s) return null;
   const f = s.formateurs[0];
   if (!f) return null;
+  // Formateur INTERNE (salarié de l'école) → aucun contrat de sous-traitance à
+  // générer (D2). Garde à la SOURCE : couvre toutes les routes (bouton, lien de
+  // signature) et pas seulement l'envoi.
+  if (f.typeContrat === "INTERNE") return null;
 
   const fmtD = (d: Date) => d.toLocaleDateString("fr-FR");
   // Nombre de jours facturés au formateur, par ordre de fiabilité :

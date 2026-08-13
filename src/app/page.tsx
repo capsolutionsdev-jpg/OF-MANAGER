@@ -339,7 +339,15 @@ export default async function HomePage() {
   const session = await auth();
   if (session?.user) {
     const role = session.user.role as Role;
-    redirect(role === "SUPERADMIN" ? "/console" : role === "APPRENANT" ? "/mon-espace" : "/dashboard");
+    redirect(
+      role === "SUPERADMIN"
+        ? "/console"
+        : role === "APPRENANT"
+          ? "/mon-espace"
+          : role === "FORMATEUR"
+            ? "/mes-sessions"
+            : "/dashboard",
+    );
   }
 
   // Tarifs LIVE (console éditeur → PlanTarif) fusionnés avec l'habillage marketing
