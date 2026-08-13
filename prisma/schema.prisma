@@ -99,6 +99,9 @@ model Organisme {
   // Clés d'intégration PAR organisme (sinon repli sur la config globale)
   anthropicApiKey String? // Assistant IA (Claude)
   yousignApiKey   String? // signature électronique prestataire
+  // Financements — clés d'intégration (chiffrées via lib/crypto).
+  wedofApiKey        String? // Wedof/CertiPlace : suivi des dossiers CPF (EDOF)
+  wedofWebhookSecret String? // secret de vérification des notifications Wedof
   // Matrice d'automatisations Brevo configurable : { "<event>": { on, channel, trigger } }
   automationsConfig Json?
   maxSmsMois        Int? // quota SMS / mois (selon formule)
@@ -135,14 +138,65 @@ model Organisme {
   demoExpiresAt     DateTime? // = demoFirstLoginAt + 48 h (null tant que jamais connecté)
   demoHardExpiresAt DateTime? // = createdAt + 7 j (filet de sécurité)
 
-  users          User[]
-  supportTickets SupportTicket[]
+  users               User[]
+  supportTickets      SupportTicket[]
+  dossiersFinancement DossierFinancement[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([statut])
   @@index([isDemo])
+}
+
+// Dossier de financement d'une inscription (CPF via Wedof, ou OPCO en interne).
+// Suit l'état côté financeur sans alourdir le modèle Inscription.
+model DossierFinancement {
+  id            String  @id @default(cuid())
+  organismeId   String? // tenant
+  organisme     Organisme? @relation(fields: [organismeId], references: [id], onDelete: Cascade)
+  inscriptionId String?
+  inscription   Inscription? @relation(fields: [inscriptionId], references: [id], onDelete: SetNull)
+  candidatId    String?
+  candidat      Candidat? @relation(fields: [candidatId], references: [id], onDelete: SetNull)
+
+  type      FinancementType // CPF, OPCO, FRANCE_TRAVAIL…
+  financeur String? // "CPF" ou nom de l'OPCO (AKTO…)
+  etat      DossierFinancementEtat @default(A_MONTER)
+  montant   Decimal? @db.Decimal(10, 2)
+  reference String? // n° de dossier interne
+
+  // CPF — suivi via Wedof (registrationFolder)
+  wedofId   String?   @unique // identifiant du dossier côté Wedof
+  wedofEtat String? // état brut renvoyé par Wedof
+  wedofMajLe DateTime? // dernière synchro Wedof
+
+  // OPCO — géré en interne
+  opcoNumero           String? // n° de dossier OPCO
+  priseEnChargeMontant Decimal? @db.Decimal(10, 2)
+  subrogation          Boolean  @default(false) // l'OPCO paie l'OF directement
+  accordLe             DateTime? // date de l'accord de prise en charge
+  bordereauUrl         String?  @db.Text // bordereau généré (PDF)
+
+  notesJson Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organismeId])
+  @@index([inscriptionId])
+  @@index([candidatId])
+  @@index([type, etat])
+}
+
+enum DossierFinancementEtat {
+  A_MONTER   // à créer / à envoyer
+  EN_COURS   // envoyé, en instruction
+  ACCEPTE    // accord de prise en charge
+  REFUSE
+  A_FACTURER // service fait → facturer le financeur
+  FACTURE
+  SOLDE      // encaissé
+  ANNULE
 }
 
 enum Modalite {
@@ -548,6 +602,7 @@ model Candidat {
   pieces       PieceJointe[]
   consentements Consentement[]
   conversations Conversation[]
+  dossiersFinancement DossierFinancement[]
   parcoursT3P  ParcoursT3P[]
 
   // ── E-learning examen civique (préparation en ligne, site vitrine) ──
@@ -944,6 +999,7 @@ model Inscription {
   conventionGroupe Convention? @relation("ConventionGroupe", fields: [conventionId], references: [id])
   factures   Facture[]
   paiements  Paiement[]
+  dossiersFinancement DossierFinancement[]
   signatures SignatureRequest[]
   parcoursT3P ParcoursT3P?
 

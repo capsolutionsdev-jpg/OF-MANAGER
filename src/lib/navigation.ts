@@ -30,6 +30,7 @@ import {
   KeyRound,
   LifeBuoy,
   Calculator,
+  Landmark,
   Award,
   Gavel,
   Library,
@@ -181,6 +182,13 @@ export const navItems: NavItem[] = [
     icon: Calculator,
     roles: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
     permission: "crm",
+  },
+  {
+    label: "Financements",
+    href: "/financements",
+    icon: Landmark,
+    roles: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
+    permission: "financements",
   },
   {
     label: "Kanban",

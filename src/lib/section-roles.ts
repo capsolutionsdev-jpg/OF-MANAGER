@@ -29,6 +29,7 @@ export const SECTION_ROLES: Record<string, Role[]> = {
   automatisations: ["ADMIN", "RESPONSABLE_FORMATION"],
   formateurs: ["ADMIN", "RESPONSABLE_FORMATION"],
   comptabilite: ["ADMIN", "RESPONSABLE_FORMATION"],
+  financements: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
   facturation: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
   bpf: ["ADMIN", "RESPONSABLE_FORMATION"],
   qualiopi: ["ADMIN", "RESPONSABLE_FORMATION"],
