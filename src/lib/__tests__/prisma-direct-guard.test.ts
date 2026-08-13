@@ -20,6 +20,9 @@ const ALLOWLIST = new Set([
   "mon-compte/page.tsx",
   "rgpd/page.tsx",
   "validations/page.tsx",
+  // Wedof : lit UNIQUEMENT l'Organisme de la session (where { id: orgId de session })
+  // pour l'état de connexion ; les dossiers de financement passent par getTenantDb.
+  "financements/page.tsx",
 ]);
 
 const APP_DIR = path.resolve(__dirname, "../../app/(app)");
@@ -100,6 +103,15 @@ const ACTIONS_ALLOWLIST = new Set([
   "validation-actions.ts",
   "formateur-actions.ts",
   "jury-actions.ts",
+  // Réglage GLOBAL (singleton plateforme AutomationSettings) : getTenantDb
+  // injecterait organismeId et entrerait en collision avec le singleton ; garde ADMIN.
+  "automation-settings-actions.ts",
+  // Wedof : mute UNIQUEMENT l'Organisme de la session (requireAdminOrg = id de
+  // session) ; garde ADMIN — scoping manuel explicite (motif vérifier-puis-muter).
+  "financements-actions.ts",
+  // E-learning : tout passe par getTenantDb ; prismaBase (RLS) n'est utilisé que
+  // pour l'échange atomique d'ordre sur des entités DÉJÀ vérifiées in-tenant (txWithOrg).
+  "cours-actions.ts",
 ]);
 
 const ACTIONS_DIR = path.resolve(__dirname, "../actions");
