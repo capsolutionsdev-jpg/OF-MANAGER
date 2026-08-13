@@ -27,7 +27,8 @@ const ZERO_COUNTS: Counts = {
 /** Déclenche manuellement les automatismes et renvoie le détail (pour le toast). */
 export async function runAutomationsNow(): Promise<RunResult> {
   const session = await auth();
-  if (!session?.user)
+  // Réservé aux gestionnaires (déclenche le balayage des automatismes).
+  if (!session?.user || !["ADMIN", "RESPONSABLE_FORMATION"].includes(session.user.role as string))
     return { ok: false, demo: true, counts: ZERO_COUNTS };
   const counts = await runAutomations();
   revalidatePath("/automatisations");
