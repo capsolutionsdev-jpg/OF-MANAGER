@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { WedofConnexion } from "@/components/financements/wedof-connexion";
 import { WedofSyncButton } from "@/components/financements/wedof-sync-button";
+import { NewOpcoDossier } from "@/components/financements/new-opco-dossier";
+import { OpcoDossierActions } from "@/components/financements/opco-dossier-actions";
 import { saveWedofWebhookSecret } from "@/lib/actions/financements-actions";
 
 export const dynamic = "force-dynamic";
@@ -20,14 +22,8 @@ async function submitWebhookSecret(formData: FormData) {
 }
 
 const ETAT_LABEL: Record<string, string> = {
-  A_MONTER: "À monter",
-  EN_COURS: "En cours",
-  ACCEPTE: "Accepté",
-  REFUSE: "Refusé",
-  A_FACTURER: "À facturer",
-  FACTURE: "Facturé",
-  SOLDE: "Soldé",
-  ANNULE: "Annulé",
+  A_MONTER: "À monter", EN_COURS: "En cours", ACCEPTE: "Accepté", REFUSE: "Refusé",
+  A_FACTURER: "À facturer", FACTURE: "Facturé", SOLDE: "Soldé", ANNULE: "Annulé",
 };
 
 export default async function FinancementsPage() {
@@ -44,11 +40,26 @@ export default async function FinancementsPage() {
   const webhookUrl = orgId ? `${appBaseUrl()}/api/webhooks/wedof/${orgId}` : "";
 
   const db = await getTenantDb();
-  const dossiers = await db.dossierFinancement.findMany({
-    orderBy: { updatedAt: "desc" },
-    take: 100,
-    include: { candidat: { select: { nom: true, prenom: true } } },
-  });
+  const [dossiers, inscriptionsRaw] = await Promise.all([
+    db.dossierFinancement.findMany({
+      orderBy: { updatedAt: "desc" },
+      take: 100,
+      include: { candidat: { select: { nom: true, prenom: true } } },
+    }),
+    db.inscription.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 200,
+      select: {
+        id: true,
+        candidat: { select: { nom: true, prenom: true } },
+        session: { select: { formation: { select: { titre: true } } } },
+      },
+    }),
+  ]);
+  const inscriptions = inscriptionsRaw.map((i) => ({
+    id: i.id,
+    label: `${i.candidat.prenom} ${i.candidat.nom} — ${i.session?.formation?.titre ?? "formation"}`,
+  }));
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-6">
@@ -62,22 +73,16 @@ export default async function FinancementsPage() {
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">CPF — connexion Wedof</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <WedofConnexion connected={wedofConnecte} />
-        </CardContent>
+        <CardHeader><CardTitle className="text-base">CPF — connexion Wedof</CardTitle></CardHeader>
+        <CardContent><WedofConnexion connected={wedofConnecte} /></CardContent>
       </Card>
 
       {wedofConnecte && (
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Notifications temps réel (optionnel)</CardTitle>
-          </CardHeader>
+          <CardHeader><CardTitle className="text-base">Notifications temps réel (optionnel)</CardTitle></CardHeader>
           <CardContent className="space-y-3">
             <p className="text-sm text-muted-foreground">
-              Pour que les dossiers se mettent à jour <b>automatiquement</b>, ajoutez dans Wedof
+              Pour que les dossiers CPF se mettent à jour <b>automatiquement</b>, ajoutez dans Wedof
               (menu « Webhooks ») un webhook vers cette adresse, avec un secret de votre choix —
               puis collez le même secret ci-dessous.
             </p>
@@ -101,20 +106,21 @@ export default async function FinancementsPage() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-3">
           <CardTitle className="text-base">Dossiers de financement</CardTitle>
-          {wedofConnecte && <WedofSyncButton />}
+          <div className="flex items-center gap-2">
+            {wedofConnecte && <WedofSyncButton />}
+            <NewOpcoDossier inscriptions={inscriptions} />
+          </div>
         </CardHeader>
         <CardContent>
           {dossiers.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
-              {wedofConnecte
-                ? "Aucun dossier pour l'instant. Cliquez sur « Synchroniser » pour récupérer vos dossiers CPF depuis Wedof."
-                : "Aucun dossier pour l'instant. Connectez Wedof ci-dessus pour suivre vos dossiers CPF."}
+              Aucun dossier pour l&apos;instant. Créez un dossier OPCO, ou connectez Wedof pour le CPF.
             </p>
           ) : (
             <div className="divide-y">
               {dossiers.map((d) => (
                 <div key={d.id} className="flex items-center justify-between gap-3 py-3 text-sm">
-                  <div>
+                  <div className="min-w-0">
                     <div className="font-medium">
                       {d.candidat ? `${d.candidat.prenom} ${d.candidat.nom}` : "—"}
                     </div>
@@ -124,7 +130,11 @@ export default async function FinancementsPage() {
                       {d.montant ? ` · ${Number(d.montant).toLocaleString("fr-FR")} €` : ""}
                     </div>
                   </div>
-                  <Badge variant="outline">{ETAT_LABEL[d.etat] ?? d.etat}</Badge>
+                  {d.type === "OPCO" ? (
+                    <OpcoDossierActions id={d.id} etat={d.etat} />
+                  ) : (
+                    <Badge variant="outline">{ETAT_LABEL[d.etat] ?? d.etat}</Badge>
+                  )}
                 </div>
               ))}
             </div>
