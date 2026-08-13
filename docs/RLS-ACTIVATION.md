@@ -17,6 +17,14 @@ Objectif : passer d'un cloisonnement **applicatif** (déjà systématique, `src/
 - `src/lib/tenant.ts` — `scopedPrisma(orgId)` (injection + garde d'appartenance) et `bypassPrisma()` (app.org="BYPASS"), tous deux bâtis sur `prismaBase`.
 - `GLOBAL_MODELS` (`Organisme`, `SupportMessage`, `PlanTarif`) — non cloisonnés, sans policy.
 
+### Mode STRICT (`RLS_STRICT`) — cloisonnement base TOTAL du raw prisma
+
+Second flag, **par-dessus** `RLS_ENABLED`, **inerte par défaut** (`RLS_STRICT !== "true"` → comportement historique BYPASS). Une fois `RLS_STRICT=true` : le raw `prisma` hors `runWithOrg` ne tourne plus en BYPASS mais se **cloisonne sur l'organisme de la SESSION** (résolu via `auth()` — JWT, sans base, mémoïsé par requête). La RLS enforce alors l'isolation base sur **tous** les chemins, pas seulement `getTenantDb`.
+
+- **Carve-out** : `STRICT_GLOBAL_MODELS = {User, Apprenant}` restent en BYPASS (entités d'auth cross-tenant : recherche par e-mail au login / création de compte apprenant, lignes legacy à organismeId NULL).
+- **SUPERADMIN / flux public / cron / build** : pas de session → BYPASS (inchangé).
+- **⚠️ À NE PAS activer en prod sans QA staging approfondie** : le cloisonnement peut révéler des lectures raw cross-organisme légitimes non prévues (→ 0 ligne). Testé en smoke (login, nav, isolation OK sur staging) mais les cas limites (lignes legacy NULL, lectures cross-org sur d'autres modèles) nécessitent une passe complète. Rollback = `RLS_STRICT=false` (le flag `RLS_ENABLED` reste).
+
 ### Sémantique du raw `prisma` (important)
 
 Une fois `RLS_ENABLED=true`, un `prisma.x.op()` brut hors `runWithOrg` s'exécute en **"BYPASS"** (non-breaking : les 122 fichiers qui utilisent le prisma brut continuent de tourner). L'enforcement RLS est donc **réel et immédiat sur les chemins `getTenantDb`** (déjà cloisonnés), et **progressif** sur les chemins bruts : les envelopper dans `runWithOrg(organismeId, …)` (ou les migrer vers `getTenantDb`) resserre l'isolation tenant par tenant, sans big-bang.
