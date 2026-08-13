@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import {
   Users,
   BookOpen,
@@ -60,6 +61,11 @@ export default async function DashboardPage() {
   const db = await getTenantDb();
   const now = new Date();
   const session = await auth();
+  // Sécurité (défense en profondeur) : le tableau de bord est RÉSERVÉ au staff.
+  // Un FORMATEUR / APPRENANT qui l'atteindrait par URL est renvoyé à son espace.
+  if (session?.user && !["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"].includes(session.user.role)) {
+    redirect(session.user.role === "APPRENANT" ? "/mon-espace" : "/mes-sessions");
+  }
   // Prénom du titulaire. Pour l'ADMIN (représentant légal de l'OF), le compte est
   // souvent nommé « Administrateur » (générique) : on retombe alors sur le
   // représentant de l'organisme pour un accueil personnalisé.

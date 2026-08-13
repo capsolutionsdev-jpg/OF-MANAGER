@@ -181,9 +181,14 @@ export default async function AppLayout({
   // Fonctionnalités FRAÎCHES (BD) pour le menu → reflète immédiatement la console.
   const navUser = { ...session.user, fonctionnalites: org?.fonctionnalites ?? session.user.fonctionnalites };
 
-  const notifications = hasFeature(navUser.fonctionnalites, "notifications")
-    ? await getNotifications()
-    : undefined;
+  // Les notifications sont des données ADMIN à l'échelle de l'organisme (leads,
+  // relances, impayés, signatures dues…) → RÉSERVÉES AU STAFF. Un FORMATEUR ou un
+  // APPRENANT ne doit jamais voir la cloche admin (fuite d'informations).
+  const isStaff = ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"].includes(session.user.role);
+  const notifications =
+    isStaff && hasFeature(navUser.fonctionnalites, "notifications")
+      ? await getNotifications()
+      : undefined;
 
   // Pied de page : liens « légaux » sortis de la barre (RGPD, Support) + mentions.
   const footerItems = buildNav(navUser.role, navUser.permissions ?? [], navUser.fonctionnalites ?? []).footer;
