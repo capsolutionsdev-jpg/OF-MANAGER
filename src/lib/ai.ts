@@ -6,7 +6,11 @@ import Anthropic from "@anthropic-ai/sdk";
 import { prisma } from "@/lib/prisma";
 import { decryptSecret } from "@/lib/crypto";
 
-const MODEL = "claude-opus-4-8";
+// Modèle IA : par DÉFAUT Haiku (le moins cher : ~5× moins que Opus pour la
+// rédaction d'e-mails, résumés, qualification de leads — largement suffisant).
+// Surchargeable par l'env `AI_MODEL` sans redéploiement (ex. Sonnet pour des
+// tâches plus complexes). Optimisation de coût — cf. étude des coûts.
+const MODEL = process.env.AI_MODEL || "claude-haiku-4-5-20251001";
 
 export function aiConfigured(): boolean {
   return Boolean(process.env.ANTHROPIC_API_KEY);
