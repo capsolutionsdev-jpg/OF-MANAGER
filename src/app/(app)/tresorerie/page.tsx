@@ -8,6 +8,7 @@ import { ExportMenu } from "@/components/export-menu";
 import { ChargesManager, type ChargeRow } from "@/components/finance/charges-manager";
 import { FinanceRecap, type RecapRow } from "@/components/finance/finance-recap";
 import { FecExport } from "@/components/finance/fec-export";
+import { EcrituresExport } from "@/components/finance/ecritures-export";
 
 export const dynamic = "force-dynamic";
 
@@ -117,6 +118,7 @@ export default async function TresoreriePage() {
 
         <TabsContent value="recap" className="space-y-4">
           <FecExport years={fecYears} />
+          <EcrituresExport years={fecYears} />
           <FinanceRecap rows={recap} />
         </TabsContent>
 
