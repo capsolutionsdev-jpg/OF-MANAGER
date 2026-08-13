@@ -6,8 +6,10 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EditOrganismeForm } from "@/components/console/edit-organisme-form";
+import { UsageCard } from "@/components/facturation/usage-card";
 import { getResolvedPlans } from "@/lib/pricing";
 import { PLAN_ORDER } from "@/lib/plans";
+import { getOrgUsage } from "@/lib/usage";
 import { roleLabels } from "@/lib/navigation";
 
 export const dynamic = "force-dynamic";
@@ -31,6 +33,7 @@ export default async function ConsoleOrganismePage({
 
   const { plans } = await getResolvedPlans();
   const ordered = PLAN_ORDER.map((k) => plans[k]);
+  const usage = await getOrgUsage(org.id, org.formule);
 
   // Sécurité : on ne transmet JAMAIS les clés API au navigateur, seulement leur
   // état (définie ou non). cf. SecretField + updateOrganisme.
@@ -85,6 +88,8 @@ export default async function ConsoleOrganismePage({
           )}
         </CardContent>
       </Card>
+
+      <UsageCard usage={usage} title="Consommation facturable" />
 
       <EditOrganismeForm org={formOrg} plans={ordered} />
     </div>
