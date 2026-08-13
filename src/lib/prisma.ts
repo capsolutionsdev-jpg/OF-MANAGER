@@ -4,8 +4,20 @@ import { currentOrgVar } from "@/lib/rls-context";
 
 // Singleton Prisma : évite de recréer des connexions en dev (hot-reload Next.js).
 const globalForPrisma = globalThis as unknown as {
-  prismaBase: PrismaClient | undefined;
+  prismaBase: ReturnType<typeof makePrismaBase> | undefined;
 };
+
+/**
+ * Colonnes LOURDES exclues par défaut de TOUTES les requêtes (garde-fou anti
+ * sur-transfert / quota base). Le dossier PDF complet (`Bytes`, jusqu'à 8 Mo par
+ * inscription) était tiré par chaque requête Inscription sans `select` → transfert
+ * massif inutile. Seul le cache PDF (`lib/documents/pdf-cache.ts`) le lit, via un
+ * `select` explicite qui l'emporte sur cet `omit`. Ajouter ici toute colonne
+ * volumineuse rarement nécessaire.
+ */
+export const PRISMA_OMIT = {
+  inscription: { dossierPdf: true },
+} as const;
 
 /**
  * Client BRUT, non étendu. Socle interne : les clients cloisonnés
@@ -13,11 +25,14 @@ const globalForPrisma = globalThis as unknown as {
  * `withOrgVar` / `txWithOrg` posent `app.org` dessus. NE PAS importer ailleurs :
  * le reste de l'app importe `prisma` (ci-dessous).
  */
-export const prismaBase =
-  globalForPrisma.prismaBase ??
-  new PrismaClient({
+function makePrismaBase() {
+  return new PrismaClient({
     log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
+    omit: PRISMA_OMIT,
   });
+}
+
+export const prismaBase = globalForPrisma.prismaBase ?? makePrismaBase();
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prismaBase = prismaBase;
 
