@@ -117,6 +117,7 @@ export function InscriptionQuickActions({
                   numero={ssiap?.numero}
                   date={ssiap?.date}
                   niveau={ssiap?.niveau}
+                  formationTitre={formation?.titre}
                 />
               </div>
             </section>
