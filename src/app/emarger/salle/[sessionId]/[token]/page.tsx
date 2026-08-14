@@ -9,6 +9,60 @@ export const dynamic = "force-dynamic";
 
 const demiLabel = (d: string) => (d === "MATIN" ? "Matin" : "Après-midi");
 
+type SalleSigRow = {
+  id: string;
+  token: string;
+  nom: string;
+  role: string;
+  signedAt: Date | null;
+};
+
+// Déclaré au niveau module (pas dans le render) : sinon react-hooks/static-components
+// (un composant créé pendant le render réinitialise son état à chaque rendu).
+function Section({
+  titre,
+  rows,
+  sessionId,
+}: {
+  titre: string;
+  rows: SalleSigRow[];
+  sessionId: string;
+}) {
+  if (rows.length === 0) return null;
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{titre}</p>
+      <ul className="space-y-2">
+        {rows.map((r) => (
+          <li key={r.id}>
+            {r.signedAt ? (
+              <div className="flex items-center justify-between gap-3 rounded-xl border bg-emerald-50 px-4 py-3">
+                <span className="font-medium text-emerald-800">{r.nom}</span>
+                <span className="inline-flex items-center gap-1 text-sm text-emerald-700">
+                  <CheckCircle2 className="h-4 w-4" /> signé
+                </span>
+              </div>
+            ) : (
+              <Link
+                href={`/emarger/${r.token}?s=${sessionId}`}
+                className="flex items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3 shadow-sm transition hover:border-primary hover:bg-primary/5 active:scale-[0.99]"
+              >
+                <span className="font-medium">
+                  {r.nom}
+                  {r.role === "FORMATEUR" ? <span className="ml-1 text-xs text-muted-foreground">(formateur)</span> : null}
+                </span>
+                <span className="inline-flex items-center gap-1 text-sm font-medium text-primary">
+                  <PenLine className="h-4 w-4" /> Signer
+                </span>
+              </Link>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export default async function EmargementSallePage({
   params,
   searchParams,
@@ -51,42 +105,6 @@ export default async function EmargementSallePage({
     weekday: "long", day: "numeric", month: "long", year: "numeric",
   });
 
-  const Section = ({ titre, rows }: { titre: string; rows: typeof dayRows }) => {
-    if (rows.length === 0) return null;
-    return (
-      <div className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{titre}</p>
-        <ul className="space-y-2">
-          {rows.map((r) => (
-            <li key={r.id}>
-              {r.signedAt ? (
-                <div className="flex items-center justify-between gap-3 rounded-xl border bg-emerald-50 px-4 py-3">
-                  <span className="font-medium text-emerald-800">{r.nom}</span>
-                  <span className="inline-flex items-center gap-1 text-sm text-emerald-700">
-                    <CheckCircle2 className="h-4 w-4" /> signé
-                  </span>
-                </div>
-              ) : (
-                <Link
-                  href={`/emarger/${r.token}?s=${sessionId}`}
-                  className="flex items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3 shadow-sm transition hover:border-primary hover:bg-primary/5 active:scale-[0.99]"
-                >
-                  <span className="font-medium">
-                    {r.nom}
-                    {r.role === "FORMATEUR" ? <span className="ml-1 text-xs text-muted-foreground">(formateur)</span> : null}
-                  </span>
-                  <span className="inline-flex items-center gap-1 text-sm font-medium text-primary">
-                    <PenLine className="h-4 w-4" /> Signer
-                  </span>
-                </Link>
-              )}
-            </li>
-          ))}
-        </ul>
-      </div>
-    );
-  };
-
   return (
     <main className="min-h-screen bg-muted/40 px-4 py-8">
       <div className="mx-auto w-full max-w-md space-y-6">
@@ -126,8 +144,8 @@ export default async function EmargementSallePage({
             <div className="flex items-center justify-center gap-2 rounded-lg bg-card px-3 py-2 text-sm text-muted-foreground">
               <Users className="h-4 w-4" /> {signedCount}/{dayRows.length} signé(s) aujourd&apos;hui
             </div>
-            <Section titre="Matin" rows={matin} />
-            <Section titre="Après-midi" rows={aprem} />
+            <Section titre="Matin" rows={matin} sessionId={sessionId} />
+            <Section titre="Après-midi" rows={aprem} sessionId={sessionId} />
           </>
         )}
 
