@@ -566,9 +566,11 @@ model Candidat {
   assignedTo    User?     @relation("CandidatAssigne", fields: [assignedToId], references: [id])
 
   // ── Sécurité privée : prérequis réglementaires (TFP APS, MAC APS) ──
-  cnapsStatut      CnapsStatut? // suivi de l'autorisation préalable CNAPS
-  carteProNumero   String?      // n° de carte professionnelle (si déjà titulaire)
-  carteProValidite DateTime?    // date de fin de validité de la carte pro
+  cnapsStatut        CnapsStatut? // suivi de l'autorisation préalable CNAPS
+  cnapsNumero        String?      // n° de l'autorisation préalable CNAPS (TFP APS initial)
+  cnapsValiditeDate  DateTime?    // date d'expiration de l'autorisation CNAPS (valable 6 mois)
+  carteProNumero     String?      // n° de carte professionnelle (si déjà titulaire)
+  carteProValidite   DateTime?    // date de fin de validité de la carte pro
 
   // ── Sécurité incendie : diplôme SSIAP détenu (recyclage / remise à niveau) ──
   ssiapNiveau         Int?      // niveau du diplôme SSIAP détenu (1, 2 ou 3)

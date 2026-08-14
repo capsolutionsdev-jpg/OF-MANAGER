@@ -46,9 +46,27 @@ export async function submitPublicInscription(
         situationPro: clean(v.situationPro),
         employeur: clean(v.employeur),
         financementType: v.financementType ? v.financementType : null,
+        // Prérequis APS-like
+        carteProNumero: v.hasCarteProAps ? clean(v.carteProNumero) : null,
+        carteProValidite: v.hasCarteProAps && v.carteProValiditeDate ? new Date(v.carteProValiditeDate) : null,
+        cnapsNumero: v.hasCnapsAuth ? clean(v.cnapsNumero) : null,
+        cnapsValiditeDate: v.hasCnapsAuth && v.cnapsValiditeDate ? new Date(v.cnapsValiditeDate) : null,
         statut: "NOUVEAU",
       },
     });
+  } else {
+    // Mise à jour du candidat existant avec les données APS-like
+    if (v.hasCarteProAps || v.hasCnapsAuth) {
+      await prisma.candidat.update({
+        where: { id: candidat.id },
+        data: {
+          carteProNumero: v.hasCarteProAps ? clean(v.carteProNumero) : null,
+          carteProValidite: v.hasCarteProAps && v.carteProValiditeDate ? new Date(v.carteProValiditeDate) : null,
+          cnapsNumero: v.hasCnapsAuth ? clean(v.cnapsNumero) : null,
+          cnapsValiditeDate: v.hasCnapsAuth && v.cnapsValiditeDate ? new Date(v.cnapsValiditeDate) : null,
+        },
+      });
+    }
   }
 
   try {
