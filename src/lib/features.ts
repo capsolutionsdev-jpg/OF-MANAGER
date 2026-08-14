@@ -24,6 +24,7 @@ export const FEATURES: Feature[] = [
   { key: "elearning", label: "E-learning", group: "Cœur" },
   { key: "comptabilite", label: "Suivi comptable", group: "Cœur" },
   { key: "facturation", label: "Devis & facturation", group: "Cœur" },
+  { key: "financements", label: "Financements (CPF / OPCO)", description: "Suivi des prises en charge CPF (Wedof) et OPCO, bordereaux, accords", group: "Cœur" },
   { key: "qualiopi", label: "Suivi Qualiopi", group: "Cœur" },
   { key: "bpf", label: "Bilan Pédagogique & Financier (BPF)", group: "Cœur" },
   { key: "rgpd", label: "RGPD", group: "Cœur" },
