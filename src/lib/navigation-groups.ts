@@ -271,31 +271,29 @@ export function getVisibleGroups(
   permissions: string[] = [],
   features: string[] = [],
 ): NavigationGroup[] {
-  return navigationGroups.filter((group) => {
-    // Check if user role is allowed
-    if (!group.allowedRoles.includes(role)) {
-      return false;
-    }
-
-    // Check if feature is gated
-    if (
-      group.featureGate &&
-      features.length > 0 &&
-      !features.includes(group.featureGate)
-    ) {
-      return false;
-    }
-
-    // Filter items within group (by role, permission, feature)
-    group.items = group.items.filter((item) => {
-      if (!item.roles.includes(role)) return false;
-      if (item.feature && features.length > 0 && !features.includes(item.feature)) {
+  // Ne JAMAIS muter les constantes module-scopées (fuite cross-role).
+  // Filtrer + mapper vers de nouveaux objets à chaque appel.
+  return navigationGroups
+    .filter((group) => {
+      if (!group.allowedRoles.includes(role)) return false;
+      if (
+        group.featureGate &&
+        features.length > 0 &&
+        !features.includes(group.featureGate)
+      ) {
         return false;
       }
       return true;
-    });
-
-    // Only show group if it has items
-    return group.items.length > 0;
-  });
+    })
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => {
+        if (!item.roles.includes(role)) return false;
+        if (item.feature && features.length > 0 && !features.includes(item.feature)) {
+          return false;
+        }
+        return true;
+      }),
+    }))
+    .filter((group) => group.items.length > 0);
 }
