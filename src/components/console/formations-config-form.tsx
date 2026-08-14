@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { ALL_FORMATIONS } from "@/lib/formations-catalog";
 import { updateOrganismeFormations } from "@/lib/actions/formations-config-actions";
@@ -8,13 +8,37 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 
+const ORDRE_GROUPES = [
+  "SSIAP 1",
+  "SSIAP 2",
+  "SSIAP 3",
+  "Secourisme (SST)",
+  "Sécurité privée (CNAPS)",
+  "Transport (VTC / Taxi)",
+  "Autres",
+];
+
 function groupeDe(slug: string): string {
   if (slug.startsWith("ssiap1")) return "SSIAP 1";
   if (slug.startsWith("ssiap2")) return "SSIAP 2";
   if (slug.startsWith("ssiap3")) return "SSIAP 3";
   if (slug === "sst" || slug === "mac-sst") return "Secourisme (SST)";
-  if (slug.includes("aps")) return "Sécurité privée (APS)";
-  if (slug.startsWith("dirigeant")) return "Dirigeant";
+  if (
+    slug.includes("aps") ||
+    slug.startsWith("a3p") ||
+    slug.startsWith("operateur-videoprotection") ||
+    slug.startsWith("dirigeant")
+  ) {
+    return "Sécurité privée (CNAPS)";
+  }
+  if (
+    slug.includes("vtc") ||
+    slug.includes("taxi") ||
+    slug === "tpmr" ||
+    slug.startsWith("passerelle")
+  ) {
+    return "Transport (VTC / Taxi)";
+  }
   return "Autres";
 }
 
@@ -26,7 +50,13 @@ export function FormationsConfigForm({
   initialSlugs: string[];
 }) {
   const [isPending, startTransition] = useTransition();
-  const [selected, setSelected] = useState<Set<string>>(new Set(initialSlugs));
+  // On ne garde de la config initiale que les identifiants encore connus de la
+  // bibliothèque (une config héritée d'une ancienne version peut contenir des
+  // identifiants obsolètes — ils sont nettoyés à la prochaine sauvegarde).
+  const slugsConnus = useMemo(() => new Set(ALL_FORMATIONS.map((f) => f.slug)), []);
+  const [selected, setSelected] = useState<Set<string>>(
+    () => new Set(initialSlugs.filter((s) => slugsConnus.has(s))),
+  );
 
   const handleToggle = (slug: string) => {
     const updated = new Set(selected);
@@ -56,6 +86,7 @@ export function FormationsConfigForm({
     if (!groupes.has(g)) groupes.set(g, []);
     groupes.get(g)!.push(f);
   }
+  const groupesTries = ORDRE_GROUPES.filter((g) => groupes.has(g));
 
   return (
     <Card>
@@ -69,11 +100,11 @@ export function FormationsConfigForm({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
-        {Array.from(groupes.entries()).map(([groupe, formations]) => (
+        {groupesTries.map((groupe) => (
           <div key={groupe}>
             <h4 className="mb-2 text-sm font-semibold">{groupe}</h4>
             <div className="space-y-2 pl-2">
-              {formations.map((f) => (
+              {groupes.get(groupe)!.map((f) => (
                 <div key={f.slug} className="flex items-start gap-2">
                   <input
                     type="checkbox"
