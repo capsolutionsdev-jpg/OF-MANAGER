@@ -16,6 +16,10 @@ export const publicInscriptionSchema = z.object({
   situationPro: optionalText,
   employeur: optionalText,
   financementType: z.nativeEnum(FinancementType).or(z.literal("")).optional(),
+  // Prérequis TFP APS : autorisation préalable CNAPS
+  cnapsHasCertification: z.boolean().optional(),
+  cnapsNumero: optionalText,
+  cnapsValiditeDate: optionalText,
   consentement: z.boolean().refine((v) => v === true, {
     message: "Vous devez accepter le traitement de vos données.",
   }),

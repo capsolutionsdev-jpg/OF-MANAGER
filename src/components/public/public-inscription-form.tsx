@@ -33,11 +33,17 @@ export function PublicInscriptionForm({
 }) {
   const [isPending, startTransition] = useTransition();
   const [submitted, setSubmitted] = useState(false);
+  const [selectedSessionId, setSelectedSessionId] = useState("");
+
+  // Récupère la formation pour afficher les champs conditionnels
+  const selectedSession = sessions.find((s) => s.id === selectedSessionId);
+  const isTfpAps = selectedSession?.label?.toLowerCase().includes("tfp aps") ?? false;
 
   const {
     register,
     handleSubmit,
     formState: { errors },
+    watch,
   } = useForm<PublicInscriptionValues>({
     resolver: zodResolver(publicInscriptionSchema),
     defaultValues: {
@@ -52,9 +58,14 @@ export function PublicInscriptionForm({
       situationPro: "",
       employeur: "",
       financementType: "",
+      cnapsHasCertification: false,
+      cnapsNumero: "",
+      cnapsValiditeDate: "",
       consentement: false,
     },
   });
+
+  const cnapsHasCertification = watch("cnapsHasCertification");
 
   function onSubmit(values: PublicInscriptionValues) {
     startTransition(async () => {
@@ -91,7 +102,15 @@ export function PublicInscriptionForm({
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="grid gap-2">
         <Label htmlFor="sessionId">Formation / session souhaitée *</Label>
-        <select id="sessionId" className={selectClass} {...register("sessionId")}>
+        <select
+          id="sessionId"
+          className={selectClass}
+          {...register("sessionId")}
+          onChange={(e) => {
+            setSelectedSessionId(e.target.value);
+            register("sessionId").onChange?.(e);
+          }}
+        >
           <option value="">— Choisir —</option>
           {sessions.map((s) => (
             <option key={s.id} value={s.id}>
@@ -154,6 +173,55 @@ export function PublicInscriptionForm({
           </select>
         </div>
       </div>
+
+      {/* ── Prérequis TFP APS : autorisation préalable CNAPS ── */}
+      {isTfpAps && (
+        <div className="space-y-3 rounded-lg border border-amber-200 bg-amber-50 p-4">
+          <p className="text-sm font-medium text-amber-900">
+            Prérequis réglementaire : Autorisation préalable CNAPS
+          </p>
+          <label className="flex items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              className="mt-0.5 h-4 w-4"
+              {...register("cnapsHasCertification")}
+            />
+            <span>
+              Je suis titulaire d&apos;une autorisation préalable CNAPS (valable 6 mois)
+            </span>
+          </label>
+
+          {cnapsHasCertification && (
+            <>
+              <div className="grid gap-2">
+                <Label htmlFor="cnapsNumero" className="text-xs">
+                  Numéro d&apos;autorisation CNAPS *
+                </Label>
+                <Input
+                  id="cnapsNumero"
+                  placeholder="Format : AAAA-XXXXX"
+                  {...register("cnapsNumero")}
+                />
+                <ErrorText msg={errors.cnapsNumero?.message} />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="cnapsValiditeDate" className="text-xs">
+                  Date d&apos;expiration (fin de validité) *
+                </Label>
+                <Input
+                  id="cnapsValiditeDate"
+                  type="date"
+                  {...register("cnapsValiditeDate")}
+                />
+                <ErrorText msg={errors.cnapsValiditeDate?.message} />
+                <p className="text-xs text-muted-foreground">
+                  La formation doit débuter avant cette date.
+                </p>
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       <label className="flex items-start gap-2 text-sm">
         <input
