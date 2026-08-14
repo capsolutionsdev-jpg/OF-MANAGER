@@ -231,6 +231,14 @@ const OFM_CSS = `
 .ofm-v2 .fcard .fi{width:44px;height:44px;border-radius:11px;background:linear-gradient(135deg,var(--navy),var(--primary));display:grid;place-items:center;color:#fff;font-size:1.2rem;margin-bottom:12px}
 .ofm-v2 .fcard h3{font-size:1.05rem;color:var(--navy);margin-bottom:6px}
 .ofm-v2 .fcard p{font-size:.9rem;color:var(--muted);margin:0}
+.ofm-v2 .fcard ul{list-style:none;padding:12px 0 0;margin:12px 0 0;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:7px}
+.ofm-v2 .fcard li{display:flex;gap:.5rem;font-size:.82rem;color:var(--ink);line-height:1.45}
+.ofm-v2 .fcard li .chk{color:var(--green);font-weight:700;flex:none}
+.ofm-v2 .also{margin-top:30px;text-align:center}
+.ofm-v2 .also .lbl{font-family:var(--font-sora);font-size:.72rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:13px}
+.ofm-v2 .chips{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;max-width:840px;margin:0 auto}
+.ofm-v2 .chips span{font-size:.8rem;background:#fff;border:1px solid var(--line);color:var(--navy);padding:.42rem .82rem;border-radius:999px;transition:.16s}
+.ofm-v2 .chips span:hover{border-color:#cfd9ef;box-shadow:var(--shadow-sm)}
 
 /* QUALIOPI (signature) */
 .ofm-v2 .qua{background:linear-gradient(160deg,var(--navy-deep),var(--navy) 55%,var(--navy-2));color:#fff;border-radius:24px;padding:clamp(30px,4vw,52px);position:relative;overflow:hidden}
@@ -582,17 +590,117 @@ export default async function HomePage() {
       <section className="blk" id="fonctionnalites" style={{ background: "var(--paper)" }}>
         <div className="wrap">
           <div className="center">
-            <span className="eyebrow">Une plateforme, tout le cycle</span>
-            <h2>De l'acquisition à la certification</h2>
-            <p>Les tâches répétitives partent en automatique. Vous gardez le contrôle et la relation client.</p>
+            <span className="eyebrow">Fonctionnalités complètes</span>
+            <h2>Tout le cycle de votre organisme, dans un seul outil</h2>
+            <p>De l'acquisition à la certification, les tâches répétitives partent en automatique. Vous gardez le contrôle et la relation client.</p>
           </div>
           <div className="feat">
-            <div className="fcard"><div className="fi">📊</div><h3>CRM &amp; pipeline</h3><p>Prospects multicanaux, scoring, relances programmées et pipeline Kanban — aucun lead oublié.</p></div>
-            <div className="fcard"><div className="fi">📅</div><h3>Sessions &amp; planning</h3><p>Sessions, salles, formateurs, planning visuel, convocations et émargement signé.</p></div>
-            <div className="fcard"><div className="fi">📄</div><h3>Documents automatiques</h3><p>Conventions, convocations, attestations et certificats générés à votre charte, en un clic.</p></div>
-            <div className="fcard"><div className="fi">✍️</div><h3>Signature électronique</h3><p>Conventions, devis et émargements signés en ligne (eIDAS), horodatés et archivés. Zéro papier.</p></div>
-            <div className="fcard"><div className="fi">🎓</div><h3>E-learning &amp; suivi</h3><p>Parcours en ligne, quiz, progression et grilles de certification pour chaque stagiaire.</p></div>
-            <div className="fcard"><div className="fi">🤖</div><h3>Assistant IA</h3><p>Rédaction d'e-mails, résumés de dossiers, qualification des leads — du temps gagné chaque jour.</p></div>
+            <div className="fcard">
+              <div className="fi">📊</div>
+              <h3>CRM &amp; acquisition</h3>
+              <p>Chaque lead capté, qualifié et relancé — jusqu'à la signature.</p>
+              <ul>
+                <li><span className="chk">✓</span> Pipeline Kanban &amp; scoring des leads</li>
+                <li><span className="chk">✓</span> Prospects multicanaux (vitrine, e-mail, import)</li>
+                <li><span className="chk">✓</span> Relances programmées, aucun oubli</li>
+              </ul>
+            </div>
+            <div className="fcard">
+              <div className="fi">📚</div>
+              <h3>Catalogue &amp; modèles réglementaires</h3>
+              <p>Des formations prêtes à l'emploi, conformes au cadre réglementaire.</p>
+              <ul>
+                <li><span className="chk">✓</span> Sécurité (SSIAP, SST, CNAPS) &amp; VTC/Taxi T3P</li>
+                <li><span className="chk">✓</span> Modèles Qualiopi complets par formation</li>
+                <li><span className="chk">✓</span> Jury &amp; grilles INRS configurables</li>
+              </ul>
+            </div>
+            <div className="fcard">
+              <div className="fi">📅</div>
+              <h3>Sessions &amp; planning</h3>
+              <p>Planifiez, affectez, remplissez — sans double-saisie.</p>
+              <ul>
+                <li><span className="chk">✓</span> Salles, capacités &amp; multi-formateurs</li>
+                <li><span className="chk">✓</span> Convocations &amp; émargement signé</li>
+                <li><span className="chk">✓</span> Alertes J-1 &amp; listes d'attente</li>
+              </ul>
+            </div>
+            <div className="fcard">
+              <div className="fi">👥</div>
+              <h3>Inscriptions &amp; candidats</h3>
+              <p>De l'inscription en ligne au dossier complet, en continu.</p>
+              <ul>
+                <li><span className="chk">✓</span> Multicanal : web, e-mail, sur place, CSV</li>
+                <li><span className="chk">✓</span> Prérequis CNAPS, carte pro, SSIAP</li>
+                <li><span className="chk">✓</span> Fiche candidat 360° &amp; suivi des pièces</li>
+              </ul>
+            </div>
+            <div className="fcard">
+              <div className="fi">✍️</div>
+              <h3>Documents &amp; signature</h3>
+              <p>95 % de vos documents générés, signés et archivés.</p>
+              <ul>
+                <li><span className="chk">✓</span> Conventions, devis, attestations en un clic</li>
+                <li><span className="chk">✓</span> Signature électronique eIDAS (YouSign)</li>
+                <li><span className="chk">✓</span> Exports CSV/Excel/PDF par module</li>
+              </ul>
+            </div>
+            <div className="fcard">
+              <div className="fi">🎖️</div>
+              <h3>Certifications &amp; examens</h3>
+              <p>Du résultat à l'attestation vérifiable, automatiquement.</p>
+              <ul>
+                <li><span className="chk">✓</span> Résultats, paliers &amp; attestations auto</li>
+                <li><span className="chk">✓</span> Vérification anti-fraude publique</li>
+                <li><span className="chk">✓</span> Diplômes &amp; badges numériques</li>
+              </ul>
+            </div>
+            <div className="fcard">
+              <div className="fi">💰</div>
+              <h3>Financement &amp; facturation</h3>
+              <p>Le bon dispositif, le bon document, la bonne facture.</p>
+              <ul>
+                <li><span className="chk">✓</span> Simulateur CPF, OPCO, France Travail, PTP</li>
+                <li><span className="chk">✓</span> Devis &amp; factures automatisés (Stripe)</li>
+                <li><span className="chk">✓</span> Trésorerie &amp; BPF pré-rempli</li>
+              </ul>
+            </div>
+            <div className="fcard">
+              <div className="fi">🎓</div>
+              <h3>E-learning &amp; parcours</h3>
+              <p>La formation en ligne et son suivi, intégrés.</p>
+              <ul>
+                <li><span className="chk">✓</span> Parcours, quiz &amp; progression</li>
+                <li><span className="chk">✓</span> Examens blancs (SSIAP, T3P VTC/Taxi)</li>
+                <li><span className="chk">✓</span> Grilles de certification par stagiaire</li>
+              </ul>
+            </div>
+            <div className="fcard">
+              <div className="fi">🤖</div>
+              <h3>Automatisations &amp; IA</h3>
+              <p>Le travail répétitif part en tâche de fond.</p>
+              <ul>
+                <li><span className="chk">✓</span> 27 e-mails candidats prêts à l'emploi</li>
+                <li><span className="chk">✓</span> Notifications staff &amp; jobs planifiés</li>
+                <li><span className="chk">✓</span> Assistant IA (rédaction, résumés, tri)</li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="also">
+            <div className="lbl">Et aussi dans la plateforme</div>
+            <div className="chips">
+              <span>📱 Application mobile (PWA + native)</span>
+              <span>📷 Scanner QR → PDF</span>
+              <span>🔔 Notifications push</span>
+              <span>🔗 API publique &amp; webhooks</span>
+              <span>🔄 Sync Wedof (CPF) &amp; Brevo</span>
+              <span>🏢 Multi-tenant &amp; marque blanche</span>
+              <span>🔑 Rôles &amp; permissions granulaires</span>
+              <span>🇫🇷 Hébergement France / Europe</span>
+              <span>📈 Monitoring &amp; supervision</span>
+              <span>🚀 Mode démo 48 h</span>
+            </div>
           </div>
         </div>
       </section>
