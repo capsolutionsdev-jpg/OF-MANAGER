@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Plus, BookOpen } from "lucide-react";
-import { getTenantDb } from "@/lib/tenant";
+import { requireTenant } from "@/lib/tenant";
+import { filterFormationsByOrgConfig } from "@/lib/get-formations-for-organisme";
 import { getCurrentOrganisme } from "@/lib/org";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
@@ -19,12 +20,13 @@ import {
 import { MODALITE_LABELS } from "@/lib/validators/formation";
 
 export default async function FormationsPage() {
-  const db = await getTenantDb();
-  const formations = await db.formation.findMany({
+  const { db, organismeId } = await requireTenant();
+  const allFormations = await db.formation.findMany({
     where: { isArchived: false },
     orderBy: { titre: "asc" },
     include: { _count: { select: { sessions: true } } },
   });
+  const formations = await filterFormationsByOrgConfig(organismeId, allFormations);
 
   // Le catalogue officiel (source capacademy.fr) est propre à CAP Compétences.
   const org = await getCurrentOrganisme();

@@ -1,46 +1,45 @@
 import { prisma } from "@/lib/prisma";
+import { CATALOGUE_SECURITE, normaliserTitre } from "@/lib/catalogue-securite";
 
 /**
- * Récupère les formations qu'un organisme a configurées pour utiliser.
- * Si aucune configuration (array vide), retourne TOUTES les formations.
- * Sinon, filtre par slug (Formation.reference).
- */
-export async function getFormationsForOrganisme(
-  organismeId: string,
-  baseFormations?: Array<{ id: string; reference?: string | null; [key: string]: unknown }>
-) {
-  // Charger la config de l'organisme
-  const org = await prisma.organisme.findUnique({
-    where: { id: organismeId },
-    select: { configurationsFormations: true },
-  });
-
-  if (!org || org.configurationsFormations.length === 0) {
-    // Pas de config = toutes les formations
-    return baseFormations ?? [];
-  }
-
-  // Filtrer les formations par slug
-  const allowedSlugs = new Set(org.configurationsFormations);
-  return (baseFormations ?? []).filter((f) => f.reference && allowedSlugs.has(f.reference));
-}
-
-/**
- * Version pour les SELECT Prisma : retourne directement les formations filtrées.
- * Appeler APRÈS avoir chargé les formations avec Prisma.
+ * Filtre une liste de formations (déjà chargées, déjà cloisonnées au tenant)
+ * selon la sélection faite en console dev (Organisme.configurationsFormations,
+ * clés de modèles de la bibliothèque).
+ *
+ * - Config vide → aucune restriction (toutes les formations du tenant).
+ * - Le rapprochement se fait par TITRE normalisé (titre + alias du modèle),
+ *   comme l'import de catalogue — la reference peut avoir été suffixée.
+ * - Une formation créée à la main par l'organisme (hors bibliothèque) reste
+ *   toujours visible : on ne masque que les formations de la bibliothèque
+ *   qui ne sont pas cochées.
  */
 export async function filterFormationsByOrgConfig<
-  T extends { reference?: string | null; [key: string]: unknown }
+  T extends { titre?: string | null; reference?: string | null },
 >(organismeId: string, formations: T[]): Promise<T[]> {
   const org = await prisma.organisme.findUnique({
     where: { id: organismeId },
     select: { configurationsFormations: true },
   });
 
-  if (!org || org.configurationsFormations.length === 0) {
-    return formations;
+  const config = org?.configurationsFormations ?? [];
+  if (config.length === 0) return formations;
+
+  const selectionnees = new Set(config);
+  const titresAutorises = new Set<string>();
+  const titresBibliotheque = new Set<string>();
+
+  for (const m of CATALOGUE_SECURITE) {
+    const titres = [m.titre, ...m.alias].map(normaliserTitre);
+    for (const t of titres) {
+      titresBibliotheque.add(t);
+      if (selectionnees.has(m.cle)) titresAutorises.add(t);
+    }
   }
 
-  const allowedSlugs = new Set(org.configurationsFormations);
-  return formations.filter((f) => f.reference && allowedSlugs.has(f.reference as string));
+  return formations.filter((f) => {
+    const titre = normaliserTitre(f.titre ?? "");
+    // Hors bibliothèque (création manuelle du tenant) → toujours visible.
+    if (!titresBibliotheque.has(titre)) return true;
+    return titresAutorises.has(titre);
+  });
 }
