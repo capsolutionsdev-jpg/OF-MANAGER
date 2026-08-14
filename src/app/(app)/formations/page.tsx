@@ -4,7 +4,6 @@ import { getTenantDb } from "@/lib/tenant";
 import { getCurrentOrganisme } from "@/lib/org";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
-import { ImportCatalogueButton } from "@/components/formations/import-catalogue-button";
 import { ImportCatalogueOfficielButton } from "@/components/formations/import-catalogue-officiel-button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Badge } from "@/components/ui/badge";
@@ -28,7 +27,6 @@ export default async function FormationsPage() {
   });
 
   // Le catalogue officiel (source capacademy.fr) est propre à CAP Compétences.
-  // Les autres écoles gardent l'import « catalogue sécurité » générique.
   const org = await getCurrentOrganisme();
   const capId = process.env.VITRINE_ORGANISME_ID;
   const estCap = !capId || org?.id === capId;
@@ -39,7 +37,7 @@ export default async function FormationsPage() {
         title="Formations"
         subtitle={`Catalogue — ${formations.length} formation${formations.length > 1 ? "s" : ""} active${formations.length > 1 ? "s" : ""}`}
       >
-        {estCap ? <ImportCatalogueOfficielButton /> : <ImportCatalogueButton />}
+        {estCap && <ImportCatalogueOfficielButton />}
         <Button render={<Link href="/formations/nouvelle" />}>
           <Plus className="mr-2 h-4 w-4" />
           Nouvelle formation
