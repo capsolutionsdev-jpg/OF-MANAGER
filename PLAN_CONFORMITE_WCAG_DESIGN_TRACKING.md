@@ -105,25 +105,31 @@
 - **Effort :** 35-40h | **Impact :** +20% productivité | **Dépend :** Lot 2.2, 2.3
 - **Guide :** PHASE_3_2_TABLES_AVANCEES.md
 
-### Lot 3.3 : Dashboard & KPI Refactor ⏳ NOT STARTED
-- [ ] Cards animées, graphiques Recharts
-- [ ] Stat tiles, responsive
+### Lot 3.3 : Dashboard & KPI Refactor 🚀 GUIDE CREATED
+- [ ] Cards animées (CountUp), graphiques Recharts
+- [ ] KPI trend indicators (↑↓), period selector
+- [ ] Responsive grid (auto-adjust columns)
+- [ ] Dark mode support, export PDF/PNG
 - **Effort :** 25-30h | **Impact :** First impression +50%
+- **Guide :** PHASE_3_3_DASHBOARD_KPI.md
 
-### Lot 3.4 : Flows Critiques (Sessions, Finance, Documents) ⏳ NOT STARTED
-- [ ] Session creation (formateurs, salles)
-- [ ] Devis (TVA, prix)
-- [ ] Documents (génération PDF, archive)
+### Lot 3.4 : Flows Critiques (Sessions, Finance, Documents) 🚀 GUIDE CREATED
+- [ ] Session creation (metadata, rooms, pricing, confirmation)
+- [ ] Devis (auto-populate customer, auto-calc TVA, YouSign e-signature)
+- [ ] Documents (validation, PDF caching, preview + email)
+- [ ] Error handling + recovery
 - **Effort :** 40-50h | **Impact :** Clarté +40%
+- **Guide :** PHASE_3_4_FLOWS_CRITIQUES.md
 
-### Lot 3.5 : Mobile Optimization + PWA Polish ⏳ NOT STARTED
-- [ ] Touch targets 48px+
-- [ ] Formulaires mobiles stacked
-- [ ] Bottom nav mobile
-- [ ] Offline capability + install prompt
+### Lot 3.5 : Mobile Optimization + PWA Polish 🚀 GUIDE CREATED
+- [ ] Touch targets 48px+, bottom nav (mobile)
+- [ ] Forms: mobile stacked, desktop grid
+- [ ] PWA manifest, install prompt, offline fallback
+- [ ] Home screen icon, splash screen, gesture support
 - **Effort :** 25-30h | **Impact :** Mobile engagement +35%
+- **Guide :** PHASE_3_5_MOBILE_POLISH.md
 
-**Status Phase 3 :** 20% (1/5 guide started, 2/5 guide created)
+**Status Phase 3 :** 70% (5/5 guides created)
 
 ---
 
@@ -139,24 +145,32 @@
 - **Effort :** 30-40h | **Dépend :** Lots 2.x, 3.x
 - **Guide :** PHASE_4_1_WCAG_TESTING.md
 
-### Lot 4.2 : Core Web Vitals Optimization ⏳ NOT STARTED
+### Lot 4.2 : Core Web Vitals Optimization 🚀 GUIDE CREATED
 - [ ] LCP < 2.5s, FID < 100ms, CLS < 0.1
-- [ ] Image optimization, code splitting, lazy loading
+- [ ] Image optimization (next/image), code splitting, lazy loading
+- [ ] Font optimization (next/font with swap display)
+- [ ] Caching strategy (ISR, browser caching)
 - **Effort :** 20-25h | **Target :** 95+ Lighthouse
+- **Guide :** PHASE_4_2_CORE_WEB_VITALS.md
 
-### Lot 4.3 : Regression Testing + E2E ⏳ NOT STARTED
-- [ ] Cross-browser (Chrome, Firefox, Safari, Edge)
-- [ ] Responsive testing (mobile, tablet, desktop)
-- [ ] Tous flows critiques
+### Lot 4.3 : Regression Testing + E2E 🚀 GUIDE CREATED
+- [ ] Playwright E2E tests (5 browser/device combos)
+- [ ] Cross-browser (Chrome, Firefox, Safari, mobile)
+- [ ] Responsive testing (desktop, tablet, mobile)
+- [ ] Critical flows + accessibility testing
 - **Effort :** 25-30h | **Dépend :** Lots 3.x
+- **Guide :** PHASE_4_3_REGRESSION_E2E.md
 
-### Lot 4.4 : Staging & Production Deployment ⏳ NOT STARTED
-- [ ] Vercel deployment, DNS cutover
-- [ ] Monitoring (Datadog), rollback plan
-- [ ] User communication
+### Lot 4.4 : Staging & Production Deployment 🚀 GUIDE CREATED
+- [ ] Blue-green deployment (Vercel)
+- [ ] Pre-flight checklist (code, DB, config, comms)
+- [ ] Monitoring (Datadog) + alerting
+- [ ] Rollback procedure (< 30s)
+- [ ] User communication (pre/during/post)
 - **Effort :** 10-15h | **Dépend :** Lot 4.1, 4.3
+- **Guide :** PHASE_4_4_DEPLOYMENT.md
 
-**Status Phase 4 :** 25% (1/4 guide created)
+**Status Phase 4 :** 75% (4/4 guides created)
 
 ---
 
@@ -164,18 +178,19 @@
 
 ```
 Phase 1 (Semaines 1-3)  : ███████░░░ 35% (1.2+1.3 started, 1.1 pending)
-Phase 2 (Semaines 4-7)  : ██████░░░░ 50% (2.1+2.2 committed, guides for 2.3/2.4)
-Phase 3 (Semaines 8-12) : ███░░░░░░░ 20% (3.1+3.2 guides created)
-Phase 4 (Semaines 13-15): █░░░░░░░░░ 25% (4.1 guide created)
+Phase 2 (Semaines 4-7)  : ██████░░░░ 50% (2.1+2.2 committed, 2.3/2.4 guides created)
+Phase 3 (Semaines 8-12) : ███████░░░ 70% (3.1/3.2/3.3/3.4/3.5 guides created)
+Phase 4 (Semaines 13-15): ███░░░░░░░ 75% (4.1/4.2/4.3/4.4 guides created)
 ─────────────────────────────────
-TOTAL                   : █████░░░░░ 32% (8/24 lots done/started, 6 guides created)
+TOTAL                   : ████████░░ 57% (8/24 lots done/started, 16/24 guides created)
 
 Commits this session:
   - aac2d1d feat(design): Phase 1.2 - animation system
   - cf38ed2 feat(design): Phase 2.1 - design tokens complete
   - b4ef050 feat(components): Phase 2.2 - accessibility base styles
   - a152580 docs: Phase 2.3/2.4 + Phase 3.1 guides + tracking update
-  - PENDING: Phase 3.2 + Phase 4.1 guides
+  - ea7a14f docs: Phase 3.2 + Phase 4.1 guides
+  - PENDING: Phase 3.3/3.4/3.5 + Phase 4.2/4.3/4.4 guides
 ```
 
 ---
