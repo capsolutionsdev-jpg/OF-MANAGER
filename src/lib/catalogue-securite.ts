@@ -443,6 +443,61 @@ export const CATALOGUE_SECURITE: ModeleFormation[] = [
     piecesAttendues: [...PIECES_APS, "Carte professionnelle valide OU autorisation préalable CNAPS"],
     programmeAValider: true,
   },
+
+  // ───────────────────────── Dirigeant d'entreprise de sécurité privée ─────────────────────────
+  {
+    cle: "dirigeant-securite-privee-initiale",
+    reference: "dirigeant-societe-securite-privee-initiale",
+    titre: "Dirigeant d'entreprise de sécurité privée (formation initiale)",
+    alias: [
+      "Dirigeant sécurité privée",
+      "Dirigeant d'entreprise de sécurité",
+      "Dirigeant CNAPS",
+      "Aptitude dirigeant CNAPS",
+    ],
+    dureeHeures: 268,
+    duree: "268 h (hors examen)",
+    examen: true,
+    soumisJury: true,
+    certification:
+      "Titre « Dirigeant d'entreprise de sécurité privée » — RNCP 40385 (niveau 5). " +
+      "Atteste de l'aptitude professionnelle exigée pour l'agrément dirigeant CNAPS.",
+    objectifs:
+      "Acquérir l'aptitude professionnelle exigée pour diriger une entreprise de sécurité privée et obtenir " +
+      "l'agrément dirigeant auprès du CNAPS. Maîtriser le cadre juridique, la gestion administrative et " +
+      "financière et le développement d'une société de sécurité.",
+    prerequis:
+      "Être majeur ; être de nationalité française ou ressortissant de l'UE/EEE ; maîtriser le français " +
+      "(oral et écrit) ; justifier d'un niveau BAC minimum, ou d'un diplôme SSIAP 3, ou d'une expérience " +
+      "à un poste à responsabilité ; casier judiciaire compatible avec l'exercice de la profession.",
+    programme: [
+      "1. Cadre juridique et réglementaire des activités privées de sécurité (Livre VI du CSI) — 80 h",
+      "2. Connaissances stratégiques (stratégie d'entreprise, piloter le développement) — 40 h",
+      "3. Connaissances pratiques (déontologie, management, relation client) — 20 h",
+      "4. Gestion administrative, sociale et financière d'une société de sécurité — 60 h",
+      "5. Développement et stratégie d'entreprise — 24 h",
+      "",
+      "(Contenu adapté au projet du candidat. Programme détaillé à valider par l'organisme.)",
+    ].join("\n"),
+    modalitesEvaluation:
+      "Certification par validation de 5 activités (A1 à A5) : épreuves écrites et études de cas " +
+      "évaluées par un jury. La validation de l'ensemble des activités est requise pour obtenir le titre " +
+      "et l'aptitude à l'agrément dirigeant CNAPS.",
+    publicVise:
+      "Créateurs et repreneurs d'entreprise de sécurité privée, futurs gérants et dirigeants souhaitant " +
+      "obtenir leur agrément dirigeant auprès du CNAPS.",
+    methodesPedagogiques:
+      "Apports juridiques, managériaux et financiers. Études de cas concrètes tirées de la gestion " +
+      "d'une société de sécurité. Support pédagogique numérique remis aux stagiaires. Formateurs experts " +
+      "du cadre réglementaire CNAPS et de la gestion d'entreprise.",
+    piecesAttendues: [
+      ...PIECES_BASE,
+      "Casier judiciaire (extrait bulletin n°3)",
+      "Preuve de nationalité (français ou UE/EEE)",
+      "Diplôme ou certificat de niveau BAC minimum OU diplôme SSIAP 3 OU justificatif d'expérience professionnelle",
+    ],
+    programmeAValider: true,
+  },
 ];
 
 /** Normalise un intitulé pour le rapprochement (accents, casse, ponctuation). */

@@ -99,7 +99,7 @@ export async function submitPublicInscription(
       organismeId: orgId,
       candidatId: candidat.id,
       type: "INSCRIPTION_FORMATION",
-      accepted: true,
+      accepte: true,
     },
   });
 
