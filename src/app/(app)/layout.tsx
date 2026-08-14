@@ -29,6 +29,11 @@ import { ConfirmProvider } from "@/components/ui/confirm-dialog";
 import { cn } from "@/lib/utils";
 import { isNativeApp } from "@/lib/native-app";
 import { PushRegistrar } from "@/components/push/push-registrar";
+import { CommandPalette } from "@/components/command-palette";
+import { Breadcrumbs } from "@/components/breadcrumbs";
+import { MobileBottomNav } from "@/components/mobile-bottom-nav";
+import { MobileSpacer } from "@/components/mobile-spacer";
+import { InstallPrompt } from "@/components/install-prompt";
 
 // Rendu dynamique : ces pages lisent la base de données et la session,
 // elles ne doivent pas être pré-générées au build.
@@ -241,8 +246,11 @@ export default async function AppLayout({
               </form>
             </div>
           )}
-          <main data-app-main className="mx-auto w-full max-w-[1400px] flex-1 p-4 pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:p-6 md:pb-6">
+          <CommandPalette />
+          <main id="main-content" data-app-main className="mx-auto w-full max-w-[1400px] flex-1 p-4 pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:p-6 md:pb-6">
+            <Breadcrumbs />
             <ConfirmProvider>{children}</ConfirmProvider>
+            <MobileSpacer />
           </main>
 
           {/* Barre d'onglets mobile (accès au pouce). `pb-20 md:pb-0` sur le pied de
@@ -273,6 +281,8 @@ export default async function AppLayout({
           )}
         </div>
       </div>
+      <MobileBottomNav />
+      <InstallPrompt />
     </div>
   );
 }

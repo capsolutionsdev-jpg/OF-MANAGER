@@ -1,21 +1,28 @@
 "use client";
 
 import { FormStep } from "./form-step";
-import { useCandidatForm } from "@/lib/forms/use-candidat-form";
+import type { CandidatFormData, FormStep as FormStepKey } from "@/lib/forms/candidat-form-schema";
 
-export function Step1Identite() {
-  const {
-    data,
-    errors,
-    touched,
-    currentStep,
-    nextStep,
-    prevStep,
-    updateField,
-  } = useCandidatForm();
+export interface Step1IdentiteProps {
+  data: Partial<CandidatFormData>;
+  errors: Record<string, string[]>;
+  touched: Record<string, boolean>;
+  currentStep: FormStepKey;
+  nextStep: () => boolean;
+  prevStep: () => boolean;
+  updateField: (field: string, value: any) => void;
+}
 
+export function Step1Identite({
+  data,
+  errors,
+  touched,
+  nextStep,
+  prevStep,
+  updateField,
+}: Step1IdentiteProps) {
   const getError = (field: string): string | undefined =>
-    touched[field] && errors[field]?.[0];
+    touched[field] ? errors[field]?.[0] : undefined;
 
   return (
     <FormStep

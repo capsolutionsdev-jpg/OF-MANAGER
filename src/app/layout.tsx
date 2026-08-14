@@ -15,6 +15,8 @@ import {
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { RegisterSW } from "@/components/pwa/register-sw";
+import { AriaLiveProvider } from "@/components/aria-live-region";
+import { SkipLinks } from "@/components/skip-links";
 
 // Polices auto-hébergées via next/font (zéro <link> externe, zéro CLS).
 // Chaque police expose une variable CSS consommée par lib/themes.ts (designs
@@ -95,8 +97,11 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full">
-        {children}
-        <Toaster richColors position="top-right" />
+        <SkipLinks />
+        <AriaLiveProvider>
+          {children}
+          <Toaster richColors position="top-right" />
+        </AriaLiveProvider>
         <RegisterSW />
       </body>
     </html>

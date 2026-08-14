@@ -85,10 +85,18 @@ export function useCandidatForm() {
     const validation = validateStep(currentStep, data);
     if (!validation.success) {
       const newErrors: Record<string, string[]> = {};
-      validation.error.errors.forEach((err) => {
-        const path = err.path.join(".");
-        newErrors[path] = [err.message];
-      });
+      const err = "error" in validation ? validation.error : null;
+      if (err && "issues" in err) {
+        (err as { issues: Array<{ path: (string | number)[]; message: string }> }).issues.forEach((issue) => {
+          const path = issue.path.join(".");
+          newErrors[path] = [issue.message];
+        });
+      } else if (err && "errors" in err) {
+        (err as { errors: Array<{ path: (string | number)[]; message: string }> }).errors.forEach((issue) => {
+          const path = issue.path.join(".");
+          newErrors[path] = [issue.message];
+        });
+      }
       setErrors(newErrors);
       return false;
     }
