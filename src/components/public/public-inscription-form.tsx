@@ -39,9 +39,10 @@ export function PublicInscriptionForm({
   const selectedSession = sessions.find((s) => s.id === selectedSessionId);
   const isTfpAps = selectedSession?.label?.toLowerCase().includes("tfp aps") ?? false;
   const isApsLikeFormation =
-    selectedSession?.label?.toLowerCase().includes("mac aps") ||
-    selectedSession?.label?.toLowerCase().includes("opérateur vidéo") ||
-    selectedSession?.label?.toLowerCase().includes("agent de protection") ?? false;
+    (selectedSession?.label?.toLowerCase().includes("mac aps") ||
+      selectedSession?.label?.toLowerCase().includes("opérateur vidéo") ||
+      selectedSession?.label?.toLowerCase().includes("agent de protection")) ??
+    false;
 
   const {
     register,
