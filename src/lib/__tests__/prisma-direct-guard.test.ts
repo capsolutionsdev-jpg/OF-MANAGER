@@ -82,6 +82,9 @@ const ACTIONS_ALLOWLIST = new Set([
   "session-validation-actions.ts",
   // Console SUPERADMIN / hors-tenant
   "console-actions.ts",
+  // Garde SUPERADMIN explicite ; provisionne le catalogue d'un tenant cible
+  // (creates scopes par organismeId passe en argument, verifie en base).
+  "formations-config-actions.ts",
   "superadmin-account-actions.ts",
   "organisme-actions.ts",
   "agrements-actions.ts",
