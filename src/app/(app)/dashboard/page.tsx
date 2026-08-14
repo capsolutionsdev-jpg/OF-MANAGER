@@ -10,7 +10,6 @@ import {
   ArrowRight,
   FileWarning,
   MessageSquareWarning,
-  AlertTriangle,
   BarChart3,
 } from "lucide-react";
 import { auth } from "@/auth";
@@ -23,7 +22,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { StatCard } from "@/components/ui/stat-card";
+import { Button } from "@/components/ui/button";
+import { KpiCardV2 } from "@/components/dashboard/kpi-card-v2";
 import { ConventionDialog } from "@/components/conventions/convention-dialog";
 import { UsageCard } from "@/components/facturation/usage-card";
 import { getOrgUsage } from "@/lib/usage";
@@ -153,10 +153,10 @@ export default async function DashboardPage() {
     d.toLocaleDateString("fr-FR") + " à " + d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 
   const kpis = [
-    { label: "Candidats", value: candidats, icon: Users, tint: "blue" as const },
-    { label: "Apprenants", value: apprenants, icon: GraduationCap, tint: "emerald" as const },
-    { label: "Sessions à venir", value: sessionsAVenir, icon: CalendarClock, tint: "amber" as const },
-    { label: "Formations", value: formations, icon: BookOpen, tint: "violet" as const },
+    { label: "Candidats", value: candidats, icon: Users, tint: "violet" as const, seed: 3 },
+    { label: "Apprenants", value: apprenants, icon: GraduationCap, tint: "emerald" as const, seed: 7 },
+    { label: "Sessions à venir", value: sessionsAVenir, icon: CalendarClock, tint: "amber" as const, seed: 11 },
+    { label: "Formations", value: formations, icon: BookOpen, tint: "blue" as const, seed: 17 },
   ];
 
   // 5 jours ouvrés de la semaine (lun → ven)
@@ -225,113 +225,225 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* En-tête */}
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Bonjour, {prenom}</h1>
-          <p className="mt-0.5 text-sm capitalize text-muted-foreground">{aujourdhui} — centre de pilotage</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Link
-            href="/dashboard/statistiques"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3.5 py-2 text-sm font-medium transition-colors hover:bg-muted"
-          >
-            <BarChart3 className="h-4 w-4" /> Statistiques
-          </Link>
-          <Link
-            href="/candidats/nouveau"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-opacity hover:opacity-90"
-          >
-            <Users className="h-4 w-4" /> Nouveau candidat
-          </Link>
-          {estStaff && (
-            <ConventionDialog entreprises={entreprisesConv} sessions={conventionSessions} />
-          )}
-        </div>
-      </div>
+      {/* ══════════ ROW 1 : Header + KPIs (col gauche) | À traiter (col droite) ══════════ */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+        {/* Col gauche : Bonjour + actions + KPIs */}
+        <div className="space-y-5">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight text-foreground">
+                Bonjour, {prenom} <span aria-hidden="true">👋</span>
+              </h1>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Voici un aperçu de l&apos;activité de votre centre de formation.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button variant="outline" size="lg" render={<Link href="/dashboard/statistiques" />}>
+                <BarChart3 className="mr-1.5 h-4 w-4" /> Statistiques
+              </Button>
+              <Button size="lg" render={<Link href="/candidats/nouveau" />}>
+                <Users className="mr-1.5 h-4 w-4" /> Nouveau candidat
+              </Button>
+              {estStaff && (
+                <ConventionDialog entreprises={entreprisesConv} sessions={conventionSessions} />
+              )}
+            </div>
+          </div>
 
-      {/* COCKPIT : jauge + KPIs + à traiter */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[auto_1fr_auto]">
+          {/* 4 KPI cards */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {kpis.map((s) => (
+              <KpiCardV2
+                key={s.label}
+                label={s.label}
+                value={s.value}
+                icon={s.icon}
+                tint={s.tint}
+                seed={s.seed}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Col droite : À traiter */}
         <Card>
-          <CardContent className="flex flex-col items-center justify-center p-5">
-            <Gauge pct={remplissage} />
-            <p className="mt-1 text-xs text-muted-foreground">{totalInscrits} / {totalPlaces} places réservées</p>
-          </CardContent>
-        </Card>
-
-        <div className="stagger grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
-          {kpis.map((s) => (
-            <StatCard key={s.label} label={s.label} value={s.value} icon={s.icon} tint={s.tint} />
-          ))}
-        </div>
-
-        <Card className="lg:w-64">
-          <CardHeader>
+          <CardHeader className="pb-3">
             <CardTitle className="text-base">À traiter</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            <Link href="#a-relancer" className="flex items-center justify-between rounded-lg bg-rose-50 px-3 py-2 text-sm transition-colors hover:bg-rose-100 dark:bg-rose-500/10 dark:hover:bg-rose-500/20">
-              <span className="flex items-center gap-1.5 text-rose-700 dark:text-rose-400"><BellRing className="h-3.5 w-3.5" /> En attente</span>
-              <span className="flex items-center gap-1 font-semibold text-rose-700 dark:text-rose-400">{enAttenteTotal} <ArrowRight className="h-3.5 w-3.5" /></span>
+            <Link
+              href="#a-relancer"
+              className="flex items-center justify-between rounded-xl bg-rose-50 px-3 py-2.5 text-sm transition-colors hover:bg-rose-100 dark:bg-rose-500/10 dark:hover:bg-rose-500/20"
+            >
+              <span className="flex items-center gap-2 text-rose-700 dark:text-rose-400">
+                <BellRing className="h-4 w-4" /> En attente
+              </span>
+              <span className="flex items-center gap-1 font-semibold text-rose-700 dark:text-rose-400">
+                {enAttenteTotal} <ArrowRight className="h-3.5 w-3.5" />
+              </span>
             </Link>
-            <Link href="/candidats" className="flex items-center justify-between rounded-lg bg-amber-50 px-3 py-2 text-sm transition-colors hover:bg-amber-100 dark:bg-amber-500/10 dark:hover:bg-amber-500/20">
-              <span className="flex items-center gap-1.5 text-amber-700 dark:text-amber-400"><FileWarning className="h-3.5 w-3.5" /> Pièces manquantes</span>
-              <span className="flex items-center gap-1 font-semibold text-amber-700 dark:text-amber-400">{piecesManquantes} <ArrowRight className="h-3.5 w-3.5" /></span>
+            <Link
+              href="/candidats"
+              className="flex items-center justify-between rounded-xl bg-amber-50 px-3 py-2.5 text-sm transition-colors hover:bg-amber-100 dark:bg-amber-500/10 dark:hover:bg-amber-500/20"
+            >
+              <span className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
+                <FileWarning className="h-4 w-4" /> Pièces manquantes
+              </span>
+              <span className="flex items-center gap-1 font-semibold text-amber-700 dark:text-amber-400">
+                {piecesManquantes} <ArrowRight className="h-3.5 w-3.5" />
+              </span>
             </Link>
-            <Link href="/qualiopi/reclamations" className="flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors hover:bg-muted">
-              <span className="flex items-center gap-1.5 text-muted-foreground"><MessageSquareWarning className="h-3.5 w-3.5" /> Réclamations</span>
-              <span className="flex items-center gap-1 font-semibold">{reclamationsOuvertes} <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" /></span>
+            <Link
+              href="/qualiopi/reclamations"
+              className="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm transition-colors hover:bg-muted"
+            >
+              <span className="flex items-center gap-2 text-muted-foreground">
+                <MessageSquareWarning className="h-4 w-4" /> Réclamations
+              </span>
+              <span className="flex items-center gap-1 font-semibold">
+                {reclamationsOuvertes} <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
+              </span>
             </Link>
           </CardContent>
         </Card>
       </div>
 
-      {usage && (
-        <div className="lg:max-w-md">
-          <UsageCard usage={usage} title="Ma consommation du mois" />
-        </div>
-      )}
+      {/* ══════════ ROW 2 : Remplissage | Consommation | Prochaines sessions ══════════ */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        {/* Remplissage — jauge */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Remplissage des sessions</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center justify-center pt-2">
+            <Gauge pct={remplissage} />
+            <p className="mt-2 text-xs text-muted-foreground">
+              {totalInscrits} / {totalPlaces} places réservées
+            </p>
+            <Link
+              href="/sessions"
+              className="mt-3 text-xs font-medium text-primary hover:underline"
+            >
+              Voir le détail →
+            </Link>
+          </CardContent>
+        </Card>
 
-      {/* CETTE SEMAINE : planning (2/3) + prochaines sessions (1/3) */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        {/* Consommation du mois — carte UsageCard existante si ADMIN, sinon placeholder */}
+        {usage ? (
+          <UsageCard usage={usage} title="Ma consommation du mois" />
+        ) : (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Ma consommation du mois</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Le suivi mensuel s&apos;affiche pour le compte titulaire de l&apos;abonnement.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Prochaines sessions */}
+        <Card>
+          <CardHeader className="flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-base">Prochaines sessions</CardTitle>
+            <Link href="/sessions" className="text-xs font-medium text-primary hover:underline">
+              Voir tout →
+            </Link>
+          </CardHeader>
+          <CardContent>
+            {prochaines.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Aucune session programmée à venir.</p>
+            ) : (
+              <ul className="space-y-3">
+                {prochaines.slice(0, 3).map((s) => {
+                  const jour = s.dateDebut.getDate();
+                  const mois = s.dateDebut
+                    .toLocaleDateString("fr-FR", { month: "short" })
+                    .replace(".", "")
+                    .toUpperCase();
+                  const complet = s._count.inscriptions >= s.nbPlaces;
+                  return (
+                    <li key={s.id}>
+                      <Link
+                        href={`/sessions/${s.id}`}
+                        className="flex items-center gap-3 rounded-xl px-2 py-2 -mx-2 transition-colors hover:bg-muted"
+                      >
+                        <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-xl bg-muted">
+                          <span className="text-base font-bold leading-none text-foreground">{jour}</span>
+                          <span className="text-[10px] font-medium text-muted-foreground">{mois}</span>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium text-foreground">
+                            {s.formation.titre}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {s._count.inscriptions} / {s.nbPlaces} places
+                          </p>
+                        </div>
+                        <Badge
+                          variant="outline"
+                          className={complet ? "shrink-0 border-amber-300 text-amber-700 dark:border-amber-500/40 dark:text-amber-400" : "shrink-0 border-emerald-300 text-emerald-700 dark:border-emerald-500/40 dark:text-emerald-400"}
+                        >
+                          {complet ? "Complète" : "Ouverte"}
+                        </Badge>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* ══════════ ROW 3 : Cette semaine (2/3) | Activité récente (1/3) ══════════ */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
-          <CardHeader className="flex-row items-center justify-between space-y-0">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <CalendarClock className="h-4 w-4" /> Cette semaine
-            </CardTitle>
-            <span className="text-xs text-muted-foreground">
-              {fmt(weekStart)} → {fmt(weekEnd)}
-            </span>
+          <CardHeader className="flex-row items-center justify-between pb-2 space-y-0">
+            <div>
+              <CardTitle className="text-base">Cette semaine</CardTitle>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {fmt(weekStart)} → {fmt(weekEnd)}
+              </p>
+            </div>
+            <Link href="/planning" className="text-xs font-medium text-primary hover:underline">
+              Voir le planning →
+            </Link>
           </CardHeader>
           <CardContent className="p-0">
             <div className="grid grid-cols-2 border-t sm:grid-cols-3 lg:grid-cols-5">
               {days.map((d, i) => (
                 <div
                   key={i}
-                  className={`min-h-[110px] border-b border-r p-2 last:border-r-0 ${d.isToday ? "bg-primary/5" : ""}`}
+                  className={`min-h-[110px] border-b border-r p-3 last:border-r-0 ${d.isToday ? "bg-primary/5" : ""}`}
                 >
-                  <div className={`mb-2 text-xs ${d.isToday ? "font-semibold text-primary" : "text-muted-foreground"}`}>
-                    {d.label} {d.num}
+                  <div
+                    className={`mb-2 text-center text-xs ${d.isToday ? "font-semibold text-primary" : "text-muted-foreground"}`}
+                  >
+                    <div className="uppercase">{d.label.replace(".", "")}</div>
+                    <div className="mt-0.5 text-lg font-semibold text-foreground">{d.num}</div>
+                    <div className="mt-0.5 text-[10px] text-muted-foreground">
+                      {d.sessions.length === 0
+                        ? "0 session"
+                        : `${d.sessions.length} session${d.sessions.length > 1 ? "s" : ""}`}
+                    </div>
                   </div>
-                  <div className="space-y-1.5">
-                    {d.sessions.length === 0 ? (
-                      <span className="text-[11px] text-muted-foreground/50">—</span>
-                    ) : (
-                      d.sessions.map((s) => (
-                        <Link
-                          key={s.id}
-                          href={`/sessions/${s.id}`}
-                          className="block rounded-md bg-blue-50 px-2 py-1.5 transition-colors hover:bg-blue-100 dark:bg-blue-500/15 dark:hover:bg-blue-500/25"
-                        >
-                          <div className="truncate text-[11px] font-medium text-blue-700 dark:text-blue-300">
-                            {s.formation.titre}
-                          </div>
-                          <div className="text-[10px] text-blue-600/80 dark:text-blue-400/80">
-                            {s.horaires ? `${s.horaires.split("–")[0].trim()} · ` : ""}
-                            {s._count.inscriptions}/{s.nbPlaces}
-                          </div>
-                        </Link>
-                      ))
+                  <div className="space-y-1">
+                    {d.sessions.slice(0, 2).map((s) => (
+                      <Link
+                        key={s.id}
+                        href={`/sessions/${s.id}`}
+                        className="block truncate rounded-md bg-primary/10 px-1.5 py-1 text-[10px] font-medium text-primary hover:bg-primary/20"
+                      >
+                        {s.formation.titre}
+                      </Link>
+                    ))}
+                    {d.sessions.length > 2 && (
+                      <p className="text-[10px] text-muted-foreground">+{d.sessions.length - 2}</p>
                     )}
                   </div>
                 </div>
@@ -340,90 +452,40 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
+        {/* Activité récente */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between text-base">
-              <span className="flex items-center gap-2"><CalendarClock className="h-4 w-4" /> Prochaines sessions</span>
-              <Link href="/sessions" className="text-xs font-normal text-primary hover:underline">Voir tout</Link>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {prochaines.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Aucune session programmée à venir.</p>
-            ) : (
-              <ul className="space-y-3">
-                {prochaines.map((s) => (
-                  <li key={s.id} className="flex items-center justify-between gap-3">
-                    <Link href={`/sessions/${s.id}`} className="min-w-0 flex-1 truncate text-sm font-medium hover:underline">{s.formation.titre}</Link>
-                    <span className="text-xs text-muted-foreground">{fmt(s.dateDebut)}</span>
-                    <Badge variant="outline" className="shrink-0">{s._count.inscriptions}/{s.nbPlaces}</Badge>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* À relancer (compact) + activité récente (en pied) */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card id="a-relancer">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between text-base">
-              <span className="flex items-center gap-2">
-                <BellRing className="h-4 w-4 text-amber-600" /> À relancer ({enAttenteTotal})
-              </span>
-              <Link href="/crm" className="text-xs font-normal text-primary hover:underline">Voir tout</Link>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {enAttente.length === 0 ? (
-              <p className="flex items-center gap-2 text-sm text-muted-foreground"><AlertTriangle className="h-4 w-4 text-emerald-600" /> Aucune inscription en attente.</p>
-            ) : (
-              <ul className="divide-y">
-                {enAttente.map((i) => (
-                  <li key={i.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
-                    <div className="min-w-0">
-                      <Link href={`/candidats/${i.candidat.id}`} className="font-medium hover:underline">{i.candidat.prenom} {i.candidat.nom}</Link>
-                      <span className="ml-2 text-xs text-muted-foreground">{i.session.formation.titre} · {fmt(i.session.dateDebut)}</span>
-                    </div>
-                    <div className="flex items-center gap-3 text-xs">
-                      {i.candidat.telephone && <a href={`tel:${i.candidat.telephone}`} className="text-primary hover:underline">{i.candidat.telephone}</a>}
-                      {i.candidat.email && (
-                        <a href={`mailto:${i.candidat.email}?subject=${encodeURIComponent(`Votre inscription — ${i.session.formation.titre}`)}`} className="rounded-md border px-2 py-1 font-medium text-primary hover:bg-muted">Relancer</a>
-                      )}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between text-base">
-              <span className="flex items-center gap-2"><History className="h-4 w-4" /> Activité récente</span>
-              <Link href="/historique" className="text-xs font-normal text-primary hover:underline">Journal complet</Link>
-            </CardTitle>
+          <CardHeader className="flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-base">Activité récente</CardTitle>
+            <Link href="/historique" className="text-xs font-medium text-primary hover:underline">
+              Voir tout →
+            </Link>
           </CardHeader>
           <CardContent>
             {logs.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Aucune activité.</p>
+              <p className="text-sm text-muted-foreground">Aucune activité récente.</p>
             ) : (
-              <ul className="space-y-3 text-sm">
-                {logs.map((log) => {
+              <ul className="space-y-3">
+                {logs.slice(0, 4).map((log) => {
                   const who = log.user?.name ?? "Système";
-                  const initials = who.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
                   const actionTxt = ACTION_LABELS[log.action] ?? log.action.toLowerCase();
                   const entityTxt = ENTITY_LABELS[log.entityType] ?? log.entityType;
-                  const cible = log.entityId ? names.get(`${log.entityType}:${log.entityId}`) : null;
+                  const cible = log.entityId
+                    ? names.get(`${log.entityType}:${log.entityId}`)
+                    : null;
                   return (
-                    <li key={log.id} className="flex gap-3">
-                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-semibold text-primary">{initials || "•"}</span>
-                      <div className="min-w-0 leading-snug">
-                        <span><span className="font-semibold">{who}</span> {actionTxt} {entityTxt}{cible && <span className="font-medium"> {cible}</span>}</span>
-                        <div className="text-xs text-muted-foreground">{fmtDateHeure(log.createdAt)}</div>
+                    <li key={log.id} className="flex gap-2.5 text-sm">
+                      <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                        <History className="h-3.5 w-3.5 text-primary" />
+                      </div>
+                      <div className="min-w-0 flex-1 leading-snug">
+                        <p className="text-sm">
+                          <span className="font-medium">{who}</span>{" "}
+                          <span className="text-muted-foreground">
+                            {actionTxt} {entityTxt}
+                          </span>
+                          {cible && <span className="font-medium"> {cible}</span>}
+                        </p>
+                        <p className="text-xs text-muted-foreground">{fmtDateHeure(log.createdAt)}</p>
                       </div>
                     </li>
                   );
@@ -433,6 +495,54 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* ══════════ ROW 4 : À relancer (liste des inscriptions en attente) ══════════ */}
+      {enAttente.length > 0 && (
+        <Card id="a-relancer">
+          <CardHeader className="flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <BellRing className="h-4 w-4 text-amber-600" /> À relancer ({enAttenteTotal})
+            </CardTitle>
+            <Link href="/crm" className="text-xs font-medium text-primary hover:underline">
+              Voir tout →
+            </Link>
+          </CardHeader>
+          <CardContent>
+            <ul className="divide-y divide-border">
+              {enAttente.map((i) => (
+                <li key={i.id} className="flex flex-wrap items-center justify-between gap-2 py-3 first:pt-0 last:pb-0">
+                  <div className="min-w-0">
+                    <Link href={`/candidats/${i.candidat.id}`} className="font-medium hover:underline">
+                      {i.candidat.prenom} {i.candidat.nom}
+                    </Link>
+                    <span className="ml-2 text-xs text-muted-foreground">
+                      {i.session.formation.titre} · {fmt(i.session.dateDebut)}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3 text-xs">
+                    {i.candidat.telephone && (
+                      <a
+                        href={`tel:${i.candidat.telephone}`}
+                        className="text-primary hover:underline"
+                      >
+                        {i.candidat.telephone}
+                      </a>
+                    )}
+                    {i.candidat.email && (
+                      <a
+                        href={`mailto:${i.candidat.email}?subject=${encodeURIComponent(`Votre inscription — ${i.session.formation.titre}`)}`}
+                        className="rounded-md border border-border px-2 py-1 font-medium text-primary hover:bg-muted"
+                      >
+                        Relancer
+                      </a>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
