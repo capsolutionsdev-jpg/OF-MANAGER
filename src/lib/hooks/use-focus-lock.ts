@@ -39,7 +39,7 @@ export function useFocusLock(
 
     // Mettre le focus sur l'élément initial ou le premier focusable
     const firstFocusable =
-      initialFocus || container.querySelector("button, input, a, select, textarea");
+      initialFocus || container.querySelector('a[href]:not([tabindex="-1"]), button:not([disabled]):not([tabindex="-1"]), input:not([disabled]):not([type="hidden"]):not([tabindex="-1"]), select:not([disabled]):not([tabindex="-1"]), textarea:not([disabled]):not([tabindex="-1"]), [tabindex]:not([tabindex="-1"]), [contenteditable="true"]');
     if (firstFocusable instanceof HTMLElement) {
       firstFocusable.focus();
     }
@@ -54,21 +54,25 @@ export function useFocusLock(
       // Tab trap
       if (e.key === "Tab") {
         const focusableElements = container.querySelectorAll(
-          "button, input, a, select, textarea"
+          'a[href]:not([tabindex="-1"]), button:not([disabled]):not([tabindex="-1"]), input:not([disabled]):not([type="hidden"]):not([tabindex="-1"]), select:not([disabled]):not([tabindex="-1"]), textarea:not([disabled]):not([tabindex="-1"]), [tabindex]:not([tabindex="-1"]), [contenteditable="true"]'
         );
-        const focusableArray = Array.from(focusableElements);
+        // Filtrer les éléments réellement visibles (pas display:none / hidden)
+        const focusableArray = Array.from(focusableElements).filter(
+          (el) => (el as HTMLElement).offsetParent !== null
+        );
+        if (focusableArray.length === 0) return;
         const currentIndex = focusableArray.indexOf(document.activeElement as Element);
         const lastIndex = focusableArray.length - 1;
 
         if (e.shiftKey) {
-          // Shift+Tab au premier élément = aller au dernier
-          if (currentIndex === 0) {
+          // Shift+Tab au premier élément (ou hors container) = aller au dernier
+          if (currentIndex <= 0) {
             e.preventDefault();
             (focusableArray[lastIndex] as HTMLElement).focus();
           }
         } else {
-          // Tab au dernier élément = aller au premier
-          if (currentIndex === lastIndex) {
+          // Tab au dernier élément (ou hors container) = aller au premier
+          if (currentIndex === -1 || currentIndex === lastIndex) {
             e.preventDefault();
             (focusableArray[0] as HTMLElement).focus();
           }

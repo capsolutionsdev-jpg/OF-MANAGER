@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   CandidatFormData,
   FormStep,
@@ -31,6 +31,31 @@ export function useCandidatForm() {
   const [deletedAt, setDeletedAt] = useState<Date | null>(null);
   const [deletedData, setDeletedData] = useState<Partial<CandidatFormData> | null>(null);
 
+  // Refs pour éviter les timer resets à chaque frappe + cleanup au démontage
+  const dataRef = useRef(data);
+  const lastSavedRef = useRef(lastSaved);
+  const deleteTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    dataRef.current = data;
+  }, [data]);
+  useEffect(() => {
+    lastSavedRef.current = lastSaved;
+  }, [lastSaved]);
+
+  // Cleanup au démontage
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      if (deleteTimeoutRef.current) {
+        clearTimeout(deleteTimeoutRef.current);
+        deleteTimeoutRef.current = null;
+      }
+    };
+  }, []);
+
   // Charger depuis localStorage au montage
   useEffect(() => {
     try {
@@ -45,16 +70,18 @@ export function useCandidatForm() {
     }
   }, []);
 
-  // Auto-save toutes les 30s
+  // Auto-save toutes les 30s (interval PERSISTANT, pas de reset à chaque frappe)
+  // Utilise les refs pour lire les dernières valeurs sans re-créer l'interval.
   useEffect(() => {
     const interval = setInterval(() => {
-      if (JSON.stringify(data) !== JSON.stringify(lastSaved)) {
-        saveToStorage(data);
+      if (
+        JSON.stringify(dataRef.current) !== JSON.stringify(lastSavedRef.current)
+      ) {
+        saveToStorage(dataRef.current);
       }
     }, AUTO_SAVE_INTERVAL);
-
     return () => clearInterval(interval);
-  }, [data, lastSaved]);
+  }, []);
 
   const saveToStorage = useCallback((formData: Partial<CandidatFormData>) => {
     try {
@@ -178,34 +205,39 @@ export function useCandidatForm() {
   }, [data, validateCurrentStep]);
 
   // Soft-delete avec undo 30s
+  // - Capture `data` en snapshot LOCAL pour éviter stale closure
+  //   (deletedData vaudrait null au moment de la capture)
+  // - Timeout stocké dans une ref pour cleanup au démontage
+  // - PLUS de window.addEventListener('undo') : undoDelete() est déjà exposé
   const deleteForm = useCallback((): void => {
-    setDeletedData(data);
+    const snapshot = data;
+    setDeletedData(snapshot);
     setDeletedAt(new Date());
     setData({});
 
-    // Auto-delete après 30s si pas d'undo
-    const timeout = setTimeout(() => {
-      localStorage.removeItem(STORAGE_KEY);
+    // Nettoyer un timeout précédent (double delete = un seul timer actif)
+    if (deleteTimeoutRef.current) {
+      clearTimeout(deleteTimeoutRef.current);
+    }
+
+    deleteTimeoutRef.current = setTimeout(() => {
+      if (!mountedRef.current) return;
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+      } catch {
+        /* ignore */
+      }
       setDeletedData(null);
       setDeletedAt(null);
+      deleteTimeoutRef.current = null;
     }, 30000);
-
-    // Permettre undo
-    window.addEventListener(
-      "undo",
-      () => {
-        clearTimeout(timeout);
-        if (deletedData) {
-          setData(deletedData);
-          setDeletedData(null);
-          setDeletedAt(null);
-        }
-      },
-      { once: true }
-    );
-  }, [data, deletedData]);
+  }, [data]);
 
   const undoDelete = useCallback((): void => {
+    if (deleteTimeoutRef.current) {
+      clearTimeout(deleteTimeoutRef.current);
+      deleteTimeoutRef.current = null;
+    }
     if (deletedData) {
       setData(deletedData);
       setDeletedData(null);

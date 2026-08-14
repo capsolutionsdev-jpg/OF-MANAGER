@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { createContext, useContext, useState } from "react";
 
 /**
@@ -29,22 +29,43 @@ const AriaLiveContext = createContext<AriaLiveContextType | null>(null);
 export function AriaLiveProvider({ children }: { children: React.ReactNode }) {
   const [messages, setMessages] = useState<AriaLiveMessage[]>([]);
 
+  // Compteur monotone pour éviter collisions d'id (Date.now() peut collisionner
+  // si announce() est appelé plusieurs fois dans la même ms).
+  const idCounterRef = useRef(0);
+  // Registre des timeouts pour cleanup au démontage (fuite mémoire sinon).
+  const timeoutsRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    const map = timeoutsRef.current;
+    return () => {
+      mountedRef.current = false;
+      map.forEach((t) => clearTimeout(t));
+      map.clear();
+    };
+  }, []);
+
   const announce = useCallback(
     (
       message: string,
       type: "polite" | "assertive" = "polite",
       duration = 5000
     ) => {
-      const id = `aria-${Date.now()}`;
+      idCounterRef.current += 1;
+      const id = `aria-${Date.now()}-${idCounterRef.current}`;
       const newMessage: AriaLiveMessage = { id, message, type, duration };
 
       setMessages((prev) => [...prev, newMessage]);
 
       // Auto-remove after duration
       if (duration > 0) {
-        setTimeout(() => {
+        const timer = setTimeout(() => {
+          timeoutsRef.current.delete(id);
+          if (!mountedRef.current) return;
           setMessages((prev) => prev.filter((m) => m.id !== id));
         }, duration);
+        timeoutsRef.current.set(id, timer);
       }
     },
     []

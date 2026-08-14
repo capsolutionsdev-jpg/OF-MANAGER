@@ -60,11 +60,15 @@ export function CommandPalette() {
           setSelectedIndex((prev) => Math.max(prev - 1, 0));
         }
 
-        // Enter to navigate
+        // Enter to navigate — clamp selectedIndex pour éviter crash
         if (e.key === "Enter" && filtered.length > 0) {
           e.preventDefault();
-          router.push(filtered[selectedIndex].href);
-          setOpen(false);
+          const safeIndex = Math.min(selectedIndex, filtered.length - 1);
+          const target = filtered[safeIndex];
+          if (target) {
+            router.push(target.href);
+            setOpen(false);
+          }
         }
       }
     };
@@ -72,6 +76,11 @@ export function CommandPalette() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [open, search, filtered, selectedIndex, router]);
+
+  // Clamp selectedIndex quand filtered change (ex: recherche affinée)
+  useEffect(() => {
+    setSelectedIndex((prev) => Math.min(prev, Math.max(0, filtered.length - 1)));
+  }, [filtered.length]);
 
   if (!open) return null;
 

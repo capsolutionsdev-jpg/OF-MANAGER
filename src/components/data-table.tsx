@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { ChevronUp, ChevronDown, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -40,14 +40,20 @@ export function DataTable<T extends { id?: string }>({
   const [currentPage, setCurrentPage] = useState(0);
 
   const handleSort = (columnId: string) => {
+    // Calculer la prochaine direction en variable locale AVANT setState
+    // pour éviter le stale state (le callback onSort reçoit la bonne valeur)
+    let nextDir: SortDirection;
+    let nextCol: string | null;
     if (sortColumn === columnId) {
-      setSortDir(sortDir === "asc" ? "desc" : null);
-      if (sortDir === "desc") setSortColumn(null);
+      nextDir = sortDir === "asc" ? "desc" : sortDir === "desc" ? null : "asc";
+      nextCol = nextDir === null ? null : columnId;
     } else {
-      setSortColumn(columnId);
-      setSortDir("asc");
+      nextDir = "asc";
+      nextCol = columnId;
     }
-    onSort?.(columnId, sortDir === "asc" ? "desc" : null);
+    setSortColumn(nextCol);
+    setSortDir(nextDir);
+    onSort?.(columnId, nextDir);
   };
 
   const handleSelectAll = (checked: boolean) => {
@@ -79,6 +85,16 @@ export function DataTable<T extends { id?: string }>({
   }, [data, currentPage, pageSize]);
 
   const totalPages = Math.ceil(data.length / pageSize);
+
+  // Reset currentPage si les données changent (filtre parent) et qu'on est hors bornes
+  useEffect(() => {
+    if (currentPage >= totalPages && totalPages > 0) {
+      setCurrentPage(Math.max(0, totalPages - 1));
+    }
+    if (data.length === 0 && currentPage !== 0) {
+      setCurrentPage(0);
+    }
+  }, [totalPages, data.length, currentPage]);
 
   return (
     <div className="space-y-4">
@@ -144,9 +160,12 @@ export function DataTable<T extends { id?: string }>({
               paginatedData.map((row, i) => {
                 const realIndex = currentPage * pageSize + i;
                 const isSelected = selectedRows.has(String(realIndex));
+                // Utiliser row.id comme clé stable si disponible (préserve état
+                // local des cellules après tri/pagination). Fallback réel index.
+                const rowKey = row.id ?? `row-${realIndex}`;
                 return (
                   <tr
-                    key={realIndex}
+                    key={rowKey}
                     className={cn(
                       "border-t transition-colors",
                       isSelected ? "bg-primary/10" : "hover:bg-muted"
@@ -204,7 +223,7 @@ export function DataTable<T extends { id?: string }>({
 
           <button
             onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
-            disabled={currentPage === totalPages - 1 || data.length === 0}
+            disabled={currentPage >= totalPages - 1 || totalPages === 0}
             className="px-3 py-1 border rounded disabled:opacity-50"
           >
             Suivant →
