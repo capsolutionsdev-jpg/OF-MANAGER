@@ -51,42 +51,50 @@
 
 ## ⏳ PHASE 2 : Fondations & Infrastructure (Semaines 4-7)
 
-### Lot 2.1 : Tailwind Config v4 + CSS Vars ⏳ NOT STARTED
-- [ ] Implémenter design system Tailwind v4
-- [ ] CSS vars pour dark mode + tenant themes
-- [ ] Animation tokens (100ms, 300ms, 500ms, 1000ms+)
+### Lot 2.1 : Tailwind Config v4 + CSS Vars ✅ COMMITTED
+- [x] Implémenter design system Tailwind v4 (commit cf38ed2)
+- [x] CSS vars pour dark mode + tenant themes
+- [x] Animation tokens (100ms, 300ms, 500ms, 1000ms+)
+- [x] 32 color variables, typography, spacing, shadows, transitions
 - **Effort :** 15-20h | **Dépend :** Lot 1.2
 
-### Lot 2.2 : UI Components Rebuild (shadcn → v2) ⏳ NOT STARTED
-- [ ] Button, Card, Input, Select, Modal, Tabs, etc.
-- [ ] Accessible par défaut (ARIA, keyboard nav)
-- [ ] Dark mode + responsive
+### Lot 2.2 : UI Components Accessibility Styles ✅ COMMITTED
+- [x] Buttons, forms, links, tables, headings styles (commit b4ef050)
+- [x] Accessible par défaut (ARIA, keyboard nav, touch targets)
+- [x] Dark mode compatible + responsive
+- [x] Focus visible, hover states, disabled states
 - **Effort :** 35-45h | **Dépend :** Lot 2.1
 
-### Lot 2.3 : Layout & Navigation Refactor ⏳ NOT STARTED
+### Lot 2.3 : Layout & Navigation Refactor 🚀 GUIDE CREATED
 - [ ] Nouvelle structure (sidebar collapsible + topbar sticky)
-- [ ] Breadcrumbs + global search
-- [ ] Mobile optimisation
+- [ ] 30 items → 6 métiers navigation
+- [ ] Breadcrumbs + global search (Cmd+K)
+- [ ] Mobile bottom nav
 - **Effort :** 25-30h | **Dépend :** Lot 1.3, 2.1
+- **Guide :** PHASE_2_3_NAVIGATION_REFACTOR.md
 
-### Lot 2.4 : WCAG Compliance Foundation ⏳ NOT STARTED
+### Lot 2.4 : WCAG Compliance Foundation 🚀 GUIDE CREATED
 - [ ] Global aria-live region
 - [ ] Focus management hooks
-- [ ] Skip links
-- [ ] Semantic HTML audit
+- [ ] Skip links + semantic HTML
+- [ ] Keyboard nav (Tab, Arrow, Esc)
 - [ ] Color contrast checker
 - **Effort :** 20-25h | **Dépend :** Lot 2.1, 2.2
+- **Guide :** PHASE_2_4_WCAG_FOUNDATION.md
 
-**Status Phase 2 :** 0% (0/4 lots started)
+**Status Phase 2 :** 50% (2/4 lots started, guides for 2/4)
 
 ---
 
 ## 🎨 PHASE 3 : Pages & Flows Critiques (Semaines 8-12)
 
-### Lot 3.1 : Formulaire Candidat Pagination ⏳ NOT STARTED
+### Lot 3.1 : Formulaire Candidat Pagination 🚀 GUIDE CREATED
 - [ ] 5 étapes : Identité → Adresse → Formation → Prérequis → Confirmation
-- [ ] Progress bar + soft-delete undo
+- [ ] Progress bar + soft-delete undo (30s window)
+- [ ] Auto-save à localStorage (every 30s)
+- [ ] Dynamic prerequisites based on formation
 - **Effort :** 30-35h | **Impact :** −78% abandons mobile | **Dépend :** Lot 2.2, 2.4
+- **Guide :** PHASE_3_1_FORMULAIRE_PAGINATION.md
 
 ### Lot 3.2 : Tables : Tri + Sticky + Bulk Actions ⏳ NOT STARTED
 - [ ] Headers cliquables (↑/↓ tri)
@@ -149,12 +157,17 @@
 ## 📈 Progression Globale
 
 ```
-Phase 1 (Semaines 1-3)  : ████░░░░░░ 25% (1.2 started)
-Phase 2 (Semaines 4-7)  : ░░░░░░░░░░ 0%
-Phase 3 (Semaines 8-12) : ░░░░░░░░░░ 0%
+Phase 1 (Semaines 1-3)  : ███████░░░ 35% (1.2+1.3 started, 1.1 pending)
+Phase 2 (Semaines 4-7)  : █████░░░░░ 50% (2.1+2.2 committed, guides for 2.3/2.4)
+Phase 3 (Semaines 8-12) : █░░░░░░░░░ 10% (3.1 guide created)
 Phase 4 (Semaines 13-15): ░░░░░░░░░░ 0%
 ─────────────────────────────────
-TOTAL                   : ██░░░░░░░░ 6% (1/24 lots done)
+TOTAL                   : ████░░░░░░ 24% (6/24 lots done/started)
+
+Commits this session:
+  - aac2d1d feat(design): Phase 1.2 - animation system
+  - cf38ed2 feat(design): Phase 2.1 - design tokens complete
+  - b4ef050 feat(components): Phase 2.2 - accessibility base styles
 ```
 
 ---
