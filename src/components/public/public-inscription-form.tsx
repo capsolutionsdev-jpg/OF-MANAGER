@@ -35,14 +35,23 @@ export function PublicInscriptionForm({
   const [submitted, setSubmitted] = useState(false);
   const [selectedSessionId, setSelectedSessionId] = useState("");
 
-  // Détecte les types de formations sécurité
+  // Détecte les types de formations sécurité à partir du libellé de session.
+  // On normalise (accents retirés, minuscules) puis on matche sur les tokens
+  // réellement présents dans les titres du catalogue — sinon un bloc de
+  // prérequis ne s'afficherait jamais (ex. "Opérateur en Vidéoprotection" ne
+  // contient pas "opérateur vidéo", "Agent en Protection Physique (A3P)" ne
+  // contient pas "agent de protection").
   const selectedSession = sessions.find((s) => s.id === selectedSessionId);
-  const isTfpAps = selectedSession?.label?.toLowerCase().includes("tfp aps") ?? false;
+  const normLabel = (selectedSession?.label ?? "")
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase();
+  const isTfpAps = normLabel.includes("tfp aps");
   const isApsLikeFormation =
-    (selectedSession?.label?.toLowerCase().includes("mac aps") ||
-      selectedSession?.label?.toLowerCase().includes("opérateur vidéo") ||
-      selectedSession?.label?.toLowerCase().includes("agent de protection")) ??
-    false;
+    normLabel.includes("mac aps") ||
+    normLabel.includes("videoprotection") ||
+    normLabel.includes("a3p") ||
+    normLabel.includes("protection physique");
 
   const {
     register,
