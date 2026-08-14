@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { getTenantDb } from "@/lib/tenant";
+import { requireTenant } from "@/lib/tenant";
+import { filterFormationsByOrgConfig } from "@/lib/get-formations-for-organisme";
 import { SessionForm } from "@/components/sessions/session-form";
 
 export default async function ModifierSessionPage({
@@ -9,9 +10,9 @@ export default async function ModifierSessionPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const db = await getTenantDb();
+  const { db, organismeId } = await requireTenant();
   const { id } = await params;
-  const [s, formations, formateurs, salles, jurys] = await Promise.all([
+  const [s, allFormations, formateurs, salles, jurys] = await Promise.all([
     db.session.findUnique({
       where: { id },
       include: {
@@ -40,6 +41,7 @@ export default async function ModifierSessionPage({
     }),
   ]);
   if (!s) notFound();
+  const formations = await filterFormationsByOrgConfig(organismeId, allFormations);
 
   return (
     <div className="space-y-6">

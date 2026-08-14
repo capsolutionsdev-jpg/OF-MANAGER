@@ -2,13 +2,14 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { requireTenant } from "@/lib/tenant";
 import { orgConfigFor } from "@/lib/org-identity";
+import { filterFormationsByOrgConfig } from "@/lib/get-formations-for-organisme";
 import { SessionForm } from "@/components/sessions/session-form";
 import { Card } from "@/components/ui/card";
 
 export default async function NouvelleSessionPage() {
   const { db, organismeId } = await requireTenant();
   const org = await orgConfigFor(organismeId);
-  const [formations, formateurs, salles, jurys] = await Promise.all([
+  const [allFormations, formateurs, salles, jurys] = await Promise.all([
     db.formation.findMany({
       where: { isArchived: false },
       orderBy: { titre: "asc" },
@@ -29,6 +30,9 @@ export default async function NouvelleSessionPage() {
       select: { id: true, nom: true, prenom: true, qualite: true, formationsValidables: true, actif: true },
     }),
   ]);
+
+  // Filtrer les formations selon la config de l'organisme
+  const formations = await filterFormationsByOrgConfig(organismeId, allFormations);
 
   return (
     <div className="space-y-6">
