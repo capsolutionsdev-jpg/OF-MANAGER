@@ -472,6 +472,144 @@
 }
 
 /* ============================================================
+   PHASE 1 — Animations Dialog & Form (Conformité WCAG + Design)
+   Nouvelles keyframes pour modals, sheets, toasts et formulaires.
+   ============================================================ */
+
+/* Dialog animations — entrée/sortie modales */
+@keyframes dialog-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes dialog-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes dialog-slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes dialog-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Toast animations */
+@keyframes toast-slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(384px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@keyframes toast-slide-out-right {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(384px);
+  }
+}
+
+/* Form animations — champs et étapes */
+@keyframes input-focus-grow {
+  from {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--primary) 50%, transparent);
+  }
+  to {
+    box-shadow: 0 0 0 4px color-mix(in oklab, var(--primary) 20%, transparent);
+  }
+}
+@keyframes step-indicator-fill {
+  from {
+    stroke-dasharray: 0 999;
+  }
+  to {
+    stroke-dasharray: 999 999;
+  }
+}
+
+/* Loading states */
+@keyframes spinner-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes skeleton-wave {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+/* Utility classes for animations */
+.animate-dialog-fade-in {
+  animation: dialog-fade-in 0.3s ease-out;
+}
+.animate-dialog-slide-up {
+  animation: dialog-slide-up 0.3s ease-out;
+}
+.animate-dialog-scale-in {
+  animation: dialog-scale-in 0.3s ease-out;
+}
+.animate-toast-enter {
+  animation: toast-slide-in-right 0.3s ease-out;
+}
+.animate-toast-exit {
+  animation: toast-slide-out-right 0.3s ease-in;
+}
+.animate-input-focus {
+  animation: input-focus-grow 0.2s ease-out;
+}
+.animate-step-fill {
+  animation: step-indicator-fill 0.5s ease-out forwards;
+}
+.animate-spinner {
+  animation: spinner-rotate 1s linear infinite;
+}
+.animate-skeleton {
+  background-size: 1000px 100%;
+  animation: skeleton-wave 2s infinite;
+}
+
+/* Respect prefers-reduced-motion for all new animations */
+@media (prefers-reduced-motion: reduce) {
+  .animate-dialog-fade-in,
+  .animate-dialog-slide-up,
+  .animate-dialog-scale-in,
+  .animate-toast-enter,
+  .animate-toast-exit,
+  .animate-input-focus,
+  .animate-step-fill,
+  .animate-spinner,
+  .animate-skeleton {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ============================================================
    Accessibilité (RGAA/WCAG) — focus clavier visible.
    Garantit un indicateur de focus net sur les éléments interactifs
    au clavier (Tab), sans gêner la navigation à la souris (:focus-visible).
