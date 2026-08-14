@@ -28,6 +28,27 @@ export async function submitPublicInscription(
   // Tenant dérivé de la session ciblée (le formulaire public n'a pas de session utilisateur).
   const orgId = session.organismeId;
 
+  // Prérequis réglementaires (autorisation CNAPS / carte pro). On ne calcule une
+  // valeur QUE lorsqu'elle est réellement renseignée : `undefined` laisse Prisma
+  // ignorer le champ (à la création → défaut null ; à la mise à jour → valeur
+  // existante conservée). On n'écrase donc JAMAIS une donnée déjà en base quand
+  // le formulaire de la formation en cours n'affiche pas la case correspondante.
+  const cnapsNumeroVal = clean(v.cnapsNumero) ?? undefined;
+  const cnapsValiditeVal = v.cnapsValiditeDate ? new Date(v.cnapsValiditeDate) : undefined;
+  const carteProNumeroVal = v.hasCarteProAps ? (clean(v.carteProNumero) ?? undefined) : undefined;
+  const carteProValiditeVal =
+    v.hasCarteProAps && v.carteProValiditeDate ? new Date(v.carteProValiditeDate) : undefined;
+  // Transport — carte pro VTC/taxi (formation continue) & examen théorique (passerelle).
+  const carteVtcTaxiNumeroVal = v.hasCarteProVtcTaxi
+    ? (clean(v.carteProVtcTaxiNumero) ?? undefined)
+    : undefined;
+  const carteVtcTaxiValiditeVal =
+    v.hasCarteProVtcTaxi && v.carteProVtcTaxiValiditeDate
+      ? new Date(v.carteProVtcTaxiValiditeDate)
+      : undefined;
+  const examenTheoriqueDateVal =
+    v.examenTheoriqueReussi && v.examenTheoriqueDate ? new Date(v.examenTheoriqueDate) : undefined;
+
   // Candidat : réutiliser s'il existe déjà (par email, dans le même organisme), sinon créer.
   let candidat = await prisma.candidat.findFirst({
     where: { email: v.email.trim(), organismeId: orgId },
@@ -46,27 +67,30 @@ export async function submitPublicInscription(
         situationPro: clean(v.situationPro),
         employeur: clean(v.employeur),
         financementType: v.financementType ? v.financementType : null,
-        // Prérequis TFP APS (autorisation CNAPS)
-        cnapsNumero: v.cnapsHasCertification ? clean(v.cnapsNumero) : v.hasCnapsAuth ? clean(v.cnapsNumero) : null,
-        cnapsValiditeDate: v.cnapsHasCertification && v.cnapsValiditeDate ? new Date(v.cnapsValiditeDate) : v.hasCnapsAuth && v.cnapsValiditeDate ? new Date(v.cnapsValiditeDate) : null,
-        // Prérequis APS-like (carte pro ou autorisation CNAPS)
-        carteProNumero: v.hasCarteProAps ? clean(v.carteProNumero) : null,
-        carteProValidite: v.hasCarteProAps && v.carteProValiditeDate ? new Date(v.carteProValiditeDate) : null,
+        cnapsNumero: cnapsNumeroVal,
+        cnapsValiditeDate: cnapsValiditeVal,
+        carteProNumero: carteProNumeroVal,
+        carteProValidite: carteProValiditeVal,
+        carteProVtcTaxiNumero: carteVtcTaxiNumeroVal,
+        carteProVtcTaxiValidite: carteVtcTaxiValiditeVal,
+        examenTheoriqueVtcTaxiDate: examenTheoriqueDateVal,
         statut: "NOUVEAU",
       },
     });
   } else {
-    // Mise à jour du candidat existant avec les données de prérequis
-    if (v.cnapsHasCertification || v.hasCarteProAps || v.hasCnapsAuth) {
-      await prisma.candidat.update({
-        where: { id: candidat.id },
-        data: {
-          cnapsNumero: v.cnapsHasCertification ? clean(v.cnapsNumero) : v.hasCnapsAuth ? clean(v.cnapsNumero) : null,
-          cnapsValiditeDate: v.cnapsHasCertification && v.cnapsValiditeDate ? new Date(v.cnapsValiditeDate) : v.hasCnapsAuth && v.cnapsValiditeDate ? new Date(v.cnapsValiditeDate) : null,
-          carteProNumero: v.hasCarteProAps ? clean(v.carteProNumero) : null,
-          carteProValidite: v.hasCarteProAps && v.carteProValiditeDate ? new Date(v.carteProValiditeDate) : null,
-        },
-      });
+    // Candidat existant : mise à jour partielle — uniquement les champs de
+    // prérequis effectivement fournis, pour ne pas remettre à null une valeur
+    // déjà connue (perte de donnée réglementaire).
+    const prereqData: Prisma.CandidatUpdateInput = {};
+    if (cnapsNumeroVal !== undefined) prereqData.cnapsNumero = cnapsNumeroVal;
+    if (cnapsValiditeVal !== undefined) prereqData.cnapsValiditeDate = cnapsValiditeVal;
+    if (carteProNumeroVal !== undefined) prereqData.carteProNumero = carteProNumeroVal;
+    if (carteProValiditeVal !== undefined) prereqData.carteProValidite = carteProValiditeVal;
+    if (carteVtcTaxiNumeroVal !== undefined) prereqData.carteProVtcTaxiNumero = carteVtcTaxiNumeroVal;
+    if (carteVtcTaxiValiditeVal !== undefined) prereqData.carteProVtcTaxiValidite = carteVtcTaxiValiditeVal;
+    if (examenTheoriqueDateVal !== undefined) prereqData.examenTheoriqueVtcTaxiDate = examenTheoriqueDateVal;
+    if (Object.keys(prereqData).length > 0) {
+      await prisma.candidat.update({ where: { id: candidat.id }, data: prereqData });
     }
   }
 

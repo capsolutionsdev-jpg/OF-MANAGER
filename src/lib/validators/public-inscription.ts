@@ -25,6 +25,13 @@ export const publicInscriptionSchema = z.object({
   hasCnapsAuth: z.boolean().optional(),
   cnapsNumero: optionalText,
   cnapsValiditeDate: optionalText,
+  // Prérequis transport — formation continue VTC/Taxi : carte pro en cours de validité
+  hasCarteProVtcTaxi: z.boolean().optional(),
+  carteProVtcTaxiNumero: optionalText,
+  carteProVtcTaxiValiditeDate: optionalText,
+  // Prérequis transport — passerelle VTC↔Taxi : examen théorique réussi < 3 ans
+  examenTheoriqueReussi: z.boolean().optional(),
+  examenTheoriqueDate: optionalText,
   consentement: z.boolean().refine((v) => v === true, {
     message: "Vous devez accepter le traitement de vos données.",
   }),

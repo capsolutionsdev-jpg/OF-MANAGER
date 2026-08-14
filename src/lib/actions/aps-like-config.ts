@@ -10,18 +10,20 @@ import { prisma } from "@/lib/prisma";
  * Prérequis : SOIT Carte pro valide, SOIT Autorisation CNAPS valide
  */
 
+// NB : les clés = la `reference` côté OF Manager, qui est EXACTEMENT le slug de
+// la fiche vitrine (clé de jointure). Un slug erroné = updateMany à 0 ligne
+// (config jamais appliquée). Slugs vérifiés dans data/safety-formations.ts.
 const APS_LIKE_CONFIG = {
   // MAC APS — renouvellement carte pro APS (valable 3 ans)
-  "SAF-MAC-APS-RECYCLAGE": { nbJury: 1, grilleInrs: "APS_EXAMEN" },
   "mac-aps-recyclage": { nbJury: 1, grilleInrs: "APS_EXAMEN" },
 
   // Opérateur vidéoprotection — initial + VAE
   "operateur-videoprotection-initiale": { nbJury: 2, grilleInrs: "VIDEOPROTECTION_EXAMEN" },
   "operateur-videoprotection-vae": { nbJury: 2, grilleInrs: "VIDEOPROTECTION_EXAMEN" },
 
-  // Agent de protection rapproché (APR) — initial + VAE
-  "agent-protection-rapproche-initiale": { nbJury: 2, grilleInrs: "APR_EXAMEN" },
-  "agent-protection-rapproche-vae": { nbJury: 2, grilleInrs: "APR_EXAMEN" },
+  // A3P — Agent en Protection Physique des Personnes (ex-« protection rapprochée ») — initial + VAE
+  "a3p-agent-protection-physique-personnes-initiale": { nbJury: 2, grilleInrs: "APR_EXAMEN" },
+  "a3p-agent-protection-physique-personnes-vae": { nbJury: 2, grilleInrs: "APR_EXAMEN" },
 };
 
 /**
