@@ -52,6 +52,12 @@ export function PublicInscriptionForm({
     normLabel.includes("videoprotection") ||
     normLabel.includes("a3p") ||
     normLabel.includes("protection physique");
+  // Transport — formation continue VTC/Taxi (renouvellement de carte pro).
+  // Titre type : "Formation Continue VTC — Renouvellement de la carte professionnelle".
+  const isVtcTaxiContinue = normLabel.includes("formation continue");
+  // Transport — passerelle VTC↔Taxi. Titres : "Mobilité Taxi → VTC (passerelle)".
+  // On matche "passerelle" uniquement (le TPMR contient "mobilité réduite" → à exclure).
+  const isPasserelle = normLabel.includes("passerelle");
 
   const {
     register,
@@ -79,6 +85,11 @@ export function PublicInscriptionForm({
       hasCnapsAuth: false,
       cnapsNumero: "",
       cnapsValiditeDate: "",
+      hasCarteProVtcTaxi: false,
+      carteProVtcTaxiNumero: "",
+      carteProVtcTaxiValiditeDate: "",
+      examenTheoriqueReussi: false,
+      examenTheoriqueDate: "",
       consentement: false,
     },
   });
@@ -86,6 +97,8 @@ export function PublicInscriptionForm({
   const cnapsHasCertification = watch("cnapsHasCertification");
   const hasCarteProAps = watch("hasCarteProAps");
   const hasCnapsAuth = watch("hasCnapsAuth");
+  const hasCarteProVtcTaxi = watch("hasCarteProVtcTaxi");
+  const examenTheoriqueReussi = watch("examenTheoriqueReussi");
 
   function onSubmit(values: PublicInscriptionValues) {
     startTransition(async () => {
@@ -308,6 +321,88 @@ export function PublicInscriptionForm({
                 </>
               )}
             </>
+          )}
+        </div>
+      )}
+
+      {/* ── Prérequis transport : formation continue VTC/Taxi (carte pro valide) ── */}
+      {isVtcTaxiContinue && (
+        <div className="space-y-3 rounded-lg border border-cyan-200 bg-cyan-50 p-4">
+          <p className="text-sm font-medium text-cyan-900">
+            Prérequis : carte professionnelle VTC / Taxi
+          </p>
+          <label className="flex items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              className="mt-0.5 h-4 w-4"
+              {...register("hasCarteProVtcTaxi")}
+            />
+            <span>
+              Je suis titulaire d&apos;une carte professionnelle VTC / Taxi en cours de validité
+            </span>
+          </label>
+
+          {hasCarteProVtcTaxi && (
+            <>
+              <div className="grid gap-2 pl-6">
+                <Label htmlFor="carteProVtcTaxiNumero" className="text-xs">
+                  Numéro de carte professionnelle *
+                </Label>
+                <Input
+                  id="carteProVtcTaxiNumero"
+                  placeholder="N° de la carte pro VTC / Taxi"
+                  {...register("carteProVtcTaxiNumero")}
+                />
+                <ErrorText msg={errors.carteProVtcTaxiNumero?.message} />
+              </div>
+              <div className="grid gap-2 pl-6">
+                <Label htmlFor="carteProVtcTaxiValiditeDate" className="text-xs">
+                  Date de fin de validité *
+                </Label>
+                <Input
+                  id="carteProVtcTaxiValiditeDate"
+                  type="date"
+                  {...register("carteProVtcTaxiValiditeDate")}
+                />
+                <ErrorText msg={errors.carteProVtcTaxiValiditeDate?.message} />
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ── Prérequis transport : passerelle VTC↔Taxi (examen théorique < 3 ans) ── */}
+      {isPasserelle && (
+        <div className="space-y-3 rounded-lg border border-cyan-200 bg-cyan-50 p-4">
+          <p className="text-sm font-medium text-cyan-900">
+            Prérequis : examen théorique VTC / Taxi
+          </p>
+          <label className="flex items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              className="mt-0.5 h-4 w-4"
+              {...register("examenTheoriqueReussi")}
+            />
+            <span>
+              J&apos;ai réussi mon examen théorique VTC / Taxi il y a moins de 3 ans
+            </span>
+          </label>
+
+          {examenTheoriqueReussi && (
+            <div className="grid gap-2 pl-6">
+              <Label htmlFor="examenTheoriqueDate" className="text-xs">
+                Date de réussite de l&apos;examen théorique *
+              </Label>
+              <Input
+                id="examenTheoriqueDate"
+                type="date"
+                {...register("examenTheoriqueDate")}
+              />
+              <ErrorText msg={errors.examenTheoriqueDate?.message} />
+              <p className="text-xs text-muted-foreground">
+                L&apos;examen doit dater de moins de 3 ans à l&apos;entrée en formation.
+              </p>
+            </div>
           )}
         </div>
       )}

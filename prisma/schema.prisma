@@ -577,6 +577,11 @@ model Candidat {
   ssiapDiplomeNumero  String?   // n° du diplôme SSIAP (figure sur l'attestation de recyclage)
   ssiapDiplomeDate    DateTime? // date d'obtention du diplôme SSIAP
 
+  // ── Transport (VTC / Taxi) : prérequis réglementaires ──
+  carteProVtcTaxiNumero      String?   // n° carte pro VTC/taxi (prérequis formation continue)
+  carteProVtcTaxiValidite    DateTime? // date de fin de validité de la carte pro VTC/taxi
+  examenTheoriqueVtcTaxiDate DateTime? // date de réussite de l'examen théorique VTC/taxi (passerelle, valable < 3 ans)
+
   // ── Accessibilité (Qualiopi ind. 26) + RGPD ──
   situationHandicap Boolean   @default(false) // situation de handicap déclarée
   besoinsAdaptation String?   @db.Text // adaptations pédagogiques nécessaires

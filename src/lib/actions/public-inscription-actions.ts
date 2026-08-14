@@ -38,6 +38,16 @@ export async function submitPublicInscription(
   const carteProNumeroVal = v.hasCarteProAps ? (clean(v.carteProNumero) ?? undefined) : undefined;
   const carteProValiditeVal =
     v.hasCarteProAps && v.carteProValiditeDate ? new Date(v.carteProValiditeDate) : undefined;
+  // Transport — carte pro VTC/taxi (formation continue) & examen théorique (passerelle).
+  const carteVtcTaxiNumeroVal = v.hasCarteProVtcTaxi
+    ? (clean(v.carteProVtcTaxiNumero) ?? undefined)
+    : undefined;
+  const carteVtcTaxiValiditeVal =
+    v.hasCarteProVtcTaxi && v.carteProVtcTaxiValiditeDate
+      ? new Date(v.carteProVtcTaxiValiditeDate)
+      : undefined;
+  const examenTheoriqueDateVal =
+    v.examenTheoriqueReussi && v.examenTheoriqueDate ? new Date(v.examenTheoriqueDate) : undefined;
 
   // Candidat : réutiliser s'il existe déjà (par email, dans le même organisme), sinon créer.
   let candidat = await prisma.candidat.findFirst({
@@ -61,6 +71,9 @@ export async function submitPublicInscription(
         cnapsValiditeDate: cnapsValiditeVal,
         carteProNumero: carteProNumeroVal,
         carteProValidite: carteProValiditeVal,
+        carteProVtcTaxiNumero: carteVtcTaxiNumeroVal,
+        carteProVtcTaxiValidite: carteVtcTaxiValiditeVal,
+        examenTheoriqueVtcTaxiDate: examenTheoriqueDateVal,
         statut: "NOUVEAU",
       },
     });
@@ -73,6 +86,9 @@ export async function submitPublicInscription(
     if (cnapsValiditeVal !== undefined) prereqData.cnapsValiditeDate = cnapsValiditeVal;
     if (carteProNumeroVal !== undefined) prereqData.carteProNumero = carteProNumeroVal;
     if (carteProValiditeVal !== undefined) prereqData.carteProValidite = carteProValiditeVal;
+    if (carteVtcTaxiNumeroVal !== undefined) prereqData.carteProVtcTaxiNumero = carteVtcTaxiNumeroVal;
+    if (carteVtcTaxiValiditeVal !== undefined) prereqData.carteProVtcTaxiValidite = carteVtcTaxiValiditeVal;
+    if (examenTheoriqueDateVal !== undefined) prereqData.examenTheoriqueVtcTaxiDate = examenTheoriqueDateVal;
     if (Object.keys(prereqData).length > 0) {
       await prisma.candidat.update({ where: { id: candidat.id }, data: prereqData });
     }
