@@ -33,6 +33,8 @@ export type ModeleFormation = {
   examen: boolean;
   /** Examen devant un jury (→ module jury / défraiement). */
   soumisJury: boolean;
+  /** Nombre de jurés attendus quand soumisJury (ex. 2 pour TFP APS, A3P, vidéoprotection, Dirigeant). */
+  nbJury?: number;
   /** Grille de certification officielle INRS à pré-remplir ("SST" | "MAC_SST"). */
   grilleInrs?: "SST" | "MAC_SST";
   /** true = contenu pédagogique détaillé à compléter/valider par l'organisme. */
@@ -391,6 +393,7 @@ export const CATALOGUE_SECURITE: ModeleFormation[] = [
     duree: "175 h (hors examen)",
     examen: true,
     soumisJury: true,
+    nbJury: 2,
     certification: "Titre à finalité professionnelle APS (RNCP).",
     objectifs:
       "Préparer le stagiaire à exercer le métier d'agent de prévention et de sécurité : " +
@@ -444,6 +447,103 @@ export const CATALOGUE_SECURITE: ModeleFormation[] = [
     programmeAValider: true,
   },
 
+  // ───────────────────────── A3P — Protection physique des personnes ─────────────────────────
+  {
+    cle: "a3p-initiale",
+    reference: "A3P",
+    titre: "Agent en Protection Physique des Personnes (A3P)",
+    alias: [
+      "A3P",
+      "A3P — Protection des personnes",
+      "Agent de protection rapprochée",
+      "Agent en protection physique des personnes (A3P)",
+    ],
+    dureeHeures: 306,
+    duree: "306 h (hors examen)",
+    examen: true,
+    soumisJury: true,
+    nbJury: 2,
+    certification:
+      "Titre « Agent en protection physique des personnes » — RNCP 40374 (niveau 4). " +
+      "Ouvre droit à la carte professionnelle « protection physique des personnes » délivrée par le CNAPS.",
+    objectifs:
+      "Assurer la protection physique rapprochée d'une ou plusieurs personnes : analyser une menace, " +
+      "évaluer les risques, organiser et sécuriser les déplacements, gérer une agression et porter " +
+      "les premiers secours, dans le respect du cadre légal et déontologique.",
+    prerequis:
+      "Être majeur ; être de nationalité française, ressortissant de l'UE/EEE ou titulaire d'un titre de " +
+      "séjour (5 ans minimum) ; maîtriser le français (niveau B1 pour les ressortissants étrangers) ; " +
+      "disposer d'une carte professionnelle de sécurité (art. L. 611-1) OU d'une autorisation préalable " +
+      "CNAPS ; casier judiciaire compatible ; avis favorable à l'entretien préalable.",
+    programme: [
+      "1. Cadre juridique de la protection des personnes et déontologie",
+      "2. Analyse et évaluation des risques et des menaces",
+      "3. Techniques de protection rapprochée (statique et dynamique)",
+      "4. Sécurisation des déplacements et repérage d'itinéraires",
+      "5. Gestion de l'agression et techniques d'intervention",
+      "6. Premiers secours et gestion des situations d'urgence",
+      "",
+      "(Déroulé horaire détaillé à compléter par l'organisme selon le référentiel de certification.)",
+    ].join("\n"),
+    modalitesEvaluation:
+      "Certification par validation de 10 activités (A1 à A10) : évaluations écrites, mises en situation " +
+      "professionnelle, rapports écrits et soutenances orales devant un jury.",
+    publicVise:
+      "Toute personne aspirant à devenir agent de protection rapprochée et souhaitant obtenir la carte " +
+      "professionnelle spécialisée du CNAPS (agents de sécurité en spécialisation notamment).",
+    methodesPedagogiques:
+      "Pédagogie très opérationnelle : exercices de protection rapprochée, simulations de déplacements " +
+      "et d'agressions, études de cas. Encadrement par des formateurs spécialisés en protection des personnes.",
+    piecesAttendues: [...PIECES_APS, "Carte professionnelle valide OU autorisation préalable CNAPS"],
+    programmeAValider: true,
+  },
+
+  // ───────────────────────── Opérateur en vidéoprotection ─────────────────────────
+  {
+    cle: "operateur-videoprotection-initiale",
+    reference: "OP-VIDEO",
+    titre: "Opérateur en Vidéoprotection",
+    alias: [
+      "Opérateur vidéoprotection",
+      "Opérateur de vidéoprotection",
+      "Operateur en videoprotection",
+      "OVP",
+    ],
+    dureeHeures: 159,
+    duree: "159 h (dont 35 h de stage en entreprise), hors examen",
+    examen: true,
+    soumisJury: true,
+    nbJury: 2,
+    certification:
+      "Titre « Opérateur en vidéoprotection » — RNCP 37737 (niveau 4). " +
+      "Ouvre droit à la carte professionnelle spécialisée délivrée par le CNAPS.",
+    objectifs:
+      "Sécuriser des personnes, des lieux et des biens à l'aide de moyens de vidéoprotection : " +
+      "exploiter un poste de contrôle, détecter et qualifier les événements à l'écran, assurer la " +
+      "traçabilité et coordonner l'intervention, dans le respect du CSI et du RGPD.",
+    prerequis:
+      "Être majeur ; disposer d'une autorisation préalable délivrée par le CNAPS ; maîtriser le " +
+      "français (oral et écrit, niveau B1) ; casier judiciaire compatible.",
+    programme: [
+      "1. Tronc commun : secourisme (SST), environnement juridique de la sécurité privée, gestion des conflits, module stratégique, valeurs de la République",
+      "2. Spécialité vidéoprotection : module juridique (CSI, RGPD, droit à l'image), prévention des risques terroristes, prévention des autres risques, exploitation de la vidéoprotection",
+      "3. Stage pratique en entreprise (35 heures)",
+      "",
+      "(Déroulé horaire détaillé à compléter par l'organisme selon le référentiel de certification.)",
+    ].join("\n"),
+    modalitesEvaluation:
+      "Certification par questionnaire professionnel, mise en situation professionnelle reconstituée " +
+      "et entretien technique devant un jury.",
+    publicVise:
+      "Personnes souhaitant exercer comme opérateur de vidéoprotection en centre de supervision urbaine " +
+      "(CSU) ou poste de contrôle de sécurité, et obtenir la carte professionnelle CNAPS.",
+    methodesPedagogiques:
+      "Théorie en exposés-débats avec support audiovisuel, travaux pratiques et mises en situation sur " +
+      "poste de supervision, études de cas de levée de doute, exercices de rédaction de main courante.",
+    piecesAttendues: [...PIECES_APS, "Autorisation préalable CNAPS"],
+    programmeAValider: true,
+  },
+
   // ───────────────────────── Dirigeant d'entreprise de sécurité privée ─────────────────────────
   {
     cle: "dirigeant-securite-privee-initiale",
@@ -459,6 +559,7 @@ export const CATALOGUE_SECURITE: ModeleFormation[] = [
     duree: "268 h (hors examen)",
     examen: true,
     soumisJury: true,
+    nbJury: 2,
     certification:
       "Titre « Dirigeant d'entreprise de sécurité privée » — RNCP 40385 (niveau 5). " +
       "Atteste de l'aptitude professionnelle exigée pour l'agrément dirigeant CNAPS.",

@@ -101,6 +101,7 @@ export async function importerCatalogueSecurite(
           modalite: "PRESENTIEL",
           examen: m.examen,
           soumisJury: m.soumisJury,
+          nbJury: m.soumisJury ? (m.nbJury ?? null) : null,
           grilleInrs: m.grilleInrs ?? null,
           piecesAttendues: m.piecesAttendues,
           delaiAcces: "Inscription jusqu'à 48 h avant le démarrage de la session.",

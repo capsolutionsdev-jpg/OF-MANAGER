@@ -1,10 +1,11 @@
 import { prisma } from "@/lib/prisma";
-import { CATALOGUE_SECURITE, normaliserTitre } from "@/lib/catalogue-securite";
+import { normaliserTitre } from "@/lib/catalogue-securite";
+import { BIBLIOTHEQUE_FORMATIONS } from "@/lib/formations-catalog";
 
 /**
  * Filtre une liste de formations (déjà chargées, déjà cloisonnées au tenant)
  * selon la sélection faite en console dev (Organisme.configurationsFormations,
- * clés de modèles de la bibliothèque).
+ * clés de modèles de la bibliothèque sécurité + transport).
  *
  * - Config vide → aucune restriction (toutes les formations du tenant).
  * - Le rapprochement se fait par TITRE normalisé (titre + alias du modèle),
@@ -22,13 +23,18 @@ export async function filterFormationsByOrgConfig<
   });
 
   const config = org?.configurationsFormations ?? [];
-  if (config.length === 0) return formations;
+  // Seuls les identifiants encore connus de la bibliothèque comptent : une
+  // config héritée d'une ancienne version (identifiants obsolètes uniquement)
+  // ne doit PAS masquer le catalogue du tenant.
+  const clesConnues = new Set(BIBLIOTHEQUE_FORMATIONS.map((m) => m.cle));
+  const connus = config.filter((c) => clesConnues.has(c));
+  if (connus.length === 0) return formations;
 
-  const selectionnees = new Set(config);
+  const selectionnees = new Set(connus);
   const titresAutorises = new Set<string>();
   const titresBibliotheque = new Set<string>();
 
-  for (const m of CATALOGUE_SECURITE) {
+  for (const m of BIBLIOTHEQUE_FORMATIONS) {
     const titres = [m.titre, ...m.alias].map(normaliserTitre);
     for (const t of titres) {
       titresBibliotheque.add(t);

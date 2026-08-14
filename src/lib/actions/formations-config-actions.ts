@@ -3,14 +3,16 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { getAllFormationSlugs } from "@/lib/formations-catalog";
-import { CATALOGUE_SECURITE, normaliserTitre, type ModeleFormation } from "@/lib/catalogue-securite";
+import { BIBLIOTHEQUE_FORMATIONS } from "@/lib/formations-catalog";
+import { normaliserTitre, type ModeleFormation } from "@/lib/catalogue-securite";
 
 export type FormationsConfigResult = {
   ok: boolean;
   error?: string;
   /** Formations créées dans le catalogue du tenant lors de cette sauvegarde. */
   creees?: string[];
+  /** Identifiants ignorés (configuration héritée d'une ancienne version). */
+  ignores?: string[];
 };
 
 function champsDuModele(m: ModeleFormation) {
@@ -32,9 +34,13 @@ function champsDuModele(m: ModeleFormation) {
 /**
  * Console dev (SUPERADMIN) : enregistre les formations qu'un organisme utilise
  * et PROVISIONNE celles qui manquent dans son catalogue (création depuis le
- * modèle réglementaire — programme, examen, jury, pièces). On ne supprime ni ne
- * modifie jamais une formation existante du tenant : décocher retire seulement
- * la formation de la sélection (elle est masquée par le filtre côté app).
+ * modèle réglementaire — programme, examen, jury, grille INRS, pièces).
+ *
+ * - Les identifiants inconnus (config héritée d'une version précédente) sont
+ *   IGNORÉS, pas rejetés : la sauvegarde repart sur une base saine.
+ * - On ne supprime ni ne modifie jamais une formation existante du tenant :
+ *   décocher retire seulement la formation de la sélection (masquée par le
+ *   filtre côté app, cf. lib/get-formations-for-organisme).
  */
 export async function updateOrganismeFormations(
   organismeId: string,
@@ -50,12 +56,11 @@ export async function updateOrganismeFormations(
     return { ok: false, error: "Réservé au compte développeur." };
   }
 
-  const validSlugs = new Set(getAllFormationSlugs());
-  for (const slug of selectedSlugs) {
-    if (!validSlugs.has(slug)) {
-      return { ok: false, error: `Formation inconnue : ${slug}` };
-    }
-  }
+  // Slugs inconnus (anciens formats) : on les écarte au lieu d'échouer.
+  const parCle = new Map(BIBLIOTHEQUE_FORMATIONS.map((m) => [m.cle, m]));
+  const slugs = [...new Set(selectedSlugs)];
+  const connus = slugs.filter((s) => parCle.has(s));
+  const ignores = slugs.filter((s) => !parCle.has(s));
 
   const org = await prisma.organisme.findUnique({
     where: { id: organismeId },
@@ -72,9 +77,8 @@ export async function updateOrganismeFormations(
   const referencesExistantes = new Set(existantes.map((f) => f.reference));
 
   const creees: string[] = [];
-  for (const slug of selectedSlugs) {
-    const modele = CATALOGUE_SECURITE.find((m) => m.cle === slug);
-    if (!modele) continue;
+  for (const slug of connus) {
+    const modele = parCle.get(slug)!;
 
     const dejaLa = [modele.titre, ...modele.alias].some((t) =>
       titresExistants.has(normaliserTitre(t)),
@@ -95,6 +99,7 @@ export async function updateOrganismeFormations(
         modalite: "PRESENTIEL",
         examen: modele.examen,
         soumisJury: modele.soumisJury,
+        nbJury: modele.soumisJury ? (modele.nbJury ?? null) : null,
         grilleInrs: modele.grilleInrs ?? null,
         piecesAttendues: modele.piecesAttendues,
         delaiAcces: "Inscription jusqu'à 48 h avant le démarrage de la session.",
@@ -107,9 +112,9 @@ export async function updateOrganismeFormations(
 
   await prisma.organisme.update({
     where: { id: organismeId },
-    data: { configurationsFormations: selectedSlugs },
+    data: { configurationsFormations: connus },
   });
 
   revalidatePath(`/console/${organismeId}`);
-  return { ok: true, creees };
+  return { ok: true, creees, ignores };
 }
