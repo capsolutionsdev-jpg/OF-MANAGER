@@ -96,11 +96,14 @@
 - **Effort :** 30-35h | **Impact :** −78% abandons mobile | **Dépend :** Lot 2.2, 2.4
 - **Guide :** PHASE_3_1_FORMULAIRE_PAGINATION.md
 
-### Lot 3.2 : Tables : Tri + Sticky + Bulk Actions ⏳ NOT STARTED
+### Lot 3.2 : Tables : Tri + Sticky + Bulk Actions 🚀 GUIDE CREATED
 - [ ] Headers cliquables (↑/↓ tri)
-- [ ] Sticky headers
-- [ ] Multi-select + batch actions
+- [ ] Sticky headers + sticky left column
+- [ ] Multi-select + batch actions (delete, assign, export)
+- [ ] Export CSV/Excel/PDF
+- [ ] Pagination (25/50/100 rows)
 - **Effort :** 35-40h | **Impact :** +20% productivité | **Dépend :** Lot 2.2, 2.3
+- **Guide :** PHASE_3_2_TABLES_AVANCEES.md
 
 ### Lot 3.3 : Dashboard & KPI Refactor ⏳ NOT STARTED
 - [ ] Cards animées, graphiques Recharts
@@ -120,18 +123,21 @@
 - [ ] Offline capability + install prompt
 - **Effort :** 25-30h | **Impact :** Mobile engagement +35%
 
-**Status Phase 3 :** 0% (0/5 lots started)
+**Status Phase 3 :** 20% (1/5 guide started, 2/5 guide created)
 
 ---
 
 ## ⚡ PHASE 4 : Testing, QA & Optimisation (Semaines 13-15)
 
-### Lot 4.1 : WCAG 2.1 AA Testing (Axe, NVDA, JAWS) ⏳ NOT STARTED
-- [ ] Audit automatisé + manual
-- [ ] Screen reader testing
-- [ ] Keyboard-only nav
-- [ ] Color contrast AA
+### Lot 4.1 : WCAG 2.1 AA Testing (Axe, NVDA, JAWS) 🚀 GUIDE CREATED
+- [ ] Audit automatisé + manual (Axe + ESLint)
+- [ ] Screen reader testing (NVDA, VoiceOver)
+- [ ] Keyboard-only nav (no mouse)
+- [ ] Color contrast verification (4.5:1 + 3:1)
+- [ ] Real user testing (3-5 users with disabilities)
+- [ ] Compliance report + sign-off
 - **Effort :** 30-40h | **Dépend :** Lots 2.x, 3.x
+- **Guide :** PHASE_4_1_WCAG_TESTING.md
 
 ### Lot 4.2 : Core Web Vitals Optimization ⏳ NOT STARTED
 - [ ] LCP < 2.5s, FID < 100ms, CLS < 0.1
@@ -150,7 +156,7 @@
 - [ ] User communication
 - **Effort :** 10-15h | **Dépend :** Lot 4.1, 4.3
 
-**Status Phase 4 :** 0% (0/4 lots started)
+**Status Phase 4 :** 25% (1/4 guide created)
 
 ---
 
@@ -158,16 +164,18 @@
 
 ```
 Phase 1 (Semaines 1-3)  : ███████░░░ 35% (1.2+1.3 started, 1.1 pending)
-Phase 2 (Semaines 4-7)  : █████░░░░░ 50% (2.1+2.2 committed, guides for 2.3/2.4)
-Phase 3 (Semaines 8-12) : █░░░░░░░░░ 10% (3.1 guide created)
-Phase 4 (Semaines 13-15): ░░░░░░░░░░ 0%
+Phase 2 (Semaines 4-7)  : ██████░░░░ 50% (2.1+2.2 committed, guides for 2.3/2.4)
+Phase 3 (Semaines 8-12) : ███░░░░░░░ 20% (3.1+3.2 guides created)
+Phase 4 (Semaines 13-15): █░░░░░░░░░ 25% (4.1 guide created)
 ─────────────────────────────────
-TOTAL                   : ████░░░░░░ 24% (6/24 lots done/started)
+TOTAL                   : █████░░░░░ 32% (8/24 lots done/started, 6 guides created)
 
 Commits this session:
   - aac2d1d feat(design): Phase 1.2 - animation system
   - cf38ed2 feat(design): Phase 2.1 - design tokens complete
   - b4ef050 feat(components): Phase 2.2 - accessibility base styles
+  - a152580 docs: Phase 2.3/2.4 + Phase 3.1 guides + tracking update
+  - PENDING: Phase 3.2 + Phase 4.1 guides
 ```
 
 ---
