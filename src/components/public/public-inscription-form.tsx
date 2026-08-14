@@ -35,9 +35,13 @@ export function PublicInscriptionForm({
   const [submitted, setSubmitted] = useState(false);
   const [selectedSessionId, setSelectedSessionId] = useState("");
 
-  // Récupère la formation pour afficher les champs conditionnels
+  // Détecte les types de formations sécurité
   const selectedSession = sessions.find((s) => s.id === selectedSessionId);
   const isTfpAps = selectedSession?.label?.toLowerCase().includes("tfp aps") ?? false;
+  const isApsLikeFormation =
+    selectedSession?.label?.toLowerCase().includes("mac aps") ||
+    selectedSession?.label?.toLowerCase().includes("opérateur vidéo") ||
+    selectedSession?.label?.toLowerCase().includes("agent de protection") ?? false;
 
   const {
     register,
@@ -59,6 +63,10 @@ export function PublicInscriptionForm({
       employeur: "",
       financementType: "",
       cnapsHasCertification: false,
+      hasCarteProAps: false,
+      carteProNumero: "",
+      carteProValiditeDate: "",
+      hasCnapsAuth: false,
       cnapsNumero: "",
       cnapsValiditeDate: "",
       consentement: false,
@@ -66,6 +74,8 @@ export function PublicInscriptionForm({
   });
 
   const cnapsHasCertification = watch("cnapsHasCertification");
+  const hasCarteProAps = watch("hasCarteProAps");
+  const hasCnapsAuth = watch("hasCnapsAuth");
 
   function onSubmit(values: PublicInscriptionValues) {
     startTransition(async () => {
@@ -218,6 +228,75 @@ export function PublicInscriptionForm({
                   La formation doit débuter avant cette date.
                 </p>
               </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ── Prérequis APS-like (MAC APS, Opérateur vidéo, Agent protection) ── */}
+      {isApsLikeFormation && (
+        <div className="space-y-3 rounded-lg border border-blue-200 bg-blue-50 p-4">
+          <p className="text-sm font-medium text-blue-900">Prérequis réglementaire</p>
+
+          {/* Option 1: Carte professionnelle APS */}
+          <label className="flex items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              className="mt-0.5 h-4 w-4"
+              {...register("hasCarteProAps")}
+            />
+            <span>Je possède une carte professionnelle APS valide</span>
+          </label>
+
+          {hasCarteProAps && (
+            <>
+              <div className="grid gap-2 pl-6">
+                <Label htmlFor="carteProNumero" className="text-xs">
+                  Numéro de carte professionnelle *
+                </Label>
+                <Input id="carteProNumero" placeholder="Format : XXXXXX" {...register("carteProNumero")} />
+                <ErrorText msg={errors.carteProNumero?.message} />
+              </div>
+              <div className="grid gap-2 pl-6">
+                <Label htmlFor="carteProValiditeDate" className="text-xs">
+                  Date d&apos;expiration *
+                </Label>
+                <Input id="carteProValiditeDate" type="date" {...register("carteProValiditeDate")} />
+                <ErrorText msg={errors.carteProValiditeDate?.message} />
+              </div>
+            </>
+          )}
+
+          {/* Option 2: Autorisation CNAPS (si pas de carte pro) */}
+          {!hasCarteProAps && (
+            <>
+              <label className="flex items-start gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 h-4 w-4"
+                  {...register("hasCnapsAuth")}
+                />
+                <span>Je possède une autorisation préalable CNAPS valide (si carte pro expirée)</span>
+              </label>
+
+              {hasCnapsAuth && (
+                <>
+                  <div className="grid gap-2 pl-6">
+                    <Label htmlFor="cnapsNumero" className="text-xs">
+                      Numéro d&apos;autorisation CNAPS *
+                    </Label>
+                    <Input id="cnapsNumero" placeholder="Format : AAAA-XXXXX" {...register("cnapsNumero")} />
+                    <ErrorText msg={errors.cnapsNumero?.message} />
+                  </div>
+                  <div className="grid gap-2 pl-6">
+                    <Label htmlFor="cnapsValiditeDate" className="text-xs">
+                      Date d&apos;expiration *
+                    </Label>
+                    <Input id="cnapsValiditeDate" type="date" {...register("cnapsValiditeDate")} />
+                    <ErrorText msg={errors.cnapsValiditeDate?.message} />
+                  </div>
+                </>
+              )}
             </>
           )}
         </div>

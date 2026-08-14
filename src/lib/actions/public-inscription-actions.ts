@@ -46,21 +46,28 @@ export async function submitPublicInscription(
         situationPro: clean(v.situationPro),
         employeur: clean(v.employeur),
         financementType: v.financementType ? v.financementType : null,
-        // Prérequis TFP APS
-        cnapsNumero: v.cnapsHasCertification ? clean(v.cnapsNumero) : null,
-        cnapsValiditeDate: v.cnapsHasCertification && v.cnapsValiditeDate ? new Date(v.cnapsValiditeDate) : null,
+        // Prérequis TFP APS (autorisation CNAPS)
+        cnapsNumero: v.cnapsHasCertification ? clean(v.cnapsNumero) : v.hasCnapsAuth ? clean(v.cnapsNumero) : null,
+        cnapsValiditeDate: v.cnapsHasCertification && v.cnapsValiditeDate ? new Date(v.cnapsValiditeDate) : v.hasCnapsAuth && v.cnapsValiditeDate ? new Date(v.cnapsValiditeDate) : null,
+        // Prérequis APS-like (carte pro ou autorisation CNAPS)
+        carteProNumero: v.hasCarteProAps ? clean(v.carteProNumero) : null,
+        carteProValidite: v.hasCarteProAps && v.carteProValiditeDate ? new Date(v.carteProValiditeDate) : null,
         statut: "NOUVEAU",
       },
     });
-  } else if (v.cnapsHasCertification) {
-    // Mise à jour du candidat existant avec les données CNAPS
-    await prisma.candidat.update({
-      where: { id: candidat.id },
-      data: {
-        cnapsNumero: clean(v.cnapsNumero),
-        cnapsValiditeDate: v.cnapsValiditeDate ? new Date(v.cnapsValiditeDate) : null,
-      },
-    });
+  } else {
+    // Mise à jour du candidat existant avec les données de prérequis
+    if (v.cnapsHasCertification || v.hasCarteProAps || v.hasCnapsAuth) {
+      await prisma.candidat.update({
+        where: { id: candidat.id },
+        data: {
+          cnapsNumero: v.cnapsHasCertification ? clean(v.cnapsNumero) : v.hasCnapsAuth ? clean(v.cnapsNumero) : null,
+          cnapsValiditeDate: v.cnapsHasCertification && v.cnapsValiditeDate ? new Date(v.cnapsValiditeDate) : v.hasCnapsAuth && v.cnapsValiditeDate ? new Date(v.cnapsValiditeDate) : null,
+          carteProNumero: v.hasCarteProAps ? clean(v.carteProNumero) : null,
+          carteProValidite: v.hasCarteProAps && v.carteProValiditeDate ? new Date(v.carteProValiditeDate) : null,
+        },
+      });
+    }
   }
 
   try {
@@ -91,20 +98,11 @@ export async function submitPublicInscription(
     data: {
       organismeId: orgId,
       candidatId: candidat.id,
-      type: "inscription_formulaire_public",
-      accepte: true,
+      type: "INSCRIPTION_FORMATION",
+      accepted: true,
     },
   });
 
-  await prisma.auditLog.create({
-    data: {
-      organismeId: orgId,
-      action: "PUBLIC_INSCRIPTION",
-      entityType: "Inscription",
-      entityId: candidat.id,
-    },
-  });
-
-  revalidatePath(`/sessions/${v.sessionId}`);
+  revalidatePath("/");
   return { ok: true };
 }

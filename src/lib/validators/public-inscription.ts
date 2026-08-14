@@ -18,6 +18,11 @@ export const publicInscriptionSchema = z.object({
   financementType: z.nativeEnum(FinancementType).or(z.literal("")).optional(),
   // Prérequis TFP APS : autorisation préalable CNAPS
   cnapsHasCertification: z.boolean().optional(),
+  // Prérequis APS-like (MAC APS, Opérateur vidéoprotection, Agent protection rapproché)
+  hasCarteProAps: z.boolean().optional(),
+  carteProNumero: optionalText,
+  carteProValiditeDate: optionalText,
+  hasCnapsAuth: z.boolean().optional(),
   cnapsNumero: optionalText,
   cnapsValiditeDate: optionalText,
   consentement: z.boolean().refine((v) => v === true, {
