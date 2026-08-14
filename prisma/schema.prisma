@@ -112,6 +112,10 @@ model Organisme {
   // Choix des documents : { "reglement_interieur": "modele" | "client", ... }
   documentsConfig Json?
 
+  // Configuration formations : slugs des formations qu'un organisme utilise (ex: ["ssiap-1-initial", "tfp-aps-cnaps"])
+  // Vide = toutes les formations du catalogue (par défaut).
+  configurationsFormations String[] @default([])
+
   // Pilotage SaaS (côté éditeur)
   statut          OrganismeStatut    @default(ESSAI)
   formule         FormuleAbonnement? // abonnement vendu (pilote la facturation + le bundle de features)

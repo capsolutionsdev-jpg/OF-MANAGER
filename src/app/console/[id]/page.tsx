@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EditOrganismeForm } from "@/components/console/edit-organisme-form";
+import { FormationsConfigForm } from "@/components/console/formations-config-form";
 import { UsageCard } from "@/components/facturation/usage-card";
 import { getResolvedPlans } from "@/lib/pricing";
 import { PLAN_ORDER } from "@/lib/plans";
@@ -90,6 +91,11 @@ export default async function ConsoleOrganismePage({
       </Card>
 
       <UsageCard usage={usage} title="Consommation facturable" />
+
+      <FormationsConfigForm
+        organismeId={org.id}
+        initialSlugs={org.configurationsFormations}
+      />
 
       <EditOrganismeForm org={formOrg} plans={ordered} />
     </div>
