@@ -46,7 +46,19 @@ export async function submitPublicInscription(
         situationPro: clean(v.situationPro),
         employeur: clean(v.employeur),
         financementType: v.financementType ? v.financementType : null,
+        // Prérequis TFP APS
+        cnapsNumero: v.cnapsHasCertification ? clean(v.cnapsNumero) : null,
+        cnapsValiditeDate: v.cnapsHasCertification && v.cnapsValiditeDate ? new Date(v.cnapsValiditeDate) : null,
         statut: "NOUVEAU",
+      },
+    });
+  } else if (v.cnapsHasCertification) {
+    // Mise à jour du candidat existant avec les données CNAPS
+    await prisma.candidat.update({
+      where: { id: candidat.id },
+      data: {
+        cnapsNumero: clean(v.cnapsNumero),
+        cnapsValiditeDate: v.cnapsValiditeDate ? new Date(v.cnapsValiditeDate) : null,
       },
     });
   }
