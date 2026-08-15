@@ -16,6 +16,7 @@
 //    et, si le vitrine est déployé seul, dans l'env VITRINE_ORGANISME_ID.
 const { PrismaClient } = require("@prisma/client");
 const bcrypt = require("bcryptjs");
+const { seedPassword } = require("./_seed-secret.cjs");
 const p = new PrismaClient();
 
 const NOM = "AGUYSE FORMATION";
@@ -23,7 +24,8 @@ const NOM = "AGUYSE FORMATION";
 // Compte ADMIN du client (surchargeable par variables d'environnement).
 // Le mot de passe est à changer à la première connexion.
 const ADMIN_EMAIL = process.env.AGUYSE_ADMIN_EMAIL || "contact@aguyse.com";
-const ADMIN_PASSWORD = process.env.AGUYSE_ADMIN_PASSWORD || "Aguyse2026!";
+// Correctif audit P1-1 : mot de passe depuis l'env (AGUYSE_ADMIN_PASSWORD) ou généré.
+const ADMIN_PASSWORD = seedPassword("AGUYSE_ADMIN_PASSWORD", { label: "ADMIN AGUYSE" });
 const ADMIN_NAME = process.env.AGUYSE_ADMIN_NAME || "Administrateur AGUYSE";
 
 // Identité de l'organisme — informations publiques relevées sur aguyse.com.
@@ -120,7 +122,7 @@ const FORMATIONS = [
         organismeId: org.id,
       },
     });
-    console.log("Compte ADMIN créé :", ADMIN_EMAIL, "/ mot de passe :", ADMIN_PASSWORD);
+    console.log("Compte ADMIN créé :", ADMIN_EMAIL, "(mot de passe = AGUYSE_ADMIN_PASSWORD ou valeur générée ci-dessus)");
     console.log("  → à communiquer au client et à changer à la 1re connexion.");
   }
 

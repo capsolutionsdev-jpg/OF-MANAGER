@@ -5,7 +5,13 @@ const prisma = new PrismaClient();
 
 async function main() {
   // 1) Compte administrateur réel
-  const hash = await bcrypt.hash(process.env.ADMIN_PASSWORD ?? "CapCap2026", 10);
+  // Correctif audit P1-1 : mot de passe requis via l'environnement (jamais en dur).
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  if (!adminPassword || adminPassword.length < 8) {
+    console.error("✗ ADMIN_PASSWORD non défini (minimum 8 caractères). Ex. : ADMIN_PASSWORD=\"…\" tsx scripts/finalize-v1.ts");
+    process.exit(1);
+  }
+  const hash = await bcrypt.hash(adminPassword, 10);
   const adminEmail = process.env.ADMIN_EMAIL ?? "infocap.comp@gmail.com";
   await prisma.user.upsert({
     where: { email: adminEmail },

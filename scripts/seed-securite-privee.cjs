@@ -2,7 +2,10 @@
 // Idempotent : repérage par sousDomaine "securite-privee" et références DEMO-SP-*.
 const { PrismaClient } = require("@prisma/client");
 const bcrypt = require("bcryptjs");
+const { seedPassword } = require("./_seed-secret.cjs");
 const p = new PrismaClient();
+// Correctif audit P1-1 : mot de passe depuis l'env (SECU_ADMIN_PASSWORD) ou généré.
+const SECU_PASSWORD = seedPassword("SECU_ADMIN_PASSWORD", { label: "gérant sécurité privée" });
 
 const ID = ["CNI / Passeport / Carte de séjour"];
 const APS_COMMUN = [
@@ -55,13 +58,13 @@ const FORMATIONS = [
       data: {
         name: "Gérant Sécurité Privée",
         email,
-        passwordHash: await bcrypt.hash("CapSecu2026!", 10),
+        passwordHash: await bcrypt.hash(SECU_PASSWORD, 10),
         role: "ADMIN",
         isActive: true,
         organismeId: org.id,
       },
     });
-    console.log("Gérant créé:", email, "/ CapSecu2026!");
+    console.log("Gérant créé:", email, "(mot de passe = SECU_ADMIN_PASSWORD ou valeur générée ci-dessus)");
   } else {
     console.log("Gérant déjà présent:", email);
   }
