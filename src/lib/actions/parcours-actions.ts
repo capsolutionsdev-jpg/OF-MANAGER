@@ -739,7 +739,8 @@ async function provisionElearning(inscriptionId: string) {
         data: { userId: existing.id },
       });
     } else {
-      motDePasse = `CAP-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+      // Correctif audit P2-7 : mot de passe provisoire via CSPRNG (était Math.random).
+      motDePasse = `CAP-${generateToken(6)}`;
       const user = await prisma.user.create({
         data: {
           email,

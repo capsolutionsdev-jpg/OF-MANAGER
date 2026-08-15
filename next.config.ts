@@ -100,7 +100,11 @@ const nextConfig: NextConfig = {
       // Autorise explicitement le domaine officiel ET les URL de déploiement
       // Vercel : sinon Next rejette les Server Actions quand l'hôte transmis
       // (x-forwarded-host) diffère de l'origine → erreur au submit des formulaires.
-      allowedOrigins: ["app.capacademy.fr", "*.vercel.app"],
+      // Correctif audit P2-5 : restreint aux préversions DU PROJET (au lieu de
+      // tout *.vercel.app, qui autoriserait un déploiement tiers comme origine
+      // de Server Action). Défense en profondeur (les cookies SameSite=Lax
+      // atténuent déjà le CSRF cross-site).
+      allowedOrigins: ["app.capacademy.fr", "cap-competence-manager-*.vercel.app"],
     },
   },
   async headers() {

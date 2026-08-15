@@ -59,6 +59,12 @@ export async function POST(req: Request) {
   }
 
   const secret = process.env.LEAD_API_SECRET;
+  // Correctif audit P2-2 : en PRODUCTION le secret est OBLIGATOIRE (fail-closed).
+  // Sans lui, l'endpoint créerait des prospects + e-mails/push pour tout tiers.
+  if (process.env.NODE_ENV === "production" && !secret) {
+    console.error("[lead] LEAD_API_SECRET non défini en production → requête refusée.");
+    return NextResponse.json({ ok: false, error: "Service indisponible." }, { status: 503 });
+  }
   if (secret && req.headers.get("x-lead-secret") !== secret) {
     return NextResponse.json({ ok: false, error: "Non autorisé." }, { status: 401 });
   }
