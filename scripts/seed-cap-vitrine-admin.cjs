@@ -10,11 +10,13 @@
 // Usage : node scripts/seed-cap-vitrine-admin.cjs
 const { PrismaClient } = require("@prisma/client");
 const bcrypt = require("bcryptjs");
+const { seedPassword } = require("./_seed-secret.cjs");
 const p = new PrismaClient();
 
 // Identifiants du compte console vitrine (à changer après 1re connexion).
-const ADMIN_EMAIL = "vitrine@capacademy.fr";
-const ADMIN_PASSWORD = "CapVitrine2026!";
+const ADMIN_EMAIL = process.env.VITRINE_ADMIN_EMAIL || "vitrine@capacademy.fr";
+// Correctif audit P1-1 : mot de passe fourni par l'environnement (jamais en dur).
+const ADMIN_PASSWORD = seedPassword("VITRINE_ADMIN_PASSWORD", { required: true, label: "ADMIN vitrine" });
 
 // Catalogue vitrine PUBLIÉ (référence = slug de la fiche vitrine).
 // SAFETY = domaine « Prévention & Sécurité », TRANSPORT = « Transport ».

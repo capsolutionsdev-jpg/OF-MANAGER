@@ -5,7 +5,10 @@
  * Usage : node scripts/seed-demo.mjs   (via DIRECT_URL)
  */
 import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import bcrypt from "bcryptjs";
+const require = createRequire(import.meta.url);
+const { seedPassword } = require("./_seed-secret.cjs");
 
 const env = {};
 for (const l of readFileSync(".env", "utf8").split(/\r?\n/)) {
@@ -13,6 +16,8 @@ for (const l of readFileSync(".env", "utf8").split(/\r?\n/)) {
   if (m) { let v = m[2].trim(); if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) v = v.slice(1, -1); env[m[1]] = v; }
 }
 process.env.DATABASE_URL = env.DIRECT_URL || env.DATABASE_URL;
+// Correctif audit P1-1 : mot de passe démo depuis l'env (DEMO_PASSWORD) ou généré.
+const DEMO_PASSWORD = seedPassword("DEMO_PASSWORD", { label: "démo (demo@academie-demo.fr)" });
 
 const { PrismaClient } = await import("@prisma/client");
 const p = new PrismaClient();
@@ -72,7 +77,7 @@ console.log("Organisme démo créé :", OID);
 await wr(() => p.user.create({ data: {
   email: "demo@academie-demo.fr", name: "Sophie Marchand (Démo)", role: "ADMIN",
   organismeId: OID, isActive: true, mustChangePassword: false,
-  passwordHash: bcrypt.hashSync("Demo2026!", 10),
+  passwordHash: bcrypt.hashSync(DEMO_PASSWORD, 10),
 } }));
 
 // ── 3) Salles ──
@@ -279,7 +284,7 @@ for (let mo = -11; mo <= 0; mo++) {
 
 console.log("\n════════ TENANT DÉMO CRÉÉ ════════");
 console.log(`Organisme : Académie Démo Formation (${OID})`);
-console.log(`Connexion : demo@academie-demo.fr / Demo2026!  (rôle ADMIN)`);
+console.log(`Connexion : demo@academie-demo.fr / ${DEMO_PASSWORD}  (rôle ADMIN)`);
 console.log(`Formations: ${formations.length} · Formateurs: ${formateurs.length} · Jurys: ${jurys.length} · Salles: ${salles.length}`);
 console.log(`Entreprises: ${entreprises.length} · Candidats: ${candidats.length}`);
 console.log(`Sessions: ${NB_SESSIONS} · Inscriptions: ${nbInsc} · Factures: ${nbFac} · Diplômes: ${nbDip} · Devis: 16`);

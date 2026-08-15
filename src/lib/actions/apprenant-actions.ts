@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { clientIpFromHeaders } from "@/lib/rate-limit";
 import { headers } from "next/headers";
 import bcrypt from "bcryptjs";
 import { getTenantDb } from "@/lib/tenant";
@@ -165,10 +166,7 @@ export async function signMyEmargement(
   if (row.signedAt) return { ok: true };
 
   const hdrs = await headers();
-  const ip =
-    hdrs.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    hdrs.get("x-real-ip") ??
-    null;
+  const ip = clientIpFromHeaders(hdrs);
 
   await prisma.emargementSignature.update({
     where: { id: row.id },

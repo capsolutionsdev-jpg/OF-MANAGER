@@ -34,11 +34,23 @@ export function rateLimit(
 
 // Client Redis paresseux : null si non configuré (→ repli mémoire).
 let redis: Redis | null | undefined;
+let warnedNoRedis = false;
 function getRedis(): Redis | null {
   if (redis !== undefined) return redis;
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
   redis = url && token ? new Redis({ url, token }) : null;
+  // Correctif audit P1-3 : en PRODUCTION sans Upstash, le rate-limiting tombe sur
+  // un compteur mémoire PAR-INSTANCE (réinitialisé aux cold starts, non partagé
+  // entre instances) → largement contournable. On alerte bruyamment (Sentry/logs)
+  // pour que l'absence de configuration ne passe pas inaperçue.
+  if (!redis && !warnedNoRedis && process.env.NODE_ENV === "production") {
+    warnedNoRedis = true;
+    console.error(
+      "[rate-limit] ⚠️ PRODUCTION sans Upstash : rate-limiting en mémoire par-instance " +
+        "(contournable). Définir UPSTASH_REDIS_REST_URL et UPSTASH_REDIS_REST_TOKEN.",
+    );
+  }
   return redis;
 }
 
@@ -66,9 +78,32 @@ export async function checkLimit(key: string, opts: LimitOpts = {}): Promise<Lim
   }
 }
 
-/** Extrait une IP cliente exploitable depuis les en-têtes de la requête. */
+/**
+ * Extrait une IP cliente exploitable depuis les en-têtes de la requête.
+ *
+ * Correctif audit P1-3 : on privilégie `x-real-ip`, posé par le proxy Vercel =
+ * IP réelle du client, NON spoofable par un `x-forwarded-for` forgé côté client.
+ * La partie GAUCHE de `x-forwarded-for` est contrôlée par le client (Vercel y
+ * APPEND la vraie IP, il ne la remplace pas) → ne jamais s'y fier seule. En repli
+ * (dev / autre hébergeur), on prend la DERNIÈRE entrée de XFF (hop de confiance).
+ */
 export function clientIp(req: Request): string {
-  const xff = req.headers.get("x-forwarded-for");
-  if (xff) return xff.split(",")[0].trim();
-  return req.headers.get("x-real-ip") || "unknown";
+  return clientIpFromHeaders(req.headers) ?? "unknown";
+}
+
+/**
+ * Variante pour les Server Actions (store `headers()` de next/headers).
+ * Même priorité que clientIp() : `x-real-ip` (Vercel, non spoofable) d'abord,
+ * puis la dernière entrée de `x-forwarded-for`. Renvoie null si rien d'exploitable
+ * (usage traçabilité/preuve de signature — audit P1-3).
+ */
+export function clientIpFromHeaders(hdrs: Headers): string | null {
+  const realIp = hdrs.get("x-real-ip");
+  if (realIp && realIp.trim()) return realIp.trim();
+  const xff = hdrs.get("x-forwarded-for");
+  if (xff) {
+    const parts = xff.split(",").map((s) => s.trim()).filter(Boolean);
+    if (parts.length) return parts[parts.length - 1];
+  }
+  return null;
 }
