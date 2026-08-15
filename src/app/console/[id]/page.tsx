@@ -14,7 +14,9 @@ import { getOrgUsage } from "@/lib/usage";
 import { ContratsPrestationCard, type ContratPrestationRow } from "@/components/console/contrats-prestation-card";
 import { montantNet, ENGAGEMENT_LABELS, type EngagementType } from "@/lib/contrats/prestation";
 import { FacturesEditeurCard, type FactureEditeurRow } from "@/components/console/factures-editeur-card";
+import { AbonnementSepaCard } from "@/components/console/abonnement-sepa-card";
 import { sirenFromSiret, type FactureStatut } from "@/lib/factures/editeur";
+import { isStripeConfigured } from "@/lib/stripe";
 import { roleLabels } from "@/lib/navigation";
 
 export const dynamic = "force-dynamic";
@@ -71,6 +73,8 @@ export default async function ConsoleOrganismePage({
     montantTTC: Number(f.montantTTC),
   }));
   const sirenManquant = !sirenFromSiret(org.siret);
+  const abonnementJusquau = org.abonnementJusquau ? org.abonnementJusquau.toLocaleDateString("fr-FR") : null;
+  const stripeConfigured = isStripeConfigured();
 
   // Sécurité : on ne transmet JAMAIS les clés API au navigateur, seulement leur
   // état (définie ou non). cf. SecretField + updateOrganisme.
@@ -129,6 +133,13 @@ export default async function ConsoleOrganismePage({
       <UsageCard usage={usage} title="Consommation facturable" />
 
       <ContratsPrestationCard organismeId={org.id} contrats={contrats} formules={formules} />
+
+      <AbonnementSepaCard
+        organismeId={org.id}
+        hasSubscription={!!org.stripeSubscriptionId}
+        abonnementJusquau={abonnementJusquau}
+        stripeConfigured={stripeConfigured}
+      />
 
       <FacturesEditeurCard organismeId={org.id} factures={factures} sirenManquant={sirenManquant} />
 

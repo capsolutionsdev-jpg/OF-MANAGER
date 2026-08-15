@@ -90,6 +90,9 @@ const ACTIONS_ALLOWLIST = new Set([
   // Facturation éditeur : FactureEditeur + Organisme (données éditeur GLOBALES),
   // gardé requireSuperAdmin. Hors-tenant.
   "facture-editeur-actions.ts",
+  // Abonnement/SEPA éditeur : Organisme + Stripe (données éditeur globales),
+  // gardé requireSuperAdmin. Hors-tenant.
+  "console-billing-actions.ts",
   // Sync SSIAP au déploiement : garde requireSuperAdmin + scope explicite par
   // organismeId (CAP), updateMany où { reference, organismeId } — hors-tenant.
   "ssiap-config.ts",

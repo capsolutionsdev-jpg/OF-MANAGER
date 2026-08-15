@@ -4,9 +4,10 @@ import { revalidatePath } from "next/cache";
 import { Prisma, FactureEditeurStatut } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/superadmin-guard";
-import { calcMontants, sirenFromSiret, type LigneFacture } from "@/lib/factures/editeur";
+import { calcMontants, overageLignes, sirenFromSiret, type LigneFacture } from "@/lib/factures/editeur";
 import { montantNet } from "@/lib/contrats/prestation";
-import { PLANS, planForOrg, type FormuleKey } from "@/lib/plans";
+import { PLANS, planForOrg, OVERAGE_EMAIL_EUR, OVERAGE_INSCRIPTION_EUR, type FormuleKey } from "@/lib/plans";
+import { getOrgUsage } from "@/lib/usage";
 
 export type FactureEditeurState = { ok?: boolean; error?: string; id?: string };
 
@@ -51,6 +52,11 @@ export async function genererFactureMensuelle(organismeId: string): Promise<Fact
       montantHT: montantAbo,
     },
   ];
+
+  // Facturation à l'usage : dépassement de quota du mois (le levier « automatismes »).
+  const usage = await getOrgUsage(organismeId, org.formule);
+  lignes.push(...overageLignes(usage, { email: OVERAGE_EMAIL_EUR, inscription: OVERAGE_INSCRIPTION_EUR }));
+
   const tauxTva = 20;
   const { montantHT, montantTva, montantTTC } = calcMontants(lignes, tauxTva);
 

@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { FORMULE_KEYS } from "@/lib/plans";
 import { fulfillCivicCheckout } from "@/lib/civique-api";
 import { organismeStatutForSubscription } from "@/lib/billing/subscription-status";
+import { sendEmail } from "@/lib/email";
 
 export const runtime = "nodejs";
 // Webhook Stripe : corps brut requis pour vérifier la signature.
@@ -122,7 +123,29 @@ export async function POST(req: Request) {
             ? new Date(inv.next_payment_attempt * 1000).toISOString()
             : null,
         });
-        // TODO(alerting) : notifier le staff de l'organisme (lot monitoring/alerting).
+        // Relance dunning : prévenir le gérant de l'organisme (best-effort).
+        try {
+          const org = customerId
+            ? await prisma.organisme.findFirst({
+                where: { stripeCustomerId: customerId },
+                select: { email: true },
+              })
+            : null;
+          if (org?.email) {
+            const prochaine = inv.next_payment_attempt
+              ? ` Un nouvel essai automatique aura lieu le ${new Date(inv.next_payment_attempt * 1000).toLocaleDateString("fr-FR")}.`
+              : "";
+            await sendEmail({
+              to: org.email,
+              subject: "Paiement de votre abonnement OF Manager en échec",
+              body:
+                `Bonjour,\n\nLe paiement de votre abonnement OF Manager n'a pas abouti (tentative ${inv.attempt_count}).${prochaine}\n\n` +
+                `Merci de vérifier votre moyen de paiement (carte ou mandat SEPA) pour éviter toute interruption de service.\n\nL'équipe OF Manager`,
+            });
+          }
+        } catch (e) {
+          console.error("[stripe webhook] relance dunning e-mail échouée (ignorée)", e);
+        }
         break;
       }
       case "invoice.paid": {
