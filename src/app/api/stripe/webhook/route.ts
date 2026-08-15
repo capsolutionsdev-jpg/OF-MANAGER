@@ -5,6 +5,7 @@ import { getStripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 import { FORMULE_KEYS } from "@/lib/plans";
 import { fulfillCivicCheckout } from "@/lib/civique-api";
+import { organismeStatutForSubscription } from "@/lib/billing/subscription-status";
 
 export const runtime = "nodejs";
 // Webhook Stripe : corps brut requis pour vérifier la signature.
@@ -87,9 +88,12 @@ export async function POST(req: Request) {
       case "customer.subscription.created":
       case "customer.subscription.updated": {
         const sub = event.data.object as Stripe.Subscription;
-        const active = sub.status === "active" || sub.status === "trialing";
+        // Dunning : `past_due` = période de grâce → on reste ACTIF (pas de
+        // suspension brutale) ; suspension seulement à l'échec définitif. Statut
+        // indéfini (incomplete/paused) → on ne touche pas à l'état courant.
+        const statut = organismeStatutForSubscription(sub.status);
         await updateOrg(sub.metadata?.organismeId, sub.customer, {
-          statut: active ? OrganismeStatut.ACTIF : OrganismeStatut.SUSPENDU,
+          ...(statut ? { statut } : {}),
           stripeSubscriptionId: sub.id,
           abonnementJusquau: readPeriodEnd(sub),
           formule: readFormule(sub.metadata),
@@ -103,11 +107,40 @@ export async function POST(req: Request) {
         });
         break;
       }
+      case "invoice.payment_failed": {
+        // Paiement échoué : NE PAS suspendre — Stripe relance automatiquement
+        // (Smart Retries) pendant la période de relance ; l'organisme reste actif
+        // en période de grâce. La suspension n'intervient qu'à l'échec définitif
+        // (subscription unpaid/canceled ci-dessus). On journalise pour l'alerting.
+        const inv = event.data.object as Stripe.Invoice;
+        const customerId = typeof inv.customer === "string" ? inv.customer : inv.customer?.id;
+        console.error("[stripe webhook] paiement échoué — dunning en cours", {
+          invoice: inv.id,
+          customer: customerId,
+          tentative: inv.attempt_count,
+          prochaineTentative: inv.next_payment_attempt
+            ? new Date(inv.next_payment_attempt * 1000).toISOString()
+            : null,
+        });
+        // TODO(alerting) : notifier le staff de l'organisme (lot monitoring/alerting).
+        break;
+      }
+      case "invoice.paid": {
+        // Recouvrement : un paiement (initial ou après relance) a réussi →
+        // l'organisme est/redevient ACTIF (sort de la période de grâce).
+        const inv = event.data.object as Stripe.Invoice;
+        await updateOrg(undefined, inv.customer, { statut: OrganismeStatut.ACTIF });
+        break;
+      }
     }
   } catch (e) {
     console.error("[stripe webhook] traitement échoué:", e);
-    // 200 quand même : on évite les retries infinis de Stripe sur erreur interne.
-    return NextResponse.json({ received: true, handled: false });
+    // 500 → Stripe RÉ-ESSAIE automatiquement (relances avec backoff sur ~72 h).
+    // Auparavant on renvoyait 200, ce qui « acquittait » un événement échoué :
+    // une erreur transitoire (base indisponible…) faisait perdre DÉFINITIVEMENT
+    // l'événement — ex. l'activation d'un organisme après un paiement encaissé
+    // (constat d'audit §7). Les handlers étant idempotents, le rejeu est sûr.
+    return NextResponse.json({ received: false, error: "traitement échoué" }, { status: 500 });
   }
 
   return NextResponse.json({ received: true });
