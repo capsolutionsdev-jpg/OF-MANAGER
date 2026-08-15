@@ -82,6 +82,11 @@ const ACTIONS_ALLOWLIST = new Set([
   "session-validation-actions.ts",
   // Console SUPERADMIN / hors-tenant
   "console-actions.ts",
+  // Contrat de prestation éditeur↔OF : opère sur ContratPrestation + Organisme
+  // (données éditeur GLOBALES, pas tenant-scoped). create/send gardés
+  // requireSuperAdmin ; la signature publique est résolue par token (sans session).
+  "contrat-prestation-actions.ts",
+  "contrat-prestation-public.ts",
   // Sync SSIAP au déploiement : garde requireSuperAdmin + scope explicite par
   // organismeId (CAP), updateMany où { reference, organismeId } — hors-tenant.
   "ssiap-config.ts",
