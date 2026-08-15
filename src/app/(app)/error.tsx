@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import * as Sentry from "@sentry/nextjs";
 import { AlertTriangle, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -13,6 +14,8 @@ export default function AppError({
 }) {
   useEffect(() => {
     console.error("[app error]", error);
+    // Remonte l'erreur à Sentry (no-op si aucun DSN configuré).
+    Sentry.captureException(error);
   }, [error]);
 
   return (
