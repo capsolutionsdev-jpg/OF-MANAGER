@@ -6,6 +6,8 @@ import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/superadmin-guard";
 import { sendEmail } from "@/lib/email";
 import { logLeadEvent } from "@/lib/growth/events";
+import { uniqueSubdomain } from "@/lib/subdomain";
+import { CORE_FEATURE_KEYS } from "@/lib/features";
 
 const STATUTS = new Set(Object.values(OrganismeStatut) as string[]);
 const SUPPORT_STATUTS = new Set(Object.values(SupportStatut) as string[]);
@@ -126,4 +128,82 @@ export async function deleteLead(id: string): Promise<void> {
   await prisma.lead.delete({ where: { id } });
   revalidatePath("/console/prospects");
   revalidatePath("/console");
+}
+
+export type ConvertLeadResult = {
+  ok: boolean;
+  organismeId?: string;
+  mode?: "demo_promue" | "creation";
+  error?: string;
+};
+
+/**
+ * Convertit un prospect en CLIENT en un clic — fin de la double saisie :
+ *  • s'il a un tenant démo → on le PROMEUT en client réel (données + accès du
+ *    prospect conservés : on retire simplement le flag démo et l'expiration) ;
+ *  • sinon → on CRÉE une instance client pré-remplie depuis le lead.
+ * Marque le lead CONVERTI, journalise l'événement (score +30) et renvoie
+ * l'organisme cible (le SUPERADMIN atterrit sur sa configuration).
+ */
+export async function convertLeadToClient(leadId: string): Promise<ConvertLeadResult> {
+  await requireSuperAdmin();
+  const lead = await prisma.lead.findUnique({ where: { id: leadId } });
+  if (!lead) return { ok: false, error: "Prospect introuvable." };
+
+  // Tenant démo lié encore présent ? → on le promeut plutôt que d'en recréer un.
+  const demo = lead.demoOrganismeId
+    ? await prisma.organisme.findUnique({
+        where: { id: lead.demoOrganismeId },
+        select: { id: true, nom: true },
+      })
+    : null;
+
+  let organismeId: string;
+  let mode: "demo_promue" | "creation";
+
+  if (demo) {
+    await prisma.organisme.update({
+      where: { id: demo.id },
+      data: {
+        isDemo: false,
+        demoHardExpiresAt: null,
+        statut: OrganismeStatut.ESSAI,
+        // Nettoie le préfixe « DÉMO — » du nom de démonstration.
+        nom: demo.nom.replace(/^D[ÉE]MO\s*—\s*/i, "").trim() || demo.nom,
+      },
+    });
+    organismeId = demo.id;
+    mode = "demo_promue";
+  } else {
+    const nomBase = (lead.organisme?.trim() || lead.nom?.trim() || "Nouveau client").slice(0, 80);
+    const org = await prisma.organisme.create({
+      data: {
+        nom: nomBase,
+        email: lead.email || null,
+        statut: OrganismeStatut.ESSAI,
+        fonctionnalites: CORE_FEATURE_KEYS,
+        sousDomaine: await uniqueSubdomain(nomBase),
+        design: "defaut",
+        couleurPrimaire: "#2C53C0",
+      },
+      select: { id: true },
+    });
+    organismeId = org.id;
+    mode = "creation";
+  }
+
+  await prisma.lead.update({
+    where: { id: leadId },
+    data: { statut: LeadStatut.CONVERTI, lu: true },
+  });
+  await logLeadEvent(leadId, "conversion", {
+    titre: mode === "demo_promue" ? "Converti en client (démo promue)" : "Converti en client",
+    meta: { organismeId, mode },
+  });
+
+  revalidatePath("/console/prospects");
+  revalidatePath(`/console/prospects/${leadId}`);
+  revalidatePath("/console/organismes");
+  revalidatePath("/console");
+  return { ok: true, organismeId, mode };
 }

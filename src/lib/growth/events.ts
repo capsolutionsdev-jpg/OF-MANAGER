@@ -18,6 +18,7 @@ export const LEAD_EVENT_TYPES = {
   email_ouvert:      { label: "E-mail ouvert",            score: 5 },
   email_clic:        { label: "Lien e-mail cliqué",       score: 10 },
   statut:            { label: "Statut modifié",           score: 0 },
+  conversion:        { label: "Converti en client",       score: 30 },
   note:              { label: "Note ajoutée",             score: 0 },
   import:            { label: "Importé (CSV)",            score: 0 },
 } as const;

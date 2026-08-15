@@ -2,6 +2,7 @@ import {
   Circle,
   FlaskConical,
   Mail,
+  Rocket,
   StickyNote,
   Tag,
   Upload,
@@ -26,6 +27,7 @@ export type LeadEventItem = {
 /** Icône lucide selon le type d'événement (Circle si type inconnu). */
 function iconePourType(type: string): LucideIcon {
   if (type === "creation") return UserPlus;
+  if (type === "conversion") return Rocket;
   if (type.startsWith("demo_")) return FlaskConical;
   if (type.startsWith("email_")) return Mail;
   if (type === "statut") return Tag;
