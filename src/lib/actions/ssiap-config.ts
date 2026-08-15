@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { requireSuperAdmin } from "@/lib/superadmin-guard";
 
 /**
  * Configure les paramètres réglementaires des formations SSIAP 1/2/3 initial :
@@ -19,6 +20,11 @@ const SSIAP_CONFIG = {
  * À exécuter une fois au déploiement pour synchroniser l'état.
  */
 export async function configureSsiapFormations() {
+  // Action de synchronisation au déploiement : réservée au compte développeur.
+  // Sans ce garde, ce « use server » exporté serait un endpoint d'écriture
+  // invocable sans authentification (constat d'audit §3.3).
+  await requireSuperAdmin();
+
   const CAP_ID = process.env.VITRINE_ORGANISME_ID || "cmqc20ql20000uv5wlclphbg8";
   const results = [];
 
