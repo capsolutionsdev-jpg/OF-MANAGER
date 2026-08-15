@@ -51,7 +51,10 @@ export function AppTopbar({
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header data-app-chrome className="sticky top-0 z-30 flex min-h-14 items-center gap-3 border-b border-border bg-card/95 px-3 pt-[env(safe-area-inset-top)] backdrop-blur-sm md:px-5">
+    <header
+      data-app-chrome
+      className="sticky top-0 z-30 flex min-h-16 items-center gap-4 border-b border-border bg-background px-4 pt-[env(safe-area-inset-top)] md:px-6"
+    >
       {/* Tiroir de navigation (mobile / tablette) */}
       <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
         <SheetTrigger render={<Button variant="ghost" size="icon" className="lg:hidden" />}>
@@ -65,10 +68,10 @@ export function AppTopbar({
         </SheetContent>
       </Sheet>
 
-      {/* Recherche globale (candidats, sessions, clients pro) → /recherche */}
+      {/* Recherche globale CENTRÉE (candidats, sessions, clients pro) → /recherche */}
       <form
         action="/recherche"
-        className="hidden items-center gap-2 rounded-md border border-border bg-background px-2.5 py-1.5 text-muted-foreground focus-within:ring-1 focus-within:ring-primary sm:flex sm:w-72"
+        className="hidden items-center gap-2 rounded-xl border border-border bg-muted px-3 py-2 text-muted-foreground focus-within:ring-2 focus-within:ring-primary/50 sm:flex sm:flex-1 sm:max-w-md lg:mx-auto"
       >
         <Search className="h-4 w-4 shrink-0" />
         <input
@@ -80,7 +83,8 @@ export function AppTopbar({
         />
       </form>
 
-      <div className="ml-auto flex items-center gap-1.5">
+      <div className="ml-auto flex items-center gap-2">
+        {/* Loup mobile */}
         <Button
           variant="ghost"
           size="icon"
@@ -90,26 +94,37 @@ export function AppTopbar({
         >
           <Search className="h-[18px] w-[18px]" />
         </Button>
+
+        {/* Séparateur visuel (optionnel, améliore la lisibilité) */}
+        <div className="hidden h-5 w-px bg-border sm:block" />
+
+        {/* Icônes d'action (focus mode, thème, notifications) */}
         <FocusModeToggle />
         <ThemeToggle />
         {notifications ? (
           <NotificationBell data={notifications} />
         ) : (
-          <Button variant="ghost" size="icon" className="text-muted-foreground" aria-label="Notifications">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-muted-foreground"
+            aria-label="Notifications"
+          >
             <Bell className="h-[18px] w-[18px]" />
           </Button>
         )}
 
+        {/* Avatar + Menu utilisateur (dropdown) */}
         <DropdownMenu>
           <DropdownMenuTrigger
             render={<Button variant="ghost" className="flex items-center gap-2 px-1.5" />}
           >
-            <Avatar className="h-8 w-8">
+            <Avatar className="h-9 w-9">
               <AvatarFallback className="bg-primary text-xs font-semibold text-primary-foreground">
                 {initials}
               </AvatarFallback>
             </Avatar>
-            <span className="hidden text-sm font-medium sm:inline">{label}</span>
+            <span className="hidden text-sm font-medium sm:inline max-w-32 truncate">{label}</span>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel className="font-normal">
@@ -148,18 +163,6 @@ export function AppTopbar({
             </Link>
           </DropdownMenuContent>
         </DropdownMenu>
-
-        {/* Déconnexion visible (1 clic) */}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="hidden gap-1.5 text-muted-foreground hover:text-destructive sm:inline-flex"
-          title="Se déconnecter"
-          render={<Link href="/deconnexion" prefetch={false} />}
-        >
-          <LogOut className="h-[18px] w-[18px]" />
-          <span className="hidden lg:inline">Déconnexion</span>
-        </Button>
       </div>
     </header>
   );
