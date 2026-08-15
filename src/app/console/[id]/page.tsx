@@ -11,6 +11,8 @@ import { UsageCard } from "@/components/facturation/usage-card";
 import { getResolvedPlans } from "@/lib/pricing";
 import { PLAN_ORDER } from "@/lib/plans";
 import { getOrgUsage } from "@/lib/usage";
+import { ContratsPrestationCard, type ContratPrestationRow } from "@/components/console/contrats-prestation-card";
+import { montantNet, ENGAGEMENT_LABELS, type EngagementType } from "@/lib/contrats/prestation";
 import { roleLabels } from "@/lib/navigation";
 
 export const dynamic = "force-dynamic";
@@ -35,6 +37,24 @@ export default async function ConsoleOrganismePage({
   const { plans } = await getResolvedPlans();
   const ordered = PLAN_ORDER.map((k) => plans[k]);
   const usage = await getOrgUsage(org.id, org.formule);
+
+  // Contrats de prestation (abonnement) de ce client.
+  const contratsRaw = await prisma.contratPrestation.findMany({
+    where: { organismeId: id },
+    orderBy: { createdAt: "desc" },
+  });
+  const contrats: ContratPrestationRow[] = contratsRaw.map((c) => ({
+    id: c.id,
+    reference: c.reference,
+    formuleNom: plans[c.formule as keyof typeof plans]?.name ?? c.formule,
+    montantNet: montantNet(Number(c.montantMensuel), c.remisePct),
+    engagementLabel: ENGAGEMENT_LABELS[c.engagement as EngagementType],
+    statut: c.statut as ContratPrestationRow["statut"],
+    token: c.token,
+    signataireNom: c.signataireNom,
+    signedAt: c.signedAt ? c.signedAt.toISOString() : null,
+  }));
+  const formules = ordered.map((p) => ({ key: p.key, name: p.name, price: p.price }));
 
   // Sécurité : on ne transmet JAMAIS les clés API au navigateur, seulement leur
   // état (définie ou non). cf. SecretField + updateOrganisme.
@@ -91,6 +111,8 @@ export default async function ConsoleOrganismePage({
       </Card>
 
       <UsageCard usage={usage} title="Consommation facturable" />
+
+      <ContratsPrestationCard organismeId={org.id} contrats={contrats} formules={formules} />
 
       <FormationsConfigForm
         organismeId={org.id}

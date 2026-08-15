@@ -145,12 +145,53 @@ model Organisme {
   users               User[]
   supportTickets      SupportTicket[]
   dossiersFinancement DossierFinancement[]
+  contratsPrestation  ContratPrestation[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([statut])
   @@index([isDemo])
+}
+
+// Contrat de PRESTATION éditeur ↔ OF client (abonnement OF Manager). À ne pas
+// confondre avec `Contrat` (contrat de formation d'un candidat). Piloté depuis la
+// console éditeur : devis (BROUILLON) → envoi (ENVOYE) → signature interne (SIGNE).
+enum EngagementPrestation {
+  MENSUEL
+  ANNUEL
+}
+
+enum ContratPrestationStatut {
+  BROUILLON
+  ENVOYE
+  SIGNE
+  REFUSE
+}
+
+model ContratPrestation {
+  id             String    @id @default(cuid())
+  organismeId    String
+  organisme      Organisme @relation(fields: [organismeId], references: [id], onDelete: Cascade)
+  reference      String    @unique
+  formule        FormuleAbonnement
+  options        String[]  @default([]) // add-ons / modules vendus en plus
+  engagement     EngagementPrestation    @default(MENSUEL)
+  montantMensuel Decimal   @db.Decimal(10, 2)
+  remisePct      Int       @default(0)
+  dateDebut      DateTime?
+  statut         ContratPrestationStatut @default(BROUILLON)
+  // Signature électronique interne : lien public + tracé manuscrit + IP + horodatage.
+  token         String?   @unique
+  signataireNom String?
+  signatureUrl  String?   @db.Text
+  signatureIp   String?
+  signedAt      DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([organismeId])
+  @@index([statut])
 }
 
 // Dossier de financement d'une inscription (CPF via Wedof, ou OPCO en interne).
