@@ -89,6 +89,30 @@ export async function getGrowthFunnel(): Promise<GrowthFunnel> {
   };
 }
 
+export type ConsoleHealth = {
+  leadsNouveaux: number;
+  leadsARappeler: number;
+  relancesEnRetard: number;
+  ticketsNonLus: number;
+};
+
+/**
+ * Signaux « santé » du cockpit éditeur : ce qui demande une action MAINTENANT.
+ * Volontairement séparé de getConsoleOverview() (4 counts efficaces) → alimente
+ * le bandeau prioritaire du tableau de bord. Les alertes « parc clients »
+ * (essais, inactifs, suspendus) restent portées par getConsoleOverview().alerts.
+ */
+export async function getConsoleHealth(): Promise<ConsoleHealth> {
+  const now = new Date();
+  const [leadsNouveaux, leadsARappeler, relancesEnRetard, ticketsNonLus] = await Promise.all([
+    prisma.lead.count({ where: { lu: false } }),
+    prisma.lead.count({ where: { statut: "A_RAPPELER" } }),
+    prisma.leadTask.count({ where: { done: false, dueAt: { lt: now } } }),
+    prisma.supportTicket.count({ where: { nonLuSupport: true } }),
+  ]);
+  return { leadsNouveaux, leadsARappeler, relancesEnRetard, ticketsNonLus };
+}
+
 export async function getConsoleOverview(): Promise<ConsoleOverview> {
   const [organismes, candByOrg, sessByOrg, { plans: planMap }] = await Promise.all([
     prisma.organisme.findMany({

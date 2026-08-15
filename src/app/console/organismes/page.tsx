@@ -7,7 +7,12 @@ import { getConsoleOverview } from "@/lib/console-stats";
 
 export const dynamic = "force-dynamic";
 
-export default async function OrganismesPage() {
+export default async function OrganismesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
+  const { q } = await searchParams;
   const { rows, totals } = await getConsoleOverview();
 
   return (
@@ -20,7 +25,7 @@ export default async function OrganismesPage() {
           <Plus className="mr-2 h-4 w-4" /> Nouvel organisme
         </Button>
       </PageHeader>
-      <OrganismesTable rows={rows} />
+      <OrganismesTable rows={rows} initialQuery={q ?? ""} />
     </div>
   );
 }
