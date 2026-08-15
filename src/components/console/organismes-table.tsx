@@ -28,8 +28,8 @@ const PLAN_BADGE: Record<string, string> = {
   COMPLET: "bg-violet-500/10 text-violet-700 dark:text-violet-300",
 };
 
-export function OrganismesTable({ rows }: { rows: OrgRow[] }) {
-  const [q, setQ] = useState("");
+export function OrganismesTable({ rows, initialQuery = "" }: { rows: OrgRow[]; initialQuery?: string }) {
+  const [q, setQ] = useState(initialQuery);
   const [statut, setStatut] = useState("TOUS");
 
   const filtered = useMemo(() => {

@@ -2,6 +2,7 @@ import Link from "next/link";
 import {
   Plus, Palette, Building2, Users, GraduationCap, CalendarDays,
   Wallet, TrendingUp, AlertTriangle, MoonStar, ArrowRight, Sparkles, Filter,
+  PhoneCall, PhoneOutgoing, Clock, LifeBuoy, CheckCircle2,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,9 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatCard } from "@/components/ui/stat-card";
 import { ConvertButton } from "@/components/console/statut-actions";
-import { getConsoleOverview, getGrowthFunnel } from "@/lib/console-stats";
+import {
+  getConsoleHealth, getConsoleOverview, getGrowthFunnel, type ConsoleHealth,
+} from "@/lib/console-stats";
 import { euros } from "@/lib/plans";
 import { cn } from "@/lib/utils";
 
@@ -22,7 +25,9 @@ const STATUT_BADGE: Record<string, string> = {
 };
 
 export default async function ConsoleDashboard() {
-  const [o, funnel] = await Promise.all([getConsoleOverview(), getGrowthFunnel()]);
+  const [o, funnel, health] = await Promise.all([
+    getConsoleOverview(), getGrowthFunnel(), getConsoleHealth(),
+  ]);
   const { totals, byStatut, growth, mrrByPlan, adoption, alerts, rows } = o;
 
   // Étapes du funnel d'acquisition (barres dégressives, largeur relative aux leads).
@@ -54,6 +59,9 @@ export default async function ConsoleDashboard() {
           <Plus className="mr-2 h-4 w-4" /> Nouvel organisme
         </Button>
       </PageHeader>
+
+      {/* Santé de la plateforme : ce qui demande une action maintenant */}
+      <HealthStrip health={health} essais={byStatut.essai} suspendus={byStatut.suspendu} />
 
       {/* KPIs */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
@@ -281,6 +289,56 @@ function Legend({ color, label, value }: { color: string; label: string; value: 
       <span className="h-2.5 w-2.5 rounded-full" style={{ background: color }} />
       <span className="text-muted-foreground">{label}</span>
       <span className="font-semibold">{value}</span>
+    </div>
+  );
+}
+
+type ChipTone = "blue" | "amber" | "rose" | "emerald";
+const CHIP_TONE: Record<ChipTone, string> = {
+  blue: "border-blue-200 bg-blue-50/70 text-blue-700 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-300",
+  amber: "border-amber-200 bg-amber-50/70 text-amber-700 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300",
+  rose: "border-rose-200 bg-rose-50/70 text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300",
+  emerald: "border-emerald-200 bg-emerald-50/70 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300",
+};
+
+/**
+ * Bandeau « santé » du cockpit : une puce cliquable par signal à traiter
+ * (leads, relances, tickets, essais, suspensions). N'affiche que le non-nul ;
+ * tout à zéro → message rassurant. cf. getConsoleHealth().
+ */
+function HealthStrip({ health, essais, suspendus }: { health: ConsoleHealth; essais: number; suspendus: number }) {
+  const chips = [
+    { key: "leads", tone: "blue" as const, icon: PhoneCall, label: "Nouveaux leads", value: health.leadsNouveaux, href: "/console/prospects" },
+    { key: "rappel", tone: "amber" as const, icon: PhoneOutgoing, label: "À rappeler", value: health.leadsARappeler, href: "/console/prospects" },
+    { key: "retard", tone: "rose" as const, icon: Clock, label: "Relances en retard", value: health.relancesEnRetard, href: "/console/prospects" },
+    { key: "tickets", tone: "rose" as const, icon: LifeBuoy, label: "Tickets support", value: health.ticketsNonLus, href: "/console/support" },
+    { key: "essais", tone: "amber" as const, icon: Sparkles, label: "Essais à convertir", value: essais, href: "/console/organismes" },
+    { key: "suspendus", tone: "rose" as const, icon: AlertTriangle, label: "Comptes suspendus", value: suspendus, href: "/console/organismes" },
+  ].filter((c) => c.value > 0);
+
+  if (chips.length === 0) {
+    return (
+      <div className={cn("flex items-center gap-2 rounded-lg border px-3 py-2.5 text-sm", CHIP_TONE.emerald)}>
+        <CheckCircle2 className="h-4 w-4 shrink-0" /> Tout est à jour — rien ne requiert votre attention.
+      </div>
+    );
+  }
+  return (
+    <div className="flex flex-wrap gap-2">
+      {chips.map((c) => (
+        <Link
+          key={c.key}
+          href={c.href}
+          className={cn(
+            "inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-transform hover:-translate-y-0.5",
+            CHIP_TONE[c.tone],
+          )}
+        >
+          <c.icon className="h-4 w-4 shrink-0" />
+          <span className="font-bold tabular-nums">{c.value}</span>
+          <span>{c.label}</span>
+        </Link>
+      ))}
     </div>
   );
 }
