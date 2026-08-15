@@ -9,9 +9,13 @@ export const dynamic = "force-dynamic";
 
 const METIERS: DemoMetier[] = ["securite", "vtc_taxi", "les_deux", "autre"];
 
+// Correctif audit P1-3 : IP via x-real-ip (Vercel, non spoofable) — cf. clientIpFromHeaders.
 function clientIp(req: Request): string {
   const h = req.headers;
-  return h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip") || "unknown";
+  const realIp = h.get("x-real-ip");
+  if (realIp && realIp.trim()) return realIp.trim();
+  const parts = (h.get("x-forwarded-for") ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+  return parts.length ? parts[parts.length - 1] : "unknown";
 }
 
 /**

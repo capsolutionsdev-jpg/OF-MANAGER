@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { clientIpFromHeaders } from "@/lib/rate-limit";
 import { headers } from "next/headers";
 import bcrypt from "bcryptjs";
 import {
@@ -529,10 +530,7 @@ export async function signDocuments(
 
   // IP du signataire (traçabilité)
   const hdrs = await headers();
-  const ip =
-    hdrs.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    hdrs.get("x-real-ip") ??
-    null;
+  const ip = clientIpFromHeaders(hdrs);
 
   const now = new Date();
   await prisma.inscription.update({

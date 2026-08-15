@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { clientIpFromHeaders } from "@/lib/rate-limit";
 import { headers } from "next/headers";
 import { FinancementType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
@@ -132,10 +133,7 @@ export async function submitProspectForm(
     return { ok: false, error: "Merci de dessiner votre signature." };
 
   const hdrs = await headers();
-  const ip =
-    hdrs.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    hdrs.get("x-real-ip") ??
-    null;
+  const ip = clientIpFromHeaders(hdrs);
 
   const finType =
     v.financementType &&

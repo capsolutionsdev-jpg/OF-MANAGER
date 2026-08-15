@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { clientIpFromHeaders } from "@/lib/rate-limit";
 import { headers } from "next/headers";
 import { FactureStatut, Prisma } from "@prisma/client";
 import { requireSection } from "@/lib/section-guard";
@@ -112,8 +113,7 @@ export async function acceptDevis(
     return { ok: false, error: "Ce devis a expiré (date de validité dépassée). Contactez l'organisme pour un nouveau devis." };
   }
   const hdrs = await headers();
-  const ip =
-    hdrs.get("x-forwarded-for")?.split(",")[0]?.trim() ?? hdrs.get("x-real-ip") ?? null;
+  const ip = clientIpFromHeaders(hdrs);
   await prisma.devis.update({
     where: { id: d.id },
     data: {

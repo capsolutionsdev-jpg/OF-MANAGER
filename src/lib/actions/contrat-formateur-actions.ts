@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { clientIpFromHeaders } from "@/lib/rate-limit";
 import { headers } from "next/headers";
 import { EmailStatut } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
@@ -126,10 +127,7 @@ export async function signContratFormateur(
   const org = await orgConfigFor(s.organismeId);
 
   const hdrs = await headers();
-  const ip =
-    hdrs.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    hdrs.get("x-real-ip") ??
-    null;
+  const ip = clientIpFromHeaders(hdrs);
 
   await prisma.session.update({
     where: { id: s.id },
