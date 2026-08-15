@@ -25,6 +25,19 @@ const ALLOWLIST = new Set([
   "financements/page.tsx",
 ]);
 
+/**
+ * Détecte un accès au client Prisma BRUT (non cloisonné), sous ses deux formes :
+ *  - import depuis `@/lib/prisma` (client brut / prismaBase) ;
+ *  - import de `bypassPrisma` depuis `@/lib/tenant` (client en mode BYPASS RLS).
+ * (Correctif audit P2-9 : la seconde forme échappait à la garde.)
+ */
+function usesRawPrisma(src: string): boolean {
+  return (
+    /from ["']@\/lib\/prisma["']/.test(src) ||
+    /import[^;]*\bbypassPrisma\b[^;]*from\s*["']@\/lib\/tenant["']/.test(src)
+  );
+}
+
 const APP_DIR = path.resolve(__dirname, "../../app/(app)");
 
 function walk(dir: string): string[] {
@@ -43,7 +56,7 @@ describe("Garde-fou : pas d'accès prisma direct dans les pages (app)", () => {
     for (const file of walk(APP_DIR)) {
       const rel = path.relative(APP_DIR, file).replace(/\\/g, "/");
       const src = readFileSync(file, "utf8");
-      if (/from ["']@\/lib\/prisma["']/.test(src) && !ALLOWLIST.has(rel)) {
+      if (usesRawPrisma(src) && !ALLOWLIST.has(rel)) {
         offenders.push(rel);
       }
     }
@@ -149,7 +162,7 @@ describe("Garde-fou : pas d'accès prisma direct dans les server actions", () =>
     for (const file of walkTs(ACTIONS_DIR)) {
       const rel = path.relative(ACTIONS_DIR, file).replace(/\\/g, "/");
       const src = readFileSync(file, "utf8");
-      if (/from ["']@\/lib\/prisma["']/.test(src) && !ACTIONS_ALLOWLIST.has(rel)) {
+      if (usesRawPrisma(src) && !ACTIONS_ALLOWLIST.has(rel)) {
         offenders.push(rel);
       }
     }
