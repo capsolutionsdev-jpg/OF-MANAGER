@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   calcMontants,
+  overageLignes,
   sirenFromSiret,
   mentionsManquantes,
   factureCiiXml,
@@ -69,5 +70,33 @@ describe("Facture éditeur — conformité e-invoicing 2026", () => {
     expect(html).toContain("Prestation de services");
     expect(html).toContain("EN 16931");
     expect(html).toContain("L441-10"); // pénalités de retard légales
+  });
+});
+
+describe("Facturation à l'usage — overageLignes", () => {
+  const prix = { email: 0.01, inscription: 5 };
+
+  it("dépassement e-mails + inscriptions → 2 lignes chiffrées", () => {
+    const lignes = overageLignes(
+      { emails: { used: 600, limit: 500 }, inscriptions: { used: 35, limit: 30 }, moisLabel: "août 2026" },
+      prix,
+    );
+    expect(lignes).toHaveLength(2);
+    expect(lignes[0].quantite).toBe(100);
+    expect(lignes[0].montantHT).toBe(1); // 100 × 0,01
+    expect(lignes[1].quantite).toBe(5);
+    expect(lignes[1].montantHT).toBe(25); // 5 × 5
+  });
+
+  it("sous le quota → aucune ligne", () => {
+    expect(
+      overageLignes({ emails: { used: 100, limit: 500 }, inscriptions: { used: 10, limit: 30 }, moisLabel: "x" }, prix),
+    ).toEqual([]);
+  });
+
+  it("formule illimitée (limit null) → aucune ligne", () => {
+    expect(
+      overageLignes({ emails: { used: 99999, limit: null }, inscriptions: { used: 999, limit: null }, moisLabel: "x" }, prix),
+    ).toEqual([]);
   });
 });

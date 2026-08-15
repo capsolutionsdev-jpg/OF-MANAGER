@@ -77,6 +77,28 @@ export function calcMontants(lignes: LigneFacture[], tauxTva: number): {
   return { montantHT, montantTva, montantTTC: round2(montantHT + montantTva) };
 }
 
+export type UsageMetriqueLite = { used: number; limit: number | null };
+
+/**
+ * Lignes de facturation À L'USAGE : le DÉPASSEMENT de quota mensuel (e-mails,
+ * inscriptions) au-delà de la formule × prix unitaire. Illimité (limit null) ou
+ * sous le quota → aucune ligne. cf. lib/usage.ts + plans OVERAGE_*.
+ */
+export function overageLignes(
+  usage: { emails: UsageMetriqueLite; inscriptions: UsageMetriqueLite; moisLabel: string },
+  prix: { email: number; inscription: number },
+): LigneFacture[] {
+  const lignes: LigneFacture[] = [];
+  const add = (libelle: string, m: UsageMetriqueLite, pu: number) => {
+    if (m.limit == null) return; // illimité → pas de dépassement facturable
+    const dep = Math.max(0, m.used - m.limit);
+    if (dep > 0) lignes.push({ libelle, quantite: dep, prixUnitaire: pu, montantHT: round2(dep * pu) });
+  };
+  add(`Dépassement e-mails (${usage.moisLabel})`, usage.emails, prix.email);
+  add(`Dépassement inscriptions (${usage.moisLabel})`, usage.inscriptions, prix.inscription);
+  return lignes;
+}
+
 /** SIREN (9 chiffres) déduit du SIRET (14 chiffres). */
 export function sirenFromSiret(siret?: string | null): string | null {
   const digits = (siret ?? "").replace(/\D/g, "");

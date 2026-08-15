@@ -48,6 +48,11 @@ export type Plan = {
 // Prix d'un compte back-office supplémentaire au-delà de l'inclus (€ HT / mois).
 export const EXTRA_SEAT_PRICE_EUR = 20;
 
+// Facturation à l'usage : prix du DÉPASSEMENT de quota mensuel (€ HT). Repères
+// éditables — c'est le levier « faire payer les automatismes ». cf. lib/usage.ts.
+export const OVERAGE_EMAIL_EUR = 0.01; // par e-mail au-delà du quota de la formule
+export const OVERAGE_INSCRIPTION_EUR = 5; // par inscription au-delà du quota
+
 export const PLANS: Record<FormuleKey, Plan> = {
   BASIQUE: {
     key: "BASIQUE", name: "Basique", price: 79, color: "#64748b",
