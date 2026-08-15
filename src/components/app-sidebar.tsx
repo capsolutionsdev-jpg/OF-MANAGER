@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, HelpCircle, ArrowRight } from "lucide-react";
 import type { Role } from "@prisma/client";
 import { buildNav, type NavItem } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
@@ -76,16 +76,16 @@ export function SidebarNav({
         className={cn(
           "group/nav flex items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] font-medium transition-colors",
           active
-            ? "bg-sidebar-accent text-sidebar-accent-foreground"
-            : "text-muted-foreground hover:bg-accent hover:text-foreground",
+            ? "bg-[#1f3a6f] text-[#4D9FFF]"
+            : "text-[#a8b9d1] hover:bg-[#1f2d47] hover:text-[#eaf0ff]",
         )}
       >
         <it.icon
           className={cn(
             "h-[17px] w-[17px] shrink-0 transition-colors",
             active
-              ? "text-sidebar-accent-foreground"
-              : "text-muted-foreground/80 group-hover/nav:text-foreground",
+              ? "text-[#4D9FFF]"
+              : "text-[#a8b9d1] group-hover/nav:text-[#eaf0ff]",
           )}
         />
         <span className="min-w-0 truncate">{it.label}</span>
@@ -110,7 +110,7 @@ export function SidebarNav({
               type="button"
               onClick={() => toggle(g.name)}
               aria-expanded={expanded}
-              className="flex w-full items-center gap-1.5 rounded-md px-2.5 py-1 text-[10.5px] font-semibold uppercase tracking-wider text-muted-foreground/70 transition-colors hover:text-foreground"
+              className="flex w-full items-center gap-1.5 rounded-md px-2.5 py-1 text-[10.5px] font-semibold uppercase tracking-wider text-[#7a8aa3] transition-colors hover:text-[#eaf0ff]"
             >
               <ChevronDown
                 className={cn(
@@ -125,7 +125,7 @@ export function SidebarNav({
         );
       })}
       {footer.length > 0 && (
-        <div className="space-y-0.5 border-t border-sidebar-border pt-3">
+        <div className="space-y-0.5 border-t border-[#1f2d47] pt-3">
           {footer.map(renderItem)}
         </div>
       )}
@@ -133,7 +133,9 @@ export function SidebarNav({
   );
 }
 
-/** En-tête de marque du rail (logo tenant ou nom). */
+/** En-tête de marque du rail (logo tenant ou nom).
+ * Dark navy version avec texte bleu clair.
+ */
 export function SidebarBrand({
   brand,
 }: {
@@ -142,25 +144,29 @@ export function SidebarBrand({
   return (
     <Link
       href="/dashboard"
-      className="flex h-14 shrink-0 items-center gap-2 border-b border-sidebar-border px-4"
+      className="flex h-14 shrink-0 items-center gap-2 border-b border-[#1f2d47] px-4"
     >
       {brand?.logoUrl ? (
         // Logo personnalisé (data URL) — next/image ne gère pas les data: URLs.
         // eslint-disable-next-line @next/next/no-img-element
         <img src={brand.logoUrl} alt={brand.nom} className="h-7 w-auto" />
       ) : (
-        <span className="font-heading text-[15px] font-semibold tracking-tight text-foreground">
+        <span className="font-heading text-[15px] font-semibold tracking-tight text-[#eaf0ff]">
           {brand?.nom ?? "CAP Compétences"}
         </span>
       )}
-      <span className="ml-auto rounded bg-muted px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
+      <span className="ml-auto rounded bg-[#1f2d47] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[#a8b9d1]">
         Manager
       </span>
     </Link>
   );
 }
 
-/** Rail latéral persistant (desktop ≥ lg). Sur mobile : tiroir via la barre du haut. */
+/** Rail latéral persistant (desktop ≥ lg). Sur mobile : tiroir via la barre du haut.
+ *
+ * Dark navy sidebar avec logo, navigation groupée, et carte d'aide en bas.
+ * Style : navy très foncé (#0D1B3E), texte bleu clair (#eaf0ff).
+ */
 export function AppSidebar({
   user,
   brand,
@@ -169,9 +175,29 @@ export function AppSidebar({
   brand?: { nom: string; logoUrl: string | null };
 }) {
   return (
-    <aside data-app-chrome className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground lg:flex">
+    <aside
+      data-app-chrome
+      className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-[#1f2d47] bg-[#0D1B3E] text-[#eaf0ff] lg:flex"
+    >
       <SidebarBrand brand={brand} />
       <SidebarNav user={user} />
+
+      {/* Carte "Besoin d'aide ?" en bas */}
+      <div className="mt-auto border-t border-[#1f2d47] p-4">
+        <Link
+          href="/aide"
+          className="flex items-start gap-3 rounded-xl bg-[#1f2d47] px-3 py-3 transition-colors hover:bg-[#2a3a52]"
+        >
+          <HelpCircle className="mt-0.5 h-5 w-5 shrink-0 text-[#4D9FFF]" />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-[#eaf0ff]">Besoin d'aide ?</p>
+            <p className="mt-0.5 text-[11px] text-[#a8b9d1]">
+              Consultez notre centre
+            </p>
+          </div>
+          <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-[#4D9FFF]" />
+        </Link>
+      </div>
     </aside>
   );
 }
