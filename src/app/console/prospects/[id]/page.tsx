@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ExternalLink, FlaskConical, Mail, Phone } from "lucide-react";
+import { ArrowLeft, Building2, ExternalLink, FlaskConical, Mail, Phone } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LeadTimeline } from "@/components/console/lead-timeline";
 import { LeadTasks } from "@/components/console/lead-tasks";
@@ -12,6 +13,7 @@ import {
   LeadNotesInternes,
   LeadStatutSelect,
 } from "@/components/console/lead-note-form";
+import { ConvertLeadButton } from "@/components/console/convert-lead-button";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -75,6 +77,13 @@ export default async function FicheProspectPage({
   const source = lead.source ? (SOURCE_LABELS[lead.source] ?? lead.source) : "Contact";
   const tachesOuvertes = lead.tasks.filter((t) => !t.done).length;
 
+  // Client déjà créé depuis ce prospect ? (organismeId dans la meta de l'événement).
+  const convEvent = lead.events.find((e) => e.type === "conversion");
+  const convertedOrgId =
+    convEvent && convEvent.meta && typeof convEvent.meta === "object" && !Array.isArray(convEvent.meta)
+      ? ((convEvent.meta as Record<string, unknown>).organismeId as string | undefined)
+      : undefined;
+
   return (
     <div className="space-y-6">
       <Link
@@ -96,6 +105,13 @@ export default async function FicheProspectPage({
           {source}
         </Badge>
         <LeadStatutSelect leadId={lead.id} statut={lead.statut} />
+        {convertedOrgId ? (
+          <Button size="sm" variant="outline" render={<Link href={`/console/${convertedOrgId}`} />}>
+            <Building2 className="mr-1.5 h-4 w-4" /> Voir le client
+          </Button>
+        ) : (
+          <ConvertLeadButton leadId={lead.id} hasDemo={!!lead.demoOrganismeId} />
+        )}
       </PageHeader>
 
       <div className="grid gap-6 lg:grid-cols-2">
