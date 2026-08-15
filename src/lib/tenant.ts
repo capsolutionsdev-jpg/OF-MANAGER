@@ -49,17 +49,21 @@ export function scopedPrisma(organismeId: string) {
           if (GLOBAL_MODELS.has(model)) return query(args);
 
           // ── Écritures ──
+          // Sécurité : le organismeId du tenant est TOUJOURS placé en dernier
+          // pour qu'un organismeId fourni dans args.data (payload client) ne
+          // puisse jamais écraser celui de la session (défense en profondeur
+          // isolation multi-tenant — audit P1, cf. SECURITY_TESTS/05_SERVER_ACTIONS.md).
           if (operation === "create") {
-            args.data = { organismeId, ...args.data };
+            args.data = { ...args.data, organismeId };
             return run(query(args));
           }
           if (operation === "createMany") {
             const rows = Array.isArray(args.data) ? args.data : [args.data];
-            args.data = rows.map((d: Record<string, unknown>) => ({ organismeId, ...d }));
+            args.data = rows.map((d: Record<string, unknown>) => ({ ...d, organismeId }));
             return run(query(args));
           }
           if (operation === "upsert") {
-            args.create = { organismeId, ...args.create };
+            args.create = { ...args.create, organismeId };
             const existing = await run(
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               (prismaBase as any)[delegateName(model)].findFirst({
