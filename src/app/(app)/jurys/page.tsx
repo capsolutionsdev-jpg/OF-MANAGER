@@ -56,12 +56,17 @@ export default async function JurysPage() {
         title="Jurys"
         subtitle="Annuaire des jurés, affectation par session avec défraiement personnalisé, suivi des paiements et envoi des notes de défraiement."
       />
-      {sessions.length === 0 && jurys.length === 0 ? (
+      {formations.length === 0 ? (
         <div className="rounded-lg border bg-card p-8 text-center text-sm text-muted-foreground">
           Aucune formation soumise à un jury. Cochez « Examen soumis à un jury » sur une formation
-          pour activer l&apos;affectation des jurés à ses sessions.
+          pour gérer les jurés et leurs affectations.
         </div>
       ) : (
+        // Dès qu'au moins une formation est soumise à jury, on affiche le
+        // gestionnaire complet — l'annuaire des jurés (ajout d'un juré) doit être
+        // accessible AVANT toute session (sinon impossible de créer le 1er juré :
+        // le bouton « Ajouter » vivait dans un gestionnaire masqué tant qu'il n'y
+        // avait ni session ni juré).
         <JurysManager jurys={juryOptions} sessions={sessionOptions} affectations={rows} formations={formations} />
       )}
     </div>
