@@ -148,8 +148,13 @@ export function SidebarBrand({
     >
       {brand?.logoUrl ? (
         // Logo personnalisé (data URL) — next/image ne gère pas les data: URLs.
+        // Rendu blanc avec brightness + invert (compatible dark backgrounds).
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={brand.logoUrl} alt={brand.nom} className="h-7 w-auto" />
+        <img
+          src={brand.logoUrl}
+          alt={brand.nom}
+          className="h-7 w-auto brightness-0 invert"
+        />
       ) : (
         <span className="font-heading text-[15px] font-semibold tracking-tight text-[#eaf0ff]">
           {brand?.nom ?? "CAP Compétences"}
