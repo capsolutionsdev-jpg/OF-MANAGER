@@ -1,42 +1,20 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { anonymiseCandidatComplet } from "@/lib/rgpd/anonymise";
 
 // Purge RGPD : anonymise les données personnelles des candidats au-delà de la
 // durée de conservation de leur organisme (Organisme.dureeConservationMois).
 // On conserve l'enregistrement (obligations Qualiopi/comptables) mais on efface
-// les données identifiantes — comme l'effacement manuel (cf. rgpd-actions).
+// TOUTES les données identifiantes — même logique COMPLÈTE que l'effacement
+// manuel (candidat + pièces + signatures + IP + messages), cf. lib/rgpd/anonymise.
 
 const ANON_DEFAULT_MONTHS = 36;
 const BATCH = 500; // borne par exécution de cron
 
-/** Anonymise un candidat (données identifiantes effacées, enregistrement conservé). */
+/** Anonymise un candidat (effacement complet, enregistrement conservé). */
 async function anonymise(organismeId: string, candidatId: string) {
-  await prisma.candidat.updateMany({
-    where: { id: candidatId, organismeId }, // garde-fou tenant
-    data: {
-      nom: "Anonymisé",
-      prenom: "—",
-      email: `anonymise-${candidatId}@rgpd.local`,
-      telephone: null,
-      adresse: null,
-      ville: null,
-      codePostal: null,
-      dateNaissance: null,
-      lieuNaissance: null,
-      paysNaissance: null,
-      situationPro: null,
-      employeur: null,
-      posteOccupe: null,
-      dernierDiplome: null,
-      photoUrl: null,
-      besoinsAdaptation: null,
-      carteProNumero: null,
-      statut: "ARCHIVE",
-      anonymiseLe: new Date(),
-    },
-  });
-  await prisma.auditLog.create({
-    data: { organismeId, action: "PURGE_RGPD_AUTO", entityType: "Candidat", entityId: candidatId },
+  await anonymiseCandidatComplet(prisma, organismeId, candidatId, {
+    action: "PURGE_RGPD_AUTO",
   });
 }
 

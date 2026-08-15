@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { DataRequestType, DataRequestStatut } from "@prisma/client";
 import { getTenantDb } from "@/lib/tenant";
 import { requireSection } from "@/lib/section-guard";
+import { anonymiseCandidatComplet } from "@/lib/rgpd/anonymise";
 
 export async function createDataRequest(formData: FormData) {
   await requireSection("rgpd");
@@ -75,42 +76,23 @@ export async function exportDonneesPersonne(
   };
 }
 
-// Anonymisation (droit à l'effacement) : on conserve les enregistrements liés
-// (obligations Qualiopi/comptables) mais on efface les données personnelles.
+// Anonymisation (droit à l'effacement, art. 17) : on conserve les enregistrements
+// liés (obligations Qualiopi/comptables) mais on efface TOUTES les données
+// personnelles — candidat, pièces déposées, signatures manuscrites, IP, messages.
+// Logique unique partagée avec la purge automatique (cf. lib/rgpd/anonymise).
 export async function anonymiseCandidat(formData: FormData) {
   const session = await requireSection("rgpd");
+  const organismeId = session.user.organismeId;
+  if (!organismeId) return;
   const db = await getTenantDb();
 
   const candidatId = String(formData.get("candidatId"));
   const c = await db.candidat.findUnique({ where: { id: candidatId } });
   if (!c) return;
 
-  await db.candidat.update({
-    where: { id: candidatId },
-    data: {
-      nom: "Anonymisé",
-      prenom: "—",
-      email: `anonymise-${candidatId}@rgpd.local`,
-      telephone: null,
-      adresse: null,
-      ville: null,
-      codePostal: null,
-      dateNaissance: null,
-      situationPro: null,
-      employeur: null,
-      posteOccupe: null,
-      besoinsAdaptation: null,
-      statut: "ARCHIVE",
-      anonymiseLe: new Date(),
-    },
-  });
-  await db.auditLog.create({
-    data: {
-      userId: session.user.id,
-      action: "ANONYMISATION_RGPD",
-      entityType: "Candidat",
-      entityId: candidatId,
-    },
+  await anonymiseCandidatComplet(db, organismeId, candidatId, {
+    action: "ANONYMISATION_RGPD",
+    userId: session.user.id,
   });
 
   revalidatePath("/candidats");
