@@ -33,9 +33,20 @@ export async function POST(req: Request) {
   if (!rl.ok) return new Response("Too Many Requests", { status: 429 });
 
   const secret = process.env.BREVO_WEBHOOK_SECRET;
-  if (secret && new URL(req.url).searchParams.get("secret") !== secret) {
+  if (secret) {
+    if (new URL(req.url).searchParams.get("secret") !== secret) {
+      return new Response("Unauthorized", { status: 401 });
+    }
+  } else if (process.env.NODE_ENV === "production") {
+    // Endpoint public d'écriture : sans secret configuré, on REFUSE en production
+    // (fail-closed) plutôt que d'accepter des événements falsifiés (audit §3.6).
+    console.warn(
+      "[brevo webhook] BREVO_WEBHOOK_SECRET absent en production → requêtes refusées. " +
+        "Ajoutez ?secret=… (BREVO_WEBHOOK_SECRET) à l'URL du webhook Brevo.",
+    );
     return new Response("Unauthorized", { status: 401 });
   }
+  // Hors production sans secret → ouvert pour les tests locaux.
 
   let body: Record<string, unknown>;
   try {

@@ -42,8 +42,16 @@ export async function POST(req: Request) {
   } else if (secret) {
     // Pas de signature Svix (test manuel) → repli sur le secret en query.
     authorized = new URL(req.url).searchParams.get("secret") === secret;
+  } else if (process.env.NODE_ENV === "production") {
+    // Endpoint public d'écriture : sans secret configuré, on REFUSE en production
+    // (fail-closed) plutôt que d'accepter des événements falsifiés (audit §3.6).
+    console.warn(
+      "[resend webhook] RESEND_WEBHOOK_SECRET absent en production → requêtes refusées. " +
+        "Configurez le secret Svix pour activer le tracking e-mail.",
+    );
+    authorized = false;
   } else {
-    authorized = true; // aucun secret configuré → mode ouvert
+    authorized = true; // hors production uniquement → ouvert pour les tests locaux
   }
   if (!authorized) return new Response("Unauthorized", { status: 401 });
 
