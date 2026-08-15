@@ -87,6 +87,9 @@ const ACTIONS_ALLOWLIST = new Set([
   // requireSuperAdmin ; la signature publique est résolue par token (sans session).
   "contrat-prestation-actions.ts",
   "contrat-prestation-public.ts",
+  // Facturation éditeur : FactureEditeur + Organisme (données éditeur GLOBALES),
+  // gardé requireSuperAdmin. Hors-tenant.
+  "facture-editeur-actions.ts",
   // Sync SSIAP au déploiement : garde requireSuperAdmin + scope explicite par
   // organismeId (CAP), updateMany où { reference, organismeId } — hors-tenant.
   "ssiap-config.ts",

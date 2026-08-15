@@ -13,6 +13,8 @@ import { PLAN_ORDER } from "@/lib/plans";
 import { getOrgUsage } from "@/lib/usage";
 import { ContratsPrestationCard, type ContratPrestationRow } from "@/components/console/contrats-prestation-card";
 import { montantNet, ENGAGEMENT_LABELS, type EngagementType } from "@/lib/contrats/prestation";
+import { FacturesEditeurCard, type FactureEditeurRow } from "@/components/console/factures-editeur-card";
+import { sirenFromSiret, type FactureStatut } from "@/lib/factures/editeur";
 import { roleLabels } from "@/lib/navigation";
 
 export const dynamic = "force-dynamic";
@@ -55,6 +57,20 @@ export default async function ConsoleOrganismePage({
     signedAt: c.signedAt ? c.signedAt.toISOString() : null,
   }));
   const formules = ordered.map((p) => ({ key: p.key, name: p.name, price: p.price }));
+
+  // Factures éditeur (abonnement) de ce client.
+  const facturesRaw = await prisma.factureEditeur.findMany({
+    where: { organismeId: id },
+    orderBy: { createdAt: "desc" },
+  });
+  const factures: FactureEditeurRow[] = facturesRaw.map((f) => ({
+    id: f.id,
+    numero: f.numero,
+    statut: f.statut as FactureStatut,
+    periodeLabel: f.periodeDebut.toLocaleDateString("fr-FR", { month: "long", year: "numeric" }),
+    montantTTC: Number(f.montantTTC),
+  }));
+  const sirenManquant = !sirenFromSiret(org.siret);
 
   // Sécurité : on ne transmet JAMAIS les clés API au navigateur, seulement leur
   // état (définie ou non). cf. SecretField + updateOrganisme.
@@ -113,6 +129,8 @@ export default async function ConsoleOrganismePage({
       <UsageCard usage={usage} title="Consommation facturable" />
 
       <ContratsPrestationCard organismeId={org.id} contrats={contrats} formules={formules} />
+
+      <FacturesEditeurCard organismeId={org.id} factures={factures} sirenManquant={sirenManquant} />
 
       <FormationsConfigForm
         organismeId={org.id}
