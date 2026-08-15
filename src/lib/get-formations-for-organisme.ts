@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { normaliserTitre } from "@/lib/catalogue-securite";
-import { BIBLIOTHEQUE_FORMATIONS } from "@/lib/formations-catalog";
+import { BIBLIOTHEQUE_FORMATIONS, migrerSlugs } from "@/lib/formations-catalog";
 
 /**
  * Filtre une liste de formations (déjà chargées, déjà cloisonnées au tenant)
@@ -23,11 +23,11 @@ export async function filterFormationsByOrgConfig<
   });
 
   const config = org?.configurationsFormations ?? [];
-  // Seuls les identifiants encore connus de la bibliothèque comptent : une
-  // config héritée d'une ancienne version (identifiants obsolètes uniquement)
-  // ne doit PAS masquer le catalogue du tenant.
-  const clesConnues = new Set(BIBLIOTHEQUE_FORMATIONS.map((m) => m.cle));
-  const connus = config.filter((c) => clesConnues.has(c));
+  // Migration des identifiants (alias anciens → clés actuelles) + filtrage aux
+  // clés connues : une config héritée d'une ancienne version reste valide au lieu
+  // d'être silencieusement ignorée. Config totalement inconnue → aucune
+  // restriction (on ne masque jamais le catalogue du tenant par erreur).
+  const connus = migrerSlugs(config);
   if (connus.length === 0) return formations;
 
   const selectionnees = new Set(connus);

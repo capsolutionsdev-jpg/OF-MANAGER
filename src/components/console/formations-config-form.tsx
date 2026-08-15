@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { ALL_FORMATIONS } from "@/lib/formations-catalog";
+import { ALL_FORMATIONS, migrerSlugs } from "@/lib/formations-catalog";
 import { updateOrganismeFormations } from "@/lib/actions/formations-config-actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -50,13 +50,14 @@ export function FormationsConfigForm({
   initialSlugs: string[];
 }) {
   const [isPending, startTransition] = useTransition();
-  // On ne garde de la config initiale que les identifiants encore connus de la
-  // bibliothèque (une config héritée d'une ancienne version peut contenir des
-  // identifiants obsolètes — ils sont nettoyés à la prochaine sauvegarde).
-  const slugsConnus = useMemo(() => new Set(ALL_FORMATIONS.map((f) => f.slug)), []);
-  const [selected, setSelected] = useState<Set<string>>(
-    () => new Set(initialSlugs.filter((s) => slugsConnus.has(s))),
+  // Config initiale MIGRÉE (alias anciens → clés actuelles) puis filtrée aux
+  // identifiants connus : une config héritée d'une ancienne version pré-coche
+  // les bonnes cases au lieu d'apparaître décochée.
+  const initialSelection = useMemo(
+    () => new Set(migrerSlugs(initialSlugs)),
+    [initialSlugs],
   );
+  const [selected, setSelected] = useState<Set<string>>(() => new Set(initialSelection));
 
   const handleToggle = (slug: string) => {
     const updated = new Set(selected);
