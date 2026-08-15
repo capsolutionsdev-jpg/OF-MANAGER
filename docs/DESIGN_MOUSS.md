@@ -246,24 +246,93 @@ colors: {
 
 ---
 
+## Généralisation à Toute la Plateforme
+
+### Architecture de Héritage
+
+Le thème Mouss est **appliqué globalement** via le layout principal `src/app/(app)/layout.tsx`:
+
+```
+app/
+├── (app)/layout.tsx [Root Layout — AppSidebar + AppTopbar]
+│   ├── dashboard/ ← Mouss
+│   ├── sessions/ ← Mouss
+│   ├── candidats/ ← Mouss
+│   ├── formations/ ← Mouss
+│   ├── formateurs/ ← Mouss
+│   ├── clients-pro/ ← Mouss
+│   ├── comptabilite/ ← Mouss
+│   ├── crm/ ← Mouss
+│   ├── diplomes/ ← Mouss
+│   ├── bpf/ ← Mouss
+│   └── ... [30+ sections]
+```
+
+**Chaque page hérite automatiquement:**
+- ✅ Sidebar dark navy (#0D1B3E)
+- ✅ Topbar light (bg-background)
+- ✅ Navigation group headers
+- ✅ Help card "Besoin d'aide ?"
+- ✅ Icônes d'action (focus mode, thème, notifications)
+- ✅ Responsive mobile drawer
+
+### Fichiers Clés
+
+| Fichier | Rôle | Mouss Status |
+|---------|------|-------|
+| `src/components/app-sidebar.tsx` | Rail latéral (desktop) + tiroir (mobile) | ✅ Navy themed |
+| `src/components/app-topbar.tsx` | En-tête horizontal (recherche, icônes, avatar) | ✅ Light themed |
+| `src/app/(app)/layout.tsx` | Root layout — applique sidebar + topbar | ✅ Pass-through |
+| `src/components/dashboard/kpi-card-v2.tsx` | Cartes KPI avec sparklines | ✅ Colorful tints |
+
+### Comment Ça Marche
+
+1. **Authentification** → `src/app/(app)/layout.tsx`
+2. **Branding chargé** → couleurs primaires du tenant
+3. **Design Mouss appliqué** → CSS variables + Tailwind
+4. **AppSidebar rendu** → navy, fixed 240px (lg) ou drawer (mobile)
+5. **AppTopbar rendu** → light bg, recherche centrée
+6. **Children rendus** → page spécifique (dashboard, sessions, etc.)
+
+### Pour Ajouter une Nouvelle Page au Thème Mouss
+
+1. Créer `src/app/(app)/ma-page/page.tsx`
+2. **Ne rien faire** — le layout parent applique déjà Mouss
+3. Utiliser les composants existants:
+   - `<Card>` pour les boîtes
+   - `<KpiCardV2>` pour les métriques
+   - `<Button>` pour les actions
+   - Classes Tailwind standard (bg-card, text-foreground, etc.)
+4. Valider l'accessibilité (focus, contrast)
+
+### Vérification Visuelle
+
+Toutes les pages du console partagent:
+- **Sidebar identique** → cohérence navigation
+- **Topbar identique** → cohérence actions
+- **Palette identique** → cohérence couleurs
+- **Spacings identiques** → cohérence layout
+
+---
+
 ## Exemples de Pages Redessinées
 
 ### ✅ Dashboard (`/dashboard`)
 - Étape 1: Contenu (7840e68)
 - Étape 2: Sidebar (8f67a7f)
 - Étape 3: Topbar (5ef5e71)
+- Logo blanc fix (df45f03)
 
-### 🔄 À venir (autres pages console)
-- Sessions
-- Candidats
-- Formations
-- Fiches session
-- Formateurs
-- Clients pro
-- Devis/Factures
-- Leads/CRM
-- Qualiopi/BPF
-- Site vitrine cockpit
+### ✅ Généralisation (Toutes les pages sous (app)/)
+- AppSidebar + AppTopbar incluses dans layout racine
+- **Aucun changement supplémentaire nécessaire** — héritage automatique
+- Sessions, Candidats, Formations, Formateurs, Clients Pro, Comptabilité, CRM, BPF, Qualiopi, etc. → **TOUS à Mouss**
+
+### 🔄 À venir (approfondissements optionnels)
+- Refonte des pages internes (listes, détails)
+- Animations par section
+- Micro-interactions hover/focus
+- Optimisations composants spécialisés
 
 ---
 
