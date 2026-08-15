@@ -148,13 +148,14 @@ export function SidebarBrand({
     >
       {brand?.logoUrl ? (
         // Logo personnalisé (data URL) — next/image ne gère pas les data: URLs.
-        // Rendu blanc avec brightness + invert (compatible dark backgrounds).
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={brand.logoUrl}
-          alt={brand.nom}
-          className="h-7 w-auto brightness-0 invert"
-        />
+        // On l'affiche TEL QUEL sur une pastille claire : `brightness-0 invert`
+        // transformait tout logo à fond opaque en carré blanc illisible sur le
+        // rail navy. La pastille garantit un logo (couleurs d'origine) visible
+        // quel que soit son fond (transparent, blanc ou coloré).
+        <span className="flex items-center rounded-md bg-white px-1.5 py-1">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={brand.logoUrl} alt={brand.nom} className="h-6 w-auto" />
+        </span>
       ) : (
         <span className="font-heading text-[15px] font-semibold tracking-tight text-[#eaf0ff]">
           {brand?.nom ?? "CAP Compétences"}
