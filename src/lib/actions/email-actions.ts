@@ -6,7 +6,7 @@ import {
   WorkflowTrigger,
   WorkflowAction,
 } from "@prisma/client";
-import { getTenantDb } from "@/lib/tenant";
+import { requireStaffTenant } from "@/lib/tenant";
 import { auth } from "@/auth";
 import { sendEmail, emailConfigured } from "@/lib/email";
 import {
@@ -32,7 +32,7 @@ export async function sendConvocationsForSession(
   if (!session?.user)
     return { ok: false, total: 0, sent: 0, demo: true, error: "Non autorisé." };
 
-  const db = await getTenantDb();
+  const { db } = await requireStaffTenant();
   const s = await db.session.findUnique({
     where: { id: sessionId },
     include: { formation: true, inscriptions: { include: { candidat: true } } },
@@ -84,7 +84,7 @@ export async function sendConvocationsForSession(
 }
 
 export async function sendConvocations(formData: FormData) {
-  const db = await getTenantDb();
+  const { db } = await requireStaffTenant();
   const session = await auth();
   if (!session?.user) return;
 
@@ -136,7 +136,7 @@ export async function sendConvocations(formData: FormData) {
 }
 
 export async function createWorkflowRule(formData: FormData) {
-  const db = await getTenantDb();
+  const { db } = await requireStaffTenant();
   const session = await auth();
   if (!session?.user) return;
 
@@ -153,7 +153,7 @@ export async function createWorkflowRule(formData: FormData) {
 }
 
 export async function toggleWorkflowRule(formData: FormData) {
-  const db = await getTenantDb();
+  const { db } = await requireStaffTenant();
   const session = await auth();
   if (!session?.user) return;
 

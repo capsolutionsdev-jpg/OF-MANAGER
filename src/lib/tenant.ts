@@ -152,3 +152,25 @@ export async function requireTenant() {
   }
   return { session, organismeId, db: scopedPrisma(organismeId) };
 }
+
+// Rôles à login mais NON-staff : élèves e-learning et formateurs. Ils ont un
+// organisme rattaché, donc `getTenantDb()`/`requireTenant()` les laisserait
+// invoquer les mutations de gestion via leur action-ID (BFLA — audit P2-1).
+const NON_STAFF_ROLES = new Set(["APPRENANT", "FORMATEUR"]);
+
+/**
+ * Comme `requireTenant()`, mais réservé au PERSONNEL de l'organisme : rejette
+ * les rôles APPRENANT/FORMATEUR (et tout accès sans organisme). À utiliser pour
+ * les Server Actions de gestion (candidats, sessions, formations, e-mails…) afin
+ * que l'autorisation par rôle ne dépende pas seulement de l'URL (le middleware
+ * confine par URL, mais les Server Actions se dispatchent par action-ID).
+ */
+export async function requireStaffTenant() {
+  const session = await auth();
+  const role = session?.user?.role as string | undefined;
+  const organismeId = session?.user?.organismeId ?? null;
+  if (!session?.user || !organismeId || !role || NON_STAFF_ROLES.has(role)) {
+    throw new Error("Non autorisé : action réservée au personnel de l'organisme.");
+  }
+  return { session, organismeId, role, db: scopedPrisma(organismeId) };
+}

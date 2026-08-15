@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { SignatureProvider, SignatureStatut } from "@prisma/client";
-import { getTenantDb } from "@/lib/tenant";
+import { requireStaffTenant } from "@/lib/tenant";
 import { auth } from "@/auth";
 import { createYousignRequest } from "@/lib/yousign";
 import { orgConfigFor } from "@/lib/org-identity";
@@ -11,7 +11,7 @@ export async function requestDocumentSignature(formData: FormData) {
   const session = await auth();
   if (!session?.user) return;
 
-  const db = await getTenantDb();
+  const { db } = await requireStaffTenant();
   const inscriptionId = String(formData.get("inscriptionId"));
   const type = String(formData.get("type"));
   const label = String(formData.get("label"));
@@ -65,7 +65,7 @@ export async function requestEmargementSignature(formData: FormData) {
   const session = await auth();
   if (!session?.user) return;
 
-  const db = await getTenantDb();
+  const { db } = await requireStaffTenant();
   const seanceId = String(formData.get("seanceId"));
   const { externalId, demo } = await createYousignRequest({
     name: "Feuille d'émargement",
@@ -104,7 +104,7 @@ export async function markSignatureSigned(formData: FormData) {
   const session = await auth();
   if (!session?.user) return;
 
-  const db = await getTenantDb();
+  const { db } = await requireStaffTenant();
   const id = String(formData.get("id"));
   await db.signatureRequest.update({
     where: { id },

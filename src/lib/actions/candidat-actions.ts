@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { CandidatStatut, CnapsStatut, InscriptionStatut } from "@prisma/client";
-import { getTenantDb } from "@/lib/tenant";
+import { requireStaffTenant } from "@/lib/tenant";
 import { auth } from "@/auth";
 import {
   candidatFormSchema,
@@ -63,7 +63,7 @@ export async function setCandidatSsiap(
 ): Promise<ActionResult> {
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Non autorisé." };
-  const db = await getTenantDb();
+  const { db } = await requireStaffTenant();
   const data: {
     ssiapDiplomeNumero: string | null;
     ssiapDiplomeDate: Date | null;
@@ -97,7 +97,7 @@ export async function setCandidatPrerequis(
 ): Promise<ActionResult> {
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Non autorisé." };
-  const db = await getTenantDb();
+  const { db } = await requireStaffTenant();
 
   const data: Record<string, unknown> = {};
   if (input.ssiapNumero !== undefined) data.ssiapDiplomeNumero = clean(input.ssiapNumero);
@@ -122,7 +122,7 @@ export async function setCandidatPrerequis(
 export async function createCandidat(
   values: CandidatFormValues,
 ): Promise<ActionResult> {
-  const db = await getTenantDb();
+  const { db } = await requireStaffTenant();
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Non autorisé." };
 
@@ -168,7 +168,7 @@ export async function updateCandidat(
   id: string,
   values: CandidatFormValues,
 ): Promise<ActionResult> {
-  const db = await getTenantDb();
+  const { db } = await requireStaffTenant();
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Non autorisé." };
 
@@ -195,7 +195,7 @@ export async function updateCandidat(
 }
 
 export async function archiveCandidat(id: string): Promise<ActionResult> {
-  const db = await getTenantDb();
+  const { db } = await requireStaffTenant();
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Non autorisé." };
 
@@ -224,7 +224,7 @@ export async function setCandidatStatut(
   const session = await auth();
   if (!session?.user) return { ok: false };
 
-  const db = await getTenantDb();
+  const { db } = await requireStaffTenant();
   await db.candidat.update({ where: { id }, data: { statut } });
   await db.auditLog.create({
     data: {

@@ -5,7 +5,7 @@ import { clientIpFromHeaders } from "@/lib/rate-limit";
 import { headers } from "next/headers";
 import { FinancementType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { getTenantDb } from "@/lib/tenant";
+import { requireStaffTenant } from "@/lib/tenant";
 import { auth } from "@/auth";
 import { sendEmail } from "@/lib/email";
 import { orgConfigFor } from "@/lib/org-identity";
@@ -50,7 +50,7 @@ export async function sendProspectIntakeLink(
 ): Promise<{ ok: boolean; error?: string }> {
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Non autorisé." };
-  const db = await getTenantDb();
+  const { db } = await requireStaffTenant();
 
   const c = await db.candidat.findUnique({
     where: { id: candidatId },

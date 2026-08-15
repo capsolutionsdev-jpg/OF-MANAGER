@@ -7,7 +7,7 @@ import {
   PaiementStatut,
   CertificationResultat,
 } from "@prisma/client";
-import { getTenantDb } from "@/lib/tenant";
+import { requireStaffTenant } from "@/lib/tenant";
 import { auth } from "@/auth";
 import {
   inscriptionFormSchema,
@@ -47,7 +47,7 @@ export async function setInscriptionStatut(
   inscriptionId: string,
   statut: InscriptionStatut,
 ): Promise<SimpleResult> {
-  const db = await getTenantDb();
+  const { db } = await requireStaffTenant();
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Non autorisé." };
 
@@ -116,7 +116,7 @@ export async function setInscriptionPaiement(
   modePaiement: string | null,
   paiementStatut: PaiementStatut,
 ): Promise<SimpleResult> {
-  const db = await getTenantDb();
+  const { db } = await requireStaffTenant();
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Non autorisé." };
 
@@ -144,7 +144,7 @@ export async function setCertification(
   inscriptionId: string,
   resultat: CertificationResultat,
 ): Promise<SimpleResult & { attestationPending?: boolean }> {
-  const db = await getTenantDb();
+  const { db } = await requireStaffTenant();
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Non autorisé." };
 
@@ -241,7 +241,7 @@ export async function setCertification(
 export async function sendSatisfactionManual(
   inscriptionId: string,
 ): Promise<SimpleResult> {
-  const db = await getTenantDb();
+  const { db } = await requireStaffTenant();
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Non autorisé." };
 
@@ -305,7 +305,7 @@ export async function createInscription(
   values: InscriptionFormValues,
   opts?: { positionnementSurPlace?: boolean; prerequisVerifies?: boolean },
 ): Promise<ActionResult> {
-  const db = await getTenantDb();
+  const { db } = await requireStaffTenant();
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Non autorisé." };
 
@@ -454,7 +454,7 @@ export async function togglePieceRecue(
   const session = await auth();
   if (!session?.user) return { ok: false };
   const nom = session.user.name || session.user.email || "Collaborateur";
-  const db = await getTenantDb();
+  const { db } = await requireStaffTenant();
 
   const insc = await db.inscription.findUnique({
     where: { id: inscriptionId },
@@ -490,7 +490,7 @@ export async function relancerDossier(
 ): Promise<{ ok: boolean; error?: string; sent?: boolean; manquantes?: number }> {
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Non autorisé." };
-  const db = await getTenantDb();
+  const { db } = await requireStaffTenant();
 
   const insc = await db.inscription.findUnique({
     where: { id: inscriptionId },
@@ -543,7 +543,7 @@ export async function relancerDossier(
 }
 
 export async function deleteInscriptionAction(formData: FormData) {
-  const db = await getTenantDb();
+  const { db } = await requireStaffTenant();
   const session = await auth();
   if (!session?.user) return;
 
