@@ -146,6 +146,7 @@ model Organisme {
   supportTickets      SupportTicket[]
   dossiersFinancement DossierFinancement[]
   contratsPrestation  ContratPrestation[]
+  facturesEditeur     FactureEditeur[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -189,6 +190,65 @@ model ContratPrestation {
   signedAt      DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+
+  @@index([organismeId])
+  @@index([statut])
+}
+
+// Facture ÉDITEUR → OF client (abonnement OF Manager). Conçue pour la réforme
+// française de la facturation électronique (2026-2027) : mentions obligatoires
+// (SIREN client, catégorie d'opération, TVA détaillée), statuts du cycle de vie
+// (Déposée/Rejetée/Refusée/Encaissée) et format structuré EN 16931 / Factur-X.
+enum FactureEditeurStatut {
+  BROUILLON
+  EMISE
+  DEPOSEE // transmise à la plateforme partenaire (PDP)
+  ENCAISSEE
+  REJETEE
+  REFUSEE
+  AVOIR
+}
+
+enum CategorieOperation {
+  BIENS
+  SERVICES
+  MIXTE
+}
+
+model FactureEditeur {
+  id          String               @id @default(cuid())
+  organismeId String // le CLIENT facturé
+  organisme   Organisme            @relation(fields: [organismeId], references: [id], onDelete: Cascade)
+  contratId   String? // contrat de prestation source (lien souple)
+  numero      String?              @unique // n° séquentiel unique, attribué À L'ÉMISSION (null en brouillon → pas de trou dans la séquence)
+  statut      FactureEditeurStatut @default(BROUILLON)
+  categorie   CategorieOperation   @default(SERVICES)
+
+  // Période facturée
+  periodeDebut DateTime
+  periodeFin   DateTime
+  dateEmission DateTime?
+  dateEcheance DateTime?
+
+  // Montants (mentions obligatoires : HT, TVA détaillée, TTC)
+  montantHT  Decimal @db.Decimal(10, 2)
+  tauxTva    Decimal @default(20) @db.Decimal(5, 2)
+  montantTva Decimal @db.Decimal(10, 2)
+  montantTTC Decimal @db.Decimal(10, 2)
+  lignes     Json // [{ libelle, quantite, prixUnitaire, montantHT }]
+
+  // Mentions issues de la réforme e-invoicing 2026
+  clientSiren      String? // SIREN du client (obligatoire dès 09/2026)
+  adresseLivraison String? // si différente de l'adresse de facturation
+  optionTvaDebits  Boolean @default(false)
+  modePaiement     String? @default("Prélèvement SEPA")
+
+  // Paiement & transmission
+  paidAt        DateTime?
+  pdpTransmisAt DateTime? // dépôt sur la plateforme partenaire (Lot 4c)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([organismeId])
   @@index([statut])
