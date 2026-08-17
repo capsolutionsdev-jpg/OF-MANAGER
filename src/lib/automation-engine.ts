@@ -4,7 +4,7 @@ import { sendEmail, emailConfigured, toBase64, type EmailAttachment } from "@/li
 import { sendSms } from "@/lib/sms";
 import { orgConfigFor } from "@/lib/org-identity";
 import { generateToken, appBaseUrl } from "@/lib/token";
-import { getAutomationSettings } from "@/lib/automation-settings";
+import { DEFAULT_AUTOMATION_SETTINGS, type AutomationSettingsData } from "@/lib/automation-settings";
 import { buildSingleDocPdf } from "@/lib/documents/build-pdf";
 import {
   effectiveAutomation,
@@ -103,7 +103,11 @@ export async function runAutomations(): Promise<Counts> {
     emargements: 0,
   };
 
-  const settings = await getAutomationSettings();
+  // Réglages d'automatismes PAR organisme (défauts si l'OF n'a pas encore réglé).
+  // Correctif audit : plus de singleton plateforme partagé — chaque tenant a les siens.
+  const settingsRows = await prisma.automationSettings.findMany();
+  const settingsMap = new Map<string, AutomationSettingsData>();
+  for (const r of settingsRows) if (r.organismeId) settingsMap.set(r.organismeId, r);
 
   // Matrice d'automatisations PAR organisme (quoi/quand/canal). Préchargée.
   const orgs = await prisma.organisme.findMany({ select: { id: true, automationsConfig: true } });
@@ -116,6 +120,9 @@ export async function runAutomations(): Promise<Counts> {
   // Config effective d'un événement pour l'organisme courant (matrice OF → repli global).
   const auto = (key: string, fallbackOn: boolean) =>
     effectiveAutomation(currentOrgId ? cfgMap.get(currentOrgId) : null, key, fallbackOn);
+  // Réglages d'automatismes de l'organisme courant (défauts si l'OF n'a rien réglé).
+  const stg = (): AutomationSettingsData =>
+    (currentOrgId ? settingsMap.get(currentOrgId) : null) ?? { id: "", ...DEFAULT_AUTOMATION_SETTINGS };
   // Envoie un SMS si le canal de l'événement l'inclut (et numéro dispo).
   const maybeSms = async (canal: string, phone: string | null | undefined, text: string) => {
     if ((canal === "sms" || canal === "both") && phone) {
@@ -174,9 +181,9 @@ export async function runAutomations(): Promise<Counts> {
     const stagiaire = `${i.candidat.prenom} ${i.candidat.nom}`;
 
     // ── 1) CONVOCATION (signé, J-n configurable, pas déjà envoyée, session à venir) ──
-    const convRule = auto("convocation", settings.convocationActive);
+    const convRule = auto("convocation", stg().convocationActive);
     const convLimite = new Date(
-      now.getTime() + (convRule.delayDays ?? settings.convocationJMoins) * 24 * 60 * 60 * 1000,
+      now.getTime() + (convRule.delayDays ?? stg().convocationJMoins) * 24 * 60 * 60 * 1000,
     );
     if (
       convRule.on &&
@@ -291,9 +298,9 @@ ${org.representant} — ${org.name}`,
     // ── 1bis) CONVOCATION À L'EXAMEN (signé, J-7 avant la fin, mail séparé + PDF) ──
     // Uniquement pour les formations soumises à examen (ex. TFP APS) — jamais
     // pour SST / MAC SST / MAC APS.
-    const cvxRule = auto("convocation_examen", settings.convocationActive);
+    const cvxRule = auto("convocation_examen", stg().convocationActive);
     const cvxLimite = new Date(
-      now.getTime() + (cvxRule.delayDays ?? settings.convocationJMoins) * 24 * 60 * 60 * 1000,
+      now.getTime() + (cvxRule.delayDays ?? stg().convocationJMoins) * 24 * 60 * 60 * 1000,
     );
     if (
       f.examen &&
@@ -349,7 +356,7 @@ ${org.representant} — ${org.name}`,
 
     // ── 2) ATTESTATION D'ENTRÉE (J1 atteint, signé, pas déjà envoyée) ──
     if (
-      auto("attestation_entree", settings.attestationEntreeActive).on &&
+      auto("attestation_entree", stg().attestationEntreeActive).on &&
       i.signedAt &&
       !i.attestationEntreeSentAt &&
       s.dateDebut <= now &&
@@ -474,7 +481,7 @@ ${org.representant} — ${org.name}`,
     }
 
     // ── 3) ENQUÊTE DE SATISFACTION (formation terminée, pas déjà envoyée) ──
-    const satRule = auto("satisfaction", settings.satisfactionActive);
+    const satRule = auto("satisfaction", stg().satisfactionActive);
     if (
       satRule.on &&
       !i.satisfactionSentAt &&
@@ -523,7 +530,7 @@ ${org.representant} — ${org.name}`,
 
     // ── 3bis) SATISFACTION ENTREPRISE (B2B : formation terminée, client pro) ──
     if (
-      auto("satisfaction_entreprise", settings.satisfactionActive).on &&
+      auto("satisfaction_entreprise", stg().satisfactionActive).on &&
       entEmail &&
       !i.satisfactionEntrepriseSentAt &&
       s.dateFin < now &&
@@ -560,7 +567,7 @@ ${org.representant} — ${org.name}`,
 
     // ── 4) DOCUMENTS DE FIN DE FORMATION (terminée, pas déjà envoyés) ──
     if (
-      auto("docs_fin", settings.docsFinActive).on &&
+      auto("docs_fin", stg().docsFinActive).on &&
       !i.docsFinSentAt &&
       s.dateFin < now &&
       i.accessToken &&
@@ -683,7 +690,7 @@ ${org.representant} — ${org.name}`,
 
   for (const s of sessionsTerminees) {
     currentOrgId = s.organismeId;
-    if (!auto("compte_rendu", settings.compteRenduActive).on) continue;
+    if (!auto("compte_rendu", stg().compteRenduActive).on) continue;
     const org = await orgConfigFor(s.organismeId);
     const f = s.formateurs[0];
     if (!f?.email) continue;
@@ -735,7 +742,7 @@ ${org.representant} — ${org.name}`;
 
   for (const e of emargs) {
     currentOrgId = e.organismeId;
-    const emRule = auto("emargement", settings.emargementActive);
+    const emRule = auto("emargement", stg().emargementActive);
     if (!emRule.on) continue;
     // Verrou atomique : réserve l'envoi (évite le double envoi concurrent).
     const emClaimed = (await prisma.emargementSignature.updateMany({
