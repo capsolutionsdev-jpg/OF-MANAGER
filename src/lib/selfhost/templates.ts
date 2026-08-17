@@ -158,7 +158,7 @@ async function main() {
     create: {
       name: "Administrateur",
       email,
-      passwordHash: await bcrypt.hash(password, 10),
+      passwordHash: await bcrypt.hash(password, 12),
       role: "ADMIN",
       isActive: true,
       organismeId: org.id,

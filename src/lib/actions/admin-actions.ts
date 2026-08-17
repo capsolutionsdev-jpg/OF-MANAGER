@@ -76,7 +76,7 @@ export async function createCollaborateur(
     data: {
       name,
       email,
-      passwordHash: await bcrypt.hash(password, 10),
+      passwordHash: await bcrypt.hash(password, 12),
       role,
       fonction: labelForPoste(poste) || null,
       isActive: true,
@@ -122,7 +122,7 @@ export async function resetCollaborateurPassword(formData: FormData) {
     where: { id },
     // Mot de passe réinitialisé → on invalide la session active (le compte
     // devra se reconnecter avec le nouveau mot de passe).
-    data: { passwordHash: await bcrypt.hash(password, 10), activeSessionId: randomUUID() },
+    data: { passwordHash: await bcrypt.hash(password, 12), activeSessionId: randomUUID() },
   });
   revalidatePath("/administration");
 }

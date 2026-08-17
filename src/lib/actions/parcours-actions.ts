@@ -747,7 +747,7 @@ async function provisionElearning(inscriptionId: string) {
           name,
           role: "APPRENANT",
           organismeId: insc.organismeId,
-          passwordHash: await bcrypt.hash(motDePasse, 10),
+          passwordHash: await bcrypt.hash(motDePasse, 12),
           // Mot de passe provisoire → changement forcé à la 1re connexion.
           mustChangePassword: true,
         },

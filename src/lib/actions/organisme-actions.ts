@@ -100,7 +100,7 @@ export async function createOrganisme(
     data: {
       name: gerantName || "Gérant",
       email: gerantEmail,
-      passwordHash: await bcrypt.hash(gerantPassword, 10),
+      passwordHash: await bcrypt.hash(gerantPassword, 12),
       role: Role.ADMIN,
       isActive: true,
       organismeId: org.id,

@@ -56,7 +56,7 @@ export async function changePassword(
     return { error: "Le nouveau mot de passe doit être différent de l'ancien." };
   }
 
-  const passwordHash = await bcrypt.hash(parsed.data.next, 10);
+  const passwordHash = await bcrypt.hash(parsed.data.next, 12);
   await db.user.update({
     where: { id: user.id },
     data: { passwordHash, mustChangePassword: false },
@@ -106,7 +106,7 @@ export async function forceChangePassword(
 
   await db.user.update({
     where: { id: user.id },
-    data: { passwordHash: await bcrypt.hash(parsed.data.next, 10), mustChangePassword: false },
+    data: { passwordHash: await bcrypt.hash(parsed.data.next, 12), mustChangePassword: false },
   });
   return { ok: true };
 }

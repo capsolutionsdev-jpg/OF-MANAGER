@@ -62,7 +62,7 @@ export async function createApprenantAccount(
       });
     }
 
-    const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = await bcrypt.hash(password, 12);
     const name = `${candidat.prenom} ${candidat.nom}`.trim();
 
     // User = entité GLOBALE (e-mail unique, authentification cross-tenant) → on
@@ -225,6 +225,17 @@ export async function assignCours(
   const session = await auth();
   if (!session?.user || !STAFF.includes(session.user.role as string))
     return { ok: false, error: "Non autorisé." };
+  // Correctif audit P3 : vérifier que le cours ET l'apprenant relèvent du tenant
+  // courant avant de lier (le cours via le client scopé ; l'apprenant via le
+  // client brut pour tolérer les lignes legacy à organismeId nul).
+  const cours = await db.cours.findUnique({ where: { id: coursId }, select: { id: true } });
+  const appr = await prisma.apprenant.findUnique({
+    where: { id: apprenantId },
+    select: { organismeId: true },
+  });
+  if (!cours || !appr || (appr.organismeId && appr.organismeId !== session.user.organismeId)) {
+    return { ok: false, error: "Apprenant ou cours introuvable." };
+  }
   await db.coursApprenant.upsert({
     where: { coursId_apprenantId: { coursId, apprenantId } },
     update: {},

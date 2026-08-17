@@ -114,7 +114,7 @@ export async function provisionDemo(input: ProvisionInput): Promise<ProvisionRes
       organismeId: org.id,
       isActive: true,
       mustChangePassword: false,
-      passwordHash: bcrypt.hashSync(password, 10),
+      passwordHash: bcrypt.hashSync(password, 12),
     },
   });
 
