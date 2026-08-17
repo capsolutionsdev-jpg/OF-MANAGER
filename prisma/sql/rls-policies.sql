@@ -1,7 +1,7 @@
 -- ============================================================
 -- RLS (Row Level Security) — isolation multi-tenant OFManager
 -- GÉNÉRÉ par scripts/gen-rls-sql.mjs — NE PAS ÉDITER À LA MAIN.
--- 70 tables tenant. Colonne de cloisonnement : "organismeId".
+-- 73 tables tenant. Colonne de cloisonnement : "organismeId".
 --
 -- Inerte tant que l'application se connecte avec le rôle PROPRIÉTAIRE des tables
 -- (le propriétaire bypasse la RLS). Enforcement réel = rôle non-owner `app_rls`
@@ -127,6 +127,13 @@ CREATE POLICY tenant_isolation ON "Contrat"
   USING ("organismeId" = current_setting('app.org', true) OR current_setting('app.org', true) = 'BYPASS')
   WITH CHECK ("organismeId" = current_setting('app.org', true) OR current_setting('app.org', true) = 'BYPASS');
 
+-- ContratPrestation
+ALTER TABLE "ContratPrestation" ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS tenant_isolation ON "ContratPrestation";
+CREATE POLICY tenant_isolation ON "ContratPrestation"
+  USING ("organismeId" = current_setting('app.org', true) OR current_setting('app.org', true) = 'BYPASS')
+  WITH CHECK ("organismeId" = current_setting('app.org', true) OR current_setting('app.org', true) = 'BYPASS');
+
 -- Convention
 ALTER TABLE "Convention" ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS tenant_isolation ON "Convention";
@@ -218,6 +225,13 @@ CREATE POLICY tenant_isolation ON "DocumentTemplate"
   USING ("organismeId" = current_setting('app.org', true) OR current_setting('app.org', true) = 'BYPASS')
   WITH CHECK ("organismeId" = current_setting('app.org', true) OR current_setting('app.org', true) = 'BYPASS');
 
+-- DossierFinancement
+ALTER TABLE "DossierFinancement" ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS tenant_isolation ON "DossierFinancement";
+CREATE POLICY tenant_isolation ON "DossierFinancement"
+  USING ("organismeId" = current_setting('app.org', true) OR current_setting('app.org', true) = 'BYPASS')
+  WITH CHECK ("organismeId" = current_setting('app.org', true) OR current_setting('app.org', true) = 'BYPASS');
+
 -- EmailLog
 ALTER TABLE "EmailLog" ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS tenant_isolation ON "EmailLog";
@@ -257,6 +271,13 @@ CREATE POLICY tenant_isolation ON "EvaluationResultat"
 ALTER TABLE "Facture" ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS tenant_isolation ON "Facture";
 CREATE POLICY tenant_isolation ON "Facture"
+  USING ("organismeId" = current_setting('app.org', true) OR current_setting('app.org', true) = 'BYPASS')
+  WITH CHECK ("organismeId" = current_setting('app.org', true) OR current_setting('app.org', true) = 'BYPASS');
+
+-- FactureEditeur
+ALTER TABLE "FactureEditeur" ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS tenant_isolation ON "FactureEditeur";
+CREATE POLICY tenant_isolation ON "FactureEditeur"
   USING ("organismeId" = current_setting('app.org', true) OR current_setting('app.org', true) = 'BYPASS')
   WITH CHECK ("organismeId" = current_setting('app.org', true) OR current_setting('app.org', true) = 'BYPASS');
 
