@@ -22,8 +22,18 @@ export async function GET(
   const logo = o?.logoUrl;
   if (!logo) return new Response(null, { status: 404 });
 
-  // URL http(s) → simple redirection vers l'asset hébergé.
-  if (/^https?:\/\//i.test(logo)) return Response.redirect(logo, 302);
+  // URL http(s) → redirection vers l'asset hébergé.
+  // Correctif audit P3 (open-redirect stocké) : n'accepter qu'une URL https
+  // bien formée ; toute autre valeur (http, schéma exotique, malformée) → 404.
+  if (/^https?:\/\//i.test(logo)) {
+    try {
+      const u = new URL(logo);
+      if (u.protocol === "https:") return Response.redirect(u.toString(), 302);
+    } catch {
+      /* URL invalide */
+    }
+    return new Response(null, { status: 404 });
+  }
 
   // data:<mime>;base64,<données>  (ou données URL-encodées)
   const m = logo.match(/^data:([^;,]+)?(;base64)?,([\s\S]*)$/);

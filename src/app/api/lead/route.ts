@@ -139,7 +139,9 @@ export async function POST(req: Request) {
   let formationSouhaiteeId: string | null = null;
   if (formationTitre) {
     const f = await prisma.formation.findFirst({
-      where: { titre: { contains: formationTitre, mode: "insensitive" } },
+      // Correctif audit P3 : scoper au tenant vitrine (sinon un titre homonyme
+      // d'un AUTRE organisme pouvait être rattaché au prospect).
+      where: { titre: { contains: formationTitre, mode: "insensitive" }, organismeId },
       select: { id: true },
     });
     formationSouhaiteeId = f?.id ?? null;
