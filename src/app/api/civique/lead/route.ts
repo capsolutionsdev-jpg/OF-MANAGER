@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { OrganismeStatut } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { civicCors } from "@/lib/civique-api";
 
@@ -32,18 +31,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Nom, prénom et e-mail requis." }, { status: 400, headers: civicCors });
   }
 
-  // Organisme cible (auto-détection comme le checkout).
-  let organismeId = process.env.CIVIC_ORGANISME_ID ?? body.organismeId ?? null;
-  if (!organismeId) {
-    const org =
-      (await prisma.organisme.findFirst({
-        where: { statut: OrganismeStatut.ACTIF },
-        orderBy: { createdAt: "asc" },
-        select: { id: true },
-      })) ??
-      (await prisma.organisme.findFirst({ orderBy: { createdAt: "asc" }, select: { id: true } }));
-    organismeId = org?.id ?? null;
-  }
+  // Correctif audit P3 : organisme cible = env CIVIC_ORGANISME_ID (ou corps pour
+  // le multi-vitrine) — plus d'auto-détection de « l'organisme le plus ancien »
+  // qui rattachait leads/paiements civiques à un tenant arbitraire.
+  const organismeId = process.env.CIVIC_ORGANISME_ID ?? body.organismeId ?? null;
   if (!organismeId) {
     return NextResponse.json({ error: "Organisme non configuré." }, { status: 503, headers: civicCors });
   }
