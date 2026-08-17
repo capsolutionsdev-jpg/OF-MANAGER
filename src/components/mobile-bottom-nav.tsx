@@ -15,13 +15,14 @@ export function MobileBottomNav() {
   // Get first 6 groups (one per tab)
   const groups = navigationGroups.slice(0, 6);
 
-  const getGroupHref = (group: any) => {
+  type NavGroup = (typeof navigationGroups)[number];
+  const getGroupHref = (group: NavGroup) => {
     // Navigate to first item in group
     return group.items[0]?.href || "/dashboard";
   };
 
-  const isGroupActive = (group: any) => {
-    return group.items.some((item: any) => pathname.startsWith(item.href));
+  const isGroupActive = (group: NavGroup) => {
+    return group.items.some((item) => pathname.startsWith(item.href));
   };
 
   return (

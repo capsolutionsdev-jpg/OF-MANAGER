@@ -70,10 +70,6 @@ export function initWebVitalsMonitoring(
 ) {
   if (typeof window === "undefined") return;
 
-  let lcp: WebVital | null = null;
-  let fid: WebVital | null = null;
-  let cls: WebVital | null = null;
-
   // Mock implementation - in real env, use web-vitals library
   const report: WebVitalsReport = {
     lcp: {

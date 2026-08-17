@@ -7,8 +7,13 @@ import { X, Download } from "lucide-react";
  * Phase 3.5 — Install Prompt (PWA)
  * Display install button when app is installable
  */
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+}
+
 export function InstallPrompt() {
-  const [prompt, setPrompt] = useState<any>(null);
+  const [prompt, setPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
   const [dismissed, setDismissed] = useState(false);
 
@@ -16,7 +21,7 @@ export function InstallPrompt() {
     // Listen for beforeinstallprompt event
     const handleBeforeInstall = (e: Event) => {
       e.preventDefault();
-      setPrompt(e);
+      setPrompt(e as BeforeInstallPromptEvent);
     };
 
     // Listen for app installed event

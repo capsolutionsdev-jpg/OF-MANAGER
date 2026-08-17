@@ -70,19 +70,6 @@ export function useCandidatForm() {
     }
   }, []);
 
-  // Auto-save toutes les 30s (interval PERSISTANT, pas de reset à chaque frappe)
-  // Utilise les refs pour lire les dernières valeurs sans re-créer l'interval.
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (
-        JSON.stringify(dataRef.current) !== JSON.stringify(lastSavedRef.current)
-      ) {
-        saveToStorage(dataRef.current);
-      }
-    }, AUTO_SAVE_INTERVAL);
-    return () => clearInterval(interval);
-  }, []);
-
   const saveToStorage = useCallback((formData: Partial<CandidatFormData>) => {
     try {
       setIsSaving(true);
@@ -96,8 +83,22 @@ export function useCandidatForm() {
     }
   }, []);
 
+  // Auto-save toutes les 30s (interval PERSISTANT, pas de reset à chaque frappe)
+  // Utilise les refs pour lire les dernières valeurs sans re-créer l'interval.
+  // saveToStorage est déclaré AVANT (useCallback stable) → deps propres.
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (
+        JSON.stringify(dataRef.current) !== JSON.stringify(lastSavedRef.current)
+      ) {
+        saveToStorage(dataRef.current);
+      }
+    }, AUTO_SAVE_INTERVAL);
+    return () => clearInterval(interval);
+  }, [saveToStorage]);
+
   const updateField = useCallback(
-    (field: string, value: any) => {
+    (field: string, value: unknown) => {
       setData((prev) => ({
         ...prev,
         [field]: value,

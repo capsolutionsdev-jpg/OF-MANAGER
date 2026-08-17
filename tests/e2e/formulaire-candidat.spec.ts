@@ -71,7 +71,7 @@ test.describe("Formulaire Candidat", () => {
 
   test("Progress bar updates", async ({ page }) => {
     // Step 1: 20%
-    let progress = await page.locator("[role=progressbar]");
+    const progress = await page.locator("[role=progressbar]");
     let width = await progress.evaluate((el) =>
       window.getComputedStyle(el).width
     );

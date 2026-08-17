@@ -10,7 +10,7 @@ export interface Step1IdentiteProps {
   currentStep: FormStepKey;
   nextStep: () => boolean;
   prevStep: () => boolean;
-  updateField: (field: string, value: any) => void;
+  updateField: (field: string, value: unknown) => void;
 }
 
 export function Step1Identite({
