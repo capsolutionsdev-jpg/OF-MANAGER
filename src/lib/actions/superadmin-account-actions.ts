@@ -51,7 +51,7 @@ export async function changeSuperadminPassword(
   const valid = await bcrypt.compare(current, user.passwordHash);
   if (!valid) return { error: "Mot de passe actuel incorrect." };
 
-  await prisma.user.update({ where: { id }, data: { passwordHash: await bcrypt.hash(next, 10) } });
+  await prisma.user.update({ where: { id }, data: { passwordHash: await bcrypt.hash(next, 12) } });
   return { ok: true };
 }
 
@@ -75,7 +75,7 @@ export async function createSuperadmin(
     data: {
       name,
       email,
-      passwordHash: await bcrypt.hash(password, 10),
+      passwordHash: await bcrypt.hash(password, 12),
       role: Role.SUPERADMIN,
       isActive: true,
       organismeId: null,

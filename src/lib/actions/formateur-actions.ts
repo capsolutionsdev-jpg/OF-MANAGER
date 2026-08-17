@@ -245,7 +245,7 @@ export async function createFormateurAccess(
   const email = (emailOverride?.trim() || formateur.email || "").toLowerCase();
   if (!email) return { ok: false, error: "Aucune adresse e-mail pour ce formateur." };
 
-  const passwordHash = await bcrypt.hash(password, 10);
+  const passwordHash = await bcrypt.hash(password, 12);
   const name = `${formateur.prenom} ${formateur.nom}`.trim();
 
   if (formateur.userId) {
