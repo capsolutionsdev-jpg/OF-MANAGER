@@ -3,6 +3,7 @@ import Link from "next/link";
 import { CheckCircle2, FileText, Download } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { orgConfigFor } from "@/lib/org-identity";
+import { linkExpired } from "@/lib/token";
 import {
   Card,
   CardContent,
@@ -33,6 +34,9 @@ export default async function SignerPage({
     include: { candidat: true, session: { include: { formation: true } } },
   });
   if (!insc) notFound();
+  // Correctif audit P3 : un lien de signature fuité ne reste pas valable
+  // indéfiniment (cohérent avec /parcours) — 12 mois après la fin de session.
+  if (linkExpired(insc.session?.dateFin)) notFound();
   const org = await orgConfigFor(insc.organismeId);
 
   const c = insc.candidat;

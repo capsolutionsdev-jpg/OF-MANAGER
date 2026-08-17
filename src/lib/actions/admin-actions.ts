@@ -14,6 +14,17 @@ async function requireAdmin() {
   if (!session?.user || session.user.role !== "ADMIN") {
     throw new Error("Action réservée à l'administrateur.");
   }
+  // Revalidation en base (audit P3) : un ADMIN rétrogradé ou désactivé ne doit
+  // pas conserver ses pouvoirs via un ancien JWT. Le client scopé filtre User
+  // par organisme (findUnique → findFirst { id, organismeId }).
+  const db = await getTenantDb();
+  const fresh = await db.user.findUnique({
+    where: { id: session.user.id },
+    select: { role: true, isActive: true },
+  });
+  if (!fresh || !fresh.isActive || fresh.role !== "ADMIN") {
+    throw new Error("Action réservée à l'administrateur.");
+  }
   return session.user;
 }
 

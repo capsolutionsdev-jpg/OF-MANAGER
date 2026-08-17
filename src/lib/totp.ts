@@ -1,5 +1,5 @@
 import "server-only";
-import { createHmac, randomBytes } from "crypto";
+import { createHmac, randomBytes, timingSafeEqual } from "crypto";
 
 // Implémentation TOTP (RFC 6238) sans dépendance externe — pour la double
 // authentification des comptes à privilèges. Compatible Google Authenticator,
@@ -51,10 +51,19 @@ export function verifyTotp(secretBase32: string, token: string, window = 1): boo
   if (!/^\d{6}$/.test(t)) return false;
   const secret = base32Decode(secretBase32);
   const counter = Math.floor(Date.now() / 1000 / 30);
+  // Correctif audit P3 : comparaison à temps constant, sans court-circuit sur la
+  // fenêtre (pas de fuite de timing sur le code TOTP).
+  let ok = false;
   for (let w = -window; w <= window; w++) {
-    if (hotp(secret, counter + w) === t) return true;
+    const candidate = hotp(secret, counter + w);
+    if (
+      candidate.length === t.length &&
+      timingSafeEqual(Buffer.from(candidate), Buffer.from(t))
+    ) {
+      ok = true;
+    }
   }
-  return false;
+  return ok;
 }
 
 /** URI otpauth:// à encoder en QR code pour l'enrôlement. */

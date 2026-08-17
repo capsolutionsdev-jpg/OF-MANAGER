@@ -51,7 +51,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           where: { email },
           include: { organisme: { select: { fonctionnalites: true, statut: true } } },
         });
-        if (!user || !user.isActive) return null;
+        if (!user || !user.isActive) {
+          // Anti-énumération (audit P3) : brûle un temps de calcul équivalent à
+          // un bcrypt.compare pour ne pas révéler l'existence du compte par le
+          // timing de la réponse.
+          await bcrypt.compare(password, "$2b$10$MA.etqhZHu6nOATN/u7B0epb6eXHAiCc6YoZYYvfwLv7nEt5ykYP2");
+          return null;
+        }
 
         // Organisme suspendu (essai échu passé en SUSPENDU par le cron, ou
         // suspension manuelle en console) → connexion refusée pour tout le tenant.
