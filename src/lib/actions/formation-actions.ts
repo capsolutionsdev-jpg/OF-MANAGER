@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { Prisma } from "@prisma/client";
-import { getTenantDb } from "@/lib/tenant";
+import { requireStaffTenant } from "@/lib/tenant";
 import { auth } from "@/auth";
 import {
   formationFormSchema,
@@ -75,7 +75,7 @@ function toLines(s?: string): string[] {
 export async function createFormation(
   values: FormationFormValues,
 ): Promise<ActionResult> {
-  const db = await getTenantDb();
+  const { db } = await requireStaffTenant();
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Non autorisé." };
 
@@ -108,7 +108,7 @@ export async function updateFormation(
   id: string,
   values: FormationFormValues,
 ): Promise<ActionResult> {
-  const db = await getTenantDb();
+  const { db } = await requireStaffTenant();
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Non autorisé." };
 
@@ -139,7 +139,7 @@ export async function updateFormation(
 // --- Actions déclenchées par des boutons (formulaires serveur) ---
 
 export async function archiveFormationAction(formData: FormData) {
-  const db = await getTenantDb();
+  const { db } = await requireStaffTenant();
   const session = await auth();
   if (!session?.user) return;
   const id = String(formData.get("id"));
@@ -157,7 +157,7 @@ export async function archiveFormationAction(formData: FormData) {
 }
 
 export async function duplicateFormationAction(formData: FormData) {
-  const db = await getTenantDb();
+  const { db } = await requireStaffTenant();
   const session = await auth();
   if (!session?.user) return;
   const id = String(formData.get("id"));

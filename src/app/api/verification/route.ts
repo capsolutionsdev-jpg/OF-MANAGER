@@ -51,7 +51,15 @@ export function OPTIONS() {
 /** Vérifie le captcha Cloudflare Turnstile (ignoré si non configuré). */
 async function verifyTurnstile(token: string | undefined, ip: string): Promise<boolean> {
   const secret = process.env.TURNSTILE_SECRET_KEY;
-  if (!secret) return true; // captcha non configuré → ne pas enfermer (dev)
+  if (!secret) {
+    // Correctif audit P2-6 : en PRODUCTION, l'absence de clé = fail-closed
+    // (sinon le captcha est inactif). En dev, on n'enferme pas.
+    if (process.env.NODE_ENV === "production") {
+      console.error("[verification] TURNSTILE_SECRET_KEY non défini en production → captcha refusé.");
+      return false;
+    }
+    return true;
+  }
   if (!token) return false;
   try {
     const r = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {

@@ -40,6 +40,12 @@ export async function POST(req: Request) {
   if (!session?.user) {
     return new Response("Non autorisé.", { status: 401 });
   }
+  // Correctif audit P3-4 : réservé au personnel (défense en profondeur — pas
+  // seulement le confinement URL du middleware).
+  const role = session.user.role as string | undefined;
+  if (role === "APPRENANT" || role === "FORMATEUR") {
+    return new Response("Non autorisé.", { status: 403 });
+  }
 
   let body: {
     entrepriseId?: string;

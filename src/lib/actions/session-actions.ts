@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
-import { getTenantDb } from "@/lib/tenant";
+import { requireStaffTenant } from "@/lib/tenant";
 import { auth } from "@/auth";
 import {
   sessionFormSchema,
@@ -160,7 +160,7 @@ async function salleWarnings(
 export async function createSession(
   values: SessionFormValues,
 ): Promise<ActionResult> {
-  const db = await getTenantDb();
+  const { db } = await requireStaffTenant();
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Non autorisé." };
 
@@ -205,7 +205,7 @@ export async function updateSession(
   id: string,
   values: SessionFormValues,
 ): Promise<ActionResult> {
-  const db = await getTenantDb();
+  const { db } = await requireStaffTenant();
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Non autorisé." };
 
@@ -252,7 +252,7 @@ export async function updateSession(
  * d'examen au certificateur pour une session. Déclenché par un bouton.
  */
 export async function setResultatsDeclares(formData: FormData) {
-  const db = await getTenantDb();
+  const { db } = await requireStaffTenant();
   const id = String(formData.get("id"));
   const declared = String(formData.get("declared")) === "true";
   await db.session.update({

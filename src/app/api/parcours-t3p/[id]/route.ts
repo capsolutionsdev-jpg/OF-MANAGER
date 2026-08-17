@@ -16,6 +16,12 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   if (!session?.user) {
     return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
   }
+  // Correctif audit P3-4 : réservé au personnel (le parcours expose des données
+  // personnelles — dateNaissance, e-mail, téléphone).
+  const role = session.user.role as string | undefined;
+  if (role === "APPRENANT" || role === "FORMATEUR") {
+    return NextResponse.json({ error: "Non autorisé." }, { status: 403 });
+  }
 
   const { id } = await params;
   // getTenantDb : la requête est cloisonnée au tenant courant → un parcours d'un

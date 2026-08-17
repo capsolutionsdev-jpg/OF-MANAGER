@@ -7,8 +7,12 @@ import { getTenantDb } from "@/lib/tenant";
 import type { PositionnementQuestion } from "@/lib/positionnement";
 
 async function requireUser() {
+  // Correctif audit P2-1 (BFLA) : réservé au personnel — rejette APPRENANT/FORMATEUR.
   const session = await auth();
-  if (!session?.user) throw new Error("Non autorisé.");
+  const role = session?.user?.role as string | undefined;
+  if (!session?.user || role === "APPRENANT" || role === "FORMATEUR") {
+    throw new Error("Non autorisé.");
+  }
   return session.user;
 }
 

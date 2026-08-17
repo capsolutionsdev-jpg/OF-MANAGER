@@ -1,5 +1,5 @@
 -- ============================================================
--- RLS ROLLBACK — retire complètement la RLS (70 tables).
+-- RLS ROLLBACK — retire complètement la RLS (73 tables).
 -- GÉNÉRÉ par scripts/gen-rls-sql.mjs — NE PAS ÉDITER À LA MAIN.
 --
 -- Rollback INSTANTANÉ recommandé en prod : remettre DATABASE_URL sur le rôle
@@ -41,6 +41,8 @@ DROP POLICY IF EXISTS tenant_isolation ON "Consentement";
 ALTER TABLE "Consentement" DISABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS tenant_isolation ON "Contrat";
 ALTER TABLE "Contrat" DISABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS tenant_isolation ON "ContratPrestation";
+ALTER TABLE "ContratPrestation" DISABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS tenant_isolation ON "Convention";
 ALTER TABLE "Convention" DISABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS tenant_isolation ON "Conversation";
@@ -67,6 +69,8 @@ DROP POLICY IF EXISTS tenant_isolation ON "DocumentGenere";
 ALTER TABLE "DocumentGenere" DISABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS tenant_isolation ON "DocumentTemplate";
 ALTER TABLE "DocumentTemplate" DISABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS tenant_isolation ON "DossierFinancement";
+ALTER TABLE "DossierFinancement" DISABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS tenant_isolation ON "EmailLog";
 ALTER TABLE "EmailLog" DISABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS tenant_isolation ON "EmargementSignature";
@@ -79,6 +83,8 @@ DROP POLICY IF EXISTS tenant_isolation ON "EvaluationResultat";
 ALTER TABLE "EvaluationResultat" DISABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS tenant_isolation ON "Facture";
 ALTER TABLE "Facture" DISABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS tenant_isolation ON "FactureEditeur";
+ALTER TABLE "FactureEditeur" DISABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS tenant_isolation ON "FactureFormateur";
 ALTER TABLE "FactureFormateur" DISABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS tenant_isolation ON "Formateur";
