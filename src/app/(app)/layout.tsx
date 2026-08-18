@@ -12,6 +12,7 @@ import { buildNav } from "@/lib/navigation";
 import { getBranding, getCurrentOrganisme } from "@/lib/org";
 import { designVars, getDesign } from "@/lib/themes";
 import { hasFeature } from "@/lib/features";
+import { requires2faEnrollment } from "@/lib/security/mandatory-2fa";
 import { getNotifications } from "@/lib/notifications";
 import { trialStatus } from "@/lib/trial";
 import {
@@ -59,7 +60,7 @@ export default async function AppLayout({
   // on déconnecte cet appareil. Idem si le compte a été désactivé entre-temps.
   const account = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { activeSessionId: true, isActive: true, mustChangePassword: true },
+    select: { activeSessionId: true, isActive: true, mustChangePassword: true, totpEnabled: true },
   });
   if (!account?.isActive) redirect("/deconnexion");
   if (account.activeSessionId && account.activeSessionId !== session.user.sid) {
@@ -67,6 +68,10 @@ export default async function AppLayout({
   }
   // Première connexion (mot de passe provisoire) → changement obligatoire.
   if (account.mustChangePassword) redirect("/bienvenue");
+  // 2FA OBLIGATOIRE pour les rôles à hauts privilèges (§11) : tant qu'elle n'est
+  // pas activée, on force l'enrôlement avant tout accès (ADMIN ici ; le
+  // SUPERADMIN est couvert par le layout /console).
+  if (requires2faEnrollment(session.user.role, account.totpEnabled)) redirect("/securite-2fa");
 
   // Marque du tenant : couleur principale injectée comme variable CSS
   // (les composants `bg-primary` / `text-primary` la reprennent), nom + logo
