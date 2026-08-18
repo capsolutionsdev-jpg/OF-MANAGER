@@ -22,6 +22,125 @@ const PIECES_TRANSPORT_BASE = [
 ];
 
 export const CATALOGUE_TRANSPORT: ModeleFormation[] = [
+  // ───────────────────────── Formations INITIALES (préparation à l'examen T3P / CMA) ─────────────────────────
+  // Le titre contient « VTC » (resp. « TAXI ») sans l'autre terme → à l'inscription,
+  // le parcours d'examen T3P dédié s'ouvre automatiquement avec le bon métier
+  // (cf. t3pMetierOfFormation). Épreuves organisées par la CMA → pas d'examen ni de
+  // jury internes à l'OF (comme les passerelles).
+  {
+    cle: "vtc-initial",
+    reference: "VTC-INIT",
+    titre: "Formation initiale VTC — Préparation à l'examen T3P",
+    alias: [
+      "VTC initial",
+      "Formation initiale VTC",
+      "Préparation examen VTC",
+      "Formation VTC",
+      "Carte professionnelle VTC",
+    ],
+    dureeHeures: 140,
+    duree: "Durée indicative (à adapter au format et au niveau du candidat)",
+    examen: false, // épreuves d'admissibilité et d'admission organisées par la CMA
+    soumisJury: false,
+    certification:
+      "Préparation à l'examen d'accès à la profession de chauffeur VTC (transport public particulier de " +
+      "personnes – T3P), organisé par la Chambre de Métiers et de l'Artisanat (CMA) : épreuve théorique " +
+      "d'admissibilité (tronc commun T3P + spécifique VTC) puis épreuve pratique d'admission. La carte " +
+      "professionnelle VTC est délivrée par la préfecture après réussite.",
+    objectifs:
+      "Maîtriser la réglementation du transport public particulier de personnes et la réglementation " +
+      "spécifique VTC, la sécurité routière, la relation client et la gestion d'une activité VTC, afin de " +
+      "réussir les épreuves d'admissibilité et d'admission de l'examen T3P.",
+    prerequis:
+      "Être titulaire du permis B en cours de validité depuis plus de 3 ans (2 ans en conduite " +
+      "accompagnée), présenter un casier judiciaire (bulletin n°2) compatible avec la profession, une " +
+      "attestation d'aptitude médicale (visite médicale en préfecture) et le certificat PSC1 (secours).",
+    programme: [
+      "Tronc commun T3P",
+      "1. Réglementation du transport public particulier de personnes (T3P)",
+      "2. Sécurité routière",
+      "3. Gestion et développement de l'entreprise (statut, comptabilité, obligations)",
+      "4. Français et anglais (niveau requis pour l'accueil de la clientèle)",
+      "Spécifique VTC",
+      "5. Réglementation propre à l'activité VTC (réservation préalable, tarification, plateformes)",
+      "6. Développement commercial et qualité de service",
+      "7. Préparation aux épreuves d'admissibilité (QCM) et d'admission (pratique) de la CMA",
+    ].join("\n"),
+    modalitesEvaluation:
+      "Évaluations formatives et examens blancs (QCM et mises en situation de conduite). Les épreuves " +
+      "officielles (admissibilité et admission) sont organisées par la CMA. Attestation de fin de formation.",
+    publicVise:
+      "Toute personne souhaitant devenir chauffeur VTC et se présenter à l'examen T3P d'accès à la profession.",
+    methodesPedagogiques:
+      "Apports théoriques, examens blancs, mises en situation professionnelles et pratique de la conduite. " +
+      "Formateurs spécialisés du secteur T3P.",
+    piecesAttendues: [
+      ...PIECES_TRANSPORT_BASE,
+      "Permis B en cours de validité (plus de 3 ans)",
+      "Casier judiciaire (bulletin n°2) compatible",
+      "Attestation d'aptitude médicale (préfecture)",
+      "Certificat PSC1 (premiers secours)",
+    ],
+    programmeAValider: true,
+  },
+  {
+    cle: "taxi-initial",
+    reference: "TAXI-INIT",
+    titre: "Formation initiale Taxi — Préparation à l'examen T3P",
+    alias: [
+      "Taxi initial",
+      "Formation initiale Taxi",
+      "Préparation examen Taxi",
+      "Formation Taxi",
+      "Carte professionnelle taxi",
+      "CCPCT",
+    ],
+    dureeHeures: 140,
+    duree: "Durée indicative (à adapter au format et au niveau du candidat)",
+    examen: false, // épreuve théorique nationale + épreuve pratique départementale organisées par la CMA
+    soumisJury: false,
+    certification:
+      "Préparation à l'examen d'accès à la profession de conducteur de taxi (T3P), organisé par la Chambre " +
+      "de Métiers et de l'Artisanat (CMA) : épreuve théorique d'admissibilité (tronc commun T3P + spécifique " +
+      "taxi) puis épreuve pratique d'admission départementale. Le certificat de capacité professionnelle " +
+      "(CCPCT) puis la carte professionnelle taxi sont délivrés après réussite.",
+    objectifs:
+      "Maîtriser la réglementation T3P et la réglementation spécifique taxi (tarification, taximètre, " +
+      "stationnement), la sécurité routière, la connaissance du territoire départemental, la relation " +
+      "client et la gestion de l'activité, afin de réussir les épreuves de l'examen T3P taxi.",
+    prerequis:
+      "Être titulaire du permis B en cours de validité depuis plus de 3 ans (2 ans en conduite " +
+      "accompagnée), présenter un casier judiciaire (bulletin n°2) compatible avec la profession, une " +
+      "attestation d'aptitude médicale (visite médicale en préfecture) et le certificat PSC1 (secours).",
+    programme: [
+      "Tronc commun T3P",
+      "1. Réglementation du transport public particulier de personnes (T3P)",
+      "2. Sécurité routière",
+      "3. Gestion et développement de l'entreprise (statut, comptabilité, obligations)",
+      "4. Français et anglais (niveau requis pour l'accueil de la clientèle)",
+      "Spécifique taxi",
+      "5. Réglementation propre à l'activité taxi : tarification, taximètre, stationnement, ADS",
+      "6. Connaissance du territoire et de la réglementation locale (épreuve départementale)",
+      "7. Préparation aux épreuves d'admissibilité (QCM) et d'admission pratique de la CMA",
+    ].join("\n"),
+    modalitesEvaluation:
+      "Évaluations formatives et examens blancs (QCM et mises en situation). Les épreuves officielles " +
+      "(théorique nationale et pratique départementale) sont organisées par la CMA. Attestation de fin de formation.",
+    publicVise:
+      "Toute personne souhaitant devenir conducteur de taxi et se présenter à l'examen T3P d'accès à la profession.",
+    methodesPedagogiques:
+      "Apports théoriques, examens blancs, mises en situation professionnelles et pratique de la conduite. " +
+      "Formateurs spécialisés du secteur T3P.",
+    piecesAttendues: [
+      ...PIECES_TRANSPORT_BASE,
+      "Permis B en cours de validité (plus de 3 ans)",
+      "Casier judiciaire (bulletin n°2) compatible",
+      "Attestation d'aptitude médicale (préfecture)",
+      "Certificat PSC1 (premiers secours)",
+    ],
+    programmeAValider: true,
+  },
+
   // ───────────────────────── Formations continues (renouvellement carte pro) ─────────────────────────
   {
     cle: "vtc-formation-continue",
