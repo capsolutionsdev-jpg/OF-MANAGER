@@ -1,59 +1,76 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowLeft, UsersRound, Users, Building2, UserCog, GraduationCap, ChevronRight } from "lucide-react";
+import { ArrowLeft, UsersRound, Users, UserCog, GraduationCap, UserPlus, Building2 } from "lucide-react";
 import { auth } from "@/auth";
 import { getTenantDb } from "@/lib/tenant";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { roleLabels } from "@/lib/navigation";
+import { CompteActions } from "@/components/admin/compte-actions";
+import type { CompteType } from "@/lib/actions/comptes-actions";
 
 export const dynamic = "force-dynamic";
 
+type Row = { id: string; label: string; sub: string | null; actif: boolean; hasLogin: boolean };
+
 /**
- * Index « Gestion des comptes » (ADMIN de l'OF). Landing de /administration/comptes :
- * un point d'entrée par type (collaborateur / formateur / candidat / client pro),
- * avec le nombre de comptes existants, vers la page dédiée qui liste et crée.
+ * Gestion des comptes de l'organisme (ADMIN) : liste par type avec suspension /
+ * réactivation (du compte de connexion) et suppression. La création reste sur les
+ * pages dédiées (liens « Créer »).
  */
-export default async function ComptesIndexPage() {
+export default async function ComptesGestionPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
   if (session.user.role !== "ADMIN") redirect("/dashboard");
   const db = await getTenantDb();
 
-  const [collaborateurs, formateurs, candidats, clientsPro] = await Promise.all([
-    db.user.count({ where: { role: { in: ["ASSISTANT", "RESPONSABLE_FORMATION"] } } }),
-    db.formateur.count(),
+  const [collab, formateurs, candidats, candidatsTotal, entreprises] = await Promise.all([
+    db.user.findMany({
+      where: { role: { in: ["ASSISTANT", "RESPONSABLE_FORMATION"] } },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, email: true, role: true, isActive: true, fonction: true },
+    }),
+    db.formateur.findMany({
+      orderBy: { nom: "asc" },
+      select: { id: true, nom: true, prenom: true, email: true, userId: true, user: { select: { isActive: true } } },
+    }),
+    db.candidat.findMany({
+      where: { apprenant: { isNot: null } },
+      orderBy: { nom: "asc" },
+      take: 100,
+      select: {
+        id: true,
+        nom: true,
+        prenom: true,
+        email: true,
+        apprenant: { select: { userId: true, user: { select: { isActive: true } } } },
+      },
+    }),
     db.candidat.count(),
     db.entreprise.count(),
   ]);
 
-  const COMPTES = [
-    {
-      href: "/administration/comptes/collaborateur",
-      icon: Users,
-      title: "Collaborateurs",
-      desc: "Responsable formation, assistant — avec accès par section.",
-      count: collaborateurs,
-    },
-    {
-      href: "/administration/comptes/formateur",
-      icon: UserCog,
-      title: "Formateurs",
-      desc: "Formateurs + accès à leur espace (sessions, contrats, factures).",
-      count: formateurs,
-    },
-    {
-      href: "/administration/comptes/candidat",
-      icon: GraduationCap,
-      title: "Candidats",
-      desc: "Candidats + accès apprenant (cours, documents, émargements).",
-      count: candidats,
-    },
-    {
-      href: "/administration/comptes/client-pro",
-      icon: Building2,
-      title: "Clients pro",
-      desc: "Entreprises clientes (B2B) + leur espace / portail.",
-      count: clientsPro,
-    },
-  ];
+  const collabRows: Row[] = collab.map((u) => ({
+    id: u.id,
+    label: u.name ?? u.email,
+    sub: `${u.email} · ${roleLabels[u.role]}${u.fonction ? " — " + u.fonction : ""}`,
+    actif: u.isActive,
+    hasLogin: true,
+  }));
+  const formateurRows: Row[] = formateurs.map((f) => ({
+    id: f.id,
+    label: `${f.prenom} ${f.nom}`.trim(),
+    sub: f.email,
+    actif: f.user?.isActive ?? false,
+    hasLogin: !!f.userId,
+  }));
+  const candidatRows: Row[] = candidats.map((c) => ({
+    id: c.id,
+    label: `${c.prenom} ${c.nom}`.trim(),
+    sub: c.email,
+    actif: c.apprenant?.user?.isActive ?? false,
+    hasLogin: !!c.apprenant?.userId,
+  }));
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -68,33 +85,109 @@ export default async function ComptesIndexPage() {
           <UsersRound className="h-6 w-6 text-primary" /> Gestion des comptes
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Gérez et créez les comptes de votre organisme — chaque type sur sa page dédiée.
+          Suspendez, réactivez ou supprimez les comptes de votre organisme. La création se fait sur
+          chaque page dédiée (bouton «&nbsp;Créer&nbsp;»).
         </p>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        {COMPTES.map((c) => (
+      <Section
+        title="Collaborateurs"
+        icon={Users}
+        type="collaborateur"
+        createHref="/administration/comptes/collaborateur"
+        rows={collabRows}
+        emptyLabel="Aucun collaborateur."
+      />
+      <Section
+        title="Formateurs"
+        icon={UserCog}
+        type="formateur"
+        createHref="/administration/comptes/formateur"
+        rows={formateurRows}
+        emptyLabel="Aucun formateur."
+      />
+      <Section
+        title="Candidats (avec compte apprenant)"
+        icon={GraduationCap}
+        type="candidat"
+        createHref="/administration/comptes/candidat"
+        rows={candidatRows}
+        emptyLabel="Aucun candidat avec un compte d'accès."
+        note={`${candidatsTotal} candidat(s) au total ; seuls ceux disposant d'un accès apprenant sont listés ici (100 max).`}
+      />
+
+      {/* Clients pro : gérés sur leur page dédiée */}
+      <Card>
+        <CardHeader className="flex-row items-center justify-between gap-2 py-3">
+          <CardTitle className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Building2 className="h-4 w-4" /> Clients pro ({entreprises})
+          </CardTitle>
           <Link
-            key={c.href}
-            href={c.href}
-            className="group flex items-start gap-3 rounded-lg border p-4 transition hover:border-primary hover:bg-muted/40"
+            href="/administration/comptes/client-pro"
+            className="inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium hover:bg-muted"
           >
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <c.icon className="h-5 w-5" />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="flex items-center gap-1.5 font-medium">
-                {c.title}
-                <span className="rounded-full bg-muted px-1.5 text-xs font-semibold text-muted-foreground">
-                  {c.count}
-                </span>
-                <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground transition group-hover:translate-x-0.5" />
-              </span>
-              <span className="mt-0.5 block text-xs text-muted-foreground">{c.desc}</span>
-            </span>
+            <UserPlus className="h-3.5 w-3.5" /> Gérer / créer
           </Link>
-        ))}
-      </div>
+        </CardHeader>
+      </Card>
     </div>
+  );
+}
+
+function Section({
+  title,
+  icon: Icon,
+  type,
+  createHref,
+  rows,
+  emptyLabel,
+  note,
+}: {
+  title: string;
+  icon: typeof Users;
+  type: CompteType;
+  createHref: string;
+  rows: Row[];
+  emptyLabel: string;
+  note?: string;
+}) {
+  return (
+    <Card>
+      <CardHeader className="flex-row items-center justify-between gap-2 py-3">
+        <CardTitle className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Icon className="h-4 w-4" /> {title} ({rows.length})
+        </CardTitle>
+        <Link
+          href={createHref}
+          className="inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium hover:bg-muted"
+        >
+          <UserPlus className="h-3.5 w-3.5" /> Créer
+        </Link>
+      </CardHeader>
+      <CardContent className="space-y-1.5">
+        {rows.length === 0 && <p className="text-sm text-muted-foreground">{emptyLabel}</p>}
+        {rows.map((r) => (
+          <div key={r.id} className="flex flex-wrap items-center gap-2 rounded-md border p-2.5">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <span className="truncate font-medium">{r.label}</span>
+                {r.hasLogin ? (
+                  r.actif ? (
+                    <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">Actif</Badge>
+                  ) : (
+                    <Badge className="bg-amber-500/10 text-amber-700 dark:text-amber-300">Suspendu</Badge>
+                  )
+                ) : (
+                  <Badge variant="secondary">Sans accès</Badge>
+                )}
+              </div>
+              {r.sub && <div className="truncate text-xs text-muted-foreground">{r.sub}</div>}
+            </div>
+            <CompteActions type={type} id={r.id} actif={r.actif} hasLogin={r.hasLogin} />
+          </div>
+        ))}
+        {note && <p className="pt-1 text-[11px] text-muted-foreground">{note}</p>}
+      </CardContent>
+    </Card>
   );
 }
