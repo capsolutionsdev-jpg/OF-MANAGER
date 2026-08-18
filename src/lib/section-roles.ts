@@ -21,6 +21,7 @@ export const SECTION_ROLES: Record<string, Role[]> = {
   formations: ["ADMIN", "RESPONSABLE_FORMATION"],
   "site-vitrine": ["ADMIN", "RESPONSABLE_FORMATION"],
   blog: ["ADMIN", "RESPONSABLE_FORMATION"],
+  communication: ["ADMIN", "RESPONSABLE_FORMATION"],
   sessions: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
   planning: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
   salles: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],

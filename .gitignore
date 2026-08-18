@@ -58,3 +58,6 @@ build-out.txt
 # Capacitor (projets natifs générés par `npx cap add`)
 /android
 /ios
+
+# Skills locaux (dev only)
+.claude/skills/

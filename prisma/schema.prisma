@@ -915,6 +915,7 @@ model Session {
   formateurs   Formateur[]   @relation("SessionFormateurs")
   inscriptions Inscription[]
   seances      Seance[]
+  socialAssets SocialContentAsset[]
   evaluations  Evaluation[]
   documents    DocumentGenere[]
   conventions  Convention[]
@@ -2751,6 +2752,70 @@ model T3PEpreuve {
 
   @@unique([parcoursId, type, tentative])
   @@index([organismeId])
+}
+
+// =============================================================
+//  Communication & réseaux sociaux — contenus générés par IA pour promouvoir
+//  une session (module « communication », activable par organisme). v1 :
+//  génération + validation + export (pas de publication automatique).
+// =============================================================
+enum SocialPlatform {
+  LINKEDIN
+  INSTAGRAM
+  FACEBOOK
+  X
+  TIKTOK
+  YOUTUBE
+  WHATSAPP
+}
+
+enum SocialAssetType {
+  TEXTE
+  IMAGE
+  VIDEO
+}
+
+enum SocialAssetStatut {
+  BROUILLON
+  A_VALIDER
+  APPROUVE
+  REJETE
+}
+
+model SocialContentAsset {
+  id          String @id @default(cuid())
+  organismeId String // tenant (multi-OF)
+
+  sessionId String
+  session   Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  platform SocialPlatform
+  type     SocialAssetType @default(TEXTE)
+
+  // Texte : JSON sérialisé { titre, corps, cta, hashtags[], longueur, avertissements[] }.
+  // Visuel : URL / data-URL + description.
+  contenu String @db.Text
+
+  statut          SocialAssetStatut @default(BROUILLON)
+  version         Int               @default(1)
+  notesValidation String?           @db.Text
+
+  createdById String?
+  valideParId String?
+  valideLe    DateTime?
+
+  // Planification éditoriale (v1 : calendrier + rappels, PAS de publication auto).
+  scheduledAt DateTime? // date/heure prévue de publication (par l'OF, à la main)
+  publishedAt DateTime? // coché « publié » par l'OF
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([sessionId, platform, type])
+  @@index([organismeId])
+  @@index([sessionId])
+  @@index([statut])
+  @@index([scheduledAt])
 }
 
 // Snapshot MENSUEL du MRR éditeur (console) : base des analytics (courbe MRR,
