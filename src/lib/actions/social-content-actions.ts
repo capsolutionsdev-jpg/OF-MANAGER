@@ -9,6 +9,7 @@ import {
   SOCIAL_PLATFORMS,
   type SessionPromoData,
 } from "@/lib/social-content";
+import { genererImageIA, imageIaConfigured } from "@/lib/image-gen";
 import type { SocialPlatform } from "@prisma/client";
 
 type Res = { ok: boolean; error?: string; count?: number };
@@ -200,6 +201,41 @@ export async function mettreAJourAsset(
   });
   revalidatePath("/communication");
   return { ok: true };
+}
+
+type ImgRes = { ok: boolean; dataUri?: string; error?: string; needsKey?: boolean };
+
+/**
+ * Génère une image IA (illustration SANS texte) pour promouvoir une session.
+ * Optionnelle : inactive proprement tant que la clé plateforme n'est pas
+ * configurée. Réservée au personnel, module « communication », rate-limitée
+ * (les images sont coûteuses). Rien n'est écrit en base : image renvoyée pour
+ * téléchargement immédiat.
+ */
+export async function genererVisuelIA(
+  sessionId: string,
+  opts?: { format?: string; brief?: string },
+): Promise<ImgRes> {
+  const { db, organismeId } = await requireStaffTenant();
+  if (!(await hasStrictFeature("communication"))) return { ok: false, error: "Module non activé." };
+  if (!imageIaConfigured()) {
+    return { ok: false, needsKey: true, error: "L'image IA n'est pas encore activée (clé à configurer)." };
+  }
+  const rl = await checkLimit(`social-img:${organismeId}`, { limit: 15, windowMs: 60 * 60 * 1000 });
+  if (!rl.ok) return { ok: false, error: "Trop de générations d'images récentes. Réessayez plus tard." };
+
+  const data = await buildPromoData(db, organismeId, sessionId);
+  if (!data) return { ok: false, error: "Session introuvable." };
+
+  const theme = [data.titre, data.certification].filter(Boolean).join(" — ");
+  const brief = (opts?.brief ?? "").slice(0, 300).trim();
+  const prompt =
+    `Illustration professionnelle et moderne pour promouvoir une formation : « ${theme} ». ` +
+    (brief ? `Indication de style : ${brief}. ` : "") +
+    `Ambiance lumineuse et qualitative, cadrage soigné adapté aux réseaux sociaux. ` +
+    `IMPÉRATIF : aucune lettre, aucun mot, aucun texte, aucun logo, aucun watermark dans l'image.`;
+
+  return genererImageIA({ prompt, format: opts?.format });
 }
 
 /** Régénère UNE plateforme d'un asset existant. */

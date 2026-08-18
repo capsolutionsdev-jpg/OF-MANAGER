@@ -5,6 +5,8 @@ import { requireStaffTenant } from "@/lib/tenant";
 import { PageHeader } from "@/components/ui/page-header";
 import { AssetsPanel, type AssetView } from "@/components/communication/assets-panel";
 import { VisualCards, type CardData } from "@/components/communication/visual-cards";
+import { AiImagePanel } from "@/components/communication/ai-image-panel";
+import { imageIaConfigured } from "@/lib/image-gen";
 
 export const dynamic = "force-dynamic";
 
@@ -143,6 +145,8 @@ export default async function CommunicationSessionPage({
       <AssetsPanel sessionId={s.id} assets={assets} />
 
       <VisualCards data={cardData} />
+
+      <AiImagePanel sessionId={s.id} configured={imageIaConfigured()} />
     </div>
   );
 }
