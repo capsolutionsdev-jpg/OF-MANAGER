@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import {
   genererFactureMensuelle,
   emettreFactureEditeur,
+  transmettreFactureEditeur,
   setFactureEditeurStatut,
   deleteFactureEditeur,
 } from "@/lib/actions/facture-editeur-actions";
@@ -111,6 +112,12 @@ function FactureRow({ organismeId, f }: { organismeId: string; f: FactureEditeur
       if (!res.ok) toast.error(res.error ?? "Échec.");
     });
   }
+  function transmettre() {
+    start(async () => {
+      const res = await transmettreFactureEditeur(f.id);
+      toast[res.ok ? "success" : "error"](res.ok ? "Facture transmise à la PDP." : res.error ?? "Échec.");
+    });
+  }
   function supprimer() {
     if (!window.confirm("Supprimer ce brouillon de facture ?")) return;
     start(() => deleteFactureEditeur(f.id, organismeId));
@@ -160,17 +167,24 @@ function FactureRow({ organismeId, f }: { organismeId: string; f: FactureEditeur
             </Button>
           </>
         ) : (
-          <select
-            value={f.statut}
-            onChange={(e) => changerStatut(e.target.value)}
-            disabled={pending}
-            className="rounded-md border bg-background px-2 py-1 text-xs"
-            aria-label="Statut du cycle de vie"
-          >
-            {STATUTS_CYCLE.map((s) => (
-              <option key={s} value={s}>{STATUT_FACTURE_LABELS[s]}</option>
-            ))}
-          </select>
+          <>
+            {f.statut === "EMISE" && (
+              <Button size="sm" variant="outline" onClick={transmettre} disabled={pending}>
+                <Send className="mr-1 h-3.5 w-3.5" /> Transmettre (PDP)
+              </Button>
+            )}
+            <select
+              value={f.statut}
+              onChange={(e) => changerStatut(e.target.value)}
+              disabled={pending}
+              className="rounded-md border bg-background px-2 py-1 text-xs"
+              aria-label="Statut du cycle de vie"
+            >
+              {STATUTS_CYCLE.map((s) => (
+                <option key={s} value={s}>{STATUT_FACTURE_LABELS[s]}</option>
+              ))}
+            </select>
+          </>
         )}
       </div>
     </div>
