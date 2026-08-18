@@ -1,7 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
-import { FileText, FileCode2, Send, Trash2, Plus, AlertTriangle, Loader2 } from "lucide-react";
+import { FileText, FileCode2, FileCheck2, Send, Trash2, Plus, AlertTriangle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -86,7 +86,9 @@ export function FacturesEditeurCard({
         ))}
 
         <p className="border-t pt-2 text-[11px] text-muted-foreground">
-          Factures conformes EN 16931 (PDF lisible + XML Factur-X). Transmission via PDP à venir (Lot 4c).
+          <b>Factur-X</b> (PDF/A-3 : PDF lisible + XML EN 16931 embarqué) téléchargeable dès qu&apos;une
+          facture est émise — c&apos;est le fichier à transmettre. Reste à brancher la transmission via PDP
+          (choix du prestataire).
         </p>
       </CardContent>
     </Card>
@@ -132,11 +134,21 @@ function FactureRow({ organismeId, f }: { organismeId: string; f: FactureEditeur
         >
           <FileText className="h-3.5 w-3.5" /> PDF
         </a>
+        {!brouillon && (
+          <a
+            href={`/api/console/facture-editeur/${f.id}/facturx`}
+            className="inline-flex items-center gap-1 rounded-md border border-emerald-300 bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-800 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
+            title="PDF/A-3 avec XML EN 16931 embarqué — le fichier à transmettre"
+          >
+            <FileCheck2 className="h-3.5 w-3.5" /> Factur-X
+          </a>
+        )}
         <a
           href={`/api/console/facture-editeur/${f.id}/xml`}
           className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium hover:bg-muted"
+          title="XML CII seul (EN 16931)"
         >
-          <FileCode2 className="h-3.5 w-3.5" /> XML Factur-X
+          <FileCode2 className="h-3.5 w-3.5" /> XML
         </a>
         {brouillon ? (
           <>
