@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, CalendarDays, MapPin, GraduationCap, Users } from "lucide-react";
-import { getTenantDb } from "@/lib/tenant";
+import { requireStaffTenant } from "@/lib/tenant";
 import { PageHeader } from "@/components/ui/page-header";
 import { AssetsPanel, type AssetView } from "@/components/communication/assets-panel";
+import { VisualCards, type CardData } from "@/components/communication/visual-cards";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +16,7 @@ export default async function CommunicationSessionPage({
   params: Promise<{ sessionId: string }>;
 }) {
   const { sessionId } = await params;
-  const db = await getTenantDb();
+  const { db, organismeId } = await requireStaffTenant();
 
   const s = await db.session.findUnique({
     where: { id: sessionId },
@@ -26,7 +27,7 @@ export default async function CommunicationSessionPage({
       modalite: true,
       lieu: true,
       nbPlaces: true,
-      formation: { select: { titre: true, dureeHeures: true } },
+      formation: { select: { titre: true, dureeHeures: true, tarif: true, certification: true } },
       _count: { select: { inscriptions: true } },
       socialAssets: {
         orderBy: { platform: "asc" },
@@ -43,6 +44,18 @@ export default async function CommunicationSessionPage({
     },
   });
   if (!s) notFound();
+
+  // Marque de l'OF (tenant-agnostique) pour les visuels.
+  const org = await db.organisme.findUnique({
+    where: { id: organismeId },
+    select: {
+      nom: true,
+      couleurPrimaire: true,
+      couleurSecondaire: true,
+      siteWeb: true,
+      qualiopiNumero: true,
+    },
+  });
 
   // Sérialisation des assets pour le composant client (JSON → objet typé).
   const assets: AssetView[] = s.socialAssets.map((a) => {
@@ -76,6 +89,23 @@ export default async function CommunicationSessionPage({
   });
 
   const distanciel = s.modalite === "DISTANCIEL";
+
+  const cardData: CardData = {
+    organismeNom: org?.nom ?? "Organisme de formation",
+    couleurPrimaire: org?.couleurPrimaire || "#1A5FD4",
+    couleurSecondaire: org?.couleurSecondaire ?? null,
+    formationTitre: s.formation.titre,
+    dateDebut: fmt(s.dateDebut),
+    dateFin: fmt(s.dateFin),
+    memeJour: s.dateDebut.toDateString() === s.dateFin.toDateString(),
+    distanciel,
+    lieu: distanciel ? null : s.lieu ?? null,
+    dureeHeures: s.formation.dureeHeures ?? null,
+    prix: s.formation.tarif != null ? `${Number(s.formation.tarif).toLocaleString("fr-FR")} €` : null,
+    certification: s.formation.certification ?? null,
+    qualiopi: Boolean(org?.qualiopiNumero),
+    siteWeb: org?.siteWeb ?? null,
+  };
 
   return (
     <div className="space-y-6">
@@ -111,6 +141,8 @@ export default async function CommunicationSessionPage({
       </div>
 
       <AssetsPanel sessionId={s.id} assets={assets} />
+
+      <VisualCards data={cardData} />
     </div>
   );
 }
