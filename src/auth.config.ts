@@ -20,7 +20,10 @@ export const authConfig = {
   pages: {
     signIn: "/login",
   },
-  session: { strategy: "jwt" },
+  // Session JWT : expiration ABSOLUE de 12 h, rafraîchie sur activité (updateAge
+  // 1 h) → approxime une expiration sur INACTIVITÉ (déconnexion après ~12 h sans
+  // navigation). Réduit la fenêtre d'exploitation d'un token volé (§13).
+  session: { strategy: "jwt", maxAge: 12 * 60 * 60, updateAge: 60 * 60 },
   callbacks: {
     // Utilisé par le middleware pour autoriser/bloquer l'accès aux routes.
     authorized({ auth, request: { nextUrl } }) {
