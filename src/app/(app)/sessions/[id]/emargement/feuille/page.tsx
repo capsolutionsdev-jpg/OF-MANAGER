@@ -7,6 +7,7 @@ import { orgConfigFor } from "@/lib/org-identity";
 import { MODALITE_LABELS } from "@/lib/validators/formation";
 import { PrintButton } from "@/components/documents/print-button";
 import { joursSession, dayKey } from "@/lib/emargement";
+import { parseAnimation } from "@/lib/formateurs/animation";
 
 export const dynamic = "force-dynamic";
 
@@ -80,6 +81,47 @@ export default async function FeuilleEmargementSessionPage({
   const formateurs = s.formateurs
     .map((f) => `${f.prenom} ${f.nom}`)
     .join(", ");
+
+  // Émargement CONFORME : un formateur par jour. On retrouve, pour chaque
+  // journée, le formateur qui l'anime (répartition `formateursAnimation`) → son
+  // nom figure sous la date, pour la signature. Repli : formateur unique, sinon
+  // « à préciser » (config absente).
+  const anim = parseAnimation(s.formateursAnimation);
+  const nomFormateur = (fid: string) => {
+    const f = s.formateurs.find((x) => x.id === fid);
+    return f ? `${f.prenom} ${f.nom}` : "";
+  };
+  const jourIso = (d: Date) => {
+    const p = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+  };
+  // Formateur explicitement affecté à la séance d'un jour (UI d'émargement).
+  const seanceFormateur = new Map<string, string | null>();
+  for (const se of s.seances) seanceFormateur.set(jourIso(se.date), se.formateurId ?? null);
+
+  const formateurDuJour = (jour: Date): string => {
+    const iso = jourIso(jour);
+    // 1) formateur affecté à la SÉANCE de ce jour (le plus explicite) ;
+    const seanceFid = seanceFormateur.get(iso);
+    if (seanceFid) {
+      const n = nomFormateur(seanceFid);
+      if (n) return n;
+    }
+    // 2) répartition « animation » (jours cochés / toute la session) ;
+    const partiel = anim.find((a) => !a.complet && a.jours.includes(iso));
+    if (partiel) {
+      const n = nomFormateur(partiel.formateurId);
+      if (n) return n;
+    }
+    const complet = anim.find((a) => a.complet);
+    if (complet) {
+      const n = nomFormateur(complet.formateurId);
+      if (n) return n;
+    }
+    // 3) repli : formateur unique de la session, sinon à préciser.
+    if (s.formateurs.length === 1) return `${s.formateurs[0].prenom} ${s.formateurs[0].nom}`;
+    return "à préciser";
+  };
 
   return (
     <div className="space-y-4">
@@ -191,9 +233,18 @@ export default async function FeuilleEmargementSessionPage({
                   </tr>
                 ))
               )}
-              {/* Ligne formateur */}
+              {/* Formateur assigné à CHAQUE jour (émargement conforme : un formateur par jour) */}
               <tr className="formateur-row">
-                <td className="name-col">Formateur : {formateurs || "—"}</td>
+                <td className="name-col">Formateur du jour</td>
+                {joursSemaine.map((jour, i) => (
+                  <td key={i} colSpan={2} className="fjour">
+                    {formateurDuJour(jour)}
+                  </td>
+                ))}
+              </tr>
+              {/* Signature du formateur, par demi-journée */}
+              <tr className="formateur-row">
+                <td className="name-col">Signature formateur</td>
                 {joursSemaine.map((jour, i) => (
                   <Fragment key={i}>
                     <td className="sig">{cellFor("FORM", jour, "MATIN")}</td>
@@ -229,6 +280,7 @@ export default async function FeuilleEmargementSessionPage({
         .sigimg { max-height: 34px; max-width: 100%; }
         .sigtime { font-size: 7px; color: #777; }
         .formateur-row td { background: #fafafa; font-style: italic; }
+        .formateur-row td.fjour { font-style: normal; font-weight: 600; }
         @media print {
           @page { size: A4 landscape; margin: 10mm; }
           body { background: white; }
