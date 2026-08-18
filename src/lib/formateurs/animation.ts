@@ -9,7 +9,13 @@
 
 export type AnimationConfig = { formateurId: string; complet: boolean; jours: string[] };
 
-/** Liste des jours (ISO « AAAA-MM-JJ ») entre deux dates INCLUSES — PUR, sans dérive de fuseau. */
+/**
+ * Liste des jours OUVRÉS (lun→ven, ISO « AAAA-MM-JJ ») entre deux dates INCLUSES.
+ * PUR, sans dérive de fuseau. Les week-ends (samedi/dimanche) sont EXCLUS : les OF
+ * ne planifient pas les sessions le week-end, et la facturation formateur compte
+ * déjà en jours ouvrés (cf. businessDaysBetween). Repli : si la session tombe
+ * entièrement sur un week-end, on garde ces jours (jamais de liste vide).
+ */
 export function joursSession(dateDebut: string, dateFin: string): string[] {
   const parse = (s: string) => {
     const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s ?? "");
@@ -18,12 +24,16 @@ export function joursSession(dateDebut: string, dateFin: string): string[] {
   let cur = parse(dateDebut);
   const end = parse(dateFin);
   if (Number.isNaN(cur) || Number.isNaN(end) || end < cur) return [];
-  const out: string[] = [];
-  while (cur <= end && out.length < 366) {
-    out.push(new Date(cur).toISOString().slice(0, 10));
+  const tous: string[] = [];
+  const ouvres: string[] = [];
+  while (cur <= end && tous.length < 366) {
+    const d = new Date(cur);
+    tous.push(d.toISOString().slice(0, 10));
+    const jour = d.getUTCDay(); // 0 = dimanche, 6 = samedi
+    if (jour !== 0 && jour !== 6) ouvres.push(d.toISOString().slice(0, 10));
     cur += 86_400_000;
   }
-  return out;
+  return ouvres.length > 0 ? ouvres : tous;
 }
 
 /** Normalise une valeur JSON (issue de la base) en config d'animation typée. */
