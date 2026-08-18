@@ -157,6 +157,17 @@ async function salleWarnings(
   return parts.length ? `Attention : ${parts.join(" ; ")}.` : undefined;
 }
 
+/** JSON d'animation par formateur, filtré aux formateurs réellement affectés. */
+function buildAnimation(
+  anim: SessionFormValues["formateursAnimation"],
+  validIds: string[],
+): Prisma.InputJsonValue {
+  const valid = new Set(validIds);
+  return (anim ?? [])
+    .filter((a) => valid.has(a.formateurId))
+    .map((a) => ({ formateurId: a.formateurId, complet: a.complet, jours: a.complet ? [] : a.jours }));
+}
+
 export async function createSession(
   values: SessionFormValues,
 ): Promise<ActionResult> {
@@ -179,6 +190,7 @@ export async function createSession(
         salleId: refs.salleId,
         createdById: session.user.id,
         formateurs: { connect: refs.formateurIds.map((fid) => ({ id: fid })) },
+        formateursAnimation: buildAnimation(parsed.data.formateursAnimation, refs.formateurIds),
       },
     });
     await syncJuryAffectations(db, created.id, parsed.data.jurys ?? []);
@@ -224,6 +236,7 @@ export async function updateSession(
         ...data,
         salleId: refs.salleId,
         formateurs: { set: refs.formateurIds.map((fid) => ({ id: fid })) },
+        formateursAnimation: buildAnimation(parsed.data.formateursAnimation, refs.formateurIds),
       },
     });
     await syncJuryAffectations(db, id, parsed.data.jurys ?? []);

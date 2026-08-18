@@ -899,6 +899,10 @@ model Session {
 
   // Tarif journalier du formateur pour cette session (sinon celui du formateur)
   tarifFormateurJour Decimal? @db.Decimal(10, 2)
+  // Animation par formateur : [{ formateurId, complet, jours: ["AAAA-MM-JJ"] }].
+  // complet = toute la session ; sinon les jours couverts. Base du nombre de jours
+  // du contrat de sous-traitance + de la facturation (formateurs EXTERNES).
+  formateursAnimation Json?
 
   // Contrat de sous-traitance formateur (envoi → signature → PDF dans la session)
   contratFormateurToken        String?   @unique

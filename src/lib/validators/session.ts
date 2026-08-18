@@ -19,6 +19,16 @@ export const sessionFormSchema = z
     statut: z.nativeEnum(SessionStatut),
     tarifFormateurJour: optionalText,
     formateurIds: z.array(z.string()).optional(),
+    // Animation par formateur : complet (toute la session) ou jours précis (partiel).
+    formateursAnimation: z
+      .array(
+        z.object({
+          formateurId: z.string(),
+          complet: z.boolean(),
+          jours: z.array(z.string()),
+        }),
+      )
+      .optional(),
     // Jury(s) d'examen affecté(s) à la session (formations soumises à jury) :
     // chaque juré avec son défraiement personnalisé et la nature de l'examen.
     jurys: z
