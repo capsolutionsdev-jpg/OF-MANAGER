@@ -172,9 +172,39 @@ export async function validerAsset(assetId: string, approuve: boolean, notes?: s
   return { ok: true };
 }
 
+/** Enregistre une édition manuelle du contenu (repasse en « à valider »). */
+export async function mettreAJourAsset(
+  assetId: string,
+  patch: { titre?: string; corps?: string; cta?: string; hashtags?: string[] },
+): Promise<Res> {
+  const { db } = await requireStaffTenant();
+  if (!(await hasStrictFeature("communication"))) return { ok: false, error: "Module non activé." };
+  const a = await db.socialContentAsset.findUnique({ where: { id: assetId }, select: { contenu: true } });
+  if (!a) return { ok: false, error: "Contenu introuvable." };
+  let obj: Record<string, unknown> = {};
+  try {
+    obj = JSON.parse(a.contenu) as Record<string, unknown>;
+  } catch {
+    obj = {};
+  }
+  if (patch.titre !== undefined) obj.titre = patch.titre;
+  if (patch.corps !== undefined) {
+    obj.corps = patch.corps;
+    obj.longueur = patch.corps.length;
+  }
+  if (patch.cta !== undefined) obj.cta = patch.cta;
+  if (patch.hashtags !== undefined) obj.hashtags = patch.hashtags;
+  await db.socialContentAsset.update({
+    where: { id: assetId },
+    data: { contenu: JSON.stringify(obj), statut: "A_VALIDER" },
+  });
+  revalidatePath("/communication");
+  return { ok: true };
+}
+
 /** Régénère UNE plateforme d'un asset existant. */
 export async function regenererAsset(assetId: string): Promise<Res> {
-  const { db, organismeId } = await requireStaffTenant();
+  const { db } = await requireStaffTenant();
   if (!(await hasStrictFeature("communication"))) return { ok: false, error: "Module non activé." };
   const asset = await db.socialContentAsset.findUnique({
     where: { id: assetId },

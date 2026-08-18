@@ -5,26 +5,11 @@
 
 import type { SocialPlatform } from "@prisma/client";
 import { aiComplete } from "@/lib/ai";
+import { SOCIAL_PLATFORMS, platformByJson, platformByEnum, type PlatformMeta } from "@/lib/social-platforms";
 
-// ─── Plateformes prises en charge + consignes de rédaction par réseau ───────────
-export const SOCIAL_PLATFORMS: {
-  enum: SocialPlatform;
-  json: string; // clé attendue dans le JSON de l'IA
-  label: string;
-  guidance: string;
-  maxChars: number;
-}[] = [
-  { enum: "LINKEDIN", json: "linkedin", label: "LinkedIn", guidance: "ton professionnel, orienté SEO, 300–400 mots, 3–5 hashtags", maxChars: 3000 },
-  { enum: "FACEBOOK", json: "facebook", label: "Facebook", guidance: "accessible et engageant, 100–200 mots, 2–4 hashtags", maxChars: 2000 },
-  { enum: "INSTAGRAM", json: "instagram", label: "Instagram", guidance: "émotionnel et visuel, 80–150 mots, 8–15 hashtags", maxChars: 2200 },
-  { enum: "X", json: "x", label: "X (Twitter)", guidance: "percutant et concis, MOINS de 280 caractères au total (hashtags compris), 1–3 hashtags", maxChars: 280 },
-  { enum: "TIKTOK", json: "tiktok", label: "TikTok", guidance: "dynamique et tendance, script court de 100–200 mots, 3–6 hashtags", maxChars: 2200 },
-  { enum: "YOUTUBE", json: "youtube", label: "YouTube", guidance: "description de vidéo informative et détaillée, 200–400 mots, 3–6 hashtags", maxChars: 5000 },
-  { enum: "WHATSAPP", json: "whatsapp", label: "WhatsApp", guidance: "amical et court, 50–100 mots, sans hashtags", maxChars: 1000 },
-];
-
-export const platformByJson = (json: string) => SOCIAL_PLATFORMS.find((p) => p.json === json);
-export const platformByEnum = (e: SocialPlatform) => SOCIAL_PLATFORMS.find((p) => p.enum === e);
+// Réexport pour compat (les appelants importaient ces symboles depuis ce module).
+export { SOCIAL_PLATFORMS, platformByJson, platformByEnum };
+export type { PlatformMeta };
 
 // ─── Données de la session à promouvoir (construites par l'action) ──────────────
 export type SessionPromoData = {

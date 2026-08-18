@@ -222,8 +222,15 @@ export const communicationGroup: NavigationGroup = {
   label: "Site Vitrine & Communication",
   icon: Globe,
   description: "Blog, analytics, e-mails",
-  allowedRoles: ["ADMIN"],
+  allowedRoles: ["ADMIN", "RESPONSABLE_FORMATION"],
   items: [
+    {
+      label: "Réseaux sociaux",
+      href: "/communication",
+      icon: Globe,
+      roles: ["ADMIN", "RESPONSABLE_FORMATION"],
+      feature: "communication",
+    },
     {
       label: "Blog",
       href: "/blog",
