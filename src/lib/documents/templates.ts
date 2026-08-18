@@ -5,6 +5,8 @@
 //  (parties, formation, dates, lieu, prix) sont des {{variables}}.
 // =============================================================
 
+import { escapeHtml } from "@/lib/documents/escape";
+
 const header = `
 <div class="doc-header">
   <img src="/cap-competences-logo.png" alt="CAP Compétences" class="doc-logo" />
@@ -844,12 +846,35 @@ export const DOCUMENT_MENU = [
   "SATISFACTION_OPCO",
 ].map((type) => ({ type, label: DOCUMENTS[type].label }));
 
-/** Remplace les variables {{cle}} par leur valeur (vide si absente). */
+// Variables contenant du HTML LÉGITIME généré en code (à NE PAS ré-échapper) :
+//  - signature_* : images <img> de signature insérées par build-pdf ;
+//  - champs multi-lignes : leur contenu est DÉJÀ échappé par ml() (resolve.ts)
+//    puis converti en <br/> — seul HTML autorisé.
+// Toute AUTRE variable = donnée utilisateur brute (nom, adresse, raison sociale,
+// compte rendu, champ libre…) → échappée par défaut (anti-injection HTML, §26).
+const TRUSTED_HTML_VARS = new Set([
+  "signature_stagiaire",
+  "signature_formateur",
+  "objectifs",
+  "programme_detail",
+  "prerequis",
+  "public_vise",
+  "methodes_pedagogiques",
+  "modalites_evaluation",
+]);
+
+/**
+ * Remplace les variables {{cle}} par leur valeur (vide si absente).
+ * Les valeurs sont ÉCHAPPÉES par défaut ; seules les clés de TRUSTED_HTML_VARS
+ * (HTML généré en interne) sont insérées telles quelles.
+ */
 export function renderTemplate(
   html: string,
   vars: Record<string, string>,
 ): string {
-  return html.replace(/\{\{\s*(\w+)\s*\}\}/g, (_match, key: string) =>
-    vars[key] !== undefined ? vars[key] : "",
-  );
+  return html.replace(/\{\{\s*(\w+)\s*\}\}/g, (_match, key: string) => {
+    const v = vars[key];
+    if (v === undefined) return "";
+    return TRUSTED_HTML_VARS.has(key) ? v : escapeHtml(v);
+  });
 }

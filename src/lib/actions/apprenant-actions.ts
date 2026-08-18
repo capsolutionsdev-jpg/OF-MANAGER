@@ -7,6 +7,7 @@ import bcrypt from "bcryptjs";
 import { getTenantDb } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
+import { isPasswordPwned } from "@/lib/security/password";
 
 type Res = { ok: boolean; error?: string };
 
@@ -30,6 +31,8 @@ export async function createApprenantAccount(
     return { ok: false, error: "Non autorisé." };
   if (!password || password.length < 8)
     return { ok: false, error: "Mot de passe : 8 caractères minimum." };
+  if (await isPasswordPwned(password))
+    return { ok: false, error: "Ce mot de passe figure dans une fuite de données connue — choisissez-en un autre." };
 
   try {
     const candidat = await db.candidat.findUnique({

@@ -33,6 +33,16 @@ export async function confirmTotp(code: string): Promise<{ ok: boolean; error?: 
   if (!secret) return { ok: false, error: "Aucun enrôlement en cours." };
   if (!verifyTotp(secret, code)) return { ok: false, error: "Code invalide, réessayez." };
   await prisma.user.update({ where: { id: session.user.id }, data: { totpEnabled: true } });
+  await prisma.auditLog.create({
+    data: {
+      userId: session.user.id,
+      organismeId: session.user.organismeId ?? undefined,
+      action: "UPDATE",
+      entityType: "User",
+      entityId: session.user.id,
+      changesJson: { totpEnabled: true },
+    },
+  });
   revalidatePath("/mon-compte");
   return { ok: true };
 }
@@ -52,6 +62,16 @@ export async function disableTotp(code: string): Promise<{ ok: boolean; error?: 
   await prisma.user.update({
     where: { id: session.user.id },
     data: { totpEnabled: false, totpSecret: null },
+  });
+  await prisma.auditLog.create({
+    data: {
+      userId: session.user.id,
+      organismeId: session.user.organismeId ?? undefined,
+      action: "UPDATE",
+      entityType: "User",
+      entityId: session.user.id,
+      changesJson: { totpEnabled: false },
+    },
   });
   revalidatePath("/mon-compte");
   return { ok: true };

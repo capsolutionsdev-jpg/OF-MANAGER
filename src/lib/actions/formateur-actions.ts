@@ -6,6 +6,7 @@ import { FactureFormateurStatut, Prisma } from "@prisma/client";
 import { getTenantDb } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
+import { isPasswordPwned } from "@/lib/security/password";
 import { storeUpload, parseDataUrl, extFromMime } from "@/lib/blob";
 import {
   formateurFormSchema,
@@ -235,6 +236,8 @@ export async function createFormateurAccess(
     return { ok: false, error: "Non autorisé." };
   if (!password || password.length < 8)
     return { ok: false, error: "Mot de passe : 8 caractères minimum." };
+  if (await isPasswordPwned(password))
+    return { ok: false, error: "Ce mot de passe figure dans une fuite de données connue — choisissez-en un autre." };
   const db = await getTenantDb();
 
   const formateur = await db.formateur.findUnique({

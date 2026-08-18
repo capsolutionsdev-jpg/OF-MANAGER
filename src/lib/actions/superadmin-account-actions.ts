@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/superadmin-guard";
+import { isPasswordPwned } from "@/lib/security/password";
 
 export type AccountState = { ok?: boolean; error?: string };
 
@@ -50,8 +51,13 @@ export async function changeSuperadminPassword(
   if (!user) return { error: "Compte introuvable." };
   const valid = await bcrypt.compare(current, user.passwordHash);
   if (!valid) return { error: "Mot de passe actuel incorrect." };
+  if (await isPasswordPwned(next))
+    return { error: "Ce mot de passe figure dans une fuite de données connue — choisissez-en un autre." };
 
   await prisma.user.update({ where: { id }, data: { passwordHash: await bcrypt.hash(next, 12) } });
+  await prisma.auditLog.create({
+    data: { userId: id, action: "UPDATE", entityType: "User", entityId: id, changesJson: { password: "changed" } },
+  });
   return { ok: true };
 }
 
@@ -60,7 +66,7 @@ export async function createSuperadmin(
   _prev: AccountState | undefined,
   formData: FormData,
 ): Promise<AccountState> {
-  await requireSuperAdmin();
+  const actor = await requireSuperAdmin();
 
   const name = str(formData, "name") || "Éditeur";
   const email = str(formData, "email").toLowerCase();
@@ -70,8 +76,10 @@ export async function createSuperadmin(
 
   const exists = await prisma.user.findUnique({ where: { email }, select: { id: true } });
   if (exists) return { error: "Un compte existe déjà avec cet e-mail." };
+  if (await isPasswordPwned(password))
+    return { error: "Ce mot de passe figure dans une fuite de données connue — choisissez-en un autre." };
 
-  await prisma.user.create({
+  const created = await prisma.user.create({
     data: {
       name,
       email,
@@ -79,6 +87,15 @@ export async function createSuperadmin(
       role: Role.SUPERADMIN,
       isActive: true,
       organismeId: null,
+    },
+  });
+  await prisma.auditLog.create({
+    data: {
+      userId: actor!.user!.id as string,
+      action: "CREATE",
+      entityType: "User",
+      entityId: created.id,
+      changesJson: { role: "SUPERADMIN" },
     },
   });
   revalidatePath("/console/compte");
@@ -93,5 +110,14 @@ export async function toggleSuperadminActive(id: string): Promise<void> {
   const u = await prisma.user.findFirst({ where: { id, role: Role.SUPERADMIN }, select: { isActive: true } });
   if (!u) return;
   await prisma.user.update({ where: { id }, data: { isActive: !u.isActive } });
+  await prisma.auditLog.create({
+    data: {
+      userId: session!.user!.id as string,
+      action: "UPDATE",
+      entityType: "User",
+      entityId: id,
+      changesJson: { isActive: !u.isActive },
+    },
+  });
   revalidatePath("/console/compte");
 }

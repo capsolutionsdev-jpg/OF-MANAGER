@@ -3,6 +3,7 @@ import { DEFAULT_ORG_IDENTITY, type OrgIdentity } from "@/lib/org-identity";
 import { MODALITE_LABELS } from "@/lib/validators/formation";
 import { FINANCEMENT_LABELS } from "@/lib/validators/candidat";
 import { ssiapNiveauOfFormation } from "@/lib/documents/families";
+import { escapeHtml } from "@/lib/documents/escape";
 
 // `dossierPdf` (Bytes) est exclu par défaut des requêtes (cf. PRISMA_OMIT) et
 // n'est pas utilisé pour construire les documents → on l'ôte du type attendu.
@@ -24,8 +25,10 @@ export function buildVariables(
   const s = i.session;
   const f = s.formation;
   const d = (date: Date | null) => (date ? date.toLocaleDateString("fr-FR") : "");
-  // Texte long (multi-lignes) → HTML avec retours à la ligne préservés.
-  const ml = (t: string | null) => (t ? t.replace(/\n/g, "<br/>") : "—");
+  // Texte long (multi-lignes) → HTML : on ÉCHAPPE d'abord le contenu (données
+  // saisies), PUIS on convertit les retours à la ligne en <br/> (le seul HTML
+  // autorisé ici). Ces champs sont allowlistés côté renderTemplate. cf. §26.
+  const ml = (t: string | null) => (t ? escapeHtml(t).replace(/\n/g, "<br/>") : "—");
 
   return {
     // Organisme

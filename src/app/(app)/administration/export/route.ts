@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { exportRateLimited } from "@/lib/security/export-guard";
 import { getTenantDb } from "@/lib/tenant";
 import { getCurrentOrganisme } from "@/lib/org";
 
@@ -16,6 +17,8 @@ export async function GET() {
   if (!session?.user || session.user.role !== "ADMIN") {
     return new Response("Réservé à l'administrateur de l'organisme.", { status: 403 });
   }
+  const limited = exportRateLimited(session.user.id);
+  if (limited) return limited;
 
   const db = await getTenantDb();
 

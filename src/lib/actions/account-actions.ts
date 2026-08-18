@@ -1,6 +1,7 @@
 "use server";
 
 import bcrypt from "bcryptjs";
+import { isPasswordPwned } from "@/lib/security/password";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { getTenantDb } from "@/lib/tenant";
@@ -55,6 +56,9 @@ export async function changePassword(
   if (await bcrypt.compare(parsed.data.next, user.passwordHash)) {
     return { error: "Le nouveau mot de passe doit être différent de l'ancien." };
   }
+  if (await isPasswordPwned(parsed.data.next)) {
+    return { error: "Ce mot de passe figure dans une fuite de données connue — choisissez-en un autre." };
+  }
 
   const passwordHash = await bcrypt.hash(parsed.data.next, 12);
   await db.user.update({
@@ -102,6 +106,9 @@ export async function forceChangePassword(
   if (!user) return { error: "Compte introuvable." };
   if (await bcrypt.compare(parsed.data.next, user.passwordHash)) {
     return { error: "Choisissez un mot de passe différent du mot de passe provisoire." };
+  }
+  if (await isPasswordPwned(parsed.data.next)) {
+    return { error: "Ce mot de passe figure dans une fuite de données connue — choisissez-en un autre." };
   }
 
   await db.user.update({
