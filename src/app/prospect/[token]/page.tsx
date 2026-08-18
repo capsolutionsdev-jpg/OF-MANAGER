@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { CheckCircle2 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { orgConfigFor } from "@/lib/org-identity";
+import { expiringTokenExpired, LINK_TTL_DAYS } from "@/lib/token";
 import {
   Card,
   CardContent,
@@ -22,6 +23,8 @@ export default async function ProspectPage({
     where: { prospectToken: token },
   });
   if (!c) notFound();
+  // Lien prospect expiré (60 j après émission — horodatage embarqué). §magic-links
+  if (expiringTokenExpired(token, LINK_TTL_DAYS.SIGNATURE)) notFound();
   const org = await orgConfigFor(c.organismeId);
 
   const formations = await prisma.formation.findMany({

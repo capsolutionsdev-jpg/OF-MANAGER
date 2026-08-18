@@ -25,6 +25,50 @@ export function linkExpired(
   return new Date() > limit;
 }
 
+/** Un jour en millisecondes. */
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Durées de validité (en JOURS) par type de lien tokenisé — politique produit :
+ *  - SIGNATURE : liens d'action/signature (60 j) ;
+ *  - SURVEY : liens d'enquête (180 j).
+ * Les liens de session s'appuient plutôt sur `linkExpired(dateFin, mois)`
+ * (ancré à la fin de session) ; ces durées servent aux liens SANS session
+ * (prospect, acceptation de devis), via `generateExpiringToken`.
+ */
+export const LINK_TTL_DAYS = { SIGNATURE: 60, SURVEY: 180 } as const;
+
+/**
+ * Jeton URL-safe À DURÉE DE VIE : `<aléatoire base64url>~<émission base36>`.
+ * L'horodatage d'émission fait PARTIE du jeton (donc de la clé stockée en base) :
+ * le modifier casse la recherche par token → il ne peut pas être forgé pour
+ * prolonger la validité (le secret reste les 192 bits aléatoires). Pour les liens
+ * sans session de référence (prospect, devis), où l'on ne peut pas s'ancrer sur
+ * une date de fin de session. Séparateur `~` (URL-safe, absent de l'alphabet
+ * base64url et sans collision avec l'exclusion `.` du matcher middleware).
+ */
+export function generateExpiringToken(bytes = 24): string {
+  return `${randomBytes(bytes).toString("base64url")}~${Date.now().toString(36)}`;
+}
+
+/**
+ * Un jeton à durée de vie (émis par `generateExpiringToken`) est-il EXPIRÉ ?
+ * Les jetons SANS horodatage (anciens, émis avant cette fonctionnalité) sont
+ * considérés NON expirés — aucun lien déjà distribué ne casse (grandfathering).
+ * `now` injectable pour les tests.
+ */
+export function expiringTokenExpired(
+  token: string,
+  ttlDays: number,
+  now: number = Date.now(),
+): boolean {
+  const sep = token.lastIndexOf("~");
+  if (sep < 0) return false; // legacy : pas d'horodatage → jamais expiré
+  const issued = parseInt(token.slice(sep + 1), 36);
+  if (!Number.isFinite(issued)) return false; // illisible → on ne bloque pas
+  return now - issued > ttlDays * DAY_MS;
+}
+
 /** Domaine public de la plateforme (liens de signature/inscription envoyés par
  * e-mail). Les URL Vercel (`*.vercel.app`) sont protégées par un mur de connexion
  * Vercel → JAMAIS utilisées pour ces liens publics. */
