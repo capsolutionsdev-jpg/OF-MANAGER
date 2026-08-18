@@ -14,6 +14,7 @@ import {
 } from "@/lib/validators/session";
 import { MODALITE_LABELS } from "@/lib/validators/formation";
 import { createSession, updateSession } from "@/lib/actions/session-actions";
+import { joursSession } from "@/lib/formateurs/animation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,6 +38,15 @@ const ACA_SHORT: Record<string, string> = {
 function ErrorText({ msg }: { msg?: string }) {
   if (!msg) return null;
   return <p className="text-sm text-destructive">{msg}</p>;
+}
+
+/** Libellé court d'un jour ISO : « lun. 01/09 ». */
+function labelJour(iso: string) {
+  return new Date(iso + "T12:00:00").toLocaleDateString("fr-FR", {
+    weekday: "short",
+    day: "2-digit",
+    month: "2-digit",
+  });
 }
 
 type FormationOption = { id: string; titre: string; reference: string; soumisJury?: boolean; nbJury?: number | null; examen?: boolean; academy?: string | null };
@@ -73,6 +83,24 @@ export function SessionForm({
     })),
   );
 
+  // Animation par formateur (hors react-hook-form) : complet (toute la session)
+  // ou jours précis (partiel). Clé = formateurId.
+  const [anim, setAnim] = useState<Record<string, { complet: boolean; jours: string[] }>>(() => {
+    const init: Record<string, { complet: boolean; jours: string[] }> = {};
+    for (const a of defaultValues?.formateursAnimation ?? []) {
+      init[a.formateurId] = { complet: a.complet, jours: a.jours };
+    }
+    return init;
+  });
+  const setComplet = (fid: string, complet: boolean) =>
+    setAnim((c) => ({ ...c, [fid]: { complet, jours: complet ? [] : c[fid]?.jours ?? [] } }));
+  const toggleJour = (fid: string, jour: string) =>
+    setAnim((c) => {
+      const cur = c[fid]?.jours ?? [];
+      const jours = cur.includes(jour) ? cur.filter((j) => j !== jour) : [...cur, jour];
+      return { ...c, [fid]: { complet: false, jours } };
+    });
+
   const {
     register,
     handleSubmit,
@@ -102,6 +130,8 @@ export function SessionForm({
   });
 
   const watchedFormationId = watch("formationId");
+  const checkedFormateurs = watch("formateurIds") ?? [];
+  const joursDispo = joursSession(watch("dateDebut") ?? "", watch("dateFin") ?? "");
   const selectedFormation = formations.find((f) => f.id === watchedFormationId);
   const juryActif = !!selectedFormation?.soumisJury;
   // La formation est-elle sanctionnée par un examen ? (masque date/lieu d'examen sinon)
@@ -133,8 +163,17 @@ export function SessionForm({
     setJurySel((c) => c.map((s) => (s.juryId === juryId ? { ...s, ...patch } : s)));
 
   function onSubmit(values: SessionFormValues) {
+    // Animation par formateur : complet par défaut ; les jours ne comptent qu'en partiel.
+    const formateursAnimation = (values.formateurIds ?? []).map((fid) => {
+      const complet = anim[fid]?.complet ?? true;
+      return { formateurId: fid, complet, jours: complet ? [] : anim[fid]?.jours ?? [] };
+    });
     // On n'envoie les jurés QUE si la formation est soumise à jury.
-    const payload: SessionFormValues = { ...values, jurys: juryActif ? jurySel : [] };
+    const payload: SessionFormValues = {
+      ...values,
+      jurys: juryActif ? jurySel : [],
+      formateursAnimation,
+    };
     startTransition(async () => {
       const res = sessionId
         ? await updateSession(sessionId, payload)
@@ -316,6 +355,85 @@ export function SessionForm({
               </div>
             )}
           </div>
+
+          {/* Étendue de l'animation par formateur (complet / partiel + jours) */}
+          {checkedFormateurs.length > 0 && joursDispo.length > 1 && (
+            <div className="grid gap-2 sm:col-span-2">
+              <Label>Étendue de l&apos;animation</Label>
+              <div className="space-y-2">
+                {checkedFormateurs.map((fid) => {
+                  const f = formateurs.find((x) => x.id === fid);
+                  if (!f) return null;
+                  const complet = anim[fid]?.complet ?? true;
+                  const jours = anim[fid]?.jours ?? [];
+                  return (
+                    <div key={fid} className="rounded-lg border p-2.5">
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm">
+                        <span className="font-medium">
+                          {f.prenom} {f.nom}
+                          {f.typeContrat === "EXTERNE" && (
+                            <span className="ml-1.5 text-xs font-normal text-amber-700 dark:text-amber-300">
+                              (externe — facturé)
+                            </span>
+                          )}
+                        </span>
+                        <label className="flex items-center gap-1.5">
+                          <input
+                            type="radio"
+                            name={`anim-${fid}`}
+                            className="h-4 w-4"
+                            checked={complet}
+                            onChange={() => setComplet(fid, true)}
+                          />
+                          Toute la session
+                        </label>
+                        <label className="flex items-center gap-1.5">
+                          <input
+                            type="radio"
+                            name={`anim-${fid}`}
+                            className="h-4 w-4"
+                            checked={!complet}
+                            onChange={() => setComplet(fid, false)}
+                          />
+                          Partiellement
+                        </label>
+                        {!complet && (
+                          <span className="text-xs text-muted-foreground">
+                            {jours.length} jour(s) / {joursDispo.length}
+                          </span>
+                        )}
+                      </div>
+                      {!complet && (
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {joursDispo.map((j) => {
+                            const on = jours.includes(j);
+                            return (
+                              <button
+                                type="button"
+                                key={j}
+                                onClick={() => toggleJour(fid, j)}
+                                className={`rounded-md border px-2 py-1 text-xs ${
+                                  on
+                                    ? "border-primary bg-primary/10 font-medium text-primary"
+                                    : "text-muted-foreground hover:bg-muted"
+                                }`}
+                              >
+                                {labelJour(j)}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Pour un formateur externe, le nombre de jours cochés alimente le contrat de sous-traitance
+                et la facturation.
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 

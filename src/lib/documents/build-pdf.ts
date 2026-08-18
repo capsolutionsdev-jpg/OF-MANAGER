@@ -1,5 +1,6 @@
 import { PDFDocument } from "pdf-lib";
 import { prisma } from "@/lib/prisma";
+import { nbJoursFormateur, parseAnimation } from "@/lib/formateurs/animation";
 import {
   DOCUMENTS,
   EMPTY_IMAGE,
@@ -300,9 +301,11 @@ export async function buildContratFormateurPdf(
   const joursSeances = new Set(
     s.seances.map((x) => x.date.toISOString().slice(0, 10)),
   ).size;
-  const nbJours =
+  const nbJoursTotal =
     s.formation.dureeJours ??
     (joursSeances > 0 ? joursSeances : businessDaysBetween(s.dateDebut, s.dateFin));
+  // Animation partielle : ne facturer que les jours réellement couverts par CE formateur.
+  const nbJours = nbJoursFormateur(parseAnimation(s.formateursAnimation), f.id, nbJoursTotal);
 
   const tarif =
     s.tarifFormateurJour != null

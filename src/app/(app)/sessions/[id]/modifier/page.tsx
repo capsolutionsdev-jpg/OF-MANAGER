@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { requireTenant } from "@/lib/tenant";
 import { filterFormationsByOrgConfig } from "@/lib/get-formations-for-organisme";
 import { SessionForm } from "@/components/sessions/session-form";
+import { parseAnimation } from "@/lib/formateurs/animation";
 
 export default async function ModifierSessionPage({
   params,
@@ -64,6 +65,7 @@ export default async function ModifierSessionPage({
           sessionId={s.id}
           defaultValues={{
             formateurIds: s.formateurs.map((f) => f.id),
+            formateursAnimation: parseAnimation(s.formateursAnimation),
             jurys: s.juryAffectations.map((a) => ({
               juryId: a.juryId,
               prixEuros: a.prixCents ? (a.prixCents / 100).toFixed(2) : "",
