@@ -38,6 +38,7 @@ import {
   History,
   Globe,
   Newspaper,
+  Share2,
   type LucideIcon,
 } from "lucide-react";
 
@@ -340,6 +341,14 @@ export const navItems: NavItem[] = [
     feature: "jurys",
   },
   {
+    label: "Réseaux sociaux",
+    href: "/communication",
+    icon: Share2,
+    roles: ["ADMIN", "RESPONSABLE_FORMATION"],
+    permission: "communication",
+    feature: "communication",
+  },
+  {
     label: "Signatures",
     href: "/signatures",
     icon: PenLine,
@@ -423,7 +432,7 @@ const GROUP_BY_HREF: Record<string, string> = {
   "/sessions": "Formation", "/planning": "Formation", "/salles": "Formation",
   "/elearning": "Formation", "/examen-civique": "Formation", "/formateurs": "Formation",
   "/diplomes": "Formation", "/jurys": "Formation",
-  "/sms": "Communication", "/ia": "Communication", "/signatures": "Communication",
+  "/communication": "Communication", "/sms": "Communication", "/ia": "Communication", "/signatures": "Communication",
   "/automatisations": "Communication",
   "/comptabilite": "Finance", "/tresorerie": "Finance", "/devis": "Finance", "/bpf": "Finance", "/rapports": "Finance",
   "/qualiopi": "Qualité",
