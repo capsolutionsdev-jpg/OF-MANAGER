@@ -13,6 +13,8 @@ import {
   Download,
   AlertTriangle,
   Loader2,
+  CalendarClock,
+  CheckCircle2,
 } from "lucide-react";
 import type { SocialPlatform } from "@prisma/client";
 import { Button } from "@/components/ui/button";
@@ -28,6 +30,8 @@ import {
   regenererAsset,
   mettreAJourAsset,
   validerAsset,
+  planifierAsset,
+  marquerPublie,
 } from "@/lib/actions/social-content-actions";
 
 export type AssetStatut = "BROUILLON" | "A_VALIDER" | "APPROUVE" | "REJETE";
@@ -39,6 +43,8 @@ export type AssetView = {
   version: number;
   notesValidation: string | null;
   valideLe: string | null;
+  scheduledAt: string | null;
+  publishedAt: string | null;
   content: {
     titre: string;
     corps: string;
@@ -47,6 +53,17 @@ export type AssetView = {
     avertissements: string[];
   };
 };
+
+/** ISO (UTC) → valeur d'un <input type="datetime-local"> (heure locale). */
+function isoToLocalInput(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+const fmtDateTime = (iso: string) =>
+  new Date(iso).toLocaleString("fr-FR", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
 const STATUT_META: Record<AssetStatut, { label: string; className: string }> = {
   BROUILLON: { label: "Brouillon", className: "border-border text-muted-foreground" },
@@ -196,6 +213,7 @@ function AssetEditor({ asset }: { asset: AssetView }) {
   const [hashtags, setHashtags] = useState(asset.content.hashtags.join(" "));
   const [rejecting, setRejecting] = useState(false);
   const [notes, setNotes] = useState("");
+  const [sched, setSched] = useState(isoToLocalInput(asset.scheduledAt));
 
   // « Modifié » = comparaison live avec les props (mises à jour après refresh).
   const dirty =
@@ -246,6 +264,32 @@ function AssetEditor({ asset }: { asset: AssetView }) {
       toast.success(approuve ? "Contenu approuvé." : "Contenu rejeté.");
       setRejecting(false);
       setNotes("");
+      router.refresh();
+    });
+  }
+
+  function planifier(clear = false) {
+    start(async () => {
+      const iso = clear || !sched ? null : new Date(sched).toISOString();
+      const res = await planifierAsset(asset.id, iso);
+      if (!res.ok) {
+        toast.error(res.error ?? "Planification impossible.");
+        return;
+      }
+      if (clear) setSched("");
+      toast.success(clear || !iso ? "Planification retirée." : "Publication planifiée.");
+      router.refresh();
+    });
+  }
+
+  function togglePublie() {
+    start(async () => {
+      const res = await marquerPublie(asset.id, !asset.publishedAt);
+      if (!res.ok) {
+        toast.error(res.error ?? "Action impossible.");
+        return;
+      }
+      toast.success(asset.publishedAt ? "Marqué non publié." : "Marqué comme publié.");
       router.refresh();
     });
   }
@@ -407,6 +451,47 @@ function AssetEditor({ asset }: { asset: AssetView }) {
           </div>
         </div>
       )}
+
+      {/* Planification éditoriale — l'OF publie à la main au moment prévu. */}
+      <div className="flex flex-wrap items-end gap-3 rounded-lg border bg-muted/20 p-3">
+        <div className="space-y-1.5">
+          <Label htmlFor={`sched-${asset.id}`} className="flex items-center gap-1.5">
+            <CalendarClock className="size-3.5" /> Publication prévue
+          </Label>
+          <Input
+            id={`sched-${asset.id}`}
+            type="datetime-local"
+            value={sched}
+            onChange={(e) => setSched(e.target.value)}
+            className="w-auto"
+          />
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button size="sm" variant="outline" onClick={() => planifier(false)} disabled={pending || !sched}>
+            Planifier
+          </Button>
+          {asset.scheduledAt && (
+            <Button size="sm" variant="ghost" onClick={() => planifier(true)} disabled={pending}>
+              Retirer
+            </Button>
+          )}
+        </div>
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          {asset.publishedAt ? (
+            <Badge variant="default" className="bg-emerald-600 text-white">
+              <CheckCircle2 className="mr-1 size-3" /> Publié le {fmtDateTime(asset.publishedAt)}
+            </Badge>
+          ) : asset.scheduledAt ? (
+            <Badge variant="outline" className="border-primary/30 text-primary">
+              Prévu le {fmtDateTime(asset.scheduledAt)}
+            </Badge>
+          ) : null}
+          <Button size="sm" variant={asset.publishedAt ? "outline" : "default"} onClick={togglePublie} disabled={pending}>
+            <CheckCircle2 className="mr-1.5 size-4" />
+            {asset.publishedAt ? "Annuler « publié »" : "Marquer publié"}
+          </Button>
+        </div>
+      </div>
     </Card>
   );
 }

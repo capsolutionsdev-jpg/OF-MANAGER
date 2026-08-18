@@ -7,6 +7,7 @@ import { AssetsPanel, type AssetView } from "@/components/communication/assets-p
 import { VisualCards, type CardData } from "@/components/communication/visual-cards";
 import { AiImagePanel } from "@/components/communication/ai-image-panel";
 import { imageIaConfigured } from "@/lib/image-gen";
+import { ModulePending, isMissingTable } from "@/components/communication/module-pending";
 
 export const dynamic = "force-dynamic";
 
@@ -20,31 +21,52 @@ export default async function CommunicationSessionPage({
   const { sessionId } = await params;
   const { db, organismeId } = await requireStaffTenant();
 
-  const s = await db.session.findUnique({
-    where: { id: sessionId },
-    select: {
-      id: true,
-      dateDebut: true,
-      dateFin: true,
-      modalite: true,
-      lieu: true,
-      nbPlaces: true,
-      formation: { select: { titre: true, dureeHeures: true, tarif: true, certification: true } },
-      _count: { select: { inscriptions: true } },
-      socialAssets: {
-        orderBy: { platform: "asc" },
-        select: {
-          id: true,
-          platform: true,
-          statut: true,
-          version: true,
-          notesValidation: true,
-          valideLe: true,
-          contenu: true,
+  const s = await db.session
+    .findUnique({
+      where: { id: sessionId },
+      select: {
+        id: true,
+        dateDebut: true,
+        dateFin: true,
+        modalite: true,
+        lieu: true,
+        nbPlaces: true,
+        formation: { select: { titre: true, dureeHeures: true, tarif: true, certification: true } },
+        _count: { select: { inscriptions: true } },
+        socialAssets: {
+          orderBy: { platform: "asc" },
+          select: {
+            id: true,
+            platform: true,
+            statut: true,
+            version: true,
+            notesValidation: true,
+            valideLe: true,
+            scheduledAt: true,
+            publishedAt: true,
+            contenu: true,
+          },
         },
       },
-    },
-  });
+    })
+    .catch((e: unknown) => {
+      if (isMissingTable(e)) return "MISSING" as const;
+      throw e;
+    });
+
+  if (s === "MISSING") {
+    return (
+      <div className="space-y-6">
+        <Link
+          href="/communication"
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ArrowLeft className="size-4" /> Toutes les sessions
+        </Link>
+        <ModulePending />
+      </div>
+    );
+  }
   if (!s) notFound();
 
   // Marque de l'OF (tenant-agnostique) pour les visuels.
@@ -80,6 +102,8 @@ export default async function CommunicationSessionPage({
       version: a.version,
       notesValidation: a.notesValidation,
       valideLe: a.valideLe ? a.valideLe.toISOString() : null,
+      scheduledAt: a.scheduledAt ? a.scheduledAt.toISOString() : null,
+      publishedAt: a.publishedAt ? a.publishedAt.toISOString() : null,
       content: {
         titre: typeof c.titre === "string" ? c.titre : "",
         corps: typeof c.corps === "string" ? c.corps : "",

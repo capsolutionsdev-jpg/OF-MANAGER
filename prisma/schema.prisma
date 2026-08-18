@@ -2804,6 +2804,10 @@ model SocialContentAsset {
   valideParId String?
   valideLe    DateTime?
 
+  // Planification éditoriale (v1 : calendrier + rappels, PAS de publication auto).
+  scheduledAt DateTime? // date/heure prévue de publication (par l'OF, à la main)
+  publishedAt DateTime? // coché « publié » par l'OF
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -2811,6 +2815,7 @@ model SocialContentAsset {
   @@index([organismeId])
   @@index([sessionId])
   @@index([statut])
+  @@index([scheduledAt])
 }
 
 // Snapshot MENSUEL du MRR éditeur (console) : base des analytics (courbe MRR,

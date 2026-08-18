@@ -1,11 +1,13 @@
 import Link from "next/link";
-import { CalendarDays, Megaphone, ChevronRight } from "lucide-react";
+import { CalendarDays, Megaphone, ChevronRight, CalendarClock } from "lucide-react";
 import { getTenantDb } from "@/lib/tenant";
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { SOCIAL_PLATFORMS } from "@/lib/social-platforms";
+import { ModulePending, isMissingTable } from "@/components/communication/module-pending";
 
 export const dynamic = "force-dynamic";
 
@@ -13,19 +15,33 @@ const fmt = (d: Date) => d.toLocaleDateString("fr-FR", { day: "numeric", month: 
 
 export default async function CommunicationPage() {
   const db = await getTenantDb();
-  const sessions = await db.session.findMany({
-    orderBy: { dateDebut: "desc" },
-    take: 100,
-    select: {
-      id: true,
-      dateDebut: true,
-      dateFin: true,
-      modalite: true,
-      lieu: true,
-      formation: { select: { titre: true } },
-      socialAssets: { select: { statut: true } },
-    },
-  });
+  const sessions = await db.session
+    .findMany({
+      orderBy: { dateDebut: "desc" },
+      take: 100,
+      select: {
+        id: true,
+        dateDebut: true,
+        dateFin: true,
+        modalite: true,
+        lieu: true,
+        formation: { select: { titre: true } },
+        socialAssets: { select: { statut: true, scheduledAt: true, publishedAt: true } },
+      },
+    })
+    .catch((e: unknown) => {
+      if (isMissingTable(e)) return "MISSING" as const;
+      throw e;
+    });
+
+  if (sessions === "MISSING") {
+    return (
+      <div className="space-y-6">
+        <PageHeader title="Réseaux sociaux" subtitle="Génération et planification de vos posts." />
+        <ModulePending />
+      </div>
+    );
+  }
 
   const now = new Date();
   const total = SOCIAL_PLATFORMS.length;
@@ -44,8 +60,12 @@ export default async function CommunicationPage() {
     <div className="space-y-6">
       <PageHeader
         title="Réseaux sociaux"
-        subtitle="Générez, validez et exportez des posts prêts à publier pour promouvoir vos sessions — LinkedIn, Instagram, Facebook, X, TikTok, YouTube, WhatsApp."
-      />
+        subtitle="Générez, validez, planifiez et exportez des posts prêts à publier pour promouvoir vos sessions — LinkedIn, Instagram, Facebook, X, TikTok, YouTube, WhatsApp."
+      >
+        <Button variant="outline" size="sm" render={<Link href="/communication/calendrier" />}>
+          <CalendarClock className="mr-1.5 size-4" /> Calendrier
+        </Button>
+      </PageHeader>
 
       {ordered.length === 0 ? (
         <EmptyState
@@ -61,6 +81,7 @@ export default async function CommunicationPage() {
             const gen = s.socialAssets.length;
             const approuve = s.socialAssets.filter((a) => a.statut === "APPROUVE").length;
             const aValider = s.socialAssets.filter((a) => a.statut === "A_VALIDER" || a.statut === "BROUILLON").length;
+            const planifie = s.socialAssets.filter((a) => a.scheduledAt && !a.publishedAt).length;
             const upcoming = s.dateDebut >= now;
             return (
               <Card key={s.id} className="p-0">
@@ -94,6 +115,11 @@ export default async function CommunicationPage() {
                         {aValider > 0 && (
                           <Badge variant="outline" className="border-amber-500/40 text-amber-600 dark:text-amber-400">
                             {aValider} à valider
+                          </Badge>
+                        )}
+                        {planifie > 0 && (
+                          <Badge variant="outline" className="border-primary/30 text-primary">
+                            {planifie} planifié{planifie > 1 ? "s" : ""}
                           </Badge>
                         )}
                       </div>

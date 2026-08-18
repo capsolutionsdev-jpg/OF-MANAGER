@@ -238,6 +238,35 @@ export async function genererVisuelIA(
   return genererImageIA({ prompt, format: opts?.format });
 }
 
+/** Planifie (ou déprogramme si null) la date/heure de publication prévue. */
+export async function planifierAsset(assetId: string, scheduledAtISO: string | null): Promise<Res> {
+  const { db } = await requireStaffTenant();
+  if (!(await hasStrictFeature("communication"))) return { ok: false, error: "Module non activé." };
+  let scheduledAt: Date | null = null;
+  if (scheduledAtISO) {
+    const d = new Date(scheduledAtISO);
+    if (Number.isNaN(d.getTime())) return { ok: false, error: "Date invalide." };
+    scheduledAt = d;
+  }
+  await db.socialContentAsset.update({ where: { id: assetId }, data: { scheduledAt } });
+  revalidatePath("/communication");
+  revalidatePath("/communication/calendrier");
+  return { ok: true };
+}
+
+/** Coche/décoche « publié » (l'OF publie à la main ; on ne fait que tracer). */
+export async function marquerPublie(assetId: string, publie: boolean): Promise<Res> {
+  const { db } = await requireStaffTenant();
+  if (!(await hasStrictFeature("communication"))) return { ok: false, error: "Module non activé." };
+  await db.socialContentAsset.update({
+    where: { id: assetId },
+    data: { publishedAt: publie ? new Date() : null },
+  });
+  revalidatePath("/communication");
+  revalidatePath("/communication/calendrier");
+  return { ok: true };
+}
+
 /** Régénère UNE plateforme d'un asset existant. */
 export async function regenererAsset(assetId: string): Promise<Res> {
   const { db } = await requireStaffTenant();
