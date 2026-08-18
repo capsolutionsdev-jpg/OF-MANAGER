@@ -15,6 +15,13 @@ describe("animation formateur — jours de la session", () => {
     expect(joursSession("", "2026-09-03")).toEqual([]);
     expect(joursSession("2026-09-03", "2026-09-01")).toEqual([]);
   });
+  it("exclut les week-ends (samedi 05 + dimanche 06 sautés)", () => {
+    // 04 = vendredi, 05 = samedi, 06 = dimanche, 07 = lundi
+    expect(joursSession("2026-09-04", "2026-09-07")).toEqual(["2026-09-04", "2026-09-07"]);
+  });
+  it("session entièrement le week-end → repli (jours gardés, jamais vide)", () => {
+    expect(joursSession("2026-09-05", "2026-09-06")).toEqual(["2026-09-05", "2026-09-06"]);
+  });
 });
 
 describe("animation formateur — nombre de jours facturables", () => {
