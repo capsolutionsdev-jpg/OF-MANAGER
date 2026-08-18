@@ -1,6 +1,7 @@
 import type { Role } from "@prisma/client";
 import JSZip from "jszip";
 import { auth } from "@/auth";
+import { exportRateLimited } from "@/lib/security/export-guard";
 import { prisma } from "@/lib/prisma";
 import {
   dockerfile,
@@ -27,6 +28,8 @@ export async function GET(
   if ((session?.user?.role as Role) !== "SUPERADMIN") {
     return new Response("Accès refusé.", { status: 403 });
   }
+  const limited = exportRateLimited(session!.user!.id as string);
+  if (limited) return limited;
   const { id } = await params;
   const o = await prisma.organisme.findUnique({ where: { id } });
   if (!o) return new Response("Organisme introuvable.", { status: 404 });

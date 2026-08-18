@@ -1,5 +1,6 @@
 import { getTenantDb } from "@/lib/tenant";
 import { auth } from "@/auth";
+import { exportRateLimited } from "@/lib/security/export-guard";
 import { exportResponse, buildSheet } from "@/lib/export";
 
 export const runtime = "nodejs";
@@ -23,6 +24,8 @@ export async function GET(
   if (!session?.user || !STAFF.includes(session.user.role as string)) {
     return new Response("Non autorisé", { status: 401 });
   }
+  const limited = exportRateLimited(session.user.id);
+  if (limited) return limited;
   const { id } = await params;
   const db = await getTenantDb();
 

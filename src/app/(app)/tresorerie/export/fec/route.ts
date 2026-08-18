@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { exportRateLimited } from "@/lib/security/export-guard";
 import { getTenantDb } from "@/lib/tenant";
 import { orgConfigFor } from "@/lib/org-identity";
 import { buildFec, serializeFec, fecFilename } from "@/lib/compta/fec";
@@ -17,6 +18,8 @@ export async function GET(req: Request) {
   if (!session?.user || !STAFF.includes(session.user.role as string)) {
     return new Response("Non autorisé", { status: 401 });
   }
+  const limited = exportRateLimited(session.user.id);
+  if (limited) return limited;
 
   const url = new URL(req.url);
   const year = Number(url.searchParams.get("year")) || new Date().getFullYear();

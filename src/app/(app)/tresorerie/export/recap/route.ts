@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { exportRateLimited } from "@/lib/security/export-guard";
 import { getTenantDb } from "@/lib/tenant";
 import { exportResponse } from "@/lib/export";
 import { buildSheet } from "@/lib/export-xlsx";
@@ -34,6 +35,8 @@ export async function GET(req: Request) {
   if (!session?.user || !STAFF.includes(session.user.role as string)) {
     return new Response("Non autorisé", { status: 401 });
   }
+  const limited = exportRateLimited(session.user.id);
+  if (limited) return limited;
   const data = await monthlyData();
   const sheet = buildSheet("Bilan mensuel", data, [
     { header: "Mois", value: (r) => mlabel(r.m) },
