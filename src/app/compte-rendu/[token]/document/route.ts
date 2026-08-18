@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { buildCompteRenduPdf } from "@/lib/documents/build-pdf";
+import { linkExpired } from "@/lib/token";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -11,9 +12,10 @@ export async function GET(
   const { token } = await params;
   const s = await prisma.session.findUnique({
     where: { crFormateurToken: token },
-    select: { id: true },
+    select: { id: true, dateFin: true },
   });
   if (!s) return new Response("Lien invalide", { status: 404 });
+  if (linkExpired(s.dateFin, 2)) return new Response("Lien expiré", { status: 410 });
 
   const pdf = await buildCompteRenduPdf(s.id);
   if (!pdf) return new Response("Document introuvable", { status: 404 });

@@ -9,7 +9,7 @@ import { requireStaffTenant } from "@/lib/tenant";
 import { auth } from "@/auth";
 import { sendEmail } from "@/lib/email";
 import { orgConfigFor } from "@/lib/org-identity";
-import { generateToken, appBaseUrl } from "@/lib/token";
+import { generateExpiringToken, expiringTokenExpired, LINK_TTL_DAYS, appBaseUrl } from "@/lib/token";
 import { logProspectEmail } from "@/lib/actions/crm-actions";
 import {
   emailShell,
@@ -59,7 +59,7 @@ export async function sendProspectIntakeLink(
   if (!c) return { ok: false, error: "Prospect introuvable." };
   if (!c.email) return { ok: false, error: "Aucune adresse e-mail pour ce prospect." };
 
-  const token = c.prospectToken ?? generateToken();
+  const token = c.prospectToken ?? generateExpiringToken();
   if (!c.prospectToken) {
     await db.candidat.update({
       where: { id: candidatId },
@@ -126,6 +126,9 @@ export async function submitProspectForm(
   });
   if (!c) return { ok: false, error: "Lien invalide." };
   if (c.prospectFormCompletedAt) return { ok: true }; // déjà rempli
+  // Lien prospect expiré (60 j après émission — horodatage embarqué dans le token). §magic-links
+  if (expiringTokenExpired(token, LINK_TTL_DAYS.SIGNATURE))
+    return { ok: false, error: "Ce lien a expiré. Contactez l'organisme pour en recevoir un nouveau." };
 
   if (!v.consent)
     return { ok: false, error: "Merci d'accepter le traitement de vos données (RGPD)." };

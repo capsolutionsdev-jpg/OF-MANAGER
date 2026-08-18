@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { buildSatisfactionPdf } from "@/lib/documents/build-pdf";
+import { linkExpired } from "@/lib/token";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -11,9 +12,10 @@ export async function GET(
   const { token } = await params;
   const i = await prisma.inscription.findUnique({
     where: { satisfactionToken: token },
-    select: { id: true },
+    select: { id: true, session: { select: { dateFin: true } } },
   });
   if (!i) return new Response("Lien invalide", { status: 404 });
+  if (linkExpired(i.session?.dateFin, 6)) return new Response("Lien expiré", { status: 410 });
 
   const pdf = await buildSatisfactionPdf(i.id);
   if (!pdf) return new Response("Document introuvable", { status: 404 });

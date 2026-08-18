@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { CheckCircle2, Download } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { orgConfigFor } from "@/lib/org-identity";
+import { linkExpired } from "@/lib/token";
 import {
   Card,
   CardContent,
@@ -23,6 +24,8 @@ export default async function CompteRenduPage({
     include: { formation: true, formateurs: true },
   });
   if (!s) notFound();
+  // Lien de compte rendu formateur expiré (~60 j après la fin de session). §magic-links
+  if (linkExpired(s.dateFin, 2)) notFound();
   const org = await orgConfigFor(s.organismeId);
 
   const done = !!s.crFormateurCompletedAt;

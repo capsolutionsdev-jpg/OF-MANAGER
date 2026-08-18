@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { CheckCircle2 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { orgConfigFor } from "@/lib/org-identity";
+import { linkExpired } from "@/lib/token";
 import {
   Card,
   CardContent,
@@ -27,6 +28,8 @@ export default async function SatisfactionEntreprisePage({
     },
   });
   if (!insc) notFound();
+  // Lien d'enquête expiré (~180 j après la fin de session). §magic-links
+  if (linkExpired(insc.session?.dateFin, 6)) notFound();
   const org = await orgConfigFor(insc.organismeId);
 
   const done = !!insc.satisfactionEntrepriseCompletedAt;
