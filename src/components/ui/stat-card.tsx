@@ -5,12 +5,14 @@ import { cn } from "@/lib/utils";
 
 type Tint = "blue" | "emerald" | "amber" | "violet" | "rose";
 
+// Tints dérivés des tokens sémantiques (couleur tenant + dark-mode automatiques),
+// au lieu de la palette Tailwind brute (-50 / -600) qui ignorait le thème.
 const TINTS: Record<Tint, string> = {
-  blue: "bg-blue-50 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400",
-  emerald: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400",
-  amber: "bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400",
-  violet: "bg-violet-50 text-violet-600 dark:bg-violet-500/15 dark:text-violet-400",
-  rose: "bg-rose-50 text-rose-600 dark:bg-rose-500/15 dark:text-rose-400",
+  blue: "bg-info/10 text-info",
+  emerald: "bg-success/10 text-success",
+  amber: "bg-warning/10 text-warning",
+  violet: "bg-primary/10 text-primary",
+  rose: "bg-destructive/10 text-destructive",
 };
 
 /** Carte d'indicateur clé (design system) : libellé, grand chiffre animé,
@@ -53,8 +55,8 @@ export function StatCard({
           <div
             className={cn(
               "mt-2 text-xs font-medium",
-              trendUp === true && "text-emerald-600",
-              trendUp === false && "text-rose-600",
+              trendUp === true && "text-success",
+              trendUp === false && "text-destructive",
               trendUp === undefined && "text-muted-foreground",
             )}
           >
