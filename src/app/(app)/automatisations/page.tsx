@@ -1,5 +1,5 @@
 import { Bell, Clock, ChevronDown } from "lucide-react";
-import { getTenantDb } from "@/lib/tenant";
+import { requireTenant } from "@/lib/tenant";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -31,11 +31,11 @@ import { getAutomationSettings } from "@/lib/automation-settings";
 import { updateAutomationSettings } from "@/lib/actions/automation-settings-actions";
 
 export default async function AutomatisationsPage() {
-  const db = await getTenantDb();
+  const { organismeId, db } = await requireTenant();
   const [rules, emails, settings] = await Promise.all([
     db.workflowRule.findMany({ orderBy: { createdAt: "desc" } }),
     db.emailLog.findMany({ orderBy: { createdAt: "desc" }, take: 25 }),
-    getAutomationSettings(),
+    getAutomationSettings(organismeId),
   ]);
   const demo = !emailConfigured();
 

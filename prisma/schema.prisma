@@ -1249,8 +1249,8 @@ model EmargementSignature {
 
 // Réglages des automatismes (ligne unique « singleton »)
 model AutomationSettings {
-  id                      String   @id @default("singleton")
-  organismeId String? // tenant (multi-OF)
+  id                      String   @id @default(cuid())
+  organismeId String? @unique // tenant (multi-OF) — 1 ligne de réglages par organisme
   convocationActive       Boolean  @default(true)
   convocationJMoins       Int      @default(7)
   attestationEntreeActive Boolean  @default(true)
@@ -1259,7 +1259,6 @@ model AutomationSettings {
   compteRenduActive       Boolean  @default(true)
   emargementActive        Boolean  @default(true)
   updatedAt               DateTime @updatedAt
-  @@index([organismeId])
 }
 
 // =============================================================

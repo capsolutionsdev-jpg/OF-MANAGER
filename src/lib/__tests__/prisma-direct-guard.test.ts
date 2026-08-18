@@ -133,8 +133,8 @@ const ACTIONS_ALLOWLIST = new Set([
   "validation-actions.ts",
   "formateur-actions.ts",
   "jury-actions.ts",
-  // Réglage GLOBAL (singleton plateforme AutomationSettings) : getTenantDb
-  // injecterait organismeId et entrerait en collision avec le singleton ; garde ADMIN.
+  // AutomationSettings cloisonné par organisme : upsert avec where explicite
+  // { organismeId } (unique) + garde STAFF_ADMIN. Client brut légitime.
   "automation-settings-actions.ts",
   // Wedof : mute UNIQUEMENT l'Organisme de la session (requireAdminOrg = id de
   // session) ; garde ADMIN — scoping manuel explicite (motif vérifier-puis-muter).

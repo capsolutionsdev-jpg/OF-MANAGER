@@ -47,12 +47,11 @@ const rlsStrict = () => process.env.RLS_STRICT === "true";
 //  - User / Apprenant : entités d'auth cross-tenant (e-mail unique toutes
 //    organisations confondues ; lues/écrites « par e-mail » au login et à la
 //    création de compte apprenant ; lignes legacy à organismeId NULL).
-//  - AutomationSettings : singleton PLATEFORME (id="singleton", organismeId NULL) ;
-//    scopé sur la session, son upsert violerait le WITH CHECK (la sauvegarde des
-//    automatismes planterait pour chaque tenant).
 // (Les GLOBAL_MODELS — Organisme, PlanTarif, SupportMessage — n'ont AUCUNE policy
 //  RLS, donc ne passent jamais par ce chemin.)
-const STRICT_GLOBAL_MODELS = new Set<string>(["User", "Apprenant", "AutomationSettings"]);
+// NB : AutomationSettings est désormais CLOISONNÉ par organisme (une ligne/tenant),
+// il n'est donc plus un modèle « global » (correctif audit multi-tenant).
+const STRICT_GLOBAL_MODELS = new Set<string>(["User", "Apprenant"]);
 
 const SET_ORG = `SELECT set_config('app.org', $1, true)`;
 
