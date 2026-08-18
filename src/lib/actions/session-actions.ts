@@ -9,6 +9,7 @@ import {
   type SessionFormValues,
 } from "@/lib/validators/session";
 import { hasStrictFeature } from "@/lib/feature-guard";
+import { joursSession, joursEnConflit } from "@/lib/formateurs/animation";
 import type { TenantDb } from "@/lib/tenant";
 
 export type ActionResult =
@@ -168,6 +169,25 @@ function buildAnimation(
     .map((a) => ({ formateurId: a.formateurId, complet: a.complet, jours: a.complet ? [] : a.jours }));
 }
 
+/** Erreur si un même jour est attribué à ≥ 2 formateurs (un jour = un seul
+ *  formateur ; « complet » = toute la session). null si tout va bien. */
+function animationOverlap(
+  anim: SessionFormValues["formateursAnimation"],
+  validIds: string[],
+  dateDebut: string,
+  dateFin: string,
+): string | null {
+  const valid = new Set(validIds);
+  const items = (anim ?? []).filter((a) => valid.has(a.formateurId));
+  if (items.length < 2) return null;
+  const conflit = joursEnConflit(
+    items.map((a) => ({ formateurId: a.formateurId, complet: a.complet, jours: a.jours })),
+    joursSession(dateDebut, dateFin), // jours ouvrés de la session
+  );
+  if (!conflit.length) return null;
+  return `Un même jour ne peut pas être animé par deux formateurs (jour${conflit.length > 1 ? "s" : ""} en conflit : ${conflit.join(", ")}). Ajustez la répartition (« Partiellement »).`;
+}
+
 export async function createSession(
   values: SessionFormValues,
 ): Promise<ActionResult> {
@@ -184,6 +204,10 @@ export async function createSession(
     const warning = await salleWarnings(
       db, refs.salleId, refs.salleCapacite, data.nbPlaces, data.dateDebut, data.dateFin,
     );
+    const overlap = animationOverlap(
+      parsed.data.formateursAnimation, refs.formateurIds, parsed.data.dateDebut, parsed.data.dateFin,
+    );
+    if (overlap) return { ok: false, error: overlap };
     const created = await db.session.create({
       data: {
         ...data,
@@ -230,6 +254,10 @@ export async function updateSession(
     const warning = await salleWarnings(
       db, refs.salleId, refs.salleCapacite, data.nbPlaces, data.dateDebut, data.dateFin, id,
     );
+    const overlap = animationOverlap(
+      parsed.data.formateursAnimation, refs.formateurIds, parsed.data.dateDebut, parsed.data.dateFin,
+    );
+    if (overlap) return { ok: false, error: overlap };
     await db.session.update({
       where: { id },
       data: {

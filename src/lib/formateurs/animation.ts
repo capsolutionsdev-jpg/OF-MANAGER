@@ -66,3 +66,19 @@ export function nbJoursFormateur(
   if (!c || c.complet) return totalJours;
   return Math.min(c.jours.length, totalJours);
 }
+
+/**
+ * Jours attribués à ≥ 2 formateurs — un jour ne peut être animé que par UN seul
+ * formateur (« complet » = toute la session). Renvoie la liste TRIÉE des jours en
+ * conflit (vide = pas de chevauchement). PUR.
+ */
+export function joursEnConflit(config: AnimationConfig[], joursOuvres: string[]): string[] {
+  const n = new Map<string, number>();
+  for (const a of config) {
+    for (const j of a.complet ? joursOuvres : a.jours) n.set(j, (n.get(j) ?? 0) + 1);
+  }
+  return [...n.entries()]
+    .filter(([, c]) => c >= 2)
+    .map(([j]) => j)
+    .sort();
+}

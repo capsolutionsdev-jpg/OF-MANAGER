@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { joursSession, nbJoursFormateur, parseAnimation } from "@/lib/formateurs/animation";
+import { joursSession, nbJoursFormateur, parseAnimation, joursEnConflit } from "@/lib/formateurs/animation";
 
 describe("animation formateur — jours de la session", () => {
   it("liste les jours inclus (sans dérive de fuseau)", () => {
@@ -52,5 +52,56 @@ describe("animation formateur — parseAnimation (valeur base)", () => {
   it("ignore le bruit (non-objets, sans formateurId)", () => {
     expect(parseAnimation([null, 3, { jours: [] }])).toEqual([]);
     expect(parseAnimation("pas un tableau")).toEqual([]);
+  });
+});
+
+describe("animation formateur — un jour = un seul formateur (joursEnConflit)", () => {
+  const jours = ["2026-09-01", "2026-09-02", "2026-09-03"];
+  it("jours disjoints → aucun conflit", () => {
+    expect(
+      joursEnConflit(
+        [
+          { formateurId: "f1", complet: false, jours: ["2026-09-01"] },
+          { formateurId: "f2", complet: false, jours: ["2026-09-02", "2026-09-03"] },
+        ],
+        jours,
+      ),
+    ).toEqual([]);
+  });
+  it("même jour sur deux formateurs → conflit", () => {
+    expect(
+      joursEnConflit(
+        [
+          { formateurId: "f1", complet: false, jours: ["2026-09-01", "2026-09-02"] },
+          { formateurId: "f2", complet: false, jours: ["2026-09-02"] },
+        ],
+        jours,
+      ),
+    ).toEqual(["2026-09-02"]);
+  });
+  it("deux « toute la session » → tous les jours en conflit", () => {
+    expect(
+      joursEnConflit(
+        [
+          { formateurId: "f1", complet: true, jours: [] },
+          { formateurId: "f2", complet: true, jours: [] },
+        ],
+        jours,
+      ),
+    ).toEqual(jours);
+  });
+  it("complet + partiel → le jour du partiel est en conflit", () => {
+    expect(
+      joursEnConflit(
+        [
+          { formateurId: "f1", complet: true, jours: [] },
+          { formateurId: "f2", complet: false, jours: ["2026-09-01"] },
+        ],
+        jours,
+      ),
+    ).toEqual(["2026-09-01"]);
+  });
+  it("un seul formateur → aucun conflit", () => {
+    expect(joursEnConflit([{ formateurId: "f1", complet: true, jours: [] }], jours)).toEqual([]);
   });
 });
