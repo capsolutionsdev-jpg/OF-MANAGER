@@ -2752,3 +2752,18 @@ model T3PEpreuve {
   @@unique([parcoursId, type, tentative])
   @@index([organismeId])
 }
+
+// Snapshot MENSUEL du MRR éditeur (console) : base des analytics (courbe MRR,
+// waterfall new/expansion/contraction/churn, cohortes). Un enregistrement par
+// mois (idempotent), alimenté par le cron /api/cron/mrr-snapshot. `byOrg` garde
+// le MRR par organisme pour reconstruire le waterfall entre deux mois.
+model MrrSnapshot {
+  id        String   @id @default(cuid())
+  mois      String   @unique // "AAAA-MM"
+  total     Int // MRR total (€)
+  actifs    Int
+  essais    Int
+  byFormule Json // { BASIQUE, MEDIUM, COMPLET } en €
+  byOrg     Json // { organismeId: mrr€ }
+  createdAt DateTime @default(now())
+}
