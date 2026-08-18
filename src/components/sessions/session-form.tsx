@@ -14,7 +14,7 @@ import {
 } from "@/lib/validators/session";
 import { MODALITE_LABELS } from "@/lib/validators/formation";
 import { createSession, updateSession } from "@/lib/actions/session-actions";
-import { joursSession } from "@/lib/formateurs/animation";
+import { joursSession, joursEnConflit } from "@/lib/formateurs/animation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -132,6 +132,31 @@ export function SessionForm({
   const watchedFormationId = watch("formationId");
   const checkedFormateurs = watch("formateurIds") ?? [];
   const joursDispo = joursSession(watch("dateDebut") ?? "", watch("dateFin") ?? "");
+
+  // Un jour ne peut être animé que par UN formateur. Renvoie l'autre formateur
+  // qui « possède » déjà ce jour (complet = toute la session, ou jour coché).
+  const autreFormateurDuJour = (jour: string, exceptFid: string): string | null => {
+    for (const fid of checkedFormateurs) {
+      if (fid === exceptFid) continue;
+      const a = anim[fid];
+      if ((a?.complet ?? true) || (a?.jours ?? []).includes(jour)) return fid;
+    }
+    return null;
+  };
+  const nomFormateur = (fid: string) => {
+    const f = formateurs.find((x) => x.id === fid);
+    return f ? `${f.prenom} ${f.nom}` : "un autre formateur";
+  };
+  // Jours attribués à ≥ 2 formateurs (complet = toute la session) → conflit.
+  const conflits = joursEnConflit(
+    checkedFormateurs.map((fid) => ({
+      formateurId: fid,
+      complet: anim[fid]?.complet ?? true,
+      jours: anim[fid]?.jours ?? [],
+    })),
+    joursDispo,
+  );
+
   const selectedFormation = formations.find((f) => f.id === watchedFormationId);
   const juryActif = !!selectedFormation?.soumisJury;
   // La formation est-elle sanctionnée par un examen ? (masque date/lieu d'examen sinon)
@@ -407,15 +432,21 @@ export function SessionForm({
                         <div className="mt-2 flex flex-wrap gap-1.5">
                           {joursDispo.map((j) => {
                             const on = jours.includes(j);
+                            const prisPar = on ? null : autreFormateurDuJour(j, fid);
+                            const bloque = !!prisPar;
                             return (
                               <button
                                 type="button"
                                 key={j}
+                                disabled={bloque}
+                                title={bloque ? `Déjà attribué à ${nomFormateur(prisPar)}` : undefined}
                                 onClick={() => toggleJour(fid, j)}
                                 className={`rounded-md border px-2 py-1 text-xs ${
                                   on
                                     ? "border-primary bg-primary/10 font-medium text-primary"
-                                    : "text-muted-foreground hover:bg-muted"
+                                    : bloque
+                                      ? "cursor-not-allowed border-dashed text-muted-foreground/40 line-through"
+                                      : "text-muted-foreground hover:bg-muted"
                                 }`}
                               >
                                 {labelJour(j)}
@@ -428,6 +459,13 @@ export function SessionForm({
                   );
                 })}
               </div>
+              {conflits.length > 0 && (
+                <p className="text-[11px] font-medium text-destructive">
+                  ⚠ {conflits.length} jour(s) attribué(s) à deux formateurs (
+                  {conflits.map(labelJour).join(", ")}). Un jour ne peut être animé que par un seul
+                  formateur — mettez l&apos;un d&apos;eux en « Partiellement » et répartissez les jours.
+                </p>
+              )}
               <p className="text-[11px] text-muted-foreground">
                 Pour un formateur externe, le nombre de jours cochés alimente le contrat de sous-traitance
                 et la facturation.
