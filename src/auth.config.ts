@@ -3,6 +3,13 @@ import type { Role } from "@prisma/client";
 // Source UNIQUE de la matrice rôles↔sections (module sans dépendance runtime →
 // compatible edge/middleware). Fini la duplication (cf. audit ARC-02).
 import { SECTION_ROLES, STAFF_FILTRES } from "@/lib/section-roles";
+import {
+  applyImpersonationStart,
+  applyImpersonationStop,
+  type ImpUpdatePayload,
+  type ImpTokenLike,
+  type ImpClaim,
+} from "@/lib/impersonation";
 
 // Config partagée (compatible edge/middleware) — SANS accès base de données.
 // Les providers (Credentials + Prisma + bcrypt) sont ajoutés dans auth.ts (runtime Node).
@@ -99,7 +106,7 @@ export const authConfig = {
 
       return true;
     },
-    jwt({ token, user }) {
+    jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id as string;
         token.role = (user as { role: Role }).role;
@@ -107,6 +114,14 @@ export const authConfig = {
         token.organismeId = (user as { organismeId?: string | null }).organismeId ?? null;
         token.fonctionnalites = (user as { fonctionnalites?: string[] }).fonctionnalites ?? [];
         token.sid = (user as { sid?: string | null }).sid ?? null;
+      } else if (trigger === "update" && session && typeof session === "object" && "imp" in session) {
+        // Bascule « mode support » (impersonation). Ne touche JAMAIS le chemin de
+        // login (branche `if (user)`) : uniquement le trigger `update` explicite.
+        const payload = session as ImpUpdatePayload;
+        // Le JWT est muté EN PLACE (même référence) via ce cast typé.
+        const tok = token as unknown as ImpTokenLike;
+        if (payload.imp === null) applyImpersonationStop(tok);
+        else applyImpersonationStart(tok, payload.imp);
       }
       return token;
     },
@@ -118,6 +133,8 @@ export const authConfig = {
         session.user.organismeId = (token.organismeId as string | null | undefined) ?? null;
         session.user.fonctionnalites = (token.fonctionnalites as string[] | undefined) ?? [];
         session.user.sid = (token.sid as string | null | undefined) ?? null;
+        const imp = token.imp as ImpClaim | null | undefined;
+        session.user.imp = imp ? { orgId: imp.orgId, orgNom: imp.orgNom } : null;
       }
       return session;
     },

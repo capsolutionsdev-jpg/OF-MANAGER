@@ -22,7 +22,7 @@ const LOGIN_WINDOW_MS = 5 * 60_000;
 const MAX_PER_EMAIL = 8; // tentatives par compte ciblé / 5 min
 const MAX_PER_IP = 20; // tentatives par IP (toutes adresses confondues) / 5 min
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+export const { handlers, auth, signIn, signOut, unstable_update: update } = NextAuth({
   ...authConfig,
   providers: [
     Credentials({

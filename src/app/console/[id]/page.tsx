@@ -15,6 +15,7 @@ import { ContratsPrestationCard, type ContratPrestationRow } from "@/components/
 import { montantNet, ENGAGEMENT_LABELS, type EngagementType } from "@/lib/contrats/prestation";
 import { FacturesEditeurCard, type FactureEditeurRow } from "@/components/console/factures-editeur-card";
 import { AbonnementSepaCard } from "@/components/console/abonnement-sepa-card";
+import { ImpersonateButton } from "@/components/console/impersonate-button";
 import { sirenFromSiret, type FactureStatut } from "@/lib/factures/editeur";
 import { isStripeConfigured } from "@/lib/stripe";
 import { roleLabels } from "@/lib/navigation";
@@ -122,6 +123,7 @@ export default async function ConsoleOrganismePage({
             <ExternalLink className="h-3.5 w-3.5" /> Ouvrir l&apos;app
           </a>
         )}
+        <ImpersonateButton organismeId={org.id} orgNom={org.nom} />
       </PageHeader>
 
       <Card>

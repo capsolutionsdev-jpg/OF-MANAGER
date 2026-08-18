@@ -34,6 +34,7 @@ import { Breadcrumbs } from "@/components/breadcrumbs";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { MobileSpacer } from "@/components/mobile-spacer";
 import { InstallPrompt } from "@/components/install-prompt";
+import { ImpersonationBanner } from "@/components/impersonation-banner";
 
 // Rendu dynamique : ces pages lisent la base de données et la session,
 // elles ne doivent pas être pré-générées au build.
@@ -228,6 +229,7 @@ export default async function AppLayout({
             brand={{ nom: branding.nom, logoUrl: branding.logoUrl }}
             notifications={notifications}
           />
+          {session.user.imp && <ImpersonationBanner orgNom={session.user.imp.orgNom} />}
           {trial.isTrial && (
             <div className="flex items-center justify-center gap-2 bg-amber-500/10 px-4 py-2 text-center text-xs font-medium text-amber-700 dark:text-amber-300">
               <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
