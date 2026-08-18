@@ -27,6 +27,7 @@ import { KpiCardV2 } from "@/components/dashboard/kpi-card-v2";
 import { ConventionDialog } from "@/components/conventions/convention-dialog";
 import { UsageCard } from "@/components/facturation/usage-card";
 import { getOrgUsage } from "@/lib/usage";
+import { withDbRetry } from "@/lib/db-retry";
 
 function Gauge({ pct }: { pct: number }) {
   const r = 50;
@@ -81,7 +82,9 @@ export default async function DashboardPage() {
   // Consommation facturable du mois (quotas de la formule) — réservée à l'ADMIN,
   // titulaire qui pilote l'abonnement. cf. lib/usage.ts (facturation au volume).
   const usage =
-    session?.user?.role === "ADMIN" && org ? await getOrgUsage(org.id, org.formule) : null;
+    session?.user?.role === "ADMIN" && org
+      ? await withDbRetry(() => getOrgUsage(org.id, org.formule))
+      : null;
 
   // Bornes de la semaine courante (lundi → dimanche)
   const weekStart = new Date(now);
@@ -95,7 +98,7 @@ export default async function DashboardPage() {
     candidats, apprenants, formations, sessionsAVenir,
     sessionsActives, enAttente, enAttenteTotal, prochaines, logs,
     reclamationsOuvertes, inscriptionsDossier, weekSessions,
-  ] = await Promise.all([
+  ] = await withDbRetry(() => Promise.all([
     db.candidat.count({ where: { statut: { not: "ARCHIVE" } } }),
     db.apprenant.count(),
     db.formation.count({ where: { isArchived: false } }),
@@ -135,7 +138,7 @@ export default async function DashboardPage() {
       include: { formation: { select: { titre: true } }, _count: { select: { inscriptions: true } } },
       orderBy: { dateDebut: "asc" },
     }),
-  ]);
+  ]));
 
   // Jauge : remplissage global des sessions en cours / à venir
   const totalPlaces = sessionsActives.reduce((a, s) => a + s.nbPlaces, 0);
@@ -193,7 +196,7 @@ export default async function DashboardPage() {
       r.forEach((x) => names.set(`Formateur:${x.id}`, `${x.prenom} ${x.nom}`));
     }
   }
-  await Promise.all(Object.entries(byType).map(([t, set]) => resolve(t, [...set])));
+  await withDbRetry(() => Promise.all(Object.entries(byType).map(([t, set]) => resolve(t, [...set]))));
 
   // Point d'entrée « Convention entreprise » (inscription groupée B2B) sur l'accueil,
   // à côté de « Nouveau candidat » — réservé au staff (#15).
@@ -203,7 +206,7 @@ export default async function DashboardPage() {
   // Données du dialog « Convention entreprise » (staff) : les deux requêtes sont
   // indépendantes → un seul aller-retour au lieu de deux en série.
   const staffData = estStaff
-    ? await Promise.all([
+    ? await withDbRetry(() => Promise.all([
         db.entreprise.findMany({
           select: { id: true, raisonSociale: true },
           orderBy: { raisonSociale: "asc" },
@@ -214,7 +217,7 @@ export default async function DashboardPage() {
           orderBy: { dateDebut: "desc" },
           take: 100,
         }),
-      ])
+      ]))
     : null;
   const entreprisesConv = staffData?.[0] ?? [];
   const sessionsConvRaw = staffData?.[1] ?? [];
