@@ -15,6 +15,7 @@ import {
 } from "@/lib/console-stats";
 import { euros } from "@/lib/plans";
 import { cn } from "@/lib/utils";
+import { withDbRetry } from "@/lib/db-retry";
 
 export const dynamic = "force-dynamic";
 
@@ -25,9 +26,9 @@ const STATUT_BADGE: Record<string, string> = {
 };
 
 export default async function ConsoleDashboard() {
-  const [o, funnel, health] = await Promise.all([
-    getConsoleOverview(), getGrowthFunnel(), getConsoleHealth(),
-  ]);
+  const [o, funnel, health] = await withDbRetry(() =>
+    Promise.all([getConsoleOverview(), getGrowthFunnel(), getConsoleHealth()]),
+  );
   const { totals, byStatut, growth, mrrByPlan, adoption, alerts, rows } = o;
 
   // Étapes du funnel d'acquisition (barres dégressives, largeur relative aux leads).
