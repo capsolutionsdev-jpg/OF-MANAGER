@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, Building2, PhoneCall, LifeBuoy, BadgeEuro, Palette,
-  FileSignature, ReceiptEuro, BarChart3, Search, Menu, X,
+  FileSignature, ReceiptEuro, BarChart3, ScrollText, Search, Menu, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ConsoleAccountMenu } from "@/components/console/console-account-menu";
@@ -23,6 +23,7 @@ type Group = { title: string; items: Item[] };
 const GROUPS: Group[] = [
   { title: "Pilotage", items: [
     { href: "/console", label: "Tableau de bord", icon: LayoutDashboard, exact: true },
+    { href: "/console/audit", label: "Journal d'audit", icon: ScrollText },
   ] },
   { title: "Commercial", items: [
     { href: "/console/prospects", label: "Prospects", icon: PhoneCall },
