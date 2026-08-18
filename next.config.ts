@@ -90,8 +90,11 @@ const nextConfig: NextConfig = {
   turbopack: { root: process.cwd() },
   outputFileTracingRoot: process.cwd(),
   // Sortie autonome (server.js + deps minimales) pour le déploiement self-host
-  // via Docker. Sans effet sur Vercel, qui utilise sa propre cible de build.
-  output: "standalone",
+  // via Docker. UNIQUEMENT hors Vercel : sur Vercel, le mode "standalone" range
+  // les fichiers de tracing autrement et casse l'empaquetage serverless
+  // (« ENOENT .next/next-server.js.nft.json » au build). Vercel utilise sa propre
+  // cible → on laisse `output` par défaut là-bas.
+  output: process.env.VERCEL ? undefined : "standalone",
   // Les server actions reçoivent des images en data-URL (logo/cachet/signature
   // de la console, photos candidat) → relever la limite du corps de requête.
   experimental: {
