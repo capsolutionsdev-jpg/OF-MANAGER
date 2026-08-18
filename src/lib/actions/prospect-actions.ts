@@ -141,6 +141,17 @@ export async function submitProspectForm(
       ? (v.financementType as FinancementType)
       : null;
 
+  // Formulaire PUBLIC (token) → on ne fait pas confiance à l'id soumis : on ne
+  // conserve la formation souhaitée que si elle appartient bien à l'organisme du
+  // prospect (sinon référence croisée vers un autre organisme). §21.
+  const fidRaw = clean(v.formationSouhaiteeId);
+  const formationSouhaiteeId = fidRaw
+    ? (await prisma.formation.findFirst({
+        where: { id: fidRaw, organismeId: c.organismeId },
+        select: { id: true },
+      }))?.id ?? null
+    : null;
+
   await prisma.candidat.update({
     where: { id: c.id },
     data: {
@@ -157,7 +168,7 @@ export async function submitProspectForm(
       posteOccupe: clean(v.posteOccupe),
       dernierDiplome: clean(v.dernierDiplome),
       sourceConnaissance: clean(v.sourceConnaissance),
-      formationSouhaiteeId: clean(v.formationSouhaiteeId),
+      formationSouhaiteeId,
       financementType: finType,
       // Photo d'identité : uniquement si fournie et bien une image encodée
       ...(v.photoDataUrl?.startsWith("data:image/")

@@ -10,6 +10,7 @@ import {
 import { MODALITE_LABELS } from "@/lib/validators/formation";
 import { SATISFACTION_CRITERES, SATISFACTION_NOTES } from "@/lib/satisfaction";
 import { buildVariables } from "@/lib/documents/resolve";
+import { escapeHtml } from "@/lib/documents/escape";
 import { orgConfigFor } from "@/lib/org-identity";
 import {
   signatureRef,
@@ -201,9 +202,8 @@ export async function buildSingleDocPdf(
   });
 }
 
-function esc(s: string) {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
+// Échappement HTML mutualisé (couvre aussi " et ') — cf. §26.
+const esc = escapeHtml;
 
 /** Génère la fiche de satisfaction remplie + signature du stagiaire, en PDF. */
 export async function buildSatisfactionPdf(
@@ -242,8 +242,8 @@ export async function buildSatisfactionPdf(
     </div>
     <h1 class="doc-title">Enquête de satisfaction — stagiaire</h1>
     <table class="doc-table">
-      <tr><td>Stagiaire</td><td>${i.candidat.prenom} ${i.candidat.nom}</td></tr>
-      <tr><td>Formation</td><td>${i.session.formation.titre}</td></tr>
+      <tr><td>Stagiaire</td><td>${esc(i.candidat.prenom)} ${esc(i.candidat.nom)}</td></tr>
+      <tr><td>Formation</td><td>${esc(i.session.formation.titre)}</td></tr>
       <tr><td>Dates</td><td>du ${fmtD(i.session.dateDebut)} au ${fmtD(i.session.dateFin)}</td></tr>
     </table>
     <table class="doc-table"><tr><th>Critère</th><th>Appréciation</th></tr>${rows}</table>
@@ -252,7 +252,7 @@ export async function buildSatisfactionPdf(
     <p>${rep.commentaire ? esc(rep.commentaire) : "—"}</p>
     <p class="mt">Fait le ${new Date().toLocaleDateString("fr-FR")}.</p>
     <div class="doc-signatures">
-      <div><div class="sig-label">Signature du stagiaire — ${i.candidat.prenom} ${i.candidat.nom}</div><div class="sig-box">${sig}</div></div>
+      <div><div class="sig-label">Signature du stagiaire — ${esc(i.candidat.prenom)} ${esc(i.candidat.nom)}</div><div class="sig-box">${sig}</div></div>
       <div><div class="sig-label">Cachet de l'organisme</div><div class="sig-box"><img src="/signature-cap-competences.png" class="doc-stamp" alt="Cachet" /></div></div>
     </div>`;
 

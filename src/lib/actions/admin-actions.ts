@@ -8,6 +8,7 @@ import { auth } from "@/auth";
 import { getTenantDb } from "@/lib/tenant";
 import { SECTION_KEYS } from "@/lib/permissions";
 import { getSeatInfo, EXTRA_SEAT_PRICE_EUR } from "@/lib/seats";
+import { isPasswordPwned } from "@/lib/security/password";
 
 async function requireAdmin() {
   const session = await auth();
@@ -59,6 +60,8 @@ export async function createCollaborateur(
 
   const exists = await db.user.findUnique({ where: { email } });
   if (exists) return { error: "Un compte existe déjà avec cet e-mail." };
+  if (await isPasswordPwned(password))
+    return { error: "Ce mot de passe figure dans une fuite de données connue — choisissez-en un autre." };
 
   // Limite de sièges back-office (comptes ADMIN/RESPONSABLE/ASSISTANT) selon la
   // formule. Un override manuel de l'éditeur (sièges payants) prime. Les
@@ -72,7 +75,7 @@ export async function createCollaborateur(
     }
   }
 
-  await db.user.create({
+  const created = await db.user.create({
     data: {
       name,
       email,
@@ -83,6 +86,15 @@ export async function createCollaborateur(
       permissions: lirePermissions(formData),
     },
   });
+  await db.auditLog.create({
+    data: {
+      userId: me.id,
+      action: "CREATE",
+      entityType: "User",
+      entityId: created.id,
+      changesJson: { role, poste },
+    },
+  });
   revalidatePath("/administration");
   return { ok: true };
 }
@@ -90,7 +102,7 @@ export async function createCollaborateur(
 /** Mise à jour du nom, du rôle et des sections autorisées d'un collaborateur. */
 export async function updateCollaborateur(formData: FormData) {
   const db = await getTenantDb();
-  await requireAdmin();
+  const me = await requireAdmin();
   const id = String(formData.get("id") ?? "");
   if (!id) return;
   const name = String(formData.get("name") ?? "").trim();
@@ -108,21 +120,42 @@ export async function updateCollaborateur(formData: FormData) {
       activeSessionId: randomUUID(),
     },
   });
+  await db.auditLog.create({
+    data: {
+      userId: me.id,
+      action: "UPDATE",
+      entityType: "User",
+      entityId: id,
+      changesJson: { role: niveauForPoste(poste), permissions: lirePermissions(formData) },
+    },
+  });
   revalidatePath("/administration");
 }
 
 /** Réinitialise le mot de passe d'un collaborateur. */
 export async function resetCollaborateurPassword(formData: FormData) {
   const db = await getTenantDb();
-  await requireAdmin();
+  const me = await requireAdmin();
   const id = String(formData.get("id") ?? "");
   const password = String(formData.get("password") ?? "");
   if (!id || password.length < 8) return;
+  // Refus des mots de passe compromis (§8) — no-op silencieux, comme la garde de
+  // longueur ci-dessus (cette action ne renvoie pas d'état d'erreur au client).
+  if (await isPasswordPwned(password)) return;
   await db.user.update({
     where: { id },
     // Mot de passe réinitialisé → on invalide la session active (le compte
     // devra se reconnecter avec le nouveau mot de passe).
     data: { passwordHash: await bcrypt.hash(password, 12), activeSessionId: randomUUID() },
+  });
+  await db.auditLog.create({
+    data: {
+      userId: me.id,
+      action: "UPDATE",
+      entityType: "User",
+      entityId: id,
+      changesJson: { password: "reset" },
+    },
   });
   revalidatePath("/administration");
 }
@@ -141,6 +174,15 @@ export async function toggleCollaborateurActive(formData: FormData) {
     where: { id },
     data: { isActive: !u.isActive, activeSessionId: randomUUID() },
   });
+  await db.auditLog.create({
+    data: {
+      userId: me.id,
+      action: "UPDATE",
+      entityType: "User",
+      entityId: id,
+      changesJson: { isActive: !u.isActive },
+    },
+  });
   revalidatePath("/administration");
 }
 
@@ -153,5 +195,14 @@ export async function deleteCollaborateur(formData: FormData) {
   const u = await db.user.findUnique({ where: { id }, select: { role: true } });
   if (!u || u.role === "ADMIN") return; // on ne supprime pas un admin via cette action
   await db.user.delete({ where: { id } });
+  await db.auditLog.create({
+    data: {
+      userId: me.id,
+      action: "DELETE",
+      entityType: "User",
+      entityId: id,
+      changesJson: { role: u.role },
+    },
+  });
   revalidatePath("/administration");
 }

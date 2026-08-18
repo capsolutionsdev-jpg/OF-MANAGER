@@ -15,11 +15,21 @@ const LEAD_STATUTS = new Set(Object.values(LeadStatut) as string[]);
 
 /** Change rapidement le statut d'un organisme (tableau de bord / liste console). */
 export async function setOrganismeStatut(id: string, statut: string): Promise<void> {
-  await requireSuperAdmin();
+  const actor = await requireSuperAdmin();
   if (!STATUTS.has(statut)) return;
   await prisma.organisme.update({
     where: { id },
     data: { statut: statut as OrganismeStatut },
+  });
+  await prisma.auditLog.create({
+    data: {
+      organismeId: id,
+      userId: actor!.user!.id as string,
+      action: "UPDATE",
+      entityType: "Organisme",
+      entityId: id,
+      changesJson: { statut },
+    },
   });
   revalidatePath("/console");
   revalidatePath("/console/organismes");
@@ -124,8 +134,11 @@ export async function markLeadRead(id: string): Promise<void> {
 
 /** Supprime un lead. */
 export async function deleteLead(id: string): Promise<void> {
-  await requireSuperAdmin();
+  const actor = await requireSuperAdmin();
   await prisma.lead.delete({ where: { id } });
+  await prisma.auditLog.create({
+    data: { userId: actor!.user!.id as string, action: "DELETE", entityType: "Lead", entityId: id },
+  });
   revalidatePath("/console/prospects");
   revalidatePath("/console");
 }

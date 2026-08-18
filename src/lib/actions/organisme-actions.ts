@@ -10,6 +10,7 @@ import { FORMULE_KEYS, type FormuleKey } from "@/lib/plans";
 import { resolveFeaturesForFormule } from "@/lib/pricing";
 import { uniqueSubdomain, toSubdomain, isValidSubdomain } from "@/lib/subdomain";
 import { encryptSecret } from "@/lib/crypto";
+import { isPasswordPwned } from "@/lib/security/password";
 
 export type ConsoleState = { ok?: boolean; error?: string; id?: string; sousDomaine?: string };
 
@@ -43,7 +44,7 @@ export async function createOrganisme(
   _prev: ConsoleState | undefined,
   formData: FormData,
 ): Promise<ConsoleState> {
-  await requireSuperAdmin();
+  const actor = await requireSuperAdmin();
 
   const nom = String(formData.get("nom") ?? "").trim();
   const gerantName = String(formData.get("gerantName") ?? "").trim();
@@ -55,6 +56,8 @@ export async function createOrganisme(
     return { error: "E-mail du gérant invalide." };
   if (gerantPassword.length < 8)
     return { error: "Mot de passe du gérant : 8 caractères minimum." };
+  if (await isPasswordPwned(gerantPassword))
+    return { error: "Ce mot de passe figure dans une fuite de données connue — choisissez-en un autre." };
 
   const exists = await prisma.user.findUnique({ where: { email: gerantEmail } });
   if (exists) return { error: "Un compte existe déjà avec cet e-mail." };
@@ -104,6 +107,17 @@ export async function createOrganisme(
       role: Role.ADMIN,
       isActive: true,
       organismeId: org.id,
+    },
+  });
+
+  await prisma.auditLog.create({
+    data: {
+      organismeId: org.id,
+      userId: actor!.user!.id as string,
+      action: "CREATE",
+      entityType: "Organisme",
+      entityId: org.id,
+      changesJson: { nom, formule, sousDomaine },
     },
   });
 
