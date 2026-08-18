@@ -106,6 +106,9 @@ const ACTIONS_ALLOWLIST = new Set([
   // Abonnement/SEPA éditeur : Organisme + Stripe (données éditeur globales),
   // gardé requireSuperAdmin. Hors-tenant.
   "console-billing-actions.ts",
+  // Impersonation « mode support » : lit Organisme + écrit AuditLog (données
+  // éditeur globales), gardé requireSuperAdmin. Hors-tenant.
+  "impersonation-actions.ts",
   // Sync SSIAP au déploiement : garde requireSuperAdmin + scope explicite par
   // organismeId (CAP), updateMany où { reference, organismeId } — hors-tenant.
   "ssiap-config.ts",
