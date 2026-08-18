@@ -8,6 +8,9 @@ import { calcMontants, overageLignes, sirenFromSiret, type LigneFacture } from "
 import { montantNet } from "@/lib/contrats/prestation";
 import { PLANS, planForOrg, OVERAGE_EMAIL_EUR, OVERAGE_INSCRIPTION_EUR, type FormuleKey } from "@/lib/plans";
 import { getOrgUsage } from "@/lib/usage";
+import { getEmetteur, partieFromOrg, factureDataFrom } from "@/lib/factures/editeur-data";
+import { renderFacturx } from "@/lib/factures/editeur-render";
+import { getPdpAdapter } from "@/lib/factures/pdp";
 
 export type FactureEditeurState = { ok?: boolean; error?: string; id?: string };
 
@@ -105,6 +108,55 @@ export async function emettreFactureEditeur(id: string): Promise<FactureEditeurS
       statut: FactureEditeurStatut.EMISE,
       dateEmission: now,
       dateEcheance: echeance,
+    },
+  });
+
+  revalidatePath(`/console/${f.organismeId}`);
+  return { ok: true, id };
+}
+
+/**
+ * Transmet la facture ÉMISE via la PDP (obligatoire dès 2026 : plus d'envoi
+ * direct). Construit le Factur-X, l'envoie via l'adaptateur PDP configuré, puis
+ * passe la facture en DEPOSEE + horodate + trace en audit. Dégrade proprement si
+ * aucune PDP n'est configurée (env PDP_PROVIDER absente).
+ */
+export async function transmettreFactureEditeur(id: string): Promise<FactureEditeurState> {
+  await requireSuperAdmin();
+  const f = await prisma.factureEditeur.findUnique({ where: { id }, include: { organisme: true } });
+  if (!f) return { error: "Facture introuvable." };
+  if (!f.numero || f.statut === FactureEditeurStatut.BROUILLON) {
+    return { error: "Émettez la facture avant de la transmettre." };
+  }
+
+  const adapter = getPdpAdapter();
+  if (!adapter.configured) {
+    return { error: "Aucune PDP configurée (définissez PDP_PROVIDER + PDP_API_URL + PDP_API_KEY)." };
+  }
+
+  const facturx = await renderFacturx(
+    { emetteur: await getEmetteur(), client: partieFromOrg(f.organisme), facture: factureDataFrom(f) },
+    { numero: f.numero, date: f.dateEmission ?? new Date() },
+  );
+  const res = await adapter.transmit({
+    numero: f.numero,
+    clientSiren: f.clientSiren,
+    montantTTC: Number(f.montantTTC),
+    facturx,
+  });
+  if (!res.ok) return { error: res.error ?? "Échec de la transmission PDP." };
+
+  await prisma.factureEditeur.update({
+    where: { id },
+    data: { statut: FactureEditeurStatut.DEPOSEE, pdpTransmisAt: new Date() },
+  });
+  await prisma.auditLog.create({
+    data: {
+      organismeId: f.organismeId,
+      action: "FACTURE_TRANSMISE_PDP",
+      entityType: "FactureEditeur",
+      entityId: id,
+      changesJson: { provider: adapter.name, reference: res.reference ?? null, numero: f.numero },
     },
   });
 
