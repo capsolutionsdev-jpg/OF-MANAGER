@@ -18,6 +18,7 @@ import { AbonnementSepaCard } from "@/components/console/abonnement-sepa-card";
 import { sirenFromSiret, type FactureStatut } from "@/lib/factures/editeur";
 import { isStripeConfigured } from "@/lib/stripe";
 import { roleLabels } from "@/lib/navigation";
+import { withDbRetry, safeRead } from "@/lib/db-retry";
 
 export const dynamic = "force-dynamic";
 
@@ -27,26 +28,39 @@ export default async function ConsoleOrganismePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const org = await prisma.organisme.findUnique({
-    where: { id },
-    include: {
-      users: {
-        select: { id: true, name: true, email: true, role: true, isActive: true },
-        orderBy: { createdAt: "asc" },
+  // Lecture ESSENTIELLE : ré-essayée sur blip transitoire (sinon 500 de toute la page).
+  const org = await withDbRetry(() =>
+    prisma.organisme.findUnique({
+      where: { id },
+      include: {
+        users: {
+          select: { id: true, name: true, email: true, role: true, isActive: true },
+          orderBy: { createdAt: "asc" },
+        },
       },
-    },
-  });
+    }),
+  );
   if (!org) notFound();
 
   const { plans } = await getResolvedPlans();
   const ordered = PLAN_ORDER.map((k) => plans[k]);
-  const usage = await getOrgUsage(org.id, org.formule);
+  // Cartes SECONDAIRES : dégradent proprement si la base blippe (jamais de 500 global).
+  const usage = await safeRead(
+    () => getOrgUsage(org.id, org.formule),
+    {
+      emails: { used: 0, limit: null, pct: 0, near: false, over: false },
+      inscriptions: { used: 0, limit: null, pct: 0, near: false, over: false },
+      moisLabel: "",
+    },
+    "usage",
+  );
 
   // Contrats de prestation (abonnement) de ce client.
-  const contratsRaw = await prisma.contratPrestation.findMany({
-    where: { organismeId: id },
-    orderBy: { createdAt: "desc" },
-  });
+  const contratsRaw = await safeRead(
+    () => prisma.contratPrestation.findMany({ where: { organismeId: id }, orderBy: { createdAt: "desc" } }),
+    [],
+    "contrats",
+  );
   const contrats: ContratPrestationRow[] = contratsRaw.map((c) => ({
     id: c.id,
     reference: c.reference,
@@ -61,10 +75,11 @@ export default async function ConsoleOrganismePage({
   const formules = ordered.map((p) => ({ key: p.key, name: p.name, price: p.price }));
 
   // Factures éditeur (abonnement) de ce client.
-  const facturesRaw = await prisma.factureEditeur.findMany({
-    where: { organismeId: id },
-    orderBy: { createdAt: "desc" },
-  });
+  const facturesRaw = await safeRead(
+    () => prisma.factureEditeur.findMany({ where: { organismeId: id }, orderBy: { createdAt: "desc" } }),
+    [],
+    "factures",
+  );
   const factures: FactureEditeurRow[] = facturesRaw.map((f) => ({
     id: f.id,
     numero: f.numero,
