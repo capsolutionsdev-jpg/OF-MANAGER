@@ -594,6 +594,101 @@
 }
 
 /* ============================================================
+   Page de connexion — aurora animée (accent tenant + ambre) + entrées
+   ============================================================ */
+.login-hero {
+  position: relative;
+  overflow: hidden;
+}
+.login-aurora {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.login-aurora > span {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(64px);
+}
+.login-blob-1 {
+  top: -12%;
+  right: -10%;
+  width: 58%;
+  aspect-ratio: 1 / 1;
+  background: var(--primary);
+  opacity: 0.5;
+  animation: login-drift-1 19s ease-in-out infinite;
+}
+.login-blob-2 {
+  bottom: -22%;
+  left: -12%;
+  width: 62%;
+  aspect-ratio: 1 / 1;
+  background: var(--amber);
+  opacity: 0.34;
+  animation: login-drift-2 23s ease-in-out infinite;
+}
+.login-blob-3 {
+  top: 34%;
+  left: 26%;
+  width: 40%;
+  aspect-ratio: 1 / 1;
+  background: var(--primary);
+  opacity: 0.22;
+  animation: login-drift-3 27s ease-in-out infinite;
+}
+@keyframes login-drift-1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-6%, 9%) scale(1.12); }
+}
+@keyframes login-drift-2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(9%, -7%) scale(1.16); }
+}
+@keyframes login-drift-3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(11%, -11%) scale(1.2); }
+}
+.login-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.6;
+  background-image:
+    linear-gradient(color-mix(in srgb, #fff 5%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, #fff 5%, transparent) 1px, transparent 1px);
+  background-size: 46px 46px;
+  -webkit-mask-image: radial-gradient(130% 100% at 18% -10%, #000 0%, transparent 68%);
+  mask-image: radial-gradient(130% 100% at 18% -10%, #000 0%, transparent 68%);
+}
+.login-in {
+  opacity: 0;
+  transform: translateY(12px);
+  animation: login-rise 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+}
+.login-d1 { animation-delay: 0.04s; }
+.login-d2 { animation-delay: 0.12s; }
+.login-d3 { animation-delay: 0.2s; }
+.login-d4 { animation-delay: 0.28s; }
+.login-d5 { animation-delay: 0.36s; }
+.login-d6 { animation-delay: 0.44s; }
+@keyframes login-rise {
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .login-blob-1,
+  .login-blob-2,
+  .login-blob-3 {
+    animation: none;
+  }
+  .login-in {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ============================================================
    PHASE 1 — Animations Dialog & Form (Conformité WCAG + Design)
    Nouvelles keyframes pour modals, sheets, toasts et formulaires.
    ============================================================ */
