@@ -9,6 +9,7 @@ import { requireStaffTenant } from "@/lib/tenant";
 import { auth } from "@/auth";
 import { sendEmail } from "@/lib/email";
 import { orgConfigFor } from "@/lib/org-identity";
+import { sendPushToOrgStaff } from "@/lib/push";
 import { generateExpiringToken, expiringTokenExpired, LINK_TTL_DAYS, appBaseUrl } from "@/lib/token";
 import { logProspectEmail } from "@/lib/actions/crm-actions";
 import {
@@ -112,6 +113,64 @@ export async function sendProspectIntakeLink(
   };
 }
 
+/**
+ * Inscription « à distance » : crée un prospect à partir du strict minimum
+ * (nom, prénom, e-mail + formation souhaitée facultative), puis lui envoie le lien
+ * de sa fiche d'inscription à compléter + signer en ligne. Le prospect arrive dans
+ * le CRM (statut NOUVEAU) ; à la complétion, il passe EN_TRAITEMENT et le staff est
+ * notifié — procédure prospect habituelle. Réservé au staff (tenant courant).
+ */
+export async function creerProspectEtInviter(input: {
+  nom: string;
+  prenom: string;
+  email: string;
+  formationSouhaiteeId?: string;
+}): Promise<{ ok: boolean; candidatId?: string; error?: string }> {
+  const session = await auth();
+  if (!session?.user) return { ok: false, error: "Non autorisé." };
+  const { db } = await requireStaffTenant();
+
+  const nom = input.nom?.trim();
+  const prenom = input.prenom?.trim();
+  const email = input.email?.trim().toLowerCase();
+  if (!nom || !prenom) return { ok: false, error: "Nom et prénom sont requis." };
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+    return { ok: false, error: "Adresse e-mail invalide." };
+
+  // Formation souhaitée : conservée seulement si elle appartient à l'organisme
+  // (db est déjà scopé au tenant courant).
+  const fid = input.formationSouhaiteeId?.trim();
+  const formationSouhaiteeId = fid
+    ? ((await db.formation.findFirst({ where: { id: fid }, select: { id: true } }))?.id ?? null)
+    : null;
+
+  const candidat = await db.candidat.create({
+    data: {
+      nom,
+      prenom,
+      email,
+      formationSouhaiteeId,
+      statut: "NOUVEAU",
+      createdById: session.user.id,
+    },
+    select: { id: true },
+  });
+
+  await db.auditLog.create({
+    data: {
+      userId: session.user.id,
+      action: "CREATE",
+      entityType: "Candidat",
+      entityId: candidat.id,
+    },
+  });
+
+  // Envoi immédiat du lien de la fiche d'inscription.
+  const sent = await sendProspectIntakeLink(candidat.id);
+  revalidatePath("/candidats");
+  return { ok: true, candidatId: candidat.id, error: sent.error };
+}
+
 const clean = (s?: string) => (s && s.trim() !== "" ? s.trim() : null);
 
 /** Soumission publique de la fiche prospect (informations + signature dessinée). */
@@ -122,7 +181,7 @@ export async function submitProspectForm(
 ): Promise<{ ok: boolean; error?: string }> {
   const c = await prisma.candidat.findUnique({
     where: { prospectToken: token },
-    select: { id: true, organismeId: true, prospectFormCompletedAt: true },
+    select: { id: true, organismeId: true, prospectFormCompletedAt: true, prenom: true, nom: true },
   });
   if (!c) return { ok: false, error: "Lien invalide." };
   if (c.prospectFormCompletedAt) return { ok: true }; // déjà rempli
@@ -195,6 +254,14 @@ export async function submitProspectForm(
       ip: ip ?? undefined,
     },
   });
+
+  // Notification staff : un prospect a complété + signé sa fiche (procédure habituelle,
+  // app mobile). Non bloquant, no-op sans FCM configuré.
+  await sendPushToOrgStaff(c.organismeId, {
+    title: "🆕 Fiche prospect complétée",
+    body: `${c.prenom} ${c.nom} a rempli et signé sa fiche d'inscription.`,
+    data: { type: "prospect", candidatId: c.id },
+  }).catch(() => {});
 
   revalidatePath("/crm");
   return { ok: true };
