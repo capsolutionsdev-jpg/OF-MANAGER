@@ -57,7 +57,7 @@
      TYPOGRAPHY — Font families & sizing
      ═════════════════════════════════════════════════════════ */
   --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-mono: var(--font-geist-mono), ui-monospace, "Cascadia Code", "Cascadia Mono", Consolas, monospace;
   --font-heading: var(--font-heading);
 
   /* Font sizes — 8-step scale */
