@@ -6,9 +6,13 @@ import {
   CalendarDays,
   CalendarPlus,
   Images,
+  Newspaper,
 } from "lucide-react";
 import type { Academy } from "@prisma/client";
 import { getTenantDb } from "@/lib/tenant";
+import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
+import { canAccessSection } from "@/lib/permissions";
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
@@ -40,6 +44,18 @@ function formuleVal(vf: unknown, key: string): { heures: string; prix: string } 
 
 export default async function SiteVitrinePage() {
   const db = await getTenantDb();
+
+  // Le « Blog » est désormais intégré ici (plus d'item de rail) : bouton affiché
+  // seulement si le collaborateur a la permission de section « blog ».
+  const session = await auth();
+  const u = session?.user?.id
+    ? await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { role: true, permissions: true },
+      })
+    : null;
+  const canBlog = u ? canAccessSection(u.role, u.permissions, "blog") : false;
+
   const formations = await db.formation.findMany({
     where: { isArchived: false },
     orderBy: { titre: "asc" },
@@ -111,6 +127,12 @@ export default async function SiteVitrinePage() {
         title="Site vitrine"
         subtitle="Pilotez ce qui s'affiche sur capacademy.fr : publication, tarif et durée de chaque formation. Les changements apparaissent sur le site public sous ~5 min."
       >
+        {canBlog && (
+          <Button variant="outline" render={<Link href="/blog" />}>
+            <Newspaper className="mr-2 h-4 w-4" />
+            Blog
+          </Button>
+        )}
         <Button variant="outline" render={<Link href="/site-vitrine/trafic" />}>
           <BarChart3 className="mr-2 h-4 w-4" />
           Trafic
