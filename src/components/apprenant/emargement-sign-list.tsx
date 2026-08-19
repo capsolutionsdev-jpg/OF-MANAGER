@@ -3,8 +3,15 @@
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { CheckCircle2, Eraser, PenLine, X } from "lucide-react";
+import { CheckCircle2, Eraser, PenLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { signMyEmargement } from "@/lib/actions/apprenant-actions";
 
 export type EmargementItem = {
@@ -26,7 +33,7 @@ export function EmargementSignList({ items }: { items: EmargementItem[] }) {
         <h2 className="text-sm font-semibold text-muted-foreground">À signer ({aSigner.length})</h2>
         {aSigner.length === 0 ? (
           <p className="rounded-lg border bg-muted/30 p-4 text-sm text-muted-foreground">
-            Aucune feuille d&apos;émargement en attente. ✓
+            Aucune feuille d&apos;émargement en attente.
           </p>
         ) : (
           <ul className="space-y-2">
@@ -115,17 +122,12 @@ function SignModal({ item, onClose }: { item: EmargementItem; onClose: () => voi
   }
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div className="w-full max-w-md space-y-4 rounded-xl bg-card p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-start justify-between">
-          <div>
-            <h3 className="font-semibold">Signer l&apos;émargement</h3>
-            <p className="text-sm text-muted-foreground">{item.dateLabel} — {item.demiLabel}</p>
-          </div>
-          <button type="button" onClick={onClose} aria-label="Fermer" className="text-muted-foreground hover:text-foreground">
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+    <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Signer l&apos;émargement</DialogTitle>
+          <DialogDescription>{item.dateLabel} — {item.demiLabel}</DialogDescription>
+        </DialogHeader>
         <div className="rounded-md border bg-white">
           <canvas
             ref={canvasRef} width={600} height={200}
@@ -134,9 +136,9 @@ function SignModal({ item, onClose }: { item: EmargementItem; onClose: () => voi
           />
         </div>
         <div className="flex items-center justify-between">
-          <button type="button" onClick={clear} className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
-            <Eraser className="h-3.5 w-3.5" /> Effacer
-          </button>
+          <Button type="button" variant="ghost" size="sm" onClick={clear} className="text-muted-foreground">
+            <Eraser className="mr-1 h-3.5 w-3.5" /> Effacer
+          </Button>
           <Button onClick={sign} disabled={isPending}>
             <PenLine className="mr-1.5 h-4 w-4" /> {isPending ? "Signature…" : "Signer"}
           </Button>
@@ -144,7 +146,7 @@ function SignModal({ item, onClose }: { item: EmargementItem; onClose: () => voi
         <p className="text-[11px] text-muted-foreground">
           Votre signature manuscrite, horodatée (IP enregistrée), a la même valeur qu&apos;une signature papier.
         </p>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

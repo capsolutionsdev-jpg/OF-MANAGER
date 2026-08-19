@@ -95,17 +95,19 @@ export function ContratSignPad({ token }: { token: string }) {
           style={{ touchAction: "none" }}
         />
       </div>
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        size="sm"
         onClick={clear}
-        className="inline-flex w-fit items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+        className="w-fit text-muted-foreground"
       >
-        <Eraser className="h-3.5 w-3.5" /> Effacer
-      </button>
+        <Eraser className="mr-1 h-3.5 w-3.5" /> Effacer
+      </Button>
       <label className="flex items-start gap-2 text-sm">
         <input
           type="checkbox"
-          className="mt-0.5 h-4 w-4"
+          className="mt-0.5 h-4 w-4 accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
           checked={accept}
           onChange={(e) => setAccept(e.target.checked)}
         />

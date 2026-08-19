@@ -3,6 +3,7 @@ import { getTenantDb } from "@/lib/tenant";
 import { auth } from "@/auth";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
+import { Button } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
 
@@ -59,10 +60,9 @@ export default async function MesContratsPage() {
                   <p className="text-xs text-muted-foreground">Du {fmt(s.dateDebut)} au {fmt(s.dateFin)}</p>
                 </div>
                 {s.contratFormateurToken && (
-                  <a href={`/contrat-formateur/${s.contratFormateurToken}`} target="_blank" rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/80">
-                    <PenLine className="h-4 w-4" /> Lire & signer
-                  </a>
+                  <Button size="sm" render={<a href={`/contrat-formateur/${s.contratFormateurToken}`} target="_blank" rel="noopener noreferrer" />}>
+                    <PenLine className="mr-1.5 h-4 w-4" /> Lire &amp; signer
+                  </Button>
                 )}
               </li>
             ))}

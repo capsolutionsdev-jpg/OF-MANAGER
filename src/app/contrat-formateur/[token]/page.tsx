@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ContratSignPad } from "@/components/contrat/contrat-sign-pad";
+import { Button } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
 
@@ -55,14 +56,9 @@ export default async function ContratFormateurPage({
               <p className="font-medium">
                 Contrat signé le {s.contratFormateurSignedAt!.toLocaleString("fr-FR")}.
               </p>
-              <a
-                href={`/contrat-formateur/${token}/document`}
-                target="_blank"
-                rel="noopener"
-                className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/80"
-              >
-                <Download className="h-4 w-4" /> Télécharger le contrat signé (PDF)
-              </a>
+              <Button render={<a href={`/contrat-formateur/${token}/document`} target="_blank" rel="noopener" />}>
+                <Download className="mr-2 h-4 w-4" /> Télécharger le contrat signé (PDF)
+              </Button>
             </CardContent>
           </Card>
         ) : (
