@@ -50,8 +50,8 @@ export function EmargementSignList({ items }: { items: EmargementItem[] }) {
           <h2 className="text-sm font-semibold text-muted-foreground">Signées ({signes.length})</h2>
           <ul className="space-y-1">
             {signes.map((i) => (
-              <li key={i.id} className="flex items-center gap-2 rounded-md bg-emerald-500/5 px-3 py-2 text-sm">
-                <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+              <li key={i.id} className="flex items-center gap-2 rounded-md bg-success/10 px-3 py-2 text-sm">
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-success" />
                 <span>{i.dateLabel} — {i.demiLabel}</span>
                 <span className="truncate text-xs text-muted-foreground">· {i.formation}</span>
               </li>

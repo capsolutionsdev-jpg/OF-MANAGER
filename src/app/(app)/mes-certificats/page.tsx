@@ -77,12 +77,12 @@ export default async function MesCertificatsPage() {
               <CardContent className="space-y-1">
                 {diplomesRemis.map((d) => (
                   <div key={d.id} className="flex items-center gap-2 text-sm">
-                    <GraduationCap className="h-4 w-4 shrink-0 text-emerald-600" />
+                    <GraduationCap className="h-4 w-4 shrink-0 text-success" />
                     <span className="flex-1">
                       Diplôme{d.numeroDiplome ? ` n° ${d.numeroDiplome}` : ""}
                       {d.remisAt ? ` — remis le ${fmt(d.remisAt)}` : ""}
                     </span>
-                    <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-300">Remis</span>
+                    <span className="rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-medium text-success">Remis</span>
                   </div>
                 ))}
               </CardContent>

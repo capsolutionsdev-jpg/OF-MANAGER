@@ -268,8 +268,8 @@ function LeconBlock({
           <FileText className="h-3.5 w-3.5 text-muted-foreground" />
           <span className="font-medium">{titre || "Leçon sans titre"}</span>
           {lecon.videoUrl && <Video className="h-3.5 w-3.5 text-primary" />}
-          {lecon.images.length > 0 && <ImageIcon className="h-3.5 w-3.5 text-sky-600" />}
-          {lecon.quiz.length > 0 && <HelpCircle className="h-3.5 w-3.5 text-amber-600" />}
+          {lecon.images.length > 0 && <ImageIcon className="h-3.5 w-3.5 text-info" />}
+          {lecon.quiz.length > 0 && <HelpCircle className="h-3.5 w-3.5 text-warning" />}
           {!isPublished && (
             <span className="rounded bg-muted px-1.5 text-[10px] text-muted-foreground">
               brouillon

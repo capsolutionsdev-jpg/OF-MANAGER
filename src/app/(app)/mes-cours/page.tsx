@@ -110,7 +110,7 @@ export default async function MesCoursPage() {
                       </span>
                       <span className="font-semibold">
                         {p === 100 ? (
-                          <span className="inline-flex items-center gap-1 text-emerald-600">
+                          <span className="inline-flex items-center gap-1 text-success">
                             <CheckCircle2 className="h-3.5 w-3.5" /> Terminé
                           </span>
                         ) : (

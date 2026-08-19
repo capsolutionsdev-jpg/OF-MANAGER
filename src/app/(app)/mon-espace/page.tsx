@@ -92,18 +92,18 @@ export default async function MonEspacePage() {
           <CardContent className="space-y-2">
             {aSigner.map((i) => (
               <Link key={i.id} href={`/parcours/${i.accessToken}`}
-                className="flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50/60 px-3 py-2 text-sm hover:bg-amber-50 dark:border-amber-500/20 dark:bg-amber-500/10">
-                <span className="flex items-center gap-2"><PenLine className="h-4 w-4 text-amber-600" /> Documents à signer — {i.session.formation.titre}</span>
-                <ArrowRight className="h-4 w-4 text-amber-600" />
+                className="flex items-center justify-between rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-sm hover:bg-warning/20">
+                <span className="flex items-center gap-2"><PenLine className="h-4 w-4 text-warning" /> Documents à signer — {i.session.formation.titre}</span>
+                <ArrowRight className="h-4 w-4 text-warning" />
               </Link>
             ))}
             {piecesManquantes.map((i) => {
               const manq = i.session.formation.piecesAttendues.filter((p) => !i.piecesRecues.includes(p));
               return (
                 <Link key={i.id} href={i.accessToken ? `/parcours/${i.accessToken}` : "/mes-documents"}
-                  className="flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50/60 px-3 py-2 text-sm hover:bg-amber-50 dark:border-amber-500/20 dark:bg-amber-500/10">
-                  <span className="flex items-center gap-2"><FolderUp className="h-4 w-4 text-amber-600" /> {manq.length} pièce{manq.length > 1 ? "s" : ""} à fournir — {i.session.formation.titre}</span>
-                  <ArrowRight className="h-4 w-4 text-amber-600" />
+                  className="flex items-center justify-between rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-sm hover:bg-warning/20">
+                  <span className="flex items-center gap-2"><FolderUp className="h-4 w-4 text-warning" /> {manq.length} pièce{manq.length > 1 ? "s" : ""} à fournir — {i.session.formation.titre}</span>
+                  <ArrowRight className="h-4 w-4 text-warning" />
                 </Link>
               );
             })}
