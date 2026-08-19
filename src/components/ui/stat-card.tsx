@@ -48,7 +48,7 @@ export function StatCard({
             <Icon className="h-5 w-5" />
           </span>
         </div>
-        <div className="mt-3 text-3xl font-bold leading-none tracking-tight">
+        <div className="mt-3 font-mono text-3xl font-bold leading-none tracking-tight tabular-nums">
           {typeof value === "number" ? <AnimatedNumber value={value} /> : value}
         </div>
         {trend && (

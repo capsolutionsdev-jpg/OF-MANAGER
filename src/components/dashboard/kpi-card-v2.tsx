@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AnimatedNumber } from "@/components/ui/animated-number";
 
 type Tint = "violet" | "emerald" | "amber" | "blue" | "rose";
 
@@ -117,7 +118,9 @@ export function KpiCardV2({
         </div>
         <div className="min-w-0 flex-1 text-right">
           <p className="text-sm font-medium text-muted-foreground">{label}</p>
-          <p className="mt-0.5 text-3xl font-bold tracking-tight text-foreground">{value}</p>
+          <p className="mt-0.5 font-mono text-3xl font-bold tracking-tight tabular-nums text-foreground">
+            {typeof value === "number" ? <AnimatedNumber value={value} /> : value}
+          </p>
         </div>
       </div>
 
