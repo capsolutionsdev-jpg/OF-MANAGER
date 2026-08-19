@@ -34,11 +34,11 @@ export default async function MesNotificationsPage() {
   const notifs: Notif[] = [];
   for (const i of inscriptions) {
     if (!i.signedAt && i.accessToken) {
-      notifs.push({ icon: PenLine, label: `Documents à signer — ${i.session.formation.titre}`, href: `/parcours/${i.accessToken}`, tint: "text-amber-600" });
+      notifs.push({ icon: PenLine, label: `Documents à signer — ${i.session.formation.titre}`, href: `/parcours/${i.accessToken}`, tint: "text-warning" });
     }
     const manq = i.session.formation.piecesAttendues.filter((p) => !i.piecesRecues.includes(p));
     if (manq.length > 0) {
-      notifs.push({ icon: FolderUp, label: `${manq.length} pièce(s) à fournir — ${i.session.formation.titre}`, href: i.accessToken ? `/parcours/${i.accessToken}` : "/mes-documents", tint: "text-amber-600" });
+      notifs.push({ icon: FolderUp, label: `${manq.length} pièce(s) à fournir — ${i.session.formation.titre}`, href: i.accessToken ? `/parcours/${i.accessToken}` : "/mes-documents", tint: "text-warning" });
     }
   }
   if (msgNonLus > 0) {
@@ -57,7 +57,7 @@ export default async function MesNotificationsPage() {
       {notifs.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center gap-2 p-10 text-center">
-            <CheckCircle2 className="h-8 w-8 text-emerald-500" />
+            <CheckCircle2 className="h-8 w-8 text-success" />
             <p className="font-medium">Vous êtes à jour 🎉</p>
             <p className="text-sm text-muted-foreground">Aucune action en attente pour le moment.</p>
           </CardContent>

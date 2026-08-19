@@ -175,7 +175,7 @@ export default async function CoursPlayerPage({
                           }`}
                         >
                           {isDone ? (
-                            <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+                            <CheckCircle2 className="h-4 w-4 shrink-0 text-success" />
                           ) : active ? (
                             <PlayCircle className="h-4 w-4 shrink-0 text-primary" />
                           ) : (

@@ -64,7 +64,7 @@ export function LeconActions({
       >
         {done ? (
           <>
-            <CheckCircle2 className="mr-1.5 h-4 w-4 text-emerald-600" /> Terminée — revoir
+            <CheckCircle2 className="mr-1.5 h-4 w-4 text-success" /> Terminée — revoir
           </>
         ) : (
           <>

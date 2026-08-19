@@ -79,8 +79,8 @@ export function QuizRunner({
 
   return (
     <div className="rounded-xl border bg-muted/20 p-5">
-      <h3 className="mb-1 flex items-center gap-2 font-semibold text-navy">
-        <HelpCircle className="h-4 w-4 text-amber-600" /> Quiz
+      <h3 className="mb-1 flex items-center gap-2 font-semibold text-foreground">
+        <HelpCircle className="h-4 w-4 text-warning" /> Quiz
       </h3>
       {previous && !submitted && (
         <p className="mb-3 text-xs text-muted-foreground">
@@ -112,7 +112,7 @@ export function QuizRunner({
                     onChange={(e) => setAnswers((p) => ({ ...p, [qi]: e.target.value }))}
                   />
                   {submitted && q.corrige && (
-                    <p className="mt-1 rounded bg-emerald-500/10 p-2 text-xs text-emerald-800 dark:text-emerald-300">
+                    <p className="mt-1 rounded bg-success/10 p-2 text-xs text-success">
                       <strong>Corrigé : </strong>
                       {q.corrige}
                     </p>
@@ -125,8 +125,8 @@ export function QuizRunner({
                     const isCorrect = q.bonnes.includes(oi);
                     let cls = "border-input bg-background";
                     if (submitted) {
-                      if (isCorrect) cls = "border-emerald-400 bg-emerald-500/10";
-                      else if (isChosen) cls = "border-red-400 bg-red-500/10";
+                      if (isCorrect) cls = "border-success/50 bg-success/10";
+                      else if (isChosen) cls = "border-destructive/50 bg-destructive/10";
                     } else if (isChosen) {
                       cls = "border-primary bg-primary/10";
                     }
@@ -147,10 +147,10 @@ export function QuizRunner({
                         </span>
                         <span className="flex-1">{opt}</span>
                         {submitted && isCorrect && (
-                          <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                          <CheckCircle2 className="h-4 w-4 text-success" />
                         )}
                         {submitted && isChosen && !isCorrect && (
-                          <XCircle className="h-4 w-4 text-red-500" />
+                          <XCircle className="h-4 w-4 text-destructive" />
                         )}
                       </button>
                     );

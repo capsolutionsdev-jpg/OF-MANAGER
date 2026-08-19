@@ -10,9 +10,9 @@ export const dynamic = "force-dynamic";
 
 const fmt = (d: Date) => d.toLocaleDateString("fr-FR");
 const PHASE = {
-  AVENIR: { label: "À venir", cls: "bg-blue-500/10 text-blue-700 dark:text-blue-300" },
-  EN_COURS: { label: "En cours", cls: "bg-violet-500/10 text-violet-700 dark:text-violet-300" },
-  TERMINEE: { label: "Terminée", cls: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" },
+  AVENIR: { label: "À venir", cls: "bg-muted text-muted-foreground" },
+  EN_COURS: { label: "En cours", cls: "bg-info/10 text-info" },
+  TERMINEE: { label: "Terminée", cls: "bg-success/10 text-success" },
 } as const;
 
 export default async function MesFormationsPage() {
@@ -97,7 +97,7 @@ export default async function MesFormationsPage() {
                     <FileText className="h-4 w-4" /> Documents
                   </Link>
                   {!i.signedAt && i.accessToken && (
-                    <Link href={`/parcours/${i.accessToken}`} className="inline-flex items-center gap-1 font-medium text-amber-700 dark:text-amber-300 hover:underline">
+                    <Link href={`/parcours/${i.accessToken}`} className="inline-flex items-center gap-1 font-medium text-warning hover:underline">
                       <PenLine className="h-4 w-4" /> Finaliser / signer
                     </Link>
                   )}
