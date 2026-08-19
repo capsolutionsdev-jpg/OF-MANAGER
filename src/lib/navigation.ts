@@ -37,7 +37,6 @@ import {
   UserCircle,
   History,
   Globe,
-  Newspaper,
   Share2,
   type LucideIcon,
 } from "lucide-react";
@@ -289,13 +288,8 @@ export const navItems: NavItem[] = [
     roles: ["ADMIN", "RESPONSABLE_FORMATION"],
     permission: "site-vitrine",
   },
-  {
-    label: "Blog",
-    href: "/blog",
-    icon: Newspaper,
-    roles: ["ADMIN", "RESPONSABLE_FORMATION"],
-    permission: "blog",
-  },
+  // NB : le « Blog » n'est plus un item de rail — il est intégré à la page
+  // Site vitrine (bouton d'en-tête). Route /blog conservée + gardée par sa permission.
   {
     label: "Sessions",
     href: "/sessions",
