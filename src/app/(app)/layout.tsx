@@ -27,6 +27,7 @@ import { isStripeConfigured } from "@/lib/stripe";
 import { SubscribePanel } from "@/components/billing/subscribe-panel";
 import { ConfirmProvider } from "@/components/ui/confirm-dialog";
 import { cn } from "@/lib/utils";
+import { RailProvider } from "@/components/rail-context";
 import { isNativeApp } from "@/lib/native-app";
 import { PushRegistrar } from "@/components/push/push-registrar";
 import { CommandPalette } from "@/components/command-palette";
@@ -215,6 +216,14 @@ export default async function AppLayout({
     >
       {/* Enregistrement push — actif seulement dans l'app native. */}
       <PushRegistrar />
+      {/* Anti-flash : applique l'état replié du rail avant le rendu (localStorage). */}
+      <script
+        dangerouslySetInnerHTML={{
+          __html:
+            "try{if(localStorage.getItem('ofm.rail.collapsed')==='1')document.documentElement.setAttribute('data-rail-collapsed','')}catch(e){}",
+        }}
+      />
+      <RailProvider>
       <div className="flex min-h-screen">
         {/* Rail de navigation vertical (desktop ≥ lg) */}
         <AppSidebar
@@ -283,6 +292,7 @@ export default async function AppLayout({
           )}
         </div>
       </div>
+      </RailProvider>
       <MobileBottomNav />
       <InstallPrompt />
     </div>

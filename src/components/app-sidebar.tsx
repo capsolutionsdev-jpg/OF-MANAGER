@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { ChevronDown, HelpCircle, ArrowRight } from "lucide-react";
 import type { Role } from "@prisma/client";
 import { buildNav, type NavItem } from "@/lib/navigation";
+import { useRail } from "@/components/rail-context";
 import { cn } from "@/lib/utils";
 
 type NavUser = {
@@ -14,13 +15,21 @@ type NavUser = {
   fonctionnalites?: string[];
 };
 
-/** Contenu de navigation (rail desktop + tiroir mobile). Groupé par catégories. */
+// Accent de l'item actif porté à un bleu plus clair (#8cbcff) → contraste AA
+// sur le fond actif #1f3a6f (l'ancien #4D9FFF passait sous le seuil).
+const ITEM_ACTIVE = "bg-[#1f3a6f] text-[#8cbcff]";
+const ITEM_IDLE = "text-[#a8b9d1] hover:bg-[#1f2d47] hover:text-[#eaf0ff]";
+
+/** Contenu de navigation (rail desktop + tiroir mobile). Groupé par catégories ;
+ * liste plate en icônes quand le rail est replié. */
 export function SidebarNav({
   user,
   onNavigate,
+  collapsed = false,
 }: {
   user: NavUser;
   onNavigate?: () => void;
+  collapsed?: boolean;
 }) {
   const pathname = usePathname();
   const { standalone, groups, footer } = buildNav(
@@ -53,7 +62,7 @@ export function SidebarNav({
     }
   }, [activeGroup]);
   const isOpen = (name: string) => open[name] ?? name === activeGroup;
-  const toggle = (name: string) =>
+  const toggleGroup = (name: string) =>
     setOpen((prev) => {
       const cur = prev[name] ?? name === activeGroup;
       const next = { ...prev, [name]: !cur };
@@ -73,25 +82,44 @@ export function SidebarNav({
         href={it.href}
         onClick={onNavigate}
         aria-current={active ? "page" : undefined}
+        title={it.label}
         className={cn(
           "group/nav flex items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] font-medium transition-colors",
-          active
-            ? "bg-[#1f3a6f] text-[#4D9FFF]"
-            : "text-[#a8b9d1] hover:bg-[#1f2d47] hover:text-[#eaf0ff]",
+          active ? ITEM_ACTIVE : ITEM_IDLE,
         )}
       >
         <it.icon
           className={cn(
             "h-[17px] w-[17px] shrink-0 transition-colors",
             active
-              ? "text-[#4D9FFF]"
+              ? "text-[#8cbcff]"
               : "text-[#a8b9d1] group-hover/nav:text-[#eaf0ff]",
           )}
         />
-        <span className="min-w-0 truncate">{it.label}</span>
+        <span className="rail-label min-w-0 truncate">{it.label}</span>
       </Link>
     );
   };
+
+  // Rail replié → liste plate (toutes les entrées en icônes), sans en-têtes de
+  // groupe (sinon les groupes fermés cacheraient leurs items).
+  if (collapsed) {
+    const flat = [...standalone, ...groups.flatMap((g) => g.items)];
+    return (
+      <nav
+        id="main-nav"
+        aria-label="Navigation principale"
+        className="flex-1 space-y-0.5 overflow-y-auto px-3 py-4"
+      >
+        {flat.map(renderItem)}
+        {footer.length > 0 && (
+          <div className="mt-3 space-y-0.5 border-t border-[#1f2d47] pt-3">
+            {footer.map(renderItem)}
+          </div>
+        )}
+      </nav>
+    );
+  }
 
   return (
     <nav
@@ -108,7 +136,7 @@ export function SidebarNav({
           <div key={g.name} className="space-y-0.5">
             <button
               type="button"
-              onClick={() => toggle(g.name)}
+              onClick={() => toggleGroup(g.name)}
               aria-expanded={expanded}
               className="flex w-full items-center gap-1.5 rounded-md px-2.5 py-1 text-[10.5px] font-semibold uppercase tracking-wider text-[#7a8aa3] transition-colors hover:text-[#eaf0ff]"
             >
@@ -133,9 +161,8 @@ export function SidebarNav({
   );
 }
 
-/** En-tête de marque du rail (logo tenant ou nom).
- * Dark navy version avec texte bleu clair.
- */
+/** En-tête de marque du rail (logo tenant ou nom). Rail navy, texte bleu clair.
+ * Une pastille-initiale apparaît quand le rail est replié (icône seule). */
 export function SidebarBrand({
   brand,
 }: {
@@ -144,24 +171,28 @@ export function SidebarBrand({
   return (
     <Link
       href="/dashboard"
-      className="flex h-14 shrink-0 items-center gap-2 border-b border-[#1f2d47] px-4"
+      className="rail-brand flex h-14 shrink-0 items-center gap-2 border-b border-[#1f2d47] px-4"
     >
+      {/* Pastille-initiale, visible seulement en mode replié (CSS). */}
+      <span
+        className="rail-brand-mark h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[#1f3a6f] font-heading text-[15px] font-semibold text-[#8cbcff]"
+        aria-hidden
+      >
+        {(brand?.nom ?? "CAP").charAt(0).toUpperCase()}
+      </span>
       {brand?.logoUrl ? (
         // Logo personnalisé (data URL) — next/image ne gère pas les data: URLs.
-        // On l'affiche TEL QUEL sur une pastille claire : `brightness-0 invert`
-        // transformait tout logo à fond opaque en carré blanc illisible sur le
-        // rail navy. La pastille garantit un logo (couleurs d'origine) visible
-        // quel que soit son fond (transparent, blanc ou coloré).
-        <span className="flex items-center rounded-md bg-white px-1.5 py-1">
+        // Pastille claire pour garantir la lisibilité quel que soit le fond du logo.
+        <span className="rail-label flex items-center rounded-md bg-white px-1.5 py-1">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={brand.logoUrl} alt={brand.nom} className="h-6 w-auto" />
         </span>
       ) : (
-        <span className="font-heading text-[15px] font-semibold tracking-tight text-[#eaf0ff]">
+        <span className="rail-label font-heading text-[15px] font-semibold tracking-tight text-[#eaf0ff]">
           {brand?.nom ?? "CAP Compétences"}
         </span>
       )}
-      <span className="ml-auto rounded bg-[#1f2d47] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[#a8b9d1]">
+      <span className="rail-label ml-auto rounded bg-[#1f2d47] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[#a8b9d1]">
         Manager
       </span>
     </Link>
@@ -170,8 +201,9 @@ export function SidebarBrand({
 
 /** Rail latéral persistant (desktop ≥ lg). Sur mobile : tiroir via la barre du haut.
  *
- * Dark navy sidebar avec logo, navigation groupée, et carte d'aide en bas.
- * Style : navy très foncé (#0D1B3E), texte bleu clair (#eaf0ff).
+ * Navy très foncé (#0D1B3E), texte bleu clair. Rétractable : le contenu vit dans
+ * `.rail-inner` (qui déborde en overlay au survol quand le rail est replié), tandis
+ * que l'`aside` réserve la largeur dans la grille flex (le contenu ne se décale pas).
  */
 export function AppSidebar({
   user,
@@ -180,29 +212,31 @@ export function AppSidebar({
   user: NavUser;
   brand?: { nom: string; logoUrl: string | null };
 }) {
+  const { collapsed } = useRail();
   return (
     <aside
       data-app-chrome
-      className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-[#1f2d47] bg-[#0D1B3E] text-[#eaf0ff] lg:flex"
+      className="app-rail sticky top-0 hidden h-screen w-60 shrink-0 lg:block"
     >
-      <SidebarBrand brand={brand} />
-      <SidebarNav user={user} />
+      <div className="rail-inner flex h-full w-full flex-col border-r border-[#1f2d47] bg-[#0D1B3E] text-[#eaf0ff]">
+        <SidebarBrand brand={brand} />
+        <SidebarNav user={user} collapsed={collapsed} />
 
-      {/* Carte "Besoin d'aide ?" en bas */}
-      <div className="mt-auto border-t border-[#1f2d47] p-4">
-        <Link
-          href="/aide"
-          className="flex items-start gap-3 rounded-xl bg-[#1f2d47] px-3 py-3 transition-colors hover:bg-[#2a3a52]"
-        >
-          <HelpCircle className="mt-0.5 h-5 w-5 shrink-0 text-[#4D9FFF]" />
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium text-[#eaf0ff]">Besoin d'aide ?</p>
-            <p className="mt-0.5 text-[11px] text-[#a8b9d1]">
-              Consultez notre centre
-            </p>
-          </div>
-          <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-[#4D9FFF]" />
-        </Link>
+        {/* Carte "Besoin d'aide ?" en bas (icône seule quand replié). */}
+        <div className="mt-auto border-t border-[#1f2d47] p-4">
+          <Link
+            href="/aide"
+            title="Besoin d'aide ?"
+            className="rail-help flex items-start gap-3 rounded-xl bg-[#1f2d47] px-3 py-3 transition-colors hover:bg-[#2a3a52]"
+          >
+            <HelpCircle className="mt-0.5 h-5 w-5 shrink-0 text-[#8cbcff]" />
+            <div className="rail-label min-w-0 flex-1">
+              <p className="text-sm font-medium text-[#eaf0ff]">Besoin d&apos;aide ?</p>
+              <p className="mt-0.5 text-[11px] text-[#a8b9d1]">Consultez notre centre</p>
+            </div>
+            <ArrowRight className="rail-label mt-1 h-4 w-4 shrink-0 text-[#8cbcff]" />
+          </Link>
+        </div>
       </div>
     </aside>
   );
