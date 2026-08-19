@@ -13,6 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { TONE_CLASSES } from "@/components/ui/status-badge";
 import { ChangePasswordForm } from "@/app/(app)/mon-compte/change-password-form";
 import { getResolvedPlans } from "@/lib/pricing";
 import { PLAN_ORDER, planKeyForOrg, euros } from "@/lib/plans";
@@ -23,9 +24,9 @@ import { ManageSubscriptionButton } from "@/components/billing/manage-subscripti
 export const dynamic = "force-dynamic";
 
 const STATUT_BADGE: Record<string, { label: string; cls: string }> = {
-  ACTIF: { label: "Abonnement actif", cls: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" },
-  ESSAI: { label: "Période d'essai", cls: "bg-amber-500/10 text-amber-700 dark:text-amber-300" },
-  SUSPENDU: { label: "Suspendu", cls: "bg-rose-500/10 text-rose-700 dark:text-rose-300" },
+  ACTIF: { label: "Abonnement actif", cls: TONE_CLASSES.success },
+  ESSAI: { label: "Période d'essai", cls: TONE_CLASSES.warning },
+  SUSPENDU: { label: "Suspendu", cls: TONE_CLASSES.danger },
 };
 
 const COMPTES = [

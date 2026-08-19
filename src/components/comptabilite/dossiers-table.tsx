@@ -220,7 +220,7 @@ export function DossiersTable({ rows }: { rows: DossierRow[] }) {
                     <Badge variant="secondary">{l.mode}</Badge>
                   </TableCell>
                   <TableCell className="text-right">{l.du > 0 ? euro(l.du) : "—"}</TableCell>
-                  <TableCell className="text-right text-emerald-700 dark:text-emerald-300">
+                  <TableCell className="text-right text-success">
                     {l.paye > 0 ? euro(l.paye) : "—"}
                   </TableCell>
                   <TableCell className="text-right font-medium">

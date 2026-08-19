@@ -71,7 +71,7 @@ export function LeadTimeline({ events }: { events: LeadEventItem[] }) {
             <div className="flex flex-wrap items-baseline gap-x-2">
               <p className="text-sm font-medium">{e.titre}</p>
               {bareme && bareme.score > 0 && (
-                <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                <span className="text-[11px] font-medium text-success">
                   +{bareme.score} pts
                 </span>
               )}

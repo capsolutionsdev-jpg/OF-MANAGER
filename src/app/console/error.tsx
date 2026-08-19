@@ -23,7 +23,7 @@ export default function ConsoleError({
 
   return (
     <div className="mx-auto flex max-w-md flex-col items-center gap-4 py-20 text-center">
-      <AlertTriangle className="h-10 w-10 text-amber-500" />
+      <AlertTriangle className="h-10 w-10 text-warning" />
       <h2 className="text-lg font-semibold">Cette page console a rencontré un problème</h2>
       <p className="text-sm text-muted-foreground">
         C&apos;est souvent temporaire (connexion à la base). Réessayez ; si le problème persiste,

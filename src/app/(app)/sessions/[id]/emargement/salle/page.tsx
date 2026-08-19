@@ -115,7 +115,7 @@ export default async function EmargementSalleAdminPage({
           <Card className="print:hidden">
             <CardHeader className="flex flex-row items-center justify-between gap-2">
               <CardTitle className="text-base">Suivi en direct</CardTitle>
-              <Badge className={signed === dayRows.length ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : "bg-amber-500/10 text-amber-700 dark:text-amber-300"}>
+              <Badge variant={signed === dayRows.length ? "success" : "warning"}>
                 {signed}/{dayRows.length} signé(s)
               </Badge>
             </CardHeader>
@@ -144,7 +144,7 @@ export default async function EmargementSalleAdminPage({
                       <span className="text-xs text-muted-foreground">{r.demi === "MATIN" ? "matin" : "après-midi"}</span>
                     </span>
                     {r.signedAt ? (
-                      <span className="inline-flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-300">
+                      <span className="inline-flex items-center gap-1 text-xs text-success">
                         <CheckCircle2 className="h-3.5 w-3.5" /> {r.signedAt.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
                       </span>
                     ) : (

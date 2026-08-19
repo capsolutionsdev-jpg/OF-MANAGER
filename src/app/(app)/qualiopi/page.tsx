@@ -88,16 +88,16 @@ export default async function QualiopiPage() {
                   </p>
                 </div>
                 <div className="flex gap-4 text-sm">
-                  <span className="text-emerald-600">● {conformes} conformes</span>
-                  <span className="text-amber-600">
+                  <span className="text-success">● {conformes} conformes</span>
+                  <span className="text-warning">
                     ● {total - conformes - nonConformes} en cours
                   </span>
-                  <span className="text-red-600">● {nonConformes} non conformes</span>
+                  <span className="text-destructive">● {nonConformes} non conformes</span>
                 </div>
               </div>
               <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-muted">
                 <div
-                  className="h-full rounded-full bg-emerald-500"
+                  className="h-full rounded-full bg-success"
                   style={{ width: `${pct}%` }}
                 />
               </div>

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatCard } from "@/components/ui/stat-card";
+import { TONE_CLASSES } from "@/components/ui/status-badge";
 import { ConvertButton } from "@/components/console/statut-actions";
 import {
   getConsoleHealth, getConsoleOverview, getGrowthFunnel, type ConsoleHealth,
@@ -20,9 +21,9 @@ import { withDbRetry } from "@/lib/db-retry";
 export const dynamic = "force-dynamic";
 
 const STATUT_BADGE: Record<string, string> = {
-  ESSAI: "bg-amber-500/10 text-amber-700",
-  ACTIF: "bg-emerald-500/10 text-emerald-700",
-  SUSPENDU: "bg-rose-500/10 text-rose-700",
+  ESSAI: TONE_CLASSES.warning,
+  ACTIF: TONE_CLASSES.success,
+  SUSPENDU: TONE_CLASSES.danger,
 };
 
 export default async function ConsoleDashboard() {
@@ -45,7 +46,7 @@ export default async function ConsoleDashboard() {
   const statutTotal = Math.max(1, byStatut.actif + byStatut.essai + byStatut.suspendu);
   const segActif = (byStatut.actif / statutTotal) * 100;
   const segEssai = (byStatut.essai / statutTotal) * 100;
-  const donut = `conic-gradient(#10B981 0 ${segActif}%, #F59E0B 0 ${segActif + segEssai}%, #E11D48 0 100%)`;
+  const donut = `conic-gradient(var(--success) 0 ${segActif}%, var(--amber) 0 ${segActif + segEssai}%, var(--destructive) 0 100%)`;
 
   return (
     <div className="space-y-6">
@@ -133,9 +134,9 @@ export default async function ConsoleDashboard() {
               </div>
             </div>
             <div className="space-y-2 text-sm">
-              <Legend color="#10B981" label="Actifs" value={byStatut.actif} />
-              <Legend color="#F59E0B" label="En essai" value={byStatut.essai} />
-              <Legend color="#E11D48" label="Suspendus" value={byStatut.suspendu} />
+              <Legend color="var(--success)" label="Actifs" value={byStatut.actif} />
+              <Legend color="var(--amber)" label="En essai" value={byStatut.essai} />
+              <Legend color="var(--destructive)" label="Suspendus" value={byStatut.suspendu} />
             </div>
           </CardContent>
         </Card>
@@ -216,16 +217,16 @@ export default async function ConsoleDashboard() {
         <Card>
           <CardHeader className="py-3">
             <CardTitle className="flex items-center gap-2 text-sm">
-              <AlertTriangle className="h-4 w-4 text-amber-500" /> À traiter
+              <AlertTriangle className="h-4 w-4 text-warning" /> À traiter
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2.5">
             {alerts.essais.length === 0 && alerts.suspendus.length === 0 && alerts.inactifs.length === 0 && (
-              <p className="text-sm text-muted-foreground">Rien à signaler — tout est à jour. 🎉</p>
+              <p className="text-sm text-muted-foreground">Rien à signaler — tout est à jour.</p>
             )}
             {alerts.essais.map((r) => (
-              <div key={r.id} className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50/60 p-2.5 text-sm">
-                <Badge className="bg-amber-500/10 text-amber-700">Essai</Badge>
+              <div key={r.id} className="flex items-center gap-2 rounded-md border border-warning/30 bg-warning/10 p-2.5 text-sm">
+                <Badge variant="warning">Essai</Badge>
                 <Link href={`/console/${r.id}`} className="font-medium hover:underline">{r.nom}</Link>
                 <ConvertButton id={r.id} className="ml-auto" />
               </div>
@@ -238,8 +239,8 @@ export default async function ConsoleDashboard() {
               </div>
             ))}
             {alerts.suspendus.map((r) => (
-              <div key={r.id} className="flex items-center gap-2 rounded-md border border-rose-200 bg-rose-50/50 p-2.5 text-sm">
-                <Badge className="bg-rose-500/10 text-rose-700">Suspendu</Badge>
+              <div key={r.id} className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-2.5 text-sm">
+                <Badge variant="destructive">Suspendu</Badge>
                 <Link href={`/console/${r.id}`} className="font-medium hover:underline">{r.nom}</Link>
               </div>
             ))}
@@ -296,10 +297,10 @@ function Legend({ color, label, value }: { color: string; label: string; value: 
 
 type ChipTone = "blue" | "amber" | "rose" | "emerald";
 const CHIP_TONE: Record<ChipTone, string> = {
-  blue: "border-blue-200 bg-blue-50/70 text-blue-700 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-300",
-  amber: "border-amber-200 bg-amber-50/70 text-amber-700 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300",
-  rose: "border-rose-200 bg-rose-50/70 text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300",
-  emerald: "border-emerald-200 bg-emerald-50/70 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300",
+  blue: TONE_CLASSES.info,
+  amber: TONE_CLASSES.warning,
+  rose: TONE_CLASSES.danger,
+  emerald: TONE_CLASSES.success,
 };
 
 /**

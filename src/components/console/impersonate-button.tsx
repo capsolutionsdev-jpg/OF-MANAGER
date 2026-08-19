@@ -34,13 +34,13 @@ export function ImpersonateButton({ organismeId, orgNom }: { organismeId: string
   }
 
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-md border border-indigo-300 bg-indigo-50 px-2 py-1 text-xs dark:border-indigo-800 dark:bg-indigo-950/40">
+    <span className="inline-flex items-center gap-1.5 rounded-md border border-border bg-muted/40 px-2 py-1 text-xs">
       <span className="text-muted-foreground">Voir l&apos;espace de «&nbsp;{orgNom}&nbsp;» ?</span>
       <button
         type="button"
         onClick={go}
         disabled={pending}
-        className="inline-flex items-center gap-1 rounded bg-indigo-600 px-2 py-0.5 font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
+        className="inline-flex items-center gap-1 rounded bg-primary px-2 py-0.5 font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
       >
         {pending ? <Loader2 className="h-3 w-3 animate-spin" /> : <UserCog className="h-3 w-3" />} Confirmer
       </button>

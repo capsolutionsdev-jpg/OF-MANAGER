@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { Gavel, Save } from "lucide-react";
+import { Gavel, Save, AlertTriangle } from "lucide-react";
 
 import {
   sessionFormSchema,
@@ -367,8 +367,8 @@ export function SessionForm({
                         <span
                           className={`ml-1.5 rounded px-1.5 py-0.5 text-[10px] font-medium ${
                             f.typeContrat === "INTERNE"
-                              ? "bg-blue-500/10 text-blue-700 dark:text-blue-300"
-                              : "bg-amber-500/10 text-amber-700 dark:text-amber-300"
+                              ? "bg-info/10 text-info"
+                              : "bg-warning/10 text-warning"
                           }`}
                         >
                           {f.typeContrat === "INTERNE" ? "Interne" : "Externe (contrat)"}
@@ -397,7 +397,7 @@ export function SessionForm({
                         <span className="font-medium">
                           {f.prenom} {f.nom}
                           {f.typeContrat === "EXTERNE" && (
-                            <span className="ml-1.5 text-xs font-normal text-amber-700 dark:text-amber-300">
+                            <span className="ml-1.5 text-xs font-normal text-warning">
                               (externe — facturé)
                             </span>
                           )}
@@ -461,7 +461,7 @@ export function SessionForm({
               </div>
               {conflits.length > 0 && (
                 <p className="text-[11px] font-medium text-destructive">
-                  ⚠ {conflits.length} jour(s) attribué(s) à deux formateurs (
+                  <AlertTriangle className="mr-1 inline h-3.5 w-3.5" /> {conflits.length} jour(s) attribué(s) à deux formateurs (
                   {conflits.map(labelJour).join(", ")}). Un jour ne peut être animé que par un seul
                   formateur — mettez l&apos;un d&apos;eux en « Partiellement » et répartissez les jours.
                 </p>

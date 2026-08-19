@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Menu, Search, Bell, LogOut, UserCog, ShieldCheck } from "lucide-react";
+import { Menu, Search, Bell, LogOut, UserCog, ShieldCheck, PanelLeft } from "lucide-react";
 import type { Role } from "@prisma/client";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,7 @@ import { SidebarNav, SidebarBrand } from "@/components/app-sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { FocusModeToggle } from "@/components/focus-mode-toggle";
+import { useRail } from "@/components/rail-context";
 import { roleLabels } from "@/lib/navigation";
 import type { NotificationsData } from "@/lib/notifications";
 
@@ -49,6 +50,7 @@ export function AppTopbar({
   // Tiroir de nav contrôlé → se referme après un tap sur une entrée (sinon il
   // reste ouvert par-dessus la nouvelle page sur mobile).
   const [menuOpen, setMenuOpen] = useState(false);
+  const { toggle } = useRail();
 
   return (
     <header
@@ -67,6 +69,18 @@ export function AppTopbar({
           <SidebarNav user={user} onNavigate={() => setMenuOpen(false)} />
         </SheetContent>
       </Sheet>
+
+      {/* Repli du rail (desktop) — une fois replié, le menu se déploie au survol. */}
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={toggle}
+        className="hidden text-muted-foreground lg:inline-flex"
+        aria-label="Replier ou déplier le menu"
+        title="Replier / déplier le menu (survol pour l'afficher)"
+      >
+        <PanelLeft className="h-[18px] w-[18px]" />
+      </Button>
 
       {/* Recherche globale CENTRÉE (candidats, sessions, clients pro) → /recherche */}
       <form

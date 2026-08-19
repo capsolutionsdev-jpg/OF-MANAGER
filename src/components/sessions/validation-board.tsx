@@ -4,10 +4,11 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
-  CheckCircle2, Circle, AlertTriangle, XCircle, ExternalLink, Loader2,
+  CheckCircle2, Check, Circle, AlertTriangle, XCircle, ExternalLink, Loader2,
   ShieldCheck, Lock, Archive, ChevronDown, ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { TONE_CLASSES } from "@/components/ui/status-badge";
 import { Textarea } from "@/components/ui/textarea";
 import {
   validateItem, unvalidateItem, archiveSessionValidated,
@@ -25,10 +26,10 @@ const fmtDate = (iso?: string) => {
 
 function StatusPill({ status }: { status: ItemStatus }) {
   const map: Record<ItemStatus, { cls: string; label: string; Icon: typeof CheckCircle2 }> = {
-    VALIDATED_AUTO: { cls: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300", label: "Validé · auto", Icon: CheckCircle2 },
-    VALIDATED_MANUAL: { cls: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300", label: "Validé · manuel", Icon: CheckCircle2 },
-    PENDING: { cls: "bg-amber-500/10 text-amber-700 dark:text-amber-300", label: "En attente", Icon: Circle },
-    MISSING: { cls: "bg-red-500/10 text-red-700 dark:text-red-300", label: "Manquant", Icon: XCircle },
+    VALIDATED_AUTO: { cls: TONE_CLASSES.success, label: "Validé · auto", Icon: CheckCircle2 },
+    VALIDATED_MANUAL: { cls: TONE_CLASSES.success, label: "Validé · manuel", Icon: CheckCircle2 },
+    PENDING: { cls: TONE_CLASSES.warning, label: "En attente", Icon: Circle },
+    MISSING: { cls: TONE_CLASSES.danger, label: "Manquant", Icon: XCircle },
   };
   const { cls, label, Icon } = map[status];
   return (
@@ -101,8 +102,8 @@ function ItemRow({
       </div>
 
       {manual && item.by && (
-        <p className="mt-0.5 pl-1 text-[11px] text-emerald-700 dark:text-emerald-300">
-          ✓ validé par {item.by}{item.at ? ` · ${fmtDate(item.at)}` : ""}
+        <p className="mt-0.5 pl-1 text-[11px] text-success">
+          <Check className="mr-0.5 inline h-3 w-3" /> validé par {item.by}{item.at ? ` · ${fmtDate(item.at)}` : ""}
           {item.comment ? ` — « ${item.comment} »` : ""}
         </p>
       )}
@@ -130,7 +131,7 @@ function ItemRow({
 function SectionCounter({ validated, total }: { validated: number; total: number }) {
   const ok = validated === total;
   return (
-    <span className={`inline-flex items-center gap-1 text-sm font-semibold ${ok ? "text-emerald-700 dark:text-emerald-300" : "text-amber-700 dark:text-amber-300"}`}>
+    <span className={`inline-flex items-center gap-1 text-sm font-semibold ${ok ? "text-success" : "text-warning"}`}>
       {ok ? <CheckCircle2 className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
       {validated}/{total}
     </span>
@@ -164,8 +165,8 @@ function CandidateRow({ c, sessionId, onDone }: { c: CandidateState; sessionId: 
           {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
           {c.name}
           {c.compliant
-            ? <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-300">Conforme</span>
-            : <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:text-amber-300">Incomplet</span>}
+            ? <span className="rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-medium text-success">Conforme</span>
+            : <span className="rounded-full bg-warning/10 px-2 py-0.5 text-[11px] font-medium text-warning">Incomplet</span>}
         </span>
         <SectionCounter validated={c.validated} total={c.total} />
       </button>
@@ -210,7 +211,7 @@ export function ValidationBoard({ state }: { state: ValidationState }) {
         </div>
         <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
           <div
-            className={`bar-anim h-full rounded-full transition-all ${state.isValidated ? "bg-emerald-500" : "bg-primary"}`}
+            className={`bar-anim h-full rounded-full transition-all ${state.isValidated ? "bg-success" : "bg-primary"}`}
             style={{ width: `${state.percentage}%` }}
           />
         </div>
@@ -221,7 +222,7 @@ export function ValidationBoard({ state }: { state: ValidationState }) {
           </div>
           <div className="flex items-center justify-between rounded-md bg-muted/40 px-3 py-2">
             <span>Candidats</span>
-            <span className={`inline-flex items-center gap-1 text-sm font-semibold ${candOk ? "text-emerald-700 dark:text-emerald-300" : "text-amber-700 dark:text-amber-300"}`}>
+            <span className={`inline-flex items-center gap-1 text-sm font-semibold ${candOk ? "text-success" : "text-warning"}`}>
               {candOk ? <CheckCircle2 className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
               {state.candidatesCompliant}/{state.candidatesTotal}
             </span>
@@ -243,7 +244,7 @@ export function ValidationBoard({ state }: { state: ValidationState }) {
       <div className="rounded-lg border">
         <div className="flex items-center justify-between border-b bg-muted/30 px-3 py-2">
           <h3 className="text-sm font-semibold">Documents des candidats</h3>
-          <span className={`inline-flex items-center gap-1 text-sm font-semibold ${candOk ? "text-emerald-700 dark:text-emerald-300" : "text-amber-700 dark:text-amber-300"}`}>
+          <span className={`inline-flex items-center gap-1 text-sm font-semibold ${candOk ? "text-success" : "text-warning"}`}>
             {candOk ? <CheckCircle2 className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
             {state.candidatesCompliant}/{state.candidatesTotal} conformes
           </span>
@@ -264,12 +265,12 @@ export function ValidationBoard({ state }: { state: ValidationState }) {
       {/* Archivage */}
       <div className="rounded-lg border bg-muted/20 p-4">
         {state.isArchived ? (
-          <p className="flex items-center gap-2 text-sm font-medium text-emerald-700 dark:text-emerald-300">
+          <p className="flex items-center gap-2 text-sm font-medium text-success">
             <Archive className="h-4 w-4" /> Session archivée.
           </p>
         ) : state.isValidated ? (
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-300">
+            <p className="flex items-center gap-2 text-sm text-success">
               <CheckCircle2 className="h-4 w-4" /> Tous les documents obligatoires sont validés.
             </p>
             <Button onClick={archive} disabled={isPending}>

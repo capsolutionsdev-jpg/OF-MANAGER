@@ -173,9 +173,9 @@ function Section({
                 <span className="truncate font-medium">{r.label}</span>
                 {r.hasLogin ? (
                   r.actif ? (
-                    <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">Actif</Badge>
+                    <Badge variant="success">Actif</Badge>
                   ) : (
-                    <Badge className="bg-amber-500/10 text-amber-700 dark:text-amber-300">Suspendu</Badge>
+                    <Badge variant="warning">Suspendu</Badge>
                   )
                 ) : (
                   <Badge variant="secondary">Sans accès</Badge>

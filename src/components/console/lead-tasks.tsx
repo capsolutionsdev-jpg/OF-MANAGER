@@ -59,7 +59,7 @@ function TaskRow({ task }: { task: LeadTaskItem }) {
           <p
             className={cn(
               "mt-0.5 inline-flex items-center gap-1 text-xs",
-              enRetard ? "font-medium text-red-600 dark:text-red-400" : "text-muted-foreground",
+              enRetard ? "font-medium text-destructive" : "text-muted-foreground",
             )}
           >
             <CalendarClock className="h-3 w-3" />

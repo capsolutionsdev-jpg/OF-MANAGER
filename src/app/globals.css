@@ -542,6 +542,58 @@
 }
 
 /* ============================================================
+   Rail latéral rétractable (repli en icônes + déploiement au survol)
+   Additif : sans l'attribut [data-rail-collapsed], le rail reste inchangé.
+   ============================================================ */
+.app-rail,
+.app-rail .rail-inner {
+  transition: width 0.18s ease;
+}
+/* Pastille-initiale : cachée par défaut, montrée seulement en mode replié. */
+.rail-brand-mark {
+  display: none;
+}
+/* Rail replié : largeur réduite. */
+:root[data-rail-collapsed] .app-rail {
+  width: 4rem;
+}
+:root[data-rail-collapsed] .app-rail .rail-inner {
+  width: 100%;
+}
+/* Icônes seules quand replié ET ni survolé ni focalisé. */
+:root[data-rail-collapsed] .app-rail:not(:hover):not(:focus-within) .rail-label {
+  display: none;
+}
+:root[data-rail-collapsed] .app-rail:not(:hover):not(:focus-within) #main-nav a,
+:root[data-rail-collapsed] .app-rail:not(:hover):not(:focus-within) .rail-brand,
+:root[data-rail-collapsed] .app-rail:not(:hover):not(:focus-within) .rail-help {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+  gap: 0;
+}
+:root[data-rail-collapsed] .app-rail:not(:hover):not(:focus-within) .rail-brand-mark {
+  display: flex;
+}
+/* Déploiement en OVERLAY au survol / focus : le contenu de la page ne se décale
+   pas (l'aside garde sa largeur repliée ; .rail-inner déborde par-dessus). */
+:root[data-rail-collapsed] .app-rail:hover .rail-inner,
+:root[data-rail-collapsed] .app-rail:focus-within .rail-inner {
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  width: 15rem;
+  z-index: 50;
+  box-shadow: 0 24px 50px -12px rgba(0, 0, 0, 0.55);
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-rail,
+  .app-rail .rail-inner {
+    transition: none;
+  }
+}
+
+/* ============================================================
    PHASE 1 — Animations Dialog & Form (Conformité WCAG + Design)
    Nouvelles keyframes pour modals, sheets, toasts et formulaires.
    ============================================================ */

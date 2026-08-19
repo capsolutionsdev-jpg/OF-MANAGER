@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { FileText, UserCog } from "lucide-react";
+import { FileText, UserCog, Check } from "lucide-react";
 import { getSessionDetail } from "@/lib/sessions/detail";
 import { SessionDetailHeader } from "@/components/sessions/session-detail-header";
 import { Button } from "@/components/ui/button";
@@ -95,8 +95,8 @@ export default async function SessionDocumentsPage({
               </span>
               {s.crFormateurCompletedAt ? (
                 <>
-                  <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
-                    ✓ Complété
+                  <Badge variant="success">
+                    <Check /> Complété
                   </Badge>
                   <Button
                     variant="outline"
@@ -112,7 +112,7 @@ export default async function SessionDocumentsPage({
                   </Button>
                 </>
               ) : s.crFormateurSentAt ? (
-                <Badge className="bg-amber-500/10 text-amber-700 dark:text-amber-300">
+                <Badge variant="warning">
                   Lien envoyé — en attente
                 </Badge>
               ) : (
@@ -135,8 +135,8 @@ export default async function SessionDocumentsPage({
               </span>
               {s.contratFormateurSignedAt ? (
                 <>
-                  <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
-                    ✓ Signé
+                  <Badge variant="success">
+                    <Check /> Signé
                   </Badge>
                   <Button
                     variant="outline"
@@ -152,7 +152,7 @@ export default async function SessionDocumentsPage({
                   </Button>
                 </>
               ) : s.contratFormateurSentAt ? (
-                <Badge className="bg-amber-500/10 text-amber-700 dark:text-amber-300">
+                <Badge variant="warning">
                   Envoyé — en attente de signature
                 </Badge>
               ) : (

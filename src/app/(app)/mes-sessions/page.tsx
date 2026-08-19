@@ -3,6 +3,7 @@ import { getTenantDb } from "@/lib/tenant";
 import { auth } from "@/auth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/ui/page-header";
 
 export const dynamic = "force-dynamic";
 
@@ -21,9 +22,7 @@ export default async function MesSessionsPage() {
   if (!formateur) {
     return (
       <div className="space-y-4">
-        <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
-          <CalendarDays className="h-6 w-6" /> Mes sessions
-        </h1>
+        <PageHeader title="Mes sessions" icon={CalendarDays} />
         <Card><CardContent className="p-10 text-center text-sm text-muted-foreground">
           Aucun espace formateur associé à ce compte. Contactez l&apos;organisme de formation.
         </CardContent></Card>
@@ -65,12 +64,7 @@ export default async function MesSessionsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
-          <CalendarDays className="h-6 w-6" /> Mes sessions
-        </h1>
-        <p className="text-sm text-muted-foreground">Vos interventions à venir et passées.</p>
-      </div>
+      <PageHeader title="Mes sessions" subtitle="Vos interventions à venir et passées." icon={CalendarDays} />
 
       <section className="space-y-2">
         <h2 className="text-sm font-semibold text-muted-foreground">À venir ({aVenir.length})</h2>

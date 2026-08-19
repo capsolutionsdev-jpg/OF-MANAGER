@@ -5,6 +5,7 @@ import { getCurrentApprenant, sessionPhase } from "@/lib/candidat-portal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +21,7 @@ export default async function MesFormationsPage() {
   if (!apprenant) {
     return (
       <div className="space-y-4">
-        <h1 className="text-2xl font-bold tracking-tight">Mes formations</h1>
+        <PageHeader title="Mes formations" />
         <Card><CardContent className="p-10 text-center text-sm text-muted-foreground">
           Aucun dossier candidat associé à ce compte.
         </CardContent></Card>
@@ -46,12 +47,7 @@ export default async function MesFormationsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
-          <BookOpen className="h-6 w-6" /> Mes formations
-        </h1>
-        <p className="mt-0.5 text-sm text-muted-foreground">Toutes les formations auxquelles vous êtes inscrit(e).</p>
-      </div>
+      <PageHeader title="Mes formations" subtitle="Toutes les formations auxquelles vous êtes inscrit(e)." icon={BookOpen} />
 
       {inscriptions.length === 0 ? (
         <Card>

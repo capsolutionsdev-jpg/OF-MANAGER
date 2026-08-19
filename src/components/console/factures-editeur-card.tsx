@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { TONE_CLASSES } from "@/components/ui/status-badge";
 import { euros } from "@/lib/plans";
 import { STATUT_FACTURE_LABELS, type FactureStatut } from "@/lib/factures/editeur";
 import { cn } from "@/lib/utils";
@@ -26,13 +27,13 @@ export type FactureEditeurRow = {
 };
 
 const STATUT_BADGE: Record<string, string> = {
-  BROUILLON: "bg-slate-500/10 text-slate-600 dark:text-slate-300",
-  EMISE: "bg-blue-500/10 text-blue-700 dark:text-blue-300",
-  DEPOSEE: "bg-violet-500/10 text-violet-700 dark:text-violet-300",
-  ENCAISSEE: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
-  REJETEE: "bg-rose-500/10 text-rose-700 dark:text-rose-300",
-  REFUSEE: "bg-rose-500/10 text-rose-700 dark:text-rose-300",
-  AVOIR: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
+  BROUILLON: TONE_CLASSES.neutral,
+  EMISE: TONE_CLASSES.info,
+  DEPOSEE: TONE_CLASSES.info,
+  ENCAISSEE: TONE_CLASSES.success,
+  REJETEE: TONE_CLASSES.danger,
+  REFUSEE: TONE_CLASSES.danger,
+  AVOIR: TONE_CLASSES.warning,
 };
 
 // Statuts du cycle de vie proposés une fois la facture émise (réforme 2026).
@@ -69,7 +70,7 @@ export function FacturesEditeurCard({
       </CardHeader>
       <CardContent className="space-y-3">
         {sirenManquant && (
-          <p className="flex items-start gap-1.5 rounded-md border border-amber-200 bg-amber-50/70 p-2.5 text-xs text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300">
+          <p className="flex items-start gap-1.5 rounded-md border border-warning/30 bg-warning/10 p-2.5 text-xs text-warning">
             <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
             <span>
               <b>SIREN du client manquant.</b> Il devient une mention obligatoire de la facture
@@ -144,7 +145,7 @@ function FactureRow({ organismeId, f }: { organismeId: string; f: FactureEditeur
         {!brouillon && (
           <a
             href={`/api/console/facture-editeur/${f.id}/facturx`}
-            className="inline-flex items-center gap-1 rounded-md border border-emerald-300 bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-800 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
+            className="inline-flex items-center gap-1 rounded-md border border-success/30 bg-success/10 px-2 py-1 text-xs font-medium text-success hover:bg-success/20"
             title="PDF/A-3 avec XML EN 16931 embarqué — le fichier à transmettre"
           >
             <FileCheck2 className="h-3.5 w-3.5" /> Factur-X
@@ -162,7 +163,7 @@ function FactureRow({ organismeId, f }: { organismeId: string; f: FactureEditeur
             <Button size="sm" variant="outline" onClick={emettre} disabled={pending}>
               <Send className="mr-1 h-3.5 w-3.5" /> Émettre
             </Button>
-            <Button size="sm" variant="ghost" onClick={supprimer} disabled={pending} className="text-rose-600 hover:text-rose-700">
+            <Button size="sm" variant="ghost" onClick={supprimer} disabled={pending} className="text-destructive hover:text-destructive/80">
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
           </>

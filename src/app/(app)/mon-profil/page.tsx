@@ -4,6 +4,7 @@ import { getCurrentApprenant } from "@/lib/candidat-portal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProfilForm } from "@/components/portail/profil-form";
 import { ChangePasswordForm } from "@/app/(app)/mon-compte/change-password-form";
+import { PageHeader } from "@/components/ui/page-header";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +13,7 @@ export default async function MonProfilPage() {
   if (!apprenant) {
     return (
       <div className="space-y-4">
-        <h1 className="text-2xl font-bold tracking-tight">Mon profil</h1>
+        <PageHeader title="Mon profil" />
         <Card><CardContent className="p-10 text-center text-sm text-muted-foreground">Aucun dossier candidat associé.</CardContent></Card>
       </div>
     );

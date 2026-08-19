@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { TONE_CLASSES } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -16,9 +17,9 @@ import { cn } from "@/lib/utils";
 import { supprimerVeille } from "@/lib/actions/registre-actions";
 
 export const VEILLE_TYPES: Record<string, { label: string; ind: string; cls: string }> = {
-  LEGALE: { label: "Veille légale & réglementaire", ind: "Indicateur 23", cls: "bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300" },
-  METIERS: { label: "Veille métiers & compétences", ind: "Indicateur 24", cls: "bg-violet-100 dark:bg-violet-500/15 text-violet-700 dark:text-violet-300" },
-  PEDAGOGIQUE: { label: "Veille pédagogique & technologique", ind: "Indicateur 25", cls: "bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300" },
+  LEGALE: { label: "Veille légale & réglementaire", ind: "Indicateur 23", cls: TONE_CLASSES.info },
+  METIERS: { label: "Veille métiers & compétences", ind: "Indicateur 24", cls: TONE_CLASSES.info },
+  PEDAGOGIQUE: { label: "Veille pédagogique & technologique", ind: "Indicateur 25", cls: TONE_CLASSES.success },
 };
 
 /** Entrée de veille sérialisée (date en ISO). */

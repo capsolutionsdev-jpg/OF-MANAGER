@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, ListTodo, Loader2 } from "lucide-react";
 import { setLeadStatut } from "@/lib/actions/console-actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { TONE_CLASSES } from "@/components/ui/status-badge";
 import { cn } from "@/lib/utils";
 import type { LeadRow } from "@/components/console/leads-table";
 
@@ -17,11 +18,11 @@ export type LeadKanbanRow = LeadRow & {
 
 /** Colonnes du pipeline, dans l'ordre de progression commerciale. */
 const COLONNES = [
-  { key: "NOUVEAU", label: "Nouveau", accent: "bg-blue-500" },
-  { key: "A_RAPPELER", label: "À rappeler", accent: "bg-amber-500" },
-  { key: "RAPPELE", label: "Rappelé", accent: "bg-violet-500" },
-  { key: "CONVERTI", label: "Converti", accent: "bg-emerald-500" },
-  { key: "PERDU", label: "Perdu", accent: "bg-slate-400" },
+  { key: "NOUVEAU", label: "Nouveau", accent: "bg-info" },
+  { key: "A_RAPPELER", label: "À rappeler", accent: "bg-warning" },
+  { key: "RAPPELE", label: "Rappelé", accent: "bg-info" },
+  { key: "CONVERTI", label: "Converti", accent: "bg-success" },
+  { key: "PERDU", label: "Perdu", accent: "bg-muted-foreground" },
 ] as const;
 
 function fmt(d: Date) {
@@ -30,9 +31,9 @@ function fmt(d: Date) {
 
 /** Teinte du badge de score : chaud (émeraude) → tiède (ambre) → froid (ardoise). */
 function scoreBadgeClass(score: number) {
-  if (score >= 50) return "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300";
-  if (score >= 25) return "bg-amber-500/10 text-amber-700 dark:text-amber-300";
-  return "bg-slate-500/10 text-slate-600 dark:text-slate-300";
+  if (score >= 50) return TONE_CLASSES.success;
+  if (score >= 25) return TONE_CLASSES.warning;
+  return TONE_CLASSES.neutral;
 }
 
 function KanbanCard({ lead, colIndex }: { lead: LeadKanbanRow; colIndex: number }) {
@@ -75,7 +76,7 @@ function KanbanCard({ lead, colIndex }: { lead: LeadKanbanRow; colIndex: number 
         <p className="flex items-center gap-2 text-[11px] text-muted-foreground">
           <span>{fmt(lead.createdAt)}</span>
           {lead.tasks.length > 0 && (
-            <span className="inline-flex items-center gap-0.5 font-medium text-amber-700 dark:text-amber-300">
+            <span className="inline-flex items-center gap-0.5 font-medium text-warning">
               <ListTodo className="h-3 w-3" />
               {lead.tasks.length} tâche{lead.tasks.length > 1 ? "s" : ""}
             </span>

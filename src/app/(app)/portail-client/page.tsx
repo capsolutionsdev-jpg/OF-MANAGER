@@ -54,7 +54,7 @@ export default async function PortailClientPage() {
                   </div>
                   {e.portalToken ? (
                     <div className="flex w-full items-center gap-2 sm:w-auto">
-                      <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">Actif</Badge>
+                      <Badge variant="success">Actif</Badge>
                       <div className="w-72 max-w-full">
                         <CopyAcceptLink path={`/portail/${e.portalToken}`} />
                       </div>

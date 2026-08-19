@@ -10,9 +10,9 @@ import { Button } from "@/components/ui/button";
 export const dynamic = "force-dynamic";
 
 const DOT: Record<NotifSeverity, string> = {
-  info: "bg-blue-500",
-  warn: "bg-amber-500",
-  danger: "bg-red-500",
+  info: "bg-info",
+  warn: "bg-warning",
+  danger: "bg-destructive",
 };
 
 function ago(iso: string) {

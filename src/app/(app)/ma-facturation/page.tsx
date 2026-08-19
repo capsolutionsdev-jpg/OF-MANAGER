@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge, type StatusTone } from "@/components/ui/status-badge";
 import { FactureFormateurForm } from "@/components/formateur/facture-formateur-form";
+import { PageHeader } from "@/components/ui/page-header";
 
 export const dynamic = "force-dynamic";
 
@@ -27,9 +28,7 @@ export default async function MaFacturationPage() {
   if (!formateur) {
     return (
       <div className="space-y-4">
-        <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
-          <Wallet className="h-6 w-6" /> Ma facturation
-        </h1>
+        <PageHeader title="Ma facturation" icon={Wallet} />
         <Card><CardContent className="p-10 text-center text-sm text-muted-foreground">
           Aucun espace formateur associé à ce compte. Contactez l&apos;organisme de formation.
         </CardContent></Card>
@@ -72,14 +71,7 @@ export default async function MaFacturationPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
-          <Wallet className="h-6 w-6" /> Ma facturation
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Transmettez vos factures à l&apos;organisme et suivez leur règlement.
-        </p>
-      </div>
+      <PageHeader title="Ma facturation" subtitle="Transmettez vos factures à l'organisme et suivez leur règlement." icon={Wallet} />
 
       <Card>
         <CardHeader><CardTitle className="text-base">Nouvelle facture</CardTitle></CardHeader>

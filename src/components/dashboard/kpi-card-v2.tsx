@@ -106,8 +106,8 @@ export function KpiCardV2({
   const s = TINT_STYLES[tint];
   const TrendIcon = trendDown ? TrendingDown : TrendingUp;
   const trendColor = trendDown
-    ? "text-rose-600 dark:text-rose-400"
-    : "text-emerald-600 dark:text-emerald-400";
+    ? "text-destructive"
+    : "text-success";
 
   return (
     <div className="group relative flex flex-col justify-between rounded-2xl border border-border bg-card p-5 transition-shadow hover:shadow-md">

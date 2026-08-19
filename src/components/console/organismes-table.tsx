@@ -11,6 +11,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { StatutSelect } from "@/components/console/statut-actions";
+import { TONE_CLASSES } from "@/components/ui/status-badge";
 import { euros } from "@/lib/plans";
 import { cn } from "@/lib/utils";
 import type { OrgRow } from "@/lib/console-stats";
@@ -23,9 +24,9 @@ const FILTERS = [
 ];
 
 const PLAN_BADGE: Record<string, string> = {
-  BASIQUE: "bg-slate-500/10 text-slate-600",
-  MEDIUM: "bg-blue-500/10 text-blue-700 dark:text-blue-300",
-  COMPLET: "bg-violet-500/10 text-violet-700 dark:text-violet-300",
+  BASIQUE: TONE_CLASSES.neutral,
+  MEDIUM: TONE_CLASSES.info,
+  COMPLET: TONE_CLASSES.info,
 };
 
 export function OrganismesTable({ rows, initialQuery = "" }: { rows: OrgRow[]; initialQuery?: string }) {

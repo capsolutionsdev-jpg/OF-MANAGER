@@ -48,7 +48,7 @@ export function AbonnementSepaCard({
       <CardContent className="space-y-3">
         <div className="flex flex-wrap items-center gap-2 text-sm">
           {hasSubscription ? (
-            <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">Abonnement Stripe actif</Badge>
+            <Badge variant="success">Abonnement Stripe actif</Badge>
           ) : (
             <Badge variant="secondary">Aucun abonnement Stripe</Badge>
           )}

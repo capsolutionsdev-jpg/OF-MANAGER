@@ -277,23 +277,23 @@ export default async function DashboardPage() {
           <CardContent className="space-y-2">
             <Link
               href="#a-relancer"
-              className="flex items-center justify-between rounded-xl bg-rose-50 px-3 py-2.5 text-sm transition-colors hover:bg-rose-100 dark:bg-rose-500/10 dark:hover:bg-rose-500/20"
+              className="flex items-center justify-between rounded-xl bg-destructive/10 px-3 py-2.5 text-sm transition-colors hover:bg-destructive/20"
             >
-              <span className="flex items-center gap-2 text-rose-700 dark:text-rose-400">
+              <span className="flex items-center gap-2 text-destructive">
                 <BellRing className="h-4 w-4" /> En attente
               </span>
-              <span className="flex items-center gap-1 font-semibold text-rose-700 dark:text-rose-400">
+              <span className="flex items-center gap-1 font-semibold text-destructive">
                 {enAttenteTotal} <ArrowRight className="h-3.5 w-3.5" />
               </span>
             </Link>
             <Link
               href="/candidats"
-              className="flex items-center justify-between rounded-xl bg-amber-50 px-3 py-2.5 text-sm transition-colors hover:bg-amber-100 dark:bg-amber-500/10 dark:hover:bg-amber-500/20"
+              className="flex items-center justify-between rounded-xl bg-warning/10 px-3 py-2.5 text-sm transition-colors hover:bg-warning/20"
             >
-              <span className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
+              <span className="flex items-center gap-2 text-warning">
                 <FileWarning className="h-4 w-4" /> Pièces manquantes
               </span>
-              <span className="flex items-center gap-1 font-semibold text-amber-700 dark:text-amber-400">
+              <span className="flex items-center gap-1 font-semibold text-warning">
                 {piecesManquantes} <ArrowRight className="h-3.5 w-3.5" />
               </span>
             </Link>
@@ -389,7 +389,7 @@ export default async function DashboardPage() {
                         </div>
                         <Badge
                           variant="outline"
-                          className={complet ? "shrink-0 border-amber-300 text-amber-700 dark:border-amber-500/40 dark:text-amber-400" : "shrink-0 border-emerald-300 text-emerald-700 dark:border-emerald-500/40 dark:text-emerald-400"}
+                          className={complet ? "shrink-0 border-warning/40 text-warning" : "shrink-0 border-success/40 text-success"}
                         >
                           {complet ? "Complète" : "Ouverte"}
                         </Badge>
@@ -504,7 +504,7 @@ export default async function DashboardPage() {
         <Card id="a-relancer">
           <CardHeader className="flex-row items-center justify-between pb-2 space-y-0">
             <CardTitle className="flex items-center gap-2 text-base">
-              <BellRing className="h-4 w-4 text-amber-600" /> À relancer ({enAttenteTotal})
+              <BellRing className="h-4 w-4 text-warning" /> À relancer ({enAttenteTotal})
             </CardTitle>
             <Link href="/crm" className="text-xs font-medium text-primary hover:underline">
               Voir tout →

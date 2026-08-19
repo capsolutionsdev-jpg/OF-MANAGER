@@ -9,6 +9,7 @@ import { requireSection } from "@/lib/section-guard";
 import { ExportMenu } from "@/components/export-menu";
 import { getTenantDb } from "@/lib/tenant";
 import { Badge } from "@/components/ui/badge";
+import { TONE_CLASSES } from "@/components/ui/status-badge";
 import {
   Card,
   CardContent,
@@ -384,7 +385,7 @@ export default async function ComptabilitePage({
             <CardContent className="p-0">
               {nonSoldes.length === 0 ? (
                 <div className="p-10 text-center text-sm text-muted-foreground">
-                  Aucune créance : tous les dossiers sont réglés. 🎉
+                  Aucune créance : tous les dossiers sont réglés.
                 </div>
               ) : (
                 <Table>
@@ -417,8 +418,8 @@ export default async function ComptabilitePage({
                           <Badge variant="secondary">{l.mode}</Badge>
                         </TableCell>
                         <TableCell className="text-right">{euro(l.du)}</TableCell>
-                        <TableCell className="text-right text-emerald-700 dark:text-emerald-300">{euro(l.paye)}</TableCell>
-                        <TableCell className="text-right font-semibold text-rose-700 dark:text-rose-300">
+                        <TableCell className="text-right text-success">{euro(l.paye)}</TableCell>
+                        <TableCell className="text-right font-semibold text-destructive">
                           {euro(l.restant)}
                         </TableCell>
                         <TableCell className="hidden lg:table-cell text-right text-muted-foreground">
@@ -479,7 +480,7 @@ export default async function ComptabilitePage({
                         <TableCell>
                           {r.mode ? <Badge variant="secondary">{r.mode}</Badge> : "—"}
                         </TableCell>
-                        <TableCell className="text-right font-medium text-emerald-700 dark:text-emerald-300">
+                        <TableCell className="text-right font-medium text-success">
                           {euro(r.montant)}
                         </TableCell>
                         <TableCell className="text-muted-foreground">{r.par}</TableCell>
@@ -517,7 +518,7 @@ export default async function ComptabilitePage({
                         <TableCell className="font-medium">{mode}</TableCell>
                         <TableCell className="text-right">{v.nb}</TableCell>
                         <TableCell className="text-right">{euro(v.du)}</TableCell>
-                        <TableCell className="text-right text-emerald-700 dark:text-emerald-300">{euro(v.paye)}</TableCell>
+                        <TableCell className="text-right text-success">{euro(v.paye)}</TableCell>
                         <TableCell className="text-right">{euro(Math.max(0, v.du - v.paye))}</TableCell>
                       </TableRow>
                     ))}
@@ -538,7 +539,7 @@ function Count({ n, tone }: { n: number; tone?: "rose" }) {
     <span
       className={`ml-1 rounded-full px-1.5 py-0.5 text-[0.7rem] font-semibold tabular-nums ${
         tone === "rose"
-          ? "bg-rose-500/10 text-rose-700 dark:text-rose-300"
+          ? TONE_CLASSES.danger
           : "bg-muted text-muted-foreground"
       }`}
     >

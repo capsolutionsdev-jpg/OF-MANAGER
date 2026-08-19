@@ -124,7 +124,7 @@ export function ConsoleRail({
                 <it.icon className="h-4 w-4" />
                 <span>{it.label}</span>
                 {badge > 0 && (
-                  <span className="ml-auto inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white">
+                  <span className="ml-auto inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
                     {badge}
                   </span>
                 )}

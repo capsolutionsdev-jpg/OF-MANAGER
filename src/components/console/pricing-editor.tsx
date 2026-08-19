@@ -88,7 +88,7 @@ export function PricingEditor({
                 <label
                   className={cn(
                     "mt-6 flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium transition",
-                    "[&:has(:checked)]:border-amber-400 [&:has(:checked)]:bg-amber-50 dark:bg-amber-500/10 [&:has(:checked)]:text-amber-700 dark:text-amber-300",
+                    "[&:has(:checked)]:border-warning/40 [&:has(:checked)]:bg-warning/10 [&:has(:checked)]:text-warning",
                   )}
                 >
                   <input type="radio" name="populaire" value={p.key} defaultChecked={p.key === popular} className="sr-only" />
@@ -194,7 +194,7 @@ export function PricingEditor({
         </p>
       )}
       {state?.ok && (
-        <p className="flex items-center gap-2 rounded-md bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-300">
+        <p className="flex items-center gap-2 rounded-md bg-success/10 px-3 py-2 text-sm text-success">
           <CheckCircle2 className="h-4 w-4" /> Formules enregistrées — mises à jour sur la vitrine et le tableau de bord.
         </p>
       )}
@@ -244,7 +244,7 @@ function FeatureGroupRows({
               return (
                 <td key={p.key} className="px-3 py-2 text-center">
                   {locked ? (
-                    <span className="inline-flex items-center justify-center text-emerald-600" title="Toujours inclus">
+                    <span className="inline-flex items-center justify-center text-success" title="Toujours inclus">
                       <Lock className="h-3.5 w-3.5" />
                     </span>
                   ) : (

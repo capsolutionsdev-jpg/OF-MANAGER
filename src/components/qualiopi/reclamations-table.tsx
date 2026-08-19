@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Search, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { TONE_CLASSES } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -40,10 +41,10 @@ export type ReclamationRow = {
 };
 
 const STATUTS: Record<string, { label: string; cls: string }> = {
-  NOUVELLE: { label: "Nouvelle", cls: "bg-red-100 dark:bg-red-500/15 text-red-700 dark:text-red-300" },
-  ACCUSE_RECEPTION: { label: "AR envoyé", cls: "bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300" },
-  EN_TRAITEMENT: { label: "En traitement", cls: "bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300" },
-  CLOTUREE: { label: "Clôturée", cls: "bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300" },
+  NOUVELLE: { label: "Nouvelle", cls: TONE_CLASSES.danger },
+  ACCUSE_RECEPTION: { label: "AR envoyé", cls: TONE_CLASSES.warning },
+  EN_TRAITEMENT: { label: "En traitement", cls: TONE_CLASSES.info },
+  CLOTUREE: { label: "Clôturée", cls: TONE_CLASSES.success },
 };
 
 const GRAVITES = ["", "Mineure", "Modérée", "Majeure"];
@@ -176,7 +177,7 @@ export function ReclamationsTable({ rows }: { rows: ReclamationRow[] }) {
                         </p>
                       )}
                       {(r.retardAr || r.retardReponse) && (
-                        <p className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-red-600 dark:text-red-400">
+                        <p className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-destructive">
                           <AlertTriangle className="h-3.5 w-3.5" />
                           {r.retardAr
                             ? "AR en retard (objectif : 5 j ouvrés)"

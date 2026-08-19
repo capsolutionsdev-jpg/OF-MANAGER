@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { InterestButton } from "@/components/portail/interest-button";
+import { PageHeader } from "@/components/ui/page-header";
 
 export const dynamic = "force-dynamic";
 
@@ -20,14 +21,7 @@ export default async function CataloguePage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
-          <Library className="h-6 w-6" /> Catalogue des formations
-        </h1>
-        <p className="mt-0.5 text-sm text-muted-foreground">
-          Découvrez nos formations. Une formation vous intéresse ? Faites-le nous savoir, nous vous recontacterons.
-        </p>
-      </div>
+      <PageHeader title="Catalogue des formations" subtitle="Découvrez nos formations. Une formation vous intéresse ? Faites-le nous savoir, nous vous recontacterons." icon={Library} />
 
       {formations.length === 0 ? (
         <Card>

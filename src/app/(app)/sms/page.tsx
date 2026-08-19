@@ -3,14 +3,15 @@ import { getTenantDb } from "@/lib/tenant";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { SendSmsForm, type SmsRecipient } from "@/components/sms/send-sms-form";
+import { TONE_CLASSES } from "@/components/ui/status-badge";
 
 export const dynamic = "force-dynamic";
 
 const STATUT_BADGE: Record<string, string> = {
-  ENVOYE: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
-  DEMO: "bg-blue-500/10 text-blue-700 dark:text-blue-300",
-  ECHEC: "bg-red-500/10 text-red-700 dark:text-red-300",
-  EN_ATTENTE: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
+  ENVOYE: TONE_CLASSES.success,
+  DEMO: TONE_CLASSES.info,
+  ECHEC: TONE_CLASSES.danger,
+  EN_ATTENTE: TONE_CLASSES.warning,
 };
 
 export default async function SmsPage() {

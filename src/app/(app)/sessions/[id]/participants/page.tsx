@@ -5,6 +5,7 @@ import { getSessionDetail } from "@/lib/sessions/detail";
 import { SessionDetailHeader } from "@/components/sessions/session-detail-header";
 import { ExportMenu } from "@/components/export-menu";
 import { Badge } from "@/components/ui/badge";
+import { TONE_CLASSES } from "@/components/ui/status-badge";
 import {
   Card,
   CardContent,
@@ -28,10 +29,10 @@ import { PaiementEditor } from "@/components/inscriptions/paiement-editor";
 import { CertificationSelect } from "@/components/inscriptions/certification-select";
 
 const STATUT_BADGE_CLS: Record<string, string> = {
-  EN_ATTENTE: "bg-muted text-muted-foreground",
-  VALIDEE: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
-  SUSPENDUE: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
-  ANNULEE: "bg-destructive/10 text-destructive",
+  EN_ATTENTE: TONE_CLASSES.neutral,
+  VALIDEE: TONE_CLASSES.success,
+  SUSPENDUE: TONE_CLASSES.warning,
+  ANNULEE: TONE_CLASSES.danger,
 };
 
 // Actions serveur générant des PDF (Chromium) → budget de durée serverless.
@@ -137,7 +138,7 @@ export default async function SessionParticipantsPage({
                       {s.formation.piecesAttendues.length === 0 ? (
                         <span className="text-xs text-muted-foreground">—</span>
                       ) : manquantes.length === 0 ? (
-                        <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+                        <Badge variant="success">
                           Complet
                         </Badge>
                       ) : (
@@ -145,7 +146,7 @@ export default async function SessionParticipantsPage({
                           href={`/candidats/${i.candidatId}`}
                           title={`Pièces manquantes : ${manquantes.join(", ")}`}
                         >
-                          <Badge variant="secondary" className="bg-red-500/10 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-500/20">
+                          <Badge variant="destructive">
                             {manquantes.length} pièce{manquantes.length > 1 ? "s" : ""} manquante{manquantes.length > 1 ? "s" : ""}
                           </Badge>
                         </Link>
@@ -159,12 +160,12 @@ export default async function SessionParticipantsPage({
                           rel="noopener"
                           title="Voir les réponses signées"
                         >
-                          <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-200 dark:hover:bg-emerald-500/20">
+                          <Badge variant="success">
                             Répondu
                           </Badge>
                         </a>
                       ) : i.positionnementSentAt ? (
-                        <Badge variant="secondary" className="bg-amber-500/10 text-amber-700 dark:text-amber-300">
+                        <Badge variant="warning">
                           Envoyé
                         </Badge>
                       ) : (

@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { SupportStatutSelect } from "@/components/console/statut-actions";
+import { TONE_CLASSES } from "@/components/ui/status-badge";
 import { replySupportTicket } from "@/lib/actions/console-actions";
 import { cn } from "@/lib/utils";
 
@@ -13,10 +14,10 @@ export const dynamic = "force-dynamic";
 
 const PRIO_LABEL: Record<string, string> = { BASSE: "Basse", NORMALE: "Normale", HAUTE: "Haute", URGENTE: "Urgente" };
 const PRIO_BADGE: Record<string, string> = {
-  BASSE: "bg-slate-500/10 text-slate-600",
-  NORMALE: "bg-blue-500/10 text-blue-700",
-  HAUTE: "bg-amber-500/10 text-amber-700",
-  URGENTE: "bg-rose-500/10 text-rose-700",
+  BASSE: TONE_CLASSES.neutral,
+  NORMALE: TONE_CLASSES.info,
+  HAUTE: TONE_CLASSES.warning,
+  URGENTE: TONE_CLASSES.danger,
 };
 
 function fmt(d: Date) {

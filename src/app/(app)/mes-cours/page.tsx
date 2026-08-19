@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { Card, CardContent } from "@/components/ui/card";
 import { ACADEMY_LABELS } from "@/lib/validators/formation";
 import { pct } from "@/lib/elearning";
+import { PageHeader } from "@/components/ui/page-header";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +19,7 @@ export default async function MesCoursPage() {
   if (!apprenant) {
     return (
       <div className="space-y-4">
-        <h1 className="text-2xl font-bold tracking-tight">Mes cours</h1>
+        <PageHeader title="Mes cours" />
         <Card>
           <CardContent className="p-10 text-center text-sm text-muted-foreground">
             Aucun espace apprenant associé à ce compte. Contactez votre organisme
@@ -52,14 +53,7 @@ export default async function MesCoursPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
-          <GraduationCap className="h-6 w-6" /> Mes cours
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Retrouvez ici les cours en ligne de votre formation.
-        </p>
-      </div>
+      <PageHeader title="Mes cours" subtitle="Retrouvez ici les cours en ligne de votre formation." icon={GraduationCap} />
 
       {acces.length === 0 ? (
         <Card>

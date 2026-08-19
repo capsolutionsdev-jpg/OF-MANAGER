@@ -3,6 +3,7 @@ import { getTenantDb } from "@/lib/tenant";
 import { getCurrentApprenant } from "@/lib/candidat-portal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +23,7 @@ export default async function MesCertificatsPage() {
   if (!apprenant) {
     return (
       <div className="space-y-4">
-        <h1 className="text-2xl font-bold tracking-tight">Mes certificats</h1>
+        <PageHeader title="Mes certificats" />
         <Card><CardContent className="p-10 text-center text-sm text-muted-foreground">Aucun dossier candidat associé.</CardContent></Card>
       </div>
     );
@@ -55,12 +56,7 @@ export default async function MesCertificatsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
-          <Award className="h-6 w-6" /> Mes certificats
-        </h1>
-        <p className="mt-0.5 text-sm text-muted-foreground">Vos attestations, certificats de réalisation et diplômes officiels.</p>
-      </div>
+      <PageHeader title="Mes certificats" subtitle="Vos attestations, certificats de réalisation et diplômes officiels." icon={Award} />
 
       {rien ? (
         <Card>

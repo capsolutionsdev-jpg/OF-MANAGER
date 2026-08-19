@@ -68,9 +68,9 @@ export default async function DevisDetailPage({
         <div className="mx-auto max-w-3xl rounded-lg border bg-muted/30 p-4 print:hidden">
           {d.acceptedAt ? (
             <div className="flex items-start gap-3">
-              <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
+              <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-success" />
               <div className="text-sm">
-                <p className="font-semibold text-emerald-700 dark:text-emerald-300">Devis accepté en ligne</p>
+                <p className="font-semibold text-success">Devis accepté en ligne</p>
                 <p className="text-muted-foreground">
                   Signé par <span className="font-medium text-foreground">{d.signataire}</span> le{" "}
                   {d.acceptedAt.toLocaleString("fr-FR")}

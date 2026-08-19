@@ -2,6 +2,7 @@ import { FileSignature, CheckCircle2, Clock, PenLine } from "lucide-react";
 import { getTenantDb } from "@/lib/tenant";
 import { auth } from "@/auth";
 import { Card, CardContent } from "@/components/ui/card";
+import { PageHeader } from "@/components/ui/page-header";
 
 export const dynamic = "force-dynamic";
 
@@ -15,9 +16,7 @@ export default async function MesContratsPage() {
   if (!formateur) {
     return (
       <div className="space-y-4">
-        <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
-          <FileSignature className="h-6 w-6" /> Mes contrats
-        </h1>
+        <PageHeader title="Mes contrats" icon={FileSignature} />
         <Card><CardContent className="p-10 text-center text-sm text-muted-foreground">
           Aucun espace formateur associé à ce compte. Contactez l&apos;organisme de formation.
         </CardContent></Card>
@@ -44,12 +43,7 @@ export default async function MesContratsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
-          <FileSignature className="h-6 w-6" /> Mes contrats
-        </h1>
-        <p className="text-sm text-muted-foreground">Vos contrats de sous-traitance, à signer et signés.</p>
-      </div>
+      <PageHeader title="Mes contrats" subtitle="Vos contrats de sous-traitance, à signer et signés." icon={FileSignature} />
 
       <section className="space-y-2">
         <h2 className="text-sm font-semibold text-muted-foreground">À signer ({aSigner.length})</h2>

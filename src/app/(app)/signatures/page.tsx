@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CheckCircle2, Clock, FileSignature } from "lucide-react";
+import { CheckCircle2, Clock, FileSignature, Check, Circle } from "lucide-react";
 import { getTenantDb } from "@/lib/tenant";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,12 +39,8 @@ export default async function SignaturesPage() {
   const enAttente = inscriptions.filter((i) => !i.signedAt);
 
   const Etape = ({ ok, label }: { ok: boolean; label: string }) => (
-    <Badge
-      className={
-        ok ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : "bg-muted text-muted-foreground"
-      }
-    >
-      {ok ? "✓ " : "○ "}
+    <Badge variant={ok ? "success" : "neutral"}>
+      {ok ? <Check /> : <Circle />}
       {label}
     </Badge>
   );
@@ -74,7 +70,7 @@ export default async function SignaturesPage() {
         </Card>
         <Card>
           <CardContent className="flex items-center gap-3 p-4">
-            <CheckCircle2 className="h-7 w-7 text-emerald-600" />
+            <CheckCircle2 className="h-7 w-7 text-success" />
             <div>
               <p className="text-xl font-bold">{signes.length}</p>
               <p className="text-xs text-muted-foreground">Signés</p>
@@ -83,7 +79,7 @@ export default async function SignaturesPage() {
         </Card>
         <Card>
           <CardContent className="flex items-center gap-3 p-4">
-            <Clock className="h-7 w-7 text-amber-600" />
+            <Clock className="h-7 w-7 text-warning" />
             <div>
               <p className="text-xl font-bold">{enAttente.length}</p>
               <p className="text-xs text-muted-foreground">En attente</p>
@@ -102,7 +98,7 @@ export default async function SignaturesPage() {
         <CardContent className="p-0">
           {enAttente.length === 0 ? (
             <p className="p-6 text-sm text-muted-foreground">
-              Aucune signature en attente. 🎉
+              Aucune signature en attente.
             </p>
           ) : (
             <Table>
@@ -193,8 +189,8 @@ export default async function SignaturesPage() {
                     </TableCell>
                     <TableCell>
                       {i.docsCopieSentAt ? (
-                        <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
-                          ✓ {fmt(i.docsCopieSentAt)}
+                        <Badge variant="success">
+                          <Check /> {fmt(i.docsCopieSentAt)}
                         </Badge>
                       ) : (
                         <span className="text-xs text-muted-foreground">—</span>

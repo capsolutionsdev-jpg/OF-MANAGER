@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { TONE_CLASSES } from "@/components/ui/status-badge";
 import { euros } from "@/lib/plans";
 import { cn } from "@/lib/utils";
 import {
@@ -29,10 +30,10 @@ export type ContratPrestationRow = {
 };
 
 const STATUT_BADGE: Record<string, string> = {
-  BROUILLON: "bg-slate-500/10 text-slate-600 dark:text-slate-300",
-  ENVOYE: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
-  SIGNE: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
-  REFUSE: "bg-rose-500/10 text-rose-700 dark:text-rose-300",
+  BROUILLON: TONE_CLASSES.neutral,
+  ENVOYE: TONE_CLASSES.warning,
+  SIGNE: TONE_CLASSES.success,
+  REFUSE: TONE_CLASSES.danger,
 };
 const STATUT_LABEL: Record<string, string> = {
   BROUILLON: "Brouillon",
@@ -168,7 +169,7 @@ function ContratRow({ organismeId, c }: { organismeId: string; c: ContratPrestat
           {c.formuleNom} · {euros(c.montantNet)}/mois · {c.engagementLabel}
         </span>
         {c.statut === "SIGNE" && c.signataireNom && (
-          <span className="inline-flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-300">
+          <span className="inline-flex items-center gap-1 text-xs text-success">
             <CheckCircle2 className="h-3.5 w-3.5" /> {c.signataireNom}
           </span>
         )}
@@ -193,7 +194,7 @@ function ContratRow({ organismeId, c }: { organismeId: string; c: ContratPrestat
           </Button>
         )}
         {c.statut !== "SIGNE" && (
-          <Button size="sm" variant="ghost" onClick={supprimer} disabled={pending} className="text-rose-600 hover:text-rose-700">
+          <Button size="sm" variant="ghost" onClick={supprimer} disabled={pending} className="text-destructive hover:text-destructive/80">
             <Trash2 className="h-3.5 w-3.5" />
           </Button>
         )}

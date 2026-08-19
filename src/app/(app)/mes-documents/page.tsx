@@ -4,6 +4,7 @@ import { getTenantDb } from "@/lib/tenant";
 import { auth } from "@/auth";
 import { coursComplete } from "@/lib/elearning";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageHeader } from "@/components/ui/page-header";
 
 export const dynamic = "force-dynamic";
 
@@ -31,9 +32,7 @@ export default async function MesDocumentsPage() {
   if (!apprenant) {
     return (
       <div className="space-y-4">
-        <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
-          <FileText className="h-6 w-6" /> Mes documents
-        </h1>
+        <PageHeader title="Mes documents" icon={FileText} />
         <Card>
           <CardContent className="p-10 text-center text-sm text-muted-foreground">
             Aucun espace apprenant associé à ce compte. Contactez votre organisme de formation.
@@ -93,14 +92,7 @@ export default async function MesDocumentsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
-          <FileText className="h-6 w-6" /> Mes documents
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Vos documents d&apos;inscription et de formation, et les pièces de votre dossier.
-        </p>
-      </div>
+      <PageHeader title="Mes documents" subtitle="Vos documents d'inscription et de formation, et les pièces de votre dossier." icon={FileText} />
 
       {inscriptions.length === 0 && (
         <Card><CardContent className="p-10 text-center text-sm text-muted-foreground">Aucune formation enregistrée.</CardContent></Card>
