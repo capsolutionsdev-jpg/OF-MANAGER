@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -13,6 +13,7 @@ import {
   Send,
   Award,
   ShieldCheck,
+  PenLine,
 } from "lucide-react";
 import { InscriptionStatut } from "@prisma/client";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,7 @@ import {
 } from "@/lib/actions/inscription-actions";
 import { relanceParcours } from "@/lib/actions/parcours-actions";
 import { genererDiplomeSsiap, genererAttestation } from "@/lib/actions/titre-actions";
+import { SignerSurPlaceDialog } from "@/components/inscriptions/signer-sur-place-dialog";
 
 export function InscriptionActionsMenu({
   inscriptionId,
@@ -52,6 +54,7 @@ export function InscriptionActionsMenu({
   const router = useRouter();
   const confirm = useConfirm();
   const [isPending, startTransition] = useTransition();
+  const [signOpen, setSignOpen] = useState(false);
 
   function genererAttestationDoc() {
     if (!attestation) return;
@@ -131,7 +134,8 @@ export function InscriptionActionsMenu({
   }
 
   return (
-    <DropdownMenu>
+    <>
+      <DropdownMenu>
       <DropdownMenuTrigger
         render={
           <Button
@@ -147,11 +151,17 @@ export function InscriptionActionsMenu({
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>Inscription</DropdownMenuLabel>
         {statut !== "VALIDEE" && (
+          <DropdownMenuItem onClick={() => setSignOpen(true)}>
+            <PenLine className="mr-2 h-4 w-4 text-primary" />
+            Confirmer &amp; signer (sur place)
+          </DropdownMenuItem>
+        )}
+        {statut !== "VALIDEE" && (
           <DropdownMenuItem
             onClick={() => changeStatut("VALIDEE", "Inscription confirmée.")}
           >
             <CheckCircle2 className="mr-2 h-4 w-4 text-emerald-600" />
-            Confirmer l&apos;inscription
+            Confirmer sans signer
           </DropdownMenuItem>
         )}
         {statut !== "SUSPENDUE" && (
@@ -207,6 +217,12 @@ export function InscriptionActionsMenu({
           Retirer de la session
         </DropdownMenuItem>
       </DropdownMenuContent>
-    </DropdownMenu>
+      </DropdownMenu>
+      <SignerSurPlaceDialog
+        inscriptionId={inscriptionId}
+        open={signOpen}
+        onOpenChange={setSignOpen}
+      />
+    </>
   );
 }

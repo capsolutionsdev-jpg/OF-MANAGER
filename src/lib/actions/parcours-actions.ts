@@ -526,7 +526,6 @@ export async function signDocuments(
   if (!insc.formCompletedAt)
     return { ok: false, error: "Complétez d'abord vos informations." };
   if (insc.signedAt) return { ok: true }; // déjà signé
-  const org = await orgConfigFor(insc.organismeId);
 
   // IP du signataire (traçabilité)
   const hdrs = await headers();
@@ -556,6 +555,30 @@ export async function signDocuments(
       signedAt: now,
     },
   });
+
+  // Effets de bord (dossier signé, convocation, e-learning, notif) — factorisés
+  // pour être partagés avec la signature « sur place ».
+  await finalizeSignedInscription(insc.id);
+
+  revalidatePath(`/candidats/${insc.candidatId}`);
+  return { ok: true };
+}
+
+/**
+ * Effets de bord APRÈS enregistrement de la signature d'une inscription, partagés
+ * entre la signature à distance (`signDocuments`) et la signature « sur place »
+ * (`signerInscriptionSurPlace`) : envoi du dossier signé (PDF) au candidat, e-mail
+ * de bienvenue + convocation, provisioning de l'accès e-learning et notification
+ * push au staff. Suppose l'inscription déjà signée (signedAt/signatureDataUrl posés).
+ */
+async function finalizeSignedInscription(inscriptionId: string): Promise<void> {
+  const insc = await prisma.inscription.findUnique({
+    where: { id: inscriptionId },
+    include: { candidat: true, session: { include: { formation: true } } },
+  });
+  if (!insc) return;
+  const org = await orgConfigFor(insc.organismeId);
+  const now = insc.signedAt ?? new Date();
 
   // Génère le dossier signé en PDF (joint à l'e-mail) : docs signés APPLICABLES
   // au profil + certificat. `signedOnly` applique la règle particulier→contrat /
@@ -671,8 +694,76 @@ export async function signDocuments(
     body: `${insc.candidat.prenom} ${insc.candidat.nom} a signé — ${insc.session.formation.titre}`,
     data: { type: "signature", inscriptionId: insc.id },
   }).catch(() => {});
+}
+
+/**
+ * Signature « sur place » (candidat présent) : le collaborateur fait consulter les
+ * documents contractuels au candidat, qui signe (manuscrit) sur l'écran/la tablette.
+ * Enregistre la signature + IP + le collaborateur témoin, passe l'inscription en
+ * VALIDEE, puis déclenche les mêmes effets que la signature à distance.
+ * Sécurité (multi-tenant) : réservé au staff propriétaire de l'inscription.
+ */
+export async function signerInscriptionSurPlace(
+  inscriptionId: string,
+  signatureDataUrl: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const denied = await assertStaffOwnsInscription(inscriptionId);
+  if (denied) return { ok: false, error: denied };
+  if (!signatureDataUrl || !signatureDataUrl.startsWith("data:image/"))
+    return { ok: false, error: "Merci de faire signer le candidat dans le cadre." };
+
+  const insc = await prisma.inscription.findUnique({
+    where: { id: inscriptionId },
+    include: { candidat: true },
+  });
+  if (!insc) return { ok: false, error: "Inscription introuvable." };
+  if (insc.signedAt) return { ok: true }; // déjà signée
+
+  const session = await auth();
+  const hdrs = await headers();
+  const ip = clientIpFromHeaders(hdrs);
+  const now = new Date();
+
+  await prisma.inscription.update({
+    where: { id: insc.id },
+    data: {
+      signedAt: now,
+      signatureIp: ip,
+      signatureDataUrl,
+      signatureStatut: SignatureStatut.SIGNEE,
+      signedParNom: session?.user?.name || "Collaborateur",
+      statut: "VALIDEE",
+      // Traçabilité : dossier complété + documents consultés au moment de la signature.
+      formCompletedAt: insc.formCompletedAt ?? now,
+      docsLusAt: insc.docsLusAt ?? now,
+    },
+  });
+
+  await prisma.signatureRequest.create({
+    data: {
+      organismeId: insc.organismeId,
+      provider: SignatureProvider.INTERNE,
+      inscriptionId: insc.id,
+      statut: SignatureStatut.SIGNEE,
+      signataires: [
+        {
+          nom: `${insc.candidat.prenom} ${insc.candidat.nom}`.trim(),
+          email: insc.candidat.email,
+          role: "stagiaire",
+        },
+      ],
+      signedAt: now,
+    },
+  });
+
+  try {
+    await finalizeSignedInscription(insc.id);
+  } catch (e) {
+    console.error("[signerInscriptionSurPlace] finalize", e);
+  }
 
   revalidatePath(`/candidats/${insc.candidatId}`);
+  revalidatePath(`/sessions/${insc.sessionId}`);
   return { ok: true };
 }
 
