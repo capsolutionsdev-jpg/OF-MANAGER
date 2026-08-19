@@ -3,6 +3,7 @@ import { Award, Download, CheckCircle2 } from "lucide-react";
 import { getSessionDetail } from "@/lib/sessions/detail";
 import { SessionDetailHeader } from "@/components/sessions/session-detail-header";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
   Card,
   CardContent,
@@ -25,6 +26,56 @@ function Field({ label, value }: { label: string; value?: string | null }) {
   );
 }
 
+/** Une jauge du bandeau-instruments : label mono, grand chiffre mono, barre + note. */
+function Gauge({
+  label,
+  value,
+  sub,
+  bar,
+  tone = "primary",
+  ok,
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  bar?: number;
+  tone?: "primary" | "success" | "warning";
+  ok?: boolean;
+}) {
+  const barColor =
+    tone === "success" ? "bg-success" : tone === "warning" ? "bg-warning" : "bg-primary";
+  return (
+    <div className="p-4">
+      <div className="font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+        {label}
+      </div>
+      <div
+        className={cn(
+          "mt-1.5 font-mono text-2xl font-semibold tracking-tight tabular-nums",
+          tone === "warning" ? "text-warning" : "text-foreground",
+        )}
+      >
+        {value}
+      </div>
+      {typeof bar === "number" && (
+        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+          <div
+            className={cn("h-full rounded-full transition-all", barColor)}
+            style={{ width: `${Math.min(100, Math.max(0, bar))}%` }}
+          />
+        </div>
+      )}
+      {ok ? (
+        <div className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-success">
+          <CheckCircle2 className="h-3 w-3" /> Validé
+        </div>
+      ) : (
+        sub && <div className="mt-2 text-[11px] text-muted-foreground">{sub}</div>
+      )}
+    </div>
+  );
+}
+
 // Actions serveur générant des PDF (Chromium) → budget de durée serverless.
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -40,6 +91,10 @@ export default async function SessionDetailPage({
 
   const { s, gardeFouGroups, vstate, canArchive, dejaArchivee } = detail;
   const fmt = (d: Date) => d.toLocaleDateString("fr-FR");
+  const actifs = s.inscriptions.filter((i) => i.statut !== "ANNULEE").length;
+  const remplissage = s.nbPlaces > 0 ? Math.round((actifs / s.nbPlaces) * 100) : 0;
+  const pending = gardeFouGroups.reduce((acc, gr) => acc + gr.noms.length, 0);
+  const conf = vstate ? vstate.percentage : null;
 
   return (
     <div className="space-y-6">
@@ -56,6 +111,16 @@ export default async function SessionDetailPage({
           vstate ? { percentage: vstate.percentage, ok: vstate.isValidated } : undefined
         }
       />
+
+      {/* Bandeau-instruments : constantes vitales de la session en un coup d'œil */}
+      <Card className="overflow-hidden">
+        <div className="grid grid-cols-2 divide-x divide-y divide-border sm:grid-cols-4 sm:divide-y-0">
+          <Gauge label="Remplissage" value={`${remplissage}%`} sub={`${actifs}/${s.nbPlaces} places`} bar={remplissage} tone="primary" />
+          <Gauge label="Participants" value={String(actifs)} sub="inscrit(s)" />
+          <Gauge label="À compléter" value={String(pending)} sub={pending > 0 ? "action(s) en attente" : "à jour"} tone={pending > 0 ? "warning" : "success"} />
+          <Gauge label="Conformité" value={conf === null ? "—" : `${conf}%`} sub="dossier session" bar={conf ?? undefined} tone="success" ok={vstate?.isValidated} />
+        </div>
+      </Card>
 
       <Card>
         <CardHeader>
