@@ -2,7 +2,7 @@ import { Wallet, FileDown } from "lucide-react";
 import { getTenantDb } from "@/lib/tenant";
 import { auth } from "@/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge, type StatusTone } from "@/components/ui/status-badge";
 import { FactureFormateurForm } from "@/components/formateur/facture-formateur-form";
 
 export const dynamic = "force-dynamic";
@@ -10,11 +10,11 @@ export const dynamic = "force-dynamic";
 export const FACTURE_FORMATEUR_LABELS: Record<string, string> = {
   EN_ATTENTE: "En attente", EN_COURS: "En cours", PAYEE: "Payée", REJETEE: "Rejetée",
 };
-const STATUT_CLASS: Record<string, string> = {
-  EN_ATTENTE: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
-  EN_COURS: "bg-sky-500/10 text-sky-700 dark:text-sky-300",
-  PAYEE: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
-  REJETEE: "bg-red-500/10 text-red-700 dark:text-red-300",
+const STATUT_TONE: Record<string, StatusTone> = {
+  EN_ATTENTE: "warning",
+  EN_COURS: "info",
+  PAYEE: "success",
+  REJETEE: "danger",
 };
 
 export default async function MaFacturationPage() {
@@ -111,7 +111,7 @@ export default async function MaFacturationPage() {
                       <FileDown className="h-3.5 w-3.5" /> Justificatif
                     </a>
                   )}
-                  <Badge className={STATUT_CLASS[f.statut] ?? ""}>{FACTURE_FORMATEUR_LABELS[f.statut] ?? f.statut}</Badge>
+                  <StatusBadge tone={STATUT_TONE[f.statut] ?? "neutral"}>{FACTURE_FORMATEUR_LABELS[f.statut] ?? f.statut}</StatusBadge>
                 </li>
               ))}
             </ul>
