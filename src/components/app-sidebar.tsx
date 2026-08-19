@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown, HelpCircle, ArrowRight } from "lucide-react";
+import { ChevronDown, HelpCircle, ArrowRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 import type { Role } from "@prisma/client";
 import { buildNav, type NavItem } from "@/lib/navigation";
 import { useRail } from "@/components/rail-context";
@@ -212,7 +212,7 @@ export function AppSidebar({
   user: NavUser;
   brand?: { nom: string; logoUrl: string | null };
 }) {
-  const { collapsed } = useRail();
+  const { collapsed, toggle } = useRail();
   return (
     <aside
       data-app-chrome
@@ -237,6 +237,23 @@ export function AppSidebar({
             <ArrowRight className="rail-label mt-1 h-4 w-4 shrink-0 text-[#8cbcff]" />
           </Link>
         </div>
+
+        {/* Bouton de repli VISIBLE sur le bord du rail (chevron). Le bouton de la
+            barre du haut fait la même chose ; celui-ci est l'affordance conventionnelle. */}
+        <button
+          type="button"
+          onClick={toggle}
+          title={collapsed ? "Déplier le menu" : "Réduire le menu"}
+          aria-label={collapsed ? "Déplier le menu" : "Réduire le menu"}
+          className="rail-collapse-btn flex w-full items-center gap-2.5 border-t border-[#1f2d47] px-4 py-2.5 text-[12px] font-medium text-[#a8b9d1] transition-colors hover:bg-[#1f2d47] hover:text-[#eaf0ff]"
+        >
+          {collapsed ? (
+            <ChevronsRight className="h-[18px] w-[18px] shrink-0" />
+          ) : (
+            <ChevronsLeft className="h-[18px] w-[18px] shrink-0" />
+          )}
+          <span className="rail-label">Réduire le menu</span>
+        </button>
       </div>
     </aside>
   );

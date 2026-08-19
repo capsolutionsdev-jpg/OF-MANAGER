@@ -566,7 +566,8 @@
 }
 :root[data-rail-collapsed] .app-rail:not(:hover):not(:focus-within) #main-nav a,
 :root[data-rail-collapsed] .app-rail:not(:hover):not(:focus-within) .rail-brand,
-:root[data-rail-collapsed] .app-rail:not(:hover):not(:focus-within) .rail-help {
+:root[data-rail-collapsed] .app-rail:not(:hover):not(:focus-within) .rail-help,
+:root[data-rail-collapsed] .app-rail:not(:hover):not(:focus-within) .rail-collapse-btn {
   justify-content: center;
   padding-left: 0;
   padding-right: 0;
