@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { getTenantDb } from "@/lib/tenant";
-import { CandidatForm } from "@/components/candidats/candidat-form";
+import { NouvelleInscription } from "@/components/candidats/nouvelle-inscription";
 import type { SessionOption } from "@/components/inscriptions/quick-enroll-modal";
 
 export const dynamic = "force-dynamic";
@@ -54,7 +54,7 @@ export default async function NouveauCandidatPage() {
       </div>
 
       <div className="max-w-3xl">
-        <CandidatForm formations={formations} collaborateurs={collaborateurs} sessions={sessionOptions} />
+        <NouvelleInscription formations={formations} collaborateurs={collaborateurs} sessions={sessionOptions} />
       </div>
     </div>
   );
