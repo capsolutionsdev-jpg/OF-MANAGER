@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { ShieldCheck } from "lucide-react";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { requires2faEnrollment } from "@/lib/security/mandatory-2fa";
+import { requires2faEnrollment, ADMIN_2FA_ENFORCED } from "@/lib/security/mandatory-2fa";
 import { TwoFactorSettings } from "@/components/account/two-factor-settings";
 
 // Lit la session + la base → jamais pré-généré. Page HORS des groupes (app)/
@@ -27,8 +27,9 @@ export default async function Securite2faPage() {
     where: { id: session.user.id },
     select: { totpEnabled: true, role: true },
   });
-  // Rôle non concerné OU 2FA déjà active → rien à faire ici : retour à l'accueil.
-  if (!account || !requires2faEnrollment(account.role, account.totpEnabled)) {
+  // Enforcement désactivé, rôle non concerné, OU 2FA déjà active → rien à faire
+  // ici : retour à l'accueil (pas d'enrôlement forcé).
+  if (!ADMIN_2FA_ENFORCED || !account || !requires2faEnrollment(account.role, account.totpEnabled)) {
     redirect(account?.role === "SUPERADMIN" ? "/console" : "/dashboard");
   }
 

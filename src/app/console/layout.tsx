@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireSuperAdmin } from "@/lib/superadmin-guard";
 import { prisma } from "@/lib/prisma";
-import { requires2faEnrollment } from "@/lib/security/mandatory-2fa";
+import { requires2faEnrollment, ADMIN_2FA_ENFORCED } from "@/lib/security/mandatory-2fa";
 import { ConsoleRail } from "@/components/console/console-rail";
 
 export const dynamic = "force-dynamic";
@@ -20,7 +20,8 @@ export default async function ConsoleLayout({
     where: { id: session!.user!.id as string },
     select: { totpEnabled: true },
   });
-  if (me && requires2faEnrollment("SUPERADMIN", me.totpEnabled)) redirect("/securite-2fa");
+  if (ADMIN_2FA_ENFORCED && me && requires2faEnrollment("SUPERADMIN", me.totpEnabled))
+    redirect("/securite-2fa");
   const [supportUnread, leadsNew] = await Promise.all([
     prisma.supportTicket.count({ where: { nonLuSupport: true } }),
     prisma.lead.count({ where: { lu: false } }),

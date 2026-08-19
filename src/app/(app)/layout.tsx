@@ -12,7 +12,7 @@ import { buildNav } from "@/lib/navigation";
 import { getBranding, getCurrentOrganisme } from "@/lib/org";
 import { designVars, getDesign } from "@/lib/themes";
 import { hasFeature } from "@/lib/features";
-import { requires2faEnrollment } from "@/lib/security/mandatory-2fa";
+import { requires2faEnrollment, ADMIN_2FA_ENFORCED } from "@/lib/security/mandatory-2fa";
 import { getNotifications } from "@/lib/notifications";
 import { trialStatus } from "@/lib/trial";
 import {
@@ -71,7 +71,8 @@ export default async function AppLayout({
   // 2FA OBLIGATOIRE pour les rôles à hauts privilèges (§11) : tant qu'elle n'est
   // pas activée, on force l'enrôlement avant tout accès (ADMIN ici ; le
   // SUPERADMIN est couvert par le layout /console).
-  if (requires2faEnrollment(session.user.role, account.totpEnabled)) redirect("/securite-2fa");
+  if (ADMIN_2FA_ENFORCED && requires2faEnrollment(session.user.role, account.totpEnabled))
+    redirect("/securite-2fa");
 
   // Marque du tenant : couleur principale injectée comme variable CSS
   // (les composants `bg-primary` / `text-primary` la reprennent), nom + logo
