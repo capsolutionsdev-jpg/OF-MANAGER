@@ -116,6 +116,15 @@ export function CandidatForm({
   const prereq = selectedFormation ? formationPrereq(selectedFormation) : {};
   const showCnaps = !!(prereq.cnaps || prereq.carteProAlternative);
   const showSsiap = !!prereq.ssiap;
+  // Libellés du bloc CNAPS selon le type de formation :
+  // - formation initiale (TFP APS, APS initial…) → le candidat détient une
+  //   AUTORISATION PRÉALABLE, pas encore de carte professionnelle ;
+  // - recyclage / A3P / vidéoprotection (carte pro acceptée EN ALTERNATIVE, cf.
+  //   prereq.carteProAlternative) → on garde les libellés « carte professionnelle ».
+  const carteProAcceptee = !!prereq.carteProAlternative;
+  const cnapsNumeroLabel = carteProAcceptee ? "N° carte professionnelle" : "N° autorisation préalable";
+  const cnapsNumeroPlaceholder = carteProAcceptee ? "CAR-…" : "";
+  const cnapsValiditeLabel = carteProAcceptee ? "Validité carte pro" : "Validité autorisation";
 
   // Sessions à venir de la formation choisie (rattachement direct — #1).
   const sessionsPourFormation = sessions.filter((s) => s.formationId === formationId);
@@ -352,11 +361,11 @@ export function CandidatForm({
               </select>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="carteProNumero">N° carte professionnelle</Label>
-              <Input id="carteProNumero" placeholder="CAR-…" {...register("carteProNumero")} />
+              <Label htmlFor="carteProNumero">{cnapsNumeroLabel}</Label>
+              <Input id="carteProNumero" placeholder={cnapsNumeroPlaceholder} {...register("carteProNumero")} />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="carteProValidite">Validité carte pro</Label>
+              <Label htmlFor="carteProValidite">{cnapsValiditeLabel}</Label>
               <Input id="carteProValidite" type="date" {...register("carteProValidite")} />
             </div>
           </CardContent>
