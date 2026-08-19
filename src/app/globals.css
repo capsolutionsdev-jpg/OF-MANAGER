@@ -561,25 +561,26 @@
   width: 100%;
 }
 /* Icônes seules quand replié ET ni survolé ni focalisé. */
-:root[data-rail-collapsed] .app-rail:not(:hover):not(:focus-within) .rail-label {
+:root[data-rail-collapsed] .app-rail:not(:hover) .rail-label {
   display: none;
 }
-:root[data-rail-collapsed] .app-rail:not(:hover):not(:focus-within) #main-nav a,
-:root[data-rail-collapsed] .app-rail:not(:hover):not(:focus-within) .rail-brand,
-:root[data-rail-collapsed] .app-rail:not(:hover):not(:focus-within) .rail-help,
-:root[data-rail-collapsed] .app-rail:not(:hover):not(:focus-within) .rail-collapse-btn {
+:root[data-rail-collapsed] .app-rail:not(:hover) #main-nav a,
+:root[data-rail-collapsed] .app-rail:not(:hover) .rail-brand,
+:root[data-rail-collapsed] .app-rail:not(:hover) .rail-help,
+:root[data-rail-collapsed] .app-rail:not(:hover) .rail-collapse-btn {
   justify-content: center;
   padding-left: 0;
   padding-right: 0;
   gap: 0;
 }
-:root[data-rail-collapsed] .app-rail:not(:hover):not(:focus-within) .rail-brand-mark {
+:root[data-rail-collapsed] .app-rail:not(:hover) .rail-brand-mark {
   display: flex;
 }
-/* Déploiement en OVERLAY au survol / focus : le contenu de la page ne se décale
-   pas (l'aside garde sa largeur repliée ; .rail-inner déborde par-dessus). */
-:root[data-rail-collapsed] .app-rail:hover .rail-inner,
-:root[data-rail-collapsed] .app-rail:focus-within .rail-inner {
+/* Déploiement en OVERLAY au SURVOL uniquement (PAS :focus-within : le bouton de
+   repli étant DANS le rail, garder le focus dessus après clic rouvrait le rail en
+   overlay par-dessus le contenu — le défaut d'affichage). L'aside garde sa largeur
+   repliée ; .rail-inner déborde par-dessus. */
+:root[data-rail-collapsed] .app-rail:hover .rail-inner {
   position: absolute;
   inset-block: 0;
   left: 0;
