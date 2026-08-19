@@ -70,12 +70,12 @@ export default async function StatistiquesPage() {
                   <Link
                     key={s.statut}
                     href="/crm"
-                    className="flex items-center justify-between rounded-lg bg-amber-50 px-3 py-2 text-sm transition-colors hover:bg-amber-100 dark:bg-amber-500/10 dark:hover:bg-amber-500/20"
+                    className="flex items-center justify-between rounded-lg bg-warning/10 px-3 py-2 text-sm transition-colors hover:bg-warning/20"
                   >
-                    <span className="flex items-center gap-1.5 font-medium text-amber-700 dark:text-amber-400">
+                    <span className="flex items-center gap-1.5 font-medium text-warning">
                       <Clock className="h-3.5 w-3.5" /> En attente
                     </span>
-                    <span className="flex items-center gap-1 text-xs font-medium text-amber-700 dark:text-amber-400">
+                    <span className="flex items-center gap-1 text-xs font-medium text-warning">
                       {s._count._all} · à relancer <ArrowRight className="h-3.5 w-3.5" />
                     </span>
                   </Link>
@@ -102,7 +102,7 @@ export default async function StatistiquesPage() {
                   label={s.financementType ? FINANCEMENT_LABELS[s.financementType] : "Non précisé"}
                   value={s._count._all}
                   max={finMax}
-                  color="bg-emerald-500"
+                  color="bg-success"
                 />
               ))
             )}
@@ -128,7 +128,7 @@ export default async function StatistiquesPage() {
                     label={s.sourceConnaissance!}
                     value={s._count._all}
                     max={sourceMax}
-                    color="bg-violet-500"
+                    color="bg-info"
                   />
                 ))
             )}

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { ChevronDown, CheckCircle2, AlertTriangle, XCircle, MinusCircle, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { TONE_CLASSES } from "@/components/ui/status-badge";
 
 type Statut = "OK" | "PARTIEL" | "MANQUANT" | "NA";
 type Check = { key: string; label: string; indicateur: number | null; statut: Statut; detail: string };
@@ -22,14 +23,14 @@ const ICON: Record<Statut, typeof CheckCircle2> = {
   OK: CheckCircle2, PARTIEL: AlertTriangle, MANQUANT: XCircle, NA: MinusCircle,
 };
 const COLOR: Record<Statut, string> = {
-  OK: "text-emerald-600", PARTIEL: "text-amber-600", MANQUANT: "text-red-600", NA: "text-muted-foreground/50",
+  OK: "text-success", PARTIEL: "text-warning", MANQUANT: "text-destructive", NA: "text-muted-foreground/50",
 };
 
 function scoreBadge(score: number) {
   const cls =
-    score >= 100 ? "bg-emerald-100 text-emerald-700" :
-    score >= 70 ? "bg-amber-100 text-amber-700" :
-    "bg-red-100 text-red-700";
+    score >= 100 ? TONE_CLASSES.success :
+    score >= 70 ? TONE_CLASSES.warning :
+    TONE_CLASSES.danger;
   return <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${cls}`}>{score}%</span>;
 }
 
@@ -63,11 +64,11 @@ export function QualiopiAuditList({ rows }: { rows: AuditRow[] }) {
                 </div>
               </div>
               {r.nbAComplete > 0 ? (
-                <Badge variant="outline" className="border-amber-300 text-amber-700">
+                <Badge variant="outline" className="border-warning/40 text-warning">
                   {r.nbAComplete} à compléter
                 </Badge>
               ) : (
-                <Badge variant="outline" className="border-emerald-300 text-emerald-700">Conforme</Badge>
+                <Badge variant="outline" className="border-success/40 text-success">Conforme</Badge>
               )}
               {scoreBadge(r.score)}
             </button>

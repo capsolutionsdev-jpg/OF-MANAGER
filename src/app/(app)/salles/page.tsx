@@ -81,7 +81,7 @@ export default async function SallesPage() {
                     <TableCell className="text-right">{s._count.sessions}</TableCell>
                     <TableCell>
                       {s.actif ? (
-                        <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">Active</Badge>
+                        <Badge variant="success">Active</Badge>
                       ) : (
                         <Badge className="bg-muted text-muted-foreground">Inactive</Badge>
                       )}

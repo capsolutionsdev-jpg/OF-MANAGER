@@ -198,17 +198,17 @@ function CritereHeader({
       <span className="min-w-0 flex-1 text-sm font-medium">{CRITERES[critere]}</span>
       <span className="flex shrink-0 items-center gap-1.5">
         {counts.nonConf > 0 && (
-          <Pill className="bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300">
+          <Pill className="bg-destructive/10 text-destructive">
             {counts.nonConf} non conforme{counts.nonConf > 1 ? "s" : ""}
           </Pill>
         )}
         {counts.enCours > 0 && (
-          <Pill className="bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">
+          <Pill className="bg-warning/10 text-warning">
             {counts.enCours} en cours
           </Pill>
         )}
         {counts.nonConf === 0 && counts.enCours === 0 && counts.conf > 0 && (
-          <Pill className="bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
+          <Pill className="bg-success/10 text-success">
             Conforme
           </Pill>
         )}

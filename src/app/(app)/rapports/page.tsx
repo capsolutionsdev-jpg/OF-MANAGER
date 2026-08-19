@@ -198,8 +198,8 @@ export default async function RapportsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-1.5 text-sm">
-            <div className="flex justify-between"><span className="text-muted-foreground">Encaissé</span><span className="font-medium text-emerald-600">{euro(encaisse)}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">En attente</span><span className="font-medium text-amber-600">{euro(enAttente)}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Encaissé</span><span className="font-medium text-success">{euro(encaisse)}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">En attente</span><span className="font-medium text-warning">{euro(enAttente)}</span></div>
             <div className="flex justify-between border-t pt-1.5"><span className="text-muted-foreground">Total facturé</span><span className="font-bold">{euro(encaisse + enAttente)}</span></div>
           </CardContent>
         </Card>

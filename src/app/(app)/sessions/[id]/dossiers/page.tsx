@@ -78,23 +78,23 @@ export default async function SessionDossiersPage({
                         {i.candidat.prenom} {i.candidat.nom}
                       </Link>
                       {i.signedAt ? (
-                        <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+                        <Badge variant="success">
                           dossier signé{i.signedParNom ? ` · par ${i.signedParNom}` : ""}
                         </Badge>
                       ) : (
                         <Badge variant="secondary">non signé</Badge>
                       )}
                       {i.satisfactionCompletedAt ? (
-                        <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+                        <Badge variant="success">
                           satisfaction reçue
                         </Badge>
                       ) : i.satisfactionSentAt ? (
-                        <Badge className="bg-amber-500/10 text-amber-700 dark:text-amber-300">
+                        <Badge variant="warning">
                           satisfaction envoyée
                         </Badge>
                       ) : null}
                       {piecesAttendues.length > 0 && manquantes.length === 0 && (
-                        <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+                        <Badge variant="success">
                           Dossier complet
                         </Badge>
                       )}

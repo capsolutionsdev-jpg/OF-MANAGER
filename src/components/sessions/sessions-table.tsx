@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import type { Modalite, SessionStatut } from "@prisma/client";
 import { Badge } from "@/components/ui/badge";
+import { TONE_CLASSES } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -50,10 +51,10 @@ type SortKey = "formation" | "academy" | "dateDebut" | "places" | "statut";
 const TEXT_KEYS: SortKey[] = ["formation", "academy", "statut"];
 
 const ETATS: { key: SessionEtat; label: string; badge: string }[] = [
-  { key: "AVENIR", label: "À venir", badge: "bg-blue-500/10 text-blue-700 dark:text-blue-300" },
-  { key: "ENCOURS", label: "En cours", badge: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" },
-  { key: "PASSEE", label: "Passées", badge: "bg-muted text-muted-foreground" },
-  { key: "ARCHIVEE", label: "Archivées", badge: "bg-red-500/10 text-red-700 dark:text-red-300" },
+  { key: "AVENIR", label: "À venir", badge: TONE_CLASSES.info },
+  { key: "ENCOURS", label: "En cours", badge: TONE_CLASSES.success },
+  { key: "PASSEE", label: "Passées", badge: TONE_CLASSES.neutral },
+  { key: "ARCHIVEE", label: "Archivées", badge: TONE_CLASSES.danger },
 ];
 
 const ACADEMY_RANK: Record<string, number> = {
@@ -258,7 +259,7 @@ export function SessionsTable({ rows }: { rows: SessionRow[] }) {
             ) : (
               pageRows.map((s) => {
                 const pct = s.nbPlaces > 0 ? Math.round((s.inscriptions / s.nbPlaces) * 100) : 0;
-                const barColor = pct >= 100 ? "bg-emerald-500" : pct >= 60 ? "bg-blue-500" : "bg-amber-500";
+                const barColor = pct >= 100 ? "bg-success" : pct >= 60 ? "bg-info" : "bg-warning";
                 return (
                   <TableRow key={s.id} className="hover:bg-muted/40">
                     <TableCell className="font-medium">

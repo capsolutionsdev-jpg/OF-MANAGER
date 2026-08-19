@@ -11,6 +11,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { TONE_CLASSES } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -51,11 +52,11 @@ export type CrmRow = {
 };
 
 const STATUT_BADGE: Record<string, string> = {
-  NOUVEAU: "bg-blue-500/10 text-blue-700 dark:text-blue-300",
-  EN_TRAITEMENT: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
-  INSCRIT: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
-  REFUSE: "bg-red-500/10 text-red-700 dark:text-red-300",
-  ARCHIVE: "bg-muted text-muted-foreground",
+  NOUVEAU: TONE_CLASSES.info,
+  EN_TRAITEMENT: TONE_CLASSES.warning,
+  INSCRIT: TONE_CLASSES.success,
+  REFUSE: TONE_CLASSES.danger,
+  ARCHIVE: TONE_CLASSES.neutral,
 };
 
 type SortKey = "nom" | "formation" | "statut";
@@ -268,11 +269,11 @@ export function CrmTable({
                   <TableCell className="text-right">
                     <div className="flex flex-wrap items-center justify-end gap-1.5">
                       {c.prospectSigned ? (
-                        <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+                        <Badge variant="success">
                           fiche signée
                         </Badge>
                       ) : c.prospectSent ? (
-                        <Badge className="bg-amber-500/10 text-amber-700 dark:text-amber-300">
+                        <Badge variant="warning">
                           lien envoyé
                         </Badge>
                       ) : null}

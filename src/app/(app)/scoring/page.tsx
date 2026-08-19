@@ -106,7 +106,7 @@ export default async function ScoringPage() {
                   <TableRow key={c.id}>
                     <TableCell>
                       <div className="flex items-center gap-1.5">
-                        {segment === "chaud" && <Flame className="h-4 w-4 text-red-500" />}
+                        {segment === "chaud" && <Flame className="h-4 w-4 text-destructive" />}
                         <span className="text-lg font-bold tabular-nums">{score}</span>
                       </div>
                     </TableCell>

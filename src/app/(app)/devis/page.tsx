@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { TONE_CLASSES } from "@/components/ui/status-badge";
 import {
   Table,
   TableBody,
@@ -18,12 +19,12 @@ import {
 export const dynamic = "force-dynamic";
 
 const STATUT: Record<string, { label: string; cls: string }> = {
-  BROUILLON: { label: "Brouillon", cls: "bg-muted text-muted-foreground" },
-  ENVOYEE: { label: "Envoyé", cls: "bg-blue-500/10 text-blue-700 dark:text-blue-300" },
-  PAYEE: { label: "Accepté", cls: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" },
-  PARTIELLE: { label: "Partiel", cls: "bg-amber-500/10 text-amber-700 dark:text-amber-300" },
-  ANNULEE: { label: "Refusé", cls: "bg-rose-500/10 text-rose-700 dark:text-rose-300" },
-  AVOIR: { label: "Avoir", cls: "bg-muted text-muted-foreground" },
+  BROUILLON: { label: "Brouillon", cls: TONE_CLASSES.neutral },
+  ENVOYEE: { label: "Envoyé", cls: TONE_CLASSES.info },
+  PAYEE: { label: "Accepté", cls: TONE_CLASSES.success },
+  PARTIELLE: { label: "Partiel", cls: TONE_CLASSES.warning },
+  ANNULEE: { label: "Refusé", cls: TONE_CLASSES.danger },
+  AVOIR: { label: "Avoir", cls: TONE_CLASSES.neutral },
 };
 
 const euro = (n: number) =>

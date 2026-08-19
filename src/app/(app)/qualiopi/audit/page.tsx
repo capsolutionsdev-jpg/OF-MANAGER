@@ -7,6 +7,7 @@ import { auditSession } from "@/lib/qualiopi/audit";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { TONE_TEXT } from "@/components/ui/status-badge";
 import { QualiopiAuditList, type AuditRow } from "@/components/qualiopi/qualiopi-audit-list";
 
 export const dynamic = "force-dynamic";
@@ -112,9 +113,9 @@ export default async function QualiopiAuditPage() {
       </div>
 
       {!referentHandicap && (
-        <Card className="border-amber-300">
+        <Card className="border-warning/40">
           <CardContent className="flex items-start gap-3 p-4 text-sm">
-            <ClipboardCheck className="mt-0.5 h-5 w-5 text-amber-600" />
+            <ClipboardCheck className="mt-0.5 h-5 w-5 text-warning" />
             <div>
               <p className="font-medium">Référent handicap non renseigné (indicateur 26)</p>
               <p className="text-muted-foreground">
@@ -137,9 +138,9 @@ export default async function QualiopiAuditPage() {
 
 function Stat({ label, value, tone }: { label: string; value: string; tone?: "pos" | "warn" | "neg" }) {
   const color =
-    tone === "pos" ? "text-emerald-700 dark:text-emerald-300" :
-    tone === "warn" ? "text-amber-700 dark:text-amber-300" :
-    tone === "neg" ? "text-red-700 dark:text-red-300" : "";
+    tone === "pos" ? TONE_TEXT.success :
+    tone === "warn" ? TONE_TEXT.warning :
+    tone === "neg" ? TONE_TEXT.danger : "";
   return (
     <Card>
       <CardContent className="pt-5">

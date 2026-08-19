@@ -1,9 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Calculator, FileText, ListChecks, Building2, Wallet, Clock, Info } from "lucide-react";
+import { Calculator, FileText, ListChecks, Building2, Wallet, Clock, Info, Square, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { TONE_CLASSES } from "@/components/ui/status-badge";
 import {
   DISPOSITIFS,
   STATUT_LABELS,
@@ -20,9 +21,9 @@ const champ =
 const label = "text-xs font-medium text-muted-foreground";
 
 const NIVEAU_STYLE: Record<string, string> = {
-  prioritaire: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
-  eligible: "bg-sky-500/10 text-sky-700 dark:text-sky-300",
-  conditions: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
+  prioritaire: TONE_CLASSES.success,
+  eligible: TONE_CLASSES.info,
+  conditions: TONE_CLASSES.warning,
 };
 
 export function SimulateurFinancement({
@@ -196,7 +197,7 @@ export function SimulateurFinancement({
                         <FileText className="h-3.5 w-3.5" /> Dossier administratif (pièces)
                       </p>
                       <ul className="space-y-0.5 pl-1 text-[13px]">
-                        {d.dossier.map((p) => <li key={p} className="flex gap-2"><span>☐</span>{p}</li>)}
+                        {d.dossier.map((p) => <li key={p} className="flex items-center gap-2"><Square className="h-4 w-4 shrink-0" />{p}</li>)}
                       </ul>
                     </div>
                   </div>
@@ -205,8 +206,8 @@ export function SimulateurFinancement({
             </Card>
           );
         })}
-        <p className="rounded-md bg-amber-500/10 px-3 py-2 text-[12px] text-amber-700 dark:text-amber-300">
-          ⚠️ Montants, plafonds et critères <strong>indicatifs</strong> — ils évoluent chaque année.
+        <p className="rounded-md bg-warning/10 px-3 py-2 text-[12px] text-warning">
+          <AlertTriangle className="mr-1 inline h-3.5 w-3.5" /> Montants, plafonds et critères <strong>indicatifs</strong> — ils évoluent chaque année.
           À confirmer auprès du financeur (OPCO, FAF, France Travail…) avant tout engagement.
         </p>
       </div>

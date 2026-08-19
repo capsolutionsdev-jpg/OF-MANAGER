@@ -127,7 +127,7 @@ export function DiplomesManager({ diplomes, sessions, formations }: { diplomes: 
             <Input placeholder="Nom" value={man.nom} onChange={(e) => setMan({ ...man, nom: e.target.value })} />
             {/* Formation OBLIGATOIRE en saisie manuelle */}
             <select
-              className={`h-9 rounded-md border bg-transparent px-3 text-sm ${man.formationId ? "" : "border-amber-400"}`}
+              className={`h-9 rounded-md border bg-transparent px-3 text-sm ${man.formationId ? "" : "border-warning"}`}
               value={man.formationId}
               onChange={(e) => setMan({ ...man, formationId: e.target.value })}
             >
@@ -212,7 +212,7 @@ function DiplomeRow({
                 onClick={() => run("st" + d.id, setDiplomeStatut(d.id, s.key), `Statut : ${s.label}.`)}
                 title={s.label}
                 className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                  done ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : "bg-muted text-muted-foreground hover:bg-muted/70"
+                  done ? "bg-success/10 text-success" : "bg-muted text-muted-foreground hover:bg-muted/70"
                 }`}>
                 {done ? <CheckCircle2 className="h-3 w-3" /> : <Circle className="h-3 w-3" />}
                 {s.label}
