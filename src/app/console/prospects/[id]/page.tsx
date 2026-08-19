@@ -14,6 +14,7 @@ import {
   LeadStatutSelect,
 } from "@/components/console/lead-note-form";
 import { ConvertLeadButton } from "@/components/console/convert-lead-button";
+import { TONE_CLASSES } from "@/components/ui/status-badge";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -26,11 +27,11 @@ const STATUT_LABELS: Record<string, string> = {
   PERDU: "Perdu",
 };
 const STATUT_BADGE: Record<string, string> = {
-  NOUVEAU: "bg-blue-500/10 text-blue-700 dark:text-blue-300",
-  A_RAPPELER: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
-  RAPPELE: "bg-violet-500/10 text-violet-700 dark:text-violet-300",
-  CONVERTI: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
-  PERDU: "bg-slate-500/10 text-slate-600",
+  NOUVEAU: TONE_CLASSES.info,
+  A_RAPPELER: TONE_CLASSES.warning,
+  RAPPELE: TONE_CLASSES.info,
+  CONVERTI: TONE_CLASSES.success,
+  PERDU: TONE_CLASSES.neutral,
 };
 const SOURCE_LABELS: Record<string, string> = {
   demo: "Démo",
@@ -48,9 +49,9 @@ function fmtDate(d: Date) {
 
 /** Couleur du badge de score selon l'engagement du lead. */
 function scoreClasse(score: number) {
-  if (score >= 50) return "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300";
-  if (score >= 20) return "bg-amber-500/10 text-amber-700 dark:text-amber-300";
-  return "bg-slate-500/10 text-slate-600 dark:text-slate-300";
+  if (score >= 50) return TONE_CLASSES.success;
+  if (score >= 20) return TONE_CLASSES.warning;
+  return TONE_CLASSES.neutral;
 }
 
 export default async function FicheProspectPage({

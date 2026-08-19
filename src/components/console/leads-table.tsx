@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useConfirm } from "@/components/ui/confirm-dialog";
+import { TONE_CLASSES } from "@/components/ui/status-badge";
 import { cn } from "@/lib/utils";
 
 export type LeadRow = {
@@ -35,11 +36,11 @@ const STATUTS = [
   { key: "PERDU", label: "Perdu" },
 ];
 const STATUT_BADGE: Record<string, string> = {
-  NOUVEAU: "bg-blue-500/10 text-blue-700 dark:text-blue-300",
-  A_RAPPELER: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
-  RAPPELE: "bg-violet-500/10 text-violet-700 dark:text-violet-300",
-  CONVERTI: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
-  PERDU: "bg-slate-500/10 text-slate-600",
+  NOUVEAU: TONE_CLASSES.info,
+  A_RAPPELER: TONE_CLASSES.warning,
+  RAPPELE: TONE_CLASSES.info,
+  CONVERTI: TONE_CLASSES.success,
+  PERDU: TONE_CLASSES.neutral,
 };
 const FILTERS = [
   { key: "ACTIFS", label: "À traiter" },

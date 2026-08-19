@@ -210,7 +210,7 @@ export default async function ConsoleOrganismePage({
                   <span className="font-medium">{u.name}</span>
                   <span className="text-muted-foreground">{u.email}</span>
                   <Badge variant="secondary">{roleLabels[u.role]}</Badge>
-                  {!u.isActive && <Badge className="bg-rose-500/10 text-rose-700">inactif</Badge>}
+                  {!u.isActive && <Badge variant="destructive">inactif</Badge>}
                 </div>
               ))}
               {org.users.length === 0 && (

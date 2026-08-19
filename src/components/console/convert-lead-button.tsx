@@ -41,7 +41,7 @@ export function ConvertLeadButton({ leadId, hasDemo }: { leadId: string; hasDemo
         )}
         Convertir en client
       </Button>
-      {err && <span className="text-xs text-rose-600 dark:text-rose-400">{err}</span>}
+      {err && <span className="text-xs text-destructive">{err}</span>}
     </div>
   );
 }

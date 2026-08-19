@@ -3,7 +3,7 @@
 import { useActionState, useState } from "react";
 import type { CSSProperties } from "react";
 import {
-  AlertCircle, CheckCircle2, Save, Upload, X,
+  AlertCircle, Check, CheckCircle2, Save, Upload, X,
   Building2, Palette, CreditCard, Mail, FileText, Settings2,
   Zap, Server, ChevronLeft, ChevronRight, Download, KeyRound,
 } from "lucide-react";
@@ -305,9 +305,9 @@ export function EditOrganismeForm({ org, plans }: { org: OrgFormData; plans?: Pl
               >
                 <span className={cn(
                   "flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold",
-                  active ? "bg-primary text-primary-foreground" : done ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground",
+                  active ? "bg-primary text-primary-foreground" : done ? "bg-success text-white" : "bg-muted text-muted-foreground",
                 )}>
-                  {done ? "✓" : i + 1}
+                  {done ? <Check className="h-4 w-4" /> : i + 1}
                 </span>
                 <span className="hidden items-center gap-1.5 lg:flex"><s.icon className="h-3.5 w-3.5" /> {s.label}</span>
                 <span className="lg:hidden">{s.label}</span>
@@ -504,7 +504,7 @@ export function EditOrganismeForm({ org, plans }: { org: OrgFormData; plans?: Pl
                               }}
                             />
                           </label>
-                          {cur.fileUrl && <span className="text-xs text-emerald-700 dark:text-emerald-300">✓ {cur.fileName ?? "fichier"}</span>}
+                          {cur.fileUrl && <span className="inline-flex items-center text-xs text-success"><Check className="mr-1 inline h-3.5 w-3.5" />{cur.fileName ?? "fichier"}</span>}
                         </span>
                       )}
                     </div>
@@ -585,7 +585,7 @@ export function EditOrganismeForm({ org, plans }: { org: OrgFormData; plans?: Pl
           </div>
         )}
         {state?.ok && (
-          <div className="mt-6 flex items-center gap-2 rounded-md bg-emerald-500/10 p-3 text-sm text-emerald-700 dark:text-emerald-300">
+          <div className="mt-6 flex items-center gap-2 rounded-md bg-success/10 p-3 text-sm text-success">
             <CheckCircle2 className="h-4 w-4 shrink-0" /> Configuration enregistrée.
           </div>
         )}

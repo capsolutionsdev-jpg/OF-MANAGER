@@ -89,7 +89,7 @@ export default async function ConsoleAnalyticsPage() {
                 <WaterfallLine label="Churn" value={waterfall.churn} />
                 <div className="flex items-center justify-between border-t pt-2 font-semibold">
                   <span>Net</span>
-                  <span className={waterfall.net >= 0 ? "text-emerald-600" : "text-rose-600"}>
+                  <span className={waterfall.net >= 0 ? "text-success" : "text-destructive"}>
                     {waterfall.net > 0 ? "+" : ""}
                     {euros(waterfall.net)}
                   </span>
@@ -111,7 +111,7 @@ export default async function ConsoleAnalyticsPage() {
               <div key={c.mois} className="flex items-center gap-3 text-sm">
                 <span className="w-16 shrink-0 text-xs text-muted-foreground">{c.mois}</span>
                 <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
-                  <div className="h-full rounded-full bg-emerald-500" style={{ width: `${c.retention}%` }} />
+                  <div className="h-full rounded-full bg-success" style={{ width: `${c.retention}%` }} />
                 </div>
                 <span className="w-24 shrink-0 text-right text-xs text-muted-foreground">
                   {c.actifs}/{c.total} · {c.retention}%
@@ -166,7 +166,7 @@ export default async function ConsoleAnalyticsPage() {
 }
 
 function WaterfallLine({ label, value, positive }: { label: string; value: number; positive?: boolean }) {
-  const cls = value === 0 ? "text-muted-foreground" : positive ? "text-emerald-600" : "text-rose-600";
+  const cls = value === 0 ? "text-muted-foreground" : positive ? "text-success" : "text-destructive";
   return (
     <div className="flex items-center justify-between">
       <span className="text-muted-foreground">{label}</span>

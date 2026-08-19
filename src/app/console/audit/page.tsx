@@ -95,10 +95,7 @@ export default async function ConsoleAuditPage({
                     </td>
                     <td className="px-3 py-2">{r.orgNom ?? <span className="text-muted-foreground">—</span>}</td>
                     <td className="px-3 py-2">
-                      <Badge
-                        variant="secondary"
-                        className={SENSIBLE.has(r.action) ? "bg-indigo-500/10 text-indigo-700 dark:text-indigo-300" : undefined}
-                      >
+                      <Badge variant={SENSIBLE.has(r.action) ? "info" : "secondary"}>
                         {r.action}
                       </Badge>
                     </td>

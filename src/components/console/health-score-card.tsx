@@ -4,15 +4,15 @@ import type { ClientHealth, HealthStatus } from "@/lib/console-health-score";
 
 // Présentation pure du score de santé/churn (rendu côté serveur, sans état).
 const LEVEL = {
-  bon: { label: "Bon", cls: "text-emerald-600 dark:text-emerald-400", ring: "#10B981" },
-  surveiller: { label: "À surveiller", cls: "text-amber-600 dark:text-amber-400", ring: "#F59E0B" },
-  risque: { label: "À risque", cls: "text-rose-600 dark:text-rose-400", ring: "#E11D48" },
+  bon: { label: "Bon", cls: "text-success", ring: "var(--success)" },
+  surveiller: { label: "À surveiller", cls: "text-warning", ring: "var(--amber)" },
+  risque: { label: "À risque", cls: "text-destructive", ring: "var(--destructive)" },
 } as const;
 
 const DOT: Record<HealthStatus, string> = {
-  ok: "text-emerald-500",
-  warn: "text-amber-500",
-  bad: "text-rose-500",
+  ok: "text-success",
+  warn: "text-warning",
+  bad: "text-destructive",
 };
 const ICON: Record<HealthStatus, typeof CheckCircle2> = {
   ok: CheckCircle2,

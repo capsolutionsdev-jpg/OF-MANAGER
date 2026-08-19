@@ -41,7 +41,7 @@ export function CreateOrganismeForm({ plans }: { plans?: Plan[] }) {
     return (
       <Card>
         <CardContent className="space-y-4 p-6">
-          <div className="flex items-center gap-2 rounded-md bg-emerald-500/10 p-3 text-sm text-emerald-700 dark:text-emerald-300">
+          <div className="flex items-center gap-2 rounded-md bg-success/10 p-3 text-sm text-success">
             <CheckCircle2 className="h-4 w-4 shrink-0" />
             Organisme créé. Communiquez ses identifiants au gérant, puis configurez son instance.
           </div>
