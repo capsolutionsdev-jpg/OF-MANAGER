@@ -542,8 +542,14 @@
 }
 
 /* ============================================================
-   Rail latéral rétractable (repli en icônes + déploiement au survol)
+   Rail latéral rétractable (repli en colonne d'icônes + infobulles)
    Additif : sans l'attribut [data-rail-collapsed], le rail reste inchangé.
+
+   Replié = colonne d'icônes de largeur FIXE. On NE déploie PLUS au survol :
+   l'ancien overlay recouvrait le contenu (« Bonjour, … » masqué). Le libellé de
+   chaque icône est porté par l'attribut `title` → infobulle native, qui n'est pas
+   rognée par le débordement du rail et ne recouvre jamais la page. Pour revoir le
+   menu complet : le bouton de repli (bord du rail ou barre du haut).
    ============================================================ */
 .app-rail,
 .app-rail .rail-inner {
@@ -553,40 +559,29 @@
 .rail-brand-mark {
   display: none;
 }
-/* Rail replié : largeur réduite. */
+/* Rail replié : largeur réduite, fixe. */
 :root[data-rail-collapsed] .app-rail {
   width: 4rem;
 }
 :root[data-rail-collapsed] .app-rail .rail-inner {
   width: 100%;
 }
-/* Icônes seules quand replié ET ni survolé ni focalisé. */
-:root[data-rail-collapsed] .app-rail:not(:hover) .rail-label {
+/* Libellés masqués : le rail reste une colonne d'icônes (le survol ne déploie plus). */
+:root[data-rail-collapsed] .app-rail .rail-label {
   display: none;
 }
-:root[data-rail-collapsed] .app-rail:not(:hover) #main-nav a,
-:root[data-rail-collapsed] .app-rail:not(:hover) .rail-brand,
-:root[data-rail-collapsed] .app-rail:not(:hover) .rail-help,
-:root[data-rail-collapsed] .app-rail:not(:hover) .rail-collapse-btn {
+/* Icônes centrées. */
+:root[data-rail-collapsed] .app-rail #main-nav a,
+:root[data-rail-collapsed] .app-rail .rail-brand,
+:root[data-rail-collapsed] .app-rail .rail-help,
+:root[data-rail-collapsed] .app-rail .rail-collapse-btn {
   justify-content: center;
   padding-left: 0;
   padding-right: 0;
   gap: 0;
 }
-:root[data-rail-collapsed] .app-rail:not(:hover) .rail-brand-mark {
+:root[data-rail-collapsed] .app-rail .rail-brand-mark {
   display: flex;
-}
-/* Déploiement en OVERLAY au SURVOL uniquement (PAS :focus-within : le bouton de
-   repli étant DANS le rail, garder le focus dessus après clic rouvrait le rail en
-   overlay par-dessus le contenu — le défaut d'affichage). L'aside garde sa largeur
-   repliée ; .rail-inner déborde par-dessus. */
-:root[data-rail-collapsed] .app-rail:hover .rail-inner {
-  position: absolute;
-  inset-block: 0;
-  left: 0;
-  width: 15rem;
-  z-index: 50;
-  box-shadow: 0 24px 50px -12px rgba(0, 0, 0, 0.55);
 }
 @media (prefers-reduced-motion: reduce) {
   .app-rail,
