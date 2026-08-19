@@ -2,6 +2,7 @@ import { History, UserPlus, PenLine, FolderCheck, Award, MessageSquare } from "l
 import { getTenantDb } from "@/lib/tenant";
 import { getCurrentApprenant } from "@/lib/candidat-portal";
 import { Card, CardContent } from "@/components/ui/card";
+import { PageHeader } from "@/components/ui/page-header";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +13,7 @@ export default async function HistoriquePage() {
   if (!apprenant) {
     return (
       <div className="space-y-4">
-        <h1 className="text-2xl font-bold tracking-tight">Historique</h1>
+        <PageHeader title="Historique" />
         <Card><CardContent className="p-10 text-center text-sm text-muted-foreground">Aucun dossier candidat associé.</CardContent></Card>
       </div>
     );
@@ -54,12 +55,7 @@ export default async function HistoriquePage() {
 
   return (
     <div className="max-w-2xl space-y-6">
-      <div>
-        <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
-          <History className="h-6 w-6" /> Historique
-        </h1>
-        <p className="mt-0.5 text-sm text-muted-foreground">La chronologie de votre parcours.</p>
-      </div>
+      <PageHeader title="Historique" subtitle="La chronologie de votre parcours." icon={History} />
 
       {events.length === 0 ? (
         <Card><CardContent className="p-10 text-center text-sm text-muted-foreground">Aucun événement pour le moment.</CardContent></Card>

@@ -3,6 +3,7 @@ import { BellRing, PenLine, FolderUp, MessageSquare, Award, CheckCircle2, ArrowR
 import { getTenantDb } from "@/lib/tenant";
 import { getCurrentApprenant } from "@/lib/candidat-portal";
 import { Card, CardContent } from "@/components/ui/card";
+import { PageHeader } from "@/components/ui/page-header";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,7 @@ export default async function MesNotificationsPage() {
   if (!apprenant) {
     return (
       <div className="space-y-4">
-        <h1 className="text-2xl font-bold tracking-tight">Notifications</h1>
+        <PageHeader title="Notifications" />
         <Card><CardContent className="p-10 text-center text-sm text-muted-foreground">Aucun dossier candidat associé.</CardContent></Card>
       </div>
     );
@@ -47,12 +48,7 @@ export default async function MesNotificationsPage() {
 
   return (
     <div className="max-w-2xl space-y-6">
-      <div>
-        <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
-          <BellRing className="h-6 w-6" /> Notifications
-        </h1>
-        <p className="mt-0.5 text-sm text-muted-foreground">Ce qui requiert votre attention.</p>
-      </div>
+      <PageHeader title="Notifications" subtitle="Ce qui requiert votre attention." icon={BellRing} />
 
       {notifs.length === 0 ? (
         <Card>

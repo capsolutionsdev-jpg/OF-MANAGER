@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { ChangePasswordForm } from "./change-password-form";
 import { TwoFactorSettings } from "@/components/account/two-factor-settings";
+import { PageHeader } from "@/components/ui/page-header";
 
 export const dynamic = "force-dynamic";
 
@@ -26,12 +27,7 @@ export default async function MonComptePage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Mon compte</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Gérez vos informations de connexion et votre sécurité.
-        </p>
-      </div>
+      <PageHeader title="Mon compte" subtitle="Gérez vos informations de connexion et votre sécurité." />
 
       <Card>
         <CardHeader>

@@ -3,6 +3,7 @@ import { getTenantDb } from "@/lib/tenant";
 import { auth } from "@/auth";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmargementSignList, type EmargementItem } from "@/components/apprenant/emargement-sign-list";
+import { PageHeader } from "@/components/ui/page-header";
 
 export const dynamic = "force-dynamic";
 
@@ -16,9 +17,7 @@ export default async function MesEmargementsPage() {
   if (!apprenant) {
     return (
       <div className="space-y-4">
-        <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
-          <PenLine className="h-6 w-6" /> Mes émargements
-        </h1>
+        <PageHeader title="Mes émargements" icon={PenLine} />
         <Card>
           <CardContent className="p-10 text-center text-sm text-muted-foreground">
             Aucun espace apprenant associé à ce compte. Contactez votre organisme de formation.
@@ -47,14 +46,7 @@ export default async function MesEmargementsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
-          <PenLine className="h-6 w-6" /> Mes émargements
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Signez vos feuilles de présence par demi-journée, directement en ligne.
-        </p>
-      </div>
+      <PageHeader title="Mes émargements" subtitle="Signez vos feuilles de présence par demi-journée, directement en ligne." icon={PenLine} />
 
       {items.length === 0 ? (
         <Card>

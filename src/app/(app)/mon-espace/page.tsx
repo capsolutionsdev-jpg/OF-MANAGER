@@ -8,6 +8,7 @@ import { auth } from "@/auth";
 import { getCurrentApprenant, sessionPhase } from "@/lib/candidat-portal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatCard } from "@/components/ui/stat-card";
+import { PageHeader } from "@/components/ui/page-header";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +22,7 @@ export default async function MonEspacePage() {
   if (!apprenant) {
     return (
       <div className="space-y-4">
-        <h1 className="text-2xl font-bold tracking-tight">Mon espace</h1>
+        <PageHeader title="Mon espace" />
         <Card>
           <CardContent className="p-10 text-center text-sm text-muted-foreground">
             Aucun dossier candidat associé à ce compte. Contactez votre organisme de formation.

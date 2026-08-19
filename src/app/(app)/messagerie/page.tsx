@@ -4,6 +4,7 @@ import { getCurrentApprenant } from "@/lib/candidat-portal";
 import { getBranding } from "@/lib/org";
 import { Card, CardContent } from "@/components/ui/card";
 import { MessagerieCandidat } from "@/components/portail/messagerie-candidat";
+import { PageHeader } from "@/components/ui/page-header";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +13,7 @@ export default async function MessageriePage() {
   if (!apprenant) {
     return (
       <div className="space-y-4">
-        <h1 className="text-2xl font-bold tracking-tight">Messagerie</h1>
+        <PageHeader title="Messagerie" />
         <Card><CardContent className="p-10 text-center text-sm text-muted-foreground">Aucun dossier candidat associé.</CardContent></Card>
       </div>
     );
@@ -30,12 +31,7 @@ export default async function MessageriePage() {
 
   return (
     <div className="max-w-2xl space-y-6">
-      <div>
-        <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
-          <MessageSquare className="h-6 w-6" /> Messagerie
-        </h1>
-        <p className="mt-0.5 text-sm text-muted-foreground">Échangez avec votre organisme de formation.</p>
-      </div>
+      <PageHeader title="Messagerie" subtitle="Échangez avec votre organisme de formation." icon={MessageSquare} />
       <MessagerieCandidat
         orgNom={branding.nom}
         messages={messages.map((m) => ({ ...m, createdAt: m.createdAt.toISOString() }))}
