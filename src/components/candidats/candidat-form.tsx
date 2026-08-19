@@ -120,11 +120,17 @@ export function CandidatForm({
   // - formation initiale (TFP APS, APS initial…) → le candidat détient une
   //   AUTORISATION PRÉALABLE, pas encore de carte professionnelle ;
   // - recyclage / A3P / vidéoprotection (carte pro acceptée EN ALTERNATIVE, cf.
-  //   prereq.carteProAlternative) → on garde les libellés « carte professionnelle ».
+  //   prereq.carteProAlternative) → l'autorisation préalable OU la carte pro sont
+  //   valables → on nomme le champ pour les deux.
+  // Aucun préfixe « CAR- » : le numéro peut être une autorisation ou une carte.
   const carteProAcceptee = !!prereq.carteProAlternative;
-  const cnapsNumeroLabel = carteProAcceptee ? "N° carte professionnelle" : "N° autorisation préalable";
-  const cnapsNumeroPlaceholder = carteProAcceptee ? "CAR-…" : "";
-  const cnapsValiditeLabel = carteProAcceptee ? "Validité carte pro" : "Validité autorisation";
+  const cnapsNumeroLabel = carteProAcceptee
+    ? "N° autorisation préalable / carte professionnelle"
+    : "N° autorisation préalable";
+  const cnapsNumeroPlaceholder = "";
+  const cnapsValiditeLabel = carteProAcceptee
+    ? "Validité autorisation / carte pro"
+    : "Validité autorisation";
 
   // Sessions à venir de la formation choisie (rattachement direct — #1).
   const sessionsPourFormation = sessions.filter((s) => s.formationId === formationId);
