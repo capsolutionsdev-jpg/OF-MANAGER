@@ -199,7 +199,7 @@ export default async function DashboardPage() {
   await withDbRetry(() => Promise.all(Object.entries(byType).map(([t, set]) => resolve(t, [...set]))));
 
   // Point d'entrée « Convention entreprise » (inscription groupée B2B) sur l'accueil,
-  // à côté de « Nouveau candidat » — réservé au staff (#15).
+  // à côté de « Commencer une inscription » — réservé au staff (#15).
   const estStaff = ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"].includes(
     (session?.user?.role as string) ?? "",
   );
@@ -246,7 +246,7 @@ export default async function DashboardPage() {
                 <BarChart3 className="mr-1.5 h-4 w-4" /> Statistiques
               </Button>
               <Button size="lg" render={<Link href="/candidats/nouveau" />}>
-                <Users className="mr-1.5 h-4 w-4" /> Nouveau candidat
+                <Users className="mr-1.5 h-4 w-4" /> Commencer une inscription
               </Button>
               {estStaff && (
                 <ConventionDialog entreprises={entreprisesConv} sessions={conventionSessions} />

@@ -47,9 +47,9 @@ export default async function NouveauCandidatPage() {
         >
           <ArrowLeft className="h-4 w-4" /> Retour aux candidats
         </Link>
-        <h1 className="text-2xl font-bold tracking-tight">Nouveau candidat</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Commencer une inscription</h1>
         <p className="text-sm text-muted-foreground">
-          Renseignez les informations du candidat.
+          Renseignez les informations du candidat pour démarrer son inscription.
         </p>
       </div>
 

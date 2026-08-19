@@ -65,7 +65,7 @@ export default async function CandidatsPage() {
         {candidats.length > 0 && <ExportMenu href="/candidats/export" />}
         <Button render={<Link href="/candidats/nouveau" />}>
           <Plus className="mr-2 h-4 w-4" />
-          Nouveau candidat
+          Commencer une inscription
         </Button>
       </PageHeader>
 
