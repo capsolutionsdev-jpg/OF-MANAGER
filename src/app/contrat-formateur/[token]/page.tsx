@@ -48,7 +48,7 @@ export default async function ContratFormateurPage({
         {signed ? (
           <Card>
             <CardContent className="space-y-3 py-8 text-center">
-              <CheckCircle2 className="mx-auto h-10 w-10 text-emerald-600" />
+              <CheckCircle2 className="mx-auto h-10 w-10 text-success" />
               <p className="font-medium">
                 Contrat signé le {s.contratFormateurSignedAt!.toLocaleString("fr-FR")}.
               </p>

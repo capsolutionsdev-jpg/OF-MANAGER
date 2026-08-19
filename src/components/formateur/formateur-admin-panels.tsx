@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { FileDown, KeyRound, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge, type StatusTone } from "@/components/ui/status-badge";
 import {
   setFactureFormateurStatut,
   createFormateurAccess,
@@ -15,11 +15,11 @@ import {
 const LABELS: Record<string, string> = {
   EN_ATTENTE: "En attente", EN_COURS: "En cours", PAYEE: "Payée", REJETEE: "Rejetée",
 };
-const CLS: Record<string, string> = {
-  EN_ATTENTE: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
-  EN_COURS: "bg-sky-500/10 text-sky-700 dark:text-sky-300",
-  PAYEE: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
-  REJETEE: "bg-red-500/10 text-red-700 dark:text-red-300",
+const TONE: Record<string, StatusTone> = {
+  EN_ATTENTE: "warning",
+  EN_COURS: "info",
+  PAYEE: "success",
+  REJETEE: "danger",
 };
 const STATUTS = ["EN_ATTENTE", "EN_COURS", "PAYEE", "REJETEE"] as const;
 
@@ -61,7 +61,7 @@ export function FormateurFacturesAdmin({ factures }: { factures: FactureRow[] })
               <FileDown className="h-3.5 w-3.5" /> Justificatif
             </a>
           )}
-          <Badge className={CLS[f.statut] ?? ""}>{LABELS[f.statut] ?? f.statut}</Badge>
+          <StatusBadge tone={TONE[f.statut] ?? "neutral"}>{LABELS[f.statut] ?? f.statut}</StatusBadge>
           <select
             value={f.statut}
             disabled={pending}

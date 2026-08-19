@@ -59,7 +59,7 @@ export default async function MesContratsPage() {
           <ul className="space-y-2">
             {aSigner.map((s) => (
               <li key={s.id} className="flex flex-wrap items-center gap-3 rounded-lg border p-3">
-                <Clock className="h-4 w-4 shrink-0 text-amber-600" />
+                <Clock className="h-4 w-4 shrink-0 text-warning" />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium">{s.formation.titre}</p>
                   <p className="text-xs text-muted-foreground">Du {fmt(s.dateDebut)} au {fmt(s.dateFin)}</p>
@@ -81,8 +81,8 @@ export default async function MesContratsPage() {
           <h2 className="text-sm font-semibold text-muted-foreground">Signés ({signes.length})</h2>
           <ul className="space-y-1">
             {signes.map((s) => (
-              <li key={s.id} className="flex items-center gap-2 rounded-md bg-emerald-500/5 px-3 py-2 text-sm">
-                <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+              <li key={s.id} className="flex items-center gap-2 rounded-md bg-success/10 px-3 py-2 text-sm">
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-success" />
                 <span className="flex-1">{s.formation.titre}</span>
                 <span className="text-xs text-muted-foreground">
                   signé le {s.contratFormateurSignedAt ? fmt(s.contratFormateurSignedAt) : ""}
