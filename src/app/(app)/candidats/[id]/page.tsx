@@ -13,6 +13,7 @@ import {
 } from "@/lib/validators/candidat";
 import { CandidatAccessPanel } from "@/components/candidats/candidat-access-panel";
 import { CivicAccessButton } from "@/components/candidats/civic-access-button";
+import { InstrumentGauge } from "@/components/ui/instrument-gauge";
 
 function Field({ label, value }: { label: string; value?: string | null }) {
   return (
@@ -36,10 +37,26 @@ export default async function CandidatProfilPage({
 
   const { candidat } = detail;
   const fmtDate = (d: Date | null) => (d ? d.toLocaleDateString("fr-FR") : null);
+  const insc = candidat.inscriptions.filter((i) => i.statut !== "ANNULEE");
+  const piecesTot = candidat.pieces.length;
+  const piecesVal = candidat.pieces.filter((p) => p.statut === "VALIDEE").length;
+  const piecesAttente = candidat.pieces.filter((p) => p.statut === "EN_ATTENTE").length;
+  const dossierPct = piecesTot > 0 ? Math.round((piecesVal / piecesTot) * 100) : null;
+  const aSigner = insc.filter((i) => !i.signedAt).length;
 
   return (
     <div className="space-y-6">
       <CandidatDetailHeader candidat={candidat} active="profil" t3pTab={detail.t3pTab} />
+
+      {/* Bandeau-instruments : constantes vitales du candidat */}
+      <Card className="overflow-hidden">
+        <div className="grid grid-cols-2 divide-x divide-y divide-border sm:grid-cols-4 sm:divide-y-0">
+          <InstrumentGauge label="Inscriptions" value={String(insc.length)} sub="formation(s)" />
+          <InstrumentGauge label="Dossier" value={dossierPct === null ? "—" : `${dossierPct}%`} sub={piecesTot > 0 ? `${piecesVal}/${piecesTot} pièces` : "aucune pièce"} bar={dossierPct ?? undefined} tone="success" />
+          <InstrumentGauge label="À signer" value={String(aSigner)} sub={aSigner > 0 ? "document(s)" : "à jour"} tone={aSigner > 0 ? "warning" : "success"} />
+          <InstrumentGauge label="Pièces à vérifier" value={String(piecesAttente)} sub={piecesAttente > 0 ? "à traiter" : "à jour"} tone={piecesAttente > 0 ? "warning" : "success"} />
+        </div>
+      </Card>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
