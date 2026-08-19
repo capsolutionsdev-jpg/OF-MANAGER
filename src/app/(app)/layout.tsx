@@ -118,7 +118,7 @@ export default async function AppLayout({
     return (
       <div className="grid min-h-screen place-items-center bg-muted/40 p-6" style={brandStyle}>
         <div data-slot="card" className="w-full max-w-2xl rounded-2xl border bg-card p-8 text-center shadow-sm">
-          <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full bg-amber-500/10 text-amber-600">
+          <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full bg-warning/10 text-warning">
             <Clock className="h-6 w-6" />
           </div>
           <h1 className="text-xl font-bold">
@@ -236,7 +236,7 @@ export default async function AppLayout({
           />
           {session.user.imp && <ImpersonationBanner orgNom={session.user.imp.orgNom} />}
           {trial.isTrial && (
-            <div className="flex items-center justify-center gap-2 bg-amber-500/10 px-4 py-2 text-center text-xs font-medium text-amber-700 dark:text-amber-300">
+            <div className="flex items-center justify-center gap-2 bg-warning/10 px-4 py-2 text-center text-xs font-medium text-warning">
               <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
               Essai gratuit — il vous reste{" "}
               <span className="font-bold">{Math.max(0, trial.daysLeft)} jour{trial.daysLeft > 1 ? "s" : ""}</span>.
