@@ -218,7 +218,7 @@ export async function genererVisuelIA(
 ): Promise<ImgRes> {
   const { db, organismeId } = await requireStaffTenant();
   if (!(await hasStrictFeature("communication"))) return { ok: false, error: "Module non activé." };
-  if (!imageIaConfigured()) {
+  if (!(await imageIaConfigured(organismeId))) {
     return { ok: false, needsKey: true, error: "L'image IA n'est pas encore activée (clé à configurer)." };
   }
   const rl = await checkLimit(`social-img:${organismeId}`, { limit: 15, windowMs: 60 * 60 * 1000 });
@@ -235,7 +235,7 @@ export async function genererVisuelIA(
     `Ambiance lumineuse et qualitative, cadrage soigné adapté aux réseaux sociaux. ` +
     `IMPÉRATIF : aucune lettre, aucun mot, aucun texte, aucun logo, aucun watermark dans l'image.`;
 
-  return genererImageIA({ prompt, format: opts?.format });
+  return genererImageIA({ prompt, format: opts?.format, organismeId });
 }
 
 /** Planifie (ou déprogramme si null) la date/heure de publication prévue. */

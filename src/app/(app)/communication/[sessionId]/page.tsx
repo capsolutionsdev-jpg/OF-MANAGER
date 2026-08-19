@@ -133,6 +133,8 @@ export default async function CommunicationSessionPage({
     siteWeb: org?.siteWeb ?? null,
   };
 
+  const imageIaActive = await imageIaConfigured(organismeId);
+
   return (
     <div className="space-y-6">
       <Link
@@ -170,7 +172,7 @@ export default async function CommunicationSessionPage({
 
       <VisualCards data={cardData} />
 
-      <AiImagePanel sessionId={s.id} configured={imageIaConfigured()} />
+      <AiImagePanel sessionId={s.id} configured={imageIaActive} />
     </div>
   );
 }

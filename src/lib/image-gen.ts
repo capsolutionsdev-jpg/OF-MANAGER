@@ -1,11 +1,12 @@
 // Génération d'images IA (optionnelle) pour les visuels réseaux sociaux.
-// Provider par défaut : OpenAI Images (gpt-image-1). Clé au niveau PLATEFORME
-// (`IMAGE_API_KEY`, repli `OPENAI_API_KEY`) → inactif proprement si non
-// configurée. Provider isolé ici : en changer (Stability, Replicate…) = ne
-// toucher que ce fichier. (Une clé par OF pourra s'ajouter plus tard, façon
-// `anthropicApiKey`.)
+// Provider par défaut : OpenAI Images (gpt-image-1). Clé résolue PAR ORGANISME
+// (`Organisme.imageApiKey`, chiffrée) avec repli sur la config plateforme
+// (`IMAGE_API_KEY` puis `OPENAI_API_KEY`). Provider isolé ici : en changer
+// (Stability, Replicate…) = ne toucher que ce fichier.
 
 import "server-only";
+import { prisma } from "@/lib/prisma";
+import { decryptSecret } from "@/lib/crypto";
 
 export type ImageResult =
   | { ok: true; dataUri: string }
@@ -18,17 +19,30 @@ const SIZE_BY_FORMAT: Record<string, string> = {
   story: "1024x1536",
 };
 
-/** La génération d'images IA est-elle activée (clé plateforme présente) ? */
-export function imageIaConfigured(): boolean {
-  return Boolean(process.env.IMAGE_API_KEY || process.env.OPENAI_API_KEY);
+/** Résout la clé d'images : propre à l'OF (chiffrée) sinon config plateforme. */
+async function resolveImageKey(organismeId?: string | null): Promise<string | undefined> {
+  if (organismeId) {
+    const o = await prisma.organisme.findUnique({
+      where: { id: organismeId },
+      select: { imageApiKey: true },
+    });
+    if (o?.imageApiKey) return decryptSecret(o.imageApiKey) ?? undefined;
+  }
+  return process.env.IMAGE_API_KEY || process.env.OPENAI_API_KEY || undefined;
+}
+
+/** La génération d'images IA est-elle activée (clé propre à l'OF ou plateforme) ? */
+export async function imageIaConfigured(organismeId?: string | null): Promise<boolean> {
+  return Boolean(await resolveImageKey(organismeId));
 }
 
 /** Génère une image à partir d'un prompt. Renvoie une data-URI PNG. */
 export async function genererImageIA(opts: {
   prompt: string;
   format?: string;
+  organismeId?: string | null;
 }): Promise<ImageResult> {
-  const key = process.env.IMAGE_API_KEY || process.env.OPENAI_API_KEY;
+  const key = await resolveImageKey(opts.organismeId);
   if (!key) {
     return { ok: false, needsKey: true, error: "Aucune clé d'images IA configurée." };
   }
