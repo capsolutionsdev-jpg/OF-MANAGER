@@ -52,6 +52,7 @@ export type OrgFormData = {
   // Secrets : on n'expose JAMAIS la valeur au navigateur — seulement l'état.
   brevoApiKeySet: boolean;
   anthropicApiKeySet: boolean;
+  imageApiKeySet: boolean;
   yousignApiKeySet: boolean;
   automationsConfig: unknown;
   maxSmsMois: number | null;
@@ -459,7 +460,8 @@ export function EditOrganismeForm({ org, plans }: { org: OrgFormData; plans?: Pl
             <CardHeader className="py-3"><CardTitle className="flex items-center gap-1.5 text-sm text-muted-foreground"><KeyRound className="h-4 w-4" /> Clés d&apos;intégration (par organisme)</CardTitle></CardHeader>
             <CardContent className="grid gap-4 sm:grid-cols-2">
               <SecretField name="brevoApiKey" label="Clé API Brevo (e-mail + SMS)" isSet={org.brevoApiKeySet} placeholder="xkeysib-…" hint="Envoi des e-mails & SMS au nom de l'OF." />
-              <SecretField name="anthropicApiKey" label="Clé API Claude (Assistant IA)" isSet={org.anthropicApiKeySet} placeholder="sk-ant-…" hint="Active la génération IA pour cet OF." />
+              <SecretField name="anthropicApiKey" label="Clé API Claude (Assistant IA — texte)" isSet={org.anthropicApiKeySet} placeholder="sk-ant-…" hint="Active la génération de texte (posts réseaux sociaux, IA) pour cet OF." />
+              <SecretField name="imageApiKey" label="Clé API images IA (visuels)" isSet={org.imageApiKeySet} placeholder="sk-… (OpenAI)" hint="Active les illustrations IA du module Communication." />
               <SecretField name="yousignApiKey" label="Clé API Yousign (signature)" isSet={org.yousignApiKeySet} placeholder="…" hint="Signature électronique prestataire." />
               <p className="text-[11px] text-muted-foreground sm:col-span-2">
                 Laisser vide = repli sur la configuration globale (ou mode démo). Chaque clé est propre à l&apos;organisme.

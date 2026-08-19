@@ -173,6 +173,7 @@ export async function updateOrganisme(
   // accidentel), et la valeur n'a jamais transité par le navigateur (SecretField).
   const newBrevo = String(formData.get("brevoApiKey") ?? "").trim();
   const newAnthropic = String(formData.get("anthropicApiKey") ?? "").trim();
+  const newImageKey = String(formData.get("imageApiKey") ?? "").trim();
   const newYousign = String(formData.get("yousignApiKey") ?? "").trim();
 
   await prisma.organisme.update({
@@ -205,6 +206,7 @@ export async function updateOrganisme(
       emailExpediteur: clean(formData.get("emailExpediteur")),
       ...(newBrevo ? { brevoApiKey: encryptSecret(newBrevo) } : {}),
       ...(newAnthropic ? { anthropicApiKey: encryptSecret(newAnthropic) } : {}),
+      ...(newImageKey ? { imageApiKey: encryptSecret(newImageKey) } : {}),
       ...(newYousign ? { yousignApiKey: encryptSecret(newYousign) } : {}),
       automationsConfig: automationsConfig as Prisma.InputJsonValue,
       maxSmsMois: readPositiveInt(formData.get("maxSmsMois")),

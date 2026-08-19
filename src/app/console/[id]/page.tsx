@@ -141,11 +141,12 @@ export default async function ConsoleOrganismePage({
 
   // Sécurité : on ne transmet JAMAIS les clés API au navigateur, seulement leur
   // état (définie ou non). cf. SecretField + updateOrganisme.
-  const { brevoApiKey, anthropicApiKey, yousignApiKey, ...orgRest } = org;
+  const { brevoApiKey, anthropicApiKey, imageApiKey, yousignApiKey, ...orgRest } = org;
   const formOrg = {
     ...orgRest,
     brevoApiKeySet: !!brevoApiKey,
     anthropicApiKeySet: !!anthropicApiKey,
+    imageApiKeySet: !!imageApiKey,
     yousignApiKeySet: !!yousignApiKey,
   };
 

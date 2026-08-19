@@ -97,7 +97,8 @@ model Organisme {
   sousDomaine        String? @unique
 
   // Clés d'intégration PAR organisme (sinon repli sur la config globale)
-  anthropicApiKey String? // Assistant IA (Claude)
+  anthropicApiKey String? // Assistant IA (Claude) — génération de texte
+  imageApiKey     String? // Images IA (visuels — module Communication)
   yousignApiKey   String? // signature électronique prestataire
   // Financements — clés d'intégration (chiffrées via lib/crypto).
   wedofApiKey        String? // Wedof/CertiPlace : suivi des dossiers CPF (EDOF)
