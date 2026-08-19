@@ -225,7 +225,7 @@ export function AppSidebar({
         {/* Carte "Besoin d'aide ?" en bas (icône seule quand replié). */}
         <div className="mt-auto border-t border-[#1f2d47] p-4">
           <Link
-            href="/aide"
+            href="/support"
             title="Besoin d'aide ?"
             className="rail-help flex items-start gap-3 rounded-xl bg-[#1f2d47] px-3 py-3 transition-colors hover:bg-[#2a3a52]"
           >
