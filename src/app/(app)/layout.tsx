@@ -275,14 +275,6 @@ export default async function AppLayout({
             <MobileSpacer />
           </main>
 
-          {/* Barre d'onglets mobile (accès au pouce). `pb-20 md:pb-0` sur le pied de
-              page évite que le contenu passe sous la barre fixe. */}
-          <MobileTabBar
-            role={navUser.role}
-            permissions={navUser.permissions ?? []}
-            fonctionnalites={navUser.fonctionnalites ?? []}
-          />
-
           {/* Pied de page « site » masqué dans l'app native (ressenti application). */}
           {!native && (
           <footer className="mt-8 border-t bg-card/40 pb-20 md:pb-0">
@@ -304,7 +296,20 @@ export default async function AppLayout({
         </div>
       </div>
       </RailProvider>
-      <MobileBottomNav />
+      {/* Barre du bas mobile — une seule : métiers (ADMIN/RF) ou espace perso (formateur/apprenant). */}
+      {navUser.role === "ADMIN" || navUser.role === "RESPONSABLE_FORMATION" ? (
+        <MobileBottomNav
+          role={navUser.role}
+          permissions={navUser.permissions ?? []}
+          fonctionnalites={navUser.fonctionnalites ?? []}
+        />
+      ) : (
+        <MobileTabBar
+          role={navUser.role}
+          permissions={navUser.permissions ?? []}
+          fonctionnalites={navUser.fonctionnalites ?? []}
+        />
+      )}
       <InstallPrompt />
     </div>
   );
