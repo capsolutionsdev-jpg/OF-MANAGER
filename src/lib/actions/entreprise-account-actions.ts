@@ -69,7 +69,12 @@ export async function createEntrepriseAccount(entrepriseId: string): Promise<Res
       emailButton("Définir mon mot de passe", link, "primary") +
       emailParagraph(`Ce lien est valable ${INVITE_TTL_DAYS} jours.`),
   });
-  await sendEmail({ to: email, subject: "Votre accès à l'espace client", html });
+  const res = await sendEmail({ to: email, subject: "Votre accès à l'espace client", html });
 
-  return { ok: true };
+  return {
+    ok: true,
+    error: res.sent
+      ? undefined
+      : `Compte créé, mais l'e-mail d'invitation n'a pas pu être envoyé${res.reason ? ` (${res.reason})` : ""}. L'invitation pourra être renvoyée depuis la fiche.`,
+  };
 }
