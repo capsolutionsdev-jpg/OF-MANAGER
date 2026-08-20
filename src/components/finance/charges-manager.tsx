@@ -245,7 +245,7 @@ function AddDepenseDialog({ open, onOpenChange, onDone }: { open: boolean; onOpe
             <Label htmlFor="d-libelle">Libellé (facultatif)</Label>
             <Input id="d-libelle" value={form.libelle} onChange={(e) => setForm({ ...form, libelle: e.target.value })} placeholder="Description" />
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div>
               <Label htmlFor="d-date">Date</Label>
               <Input id="d-date" type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
