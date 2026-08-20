@@ -475,4 +475,5 @@ export const roleLabels: Record<Role, string> = {
   ASSISTANT: "Assistant administratif",
   FORMATEUR: "Formateur",
   APPRENANT: "Apprenant",
+  ENTREPRISE: "Entreprise (compte client B2B)",
 };

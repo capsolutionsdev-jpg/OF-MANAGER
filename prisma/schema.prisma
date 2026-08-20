@@ -25,6 +25,7 @@ enum Role {
   ASSISTANT
   FORMATEUR
   APPRENANT
+  ENTREPRISE
 }
 
 enum OrganismeStatut {
@@ -580,11 +581,14 @@ model User {
   // Optionnelle : tant que totpEnabled = false, la connexion est inchangée.
   totpSecret   String?
   totpEnabled  Boolean  @default(false)
+  inviteToken       String?   @unique
+  inviteTokenExpiry DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   // Profils liés (selon le rôle)
   formateur Formateur?
+  entreprise        Entreprise? @relation("EntrepriseCompte")
   apprenant Apprenant?
 
   // Traçabilité
@@ -1425,6 +1429,8 @@ model Entreprise {
   // Jeton aléatoire (24 octets) → recherche par findFirst ; pas de contrainte
   // unique (évite une migration destructive sur la base partagée).
   portalToken   String?
+  userId String? @unique
+  user   User?   @relation("EntrepriseCompte", fields: [userId], references: [id])
 
   candidats    Candidat[]
   inscriptions Inscription[]
