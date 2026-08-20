@@ -13,6 +13,7 @@ import {
 } from "@/lib/validators/candidat";
 import { CandidatAccessPanel } from "@/components/candidats/candidat-access-panel";
 import { CivicAccessButton } from "@/components/candidats/civic-access-button";
+import { hasExamenCivique } from "@/lib/civique-guard";
 import { InstrumentGauge } from "@/components/ui/instrument-gauge";
 
 function Field({ label, value }: { label: string; value?: string | null }) {
@@ -36,6 +37,10 @@ export default async function CandidatProfilPage({
   if (!detail) notFound();
 
   const { candidat } = detail;
+  // Module « Examen civique » retiré/masqué globalement (hasExamenCivique = false
+  // partout tant qu'il n'est pas re-commercialisé) → on n'affiche plus la section
+  // d'accès e-learning civique sur la fiche candidat. Réactivable via le garde.
+  const showCivique = await hasExamenCivique();
   const fmtDate = (d: Date | null) => (d ? d.toLocaleDateString("fr-FR") : null);
   const insc = candidat.inscriptions.filter((i) => i.statut !== "ANNULEE");
   const piecesTot = candidat.pieces.length;
@@ -83,10 +88,12 @@ export default async function CandidatProfilPage({
               hasAccount={!!candidat.apprenant?.userId}
               email={candidat.email}
             />
-            <CivicAccessButton
-              candidatId={candidat.id}
-              hasToken={!!candidat.civicToken}
-            />
+            {showCivique && (
+              <CivicAccessButton
+                candidatId={candidat.id}
+                hasToken={!!candidat.civicToken}
+              />
+            )}
           </CardContent>
         </Card>
 
