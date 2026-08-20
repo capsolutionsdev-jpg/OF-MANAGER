@@ -69,9 +69,17 @@ async function sendViaResend(
   params: { to: string; subject: string; body?: string; html?: string; attachments?: EmailAttachment[] },
   sender: Sender,
 ): Promise<{ sent: boolean; reason?: string }> {
-  const fromEmail = process.env.RESEND_SENDER || sender.email;
+  // RESEND_SENDER accepte 2 formats : adresse seule (« no-reply@domaine.fr ») OU
+  // en-tête complet (« Nom <no-reply@domaine.fr> »). Si « < » est présent, on
+  // l'utilise TEL QUEL — sinon on obtiendrait « Nom <Nom <addr>> » (invalide →
+  // Resend refuse l'envoi) ; sinon on préfixe le nom de l'expéditeur.
+  const rawSender = process.env.RESEND_SENDER;
+  const from =
+    rawSender && rawSender.includes("<")
+      ? rawSender
+      : `${sender.name} <${rawSender || sender.email}>`;
   const payload: Record<string, unknown> = {
-    from: `${sender.name} <${fromEmail}>`,
+    from,
     to: [params.to],
     subject: params.subject,
     // HTML prioritaire (e-mails candidats habillés) ; texte pour les envois legacy.
@@ -98,12 +106,12 @@ async function sendViaResend(
     let reason = `Resend a refusé l'envoi (HTTP ${res.status}).`;
     try {
       const body = (await res.json()) as { message?: string; name?: string };
-      if (body?.message) reason = `Resend : ${body.message} (expéditeur : ${fromEmail})`;
-      else if (body?.name) reason = `Resend : ${body.name} (expéditeur : ${fromEmail})`;
+      if (body?.message) reason = `Resend : ${body.message} (expéditeur : ${from})`;
+      else if (body?.name) reason = `Resend : ${body.name} (expéditeur : ${from})`;
     } catch {
       /* corps non JSON : on garde le message générique */
     }
-    console.error("[email] Resend refus", res.status, "from:", fromEmail, "-", reason);
+    console.error("[email] Resend refus", res.status, "from:", from, "-", reason);
     return { sent: false, reason };
   } catch (e) {
     const reason = `Resend injoignable : ${e instanceof Error ? e.message : String(e)}`;
