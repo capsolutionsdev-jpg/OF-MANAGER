@@ -8,20 +8,24 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { creerProspectEtInviter } from "@/lib/actions/prospect-actions";
+import type { SessionOption } from "@/components/inscriptions/quick-enroll-modal";
+import { inviterInscriptionDistance } from "@/lib/actions/inscription-actions";
 
 const selectClass =
   "h-9 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
 /**
- * Inscription « à distance » : on saisit le strict minimum (nom, prénom, e-mail
- * + formation souhaitée facultative). Le candidat reçoit un e-mail l'invitant à
- * compléter son dossier et à signer en ligne ; il arrive dans les prospects.
+ * Inscription « à distance » : nom, prénom, e-mail + formation + session. Le
+ * candidat reçoit un e-mail l'invitant à compléter son dossier, consulter ses
+ * documents et signer en ligne ; son inscription à la session est validée après
+ * signature (flux parcours).
  */
 export function InvitationDistanceForm({
   formations,
+  sessions,
 }: {
   formations: { id: string; titre: string }[];
+  sessions: SessionOption[];
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -29,6 +33,11 @@ export function InvitationDistanceForm({
   const [prenom, setPrenom] = useState("");
   const [email, setEmail] = useState("");
   const [formationSouhaiteeId, setFormationSouhaiteeId] = useState("");
+  const [sessionId, setSessionId] = useState("");
+
+  const sessionsPourFormation = sessions.filter(
+    (s) => s.formationId === formationSouhaiteeId,
+  );
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -36,15 +45,30 @@ export function InvitationDistanceForm({
       toast.error("Nom, prénom et e-mail sont requis.");
       return;
     }
+    if (!formationSouhaiteeId) {
+      toast.error("Choisissez la formation.");
+      return;
+    }
+    if (!sessionId) {
+      toast.error("Choisissez la session.");
+      return;
+    }
     startTransition(async () => {
-      const res = await creerProspectEtInviter({
+      const res = await inviterInscriptionDistance({
         nom,
         prenom,
         email,
-        formationSouhaiteeId: formationSouhaiteeId || undefined,
+        formationSouhaiteeId,
+        sessionId,
       });
       if (res.ok) {
-        toast.success(res.error ?? "Invitation envoyée au candidat par e-mail.");
+        if (res.sent) {
+          toast.success("Invitation envoyée au candidat par e-mail.");
+        } else {
+          toast.warning(
+            "Inscription créée, mais l'e-mail n'a pas pu être envoyé (vérifiez la configuration e-mail). Vous pourrez renvoyer le lien depuis la fiche.",
+          );
+        }
         if (res.candidatId) router.push(`/candidats/${res.candidatId}`);
         router.refresh();
       } else {
@@ -61,9 +85,9 @@ export function InvitationDistanceForm({
       <CardContent>
         <form onSubmit={submit} className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Renseignez le strict minimum. Le candidat recevra un e-mail pour
-            <b> compléter son dossier et signer en ligne</b>, puis apparaîtra dans vos
-            prospects (vous recevez une notification à la complétion).
+            Le candidat recevra un e-mail pour{" "}
+            <b>compléter son dossier, consulter ses documents et signer en ligne</b>.
+            Son inscription à la session choisie sera validée après signature.
           </p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="grid gap-2">
@@ -85,14 +109,17 @@ export function InvitationDistanceForm({
               />
             </div>
             <div className="grid gap-2 sm:col-span-2">
-              <Label htmlFor="d-formation">Formation souhaitée (facultatif)</Label>
+              <Label htmlFor="d-formation">Formation *</Label>
               <select
                 id="d-formation"
                 className={selectClass}
                 value={formationSouhaiteeId}
-                onChange={(e) => setFormationSouhaiteeId(e.target.value)}
+                onChange={(e) => {
+                  setFormationSouhaiteeId(e.target.value);
+                  setSessionId("");
+                }}
               >
-                <option value="">— À préciser par le candidat —</option>
+                <option value="">— Sélectionnez —</option>
                 {formations.map((f) => (
                   <option key={f.id} value={f.id}>
                     {f.titre}
@@ -100,10 +127,35 @@ export function InvitationDistanceForm({
                 ))}
               </select>
             </div>
+            {formationSouhaiteeId && (
+              <div className="grid gap-2 sm:col-span-2">
+                <Label htmlFor="d-session">Session *</Label>
+                {sessionsPourFormation.length > 0 ? (
+                  <select
+                    id="d-session"
+                    className={selectClass}
+                    value={sessionId}
+                    onChange={(e) => setSessionId(e.target.value)}
+                  >
+                    <option value="">— Sélectionnez —</option>
+                    {sessionsPourFormation.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.label}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Aucune session à venir pour cette formation. Créez une session,
+                    ou utilisez le mode « Sur place ».
+                  </p>
+                )}
+              </div>
+            )}
           </div>
-          <Button type="submit" disabled={isPending}>
+          <Button type="submit" disabled={isPending || !sessionId}>
             <Send className="mr-2 h-4 w-4" />
-            {isPending ? "Envoi…" : "Envoyer l'e-mail d'inscription"}
+            {isPending ? "Envoi…" : "Envoyer l'invitation"}
           </Button>
         </form>
       </CardContent>

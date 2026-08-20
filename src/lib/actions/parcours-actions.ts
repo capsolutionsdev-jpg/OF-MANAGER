@@ -42,7 +42,7 @@ import {
  */
 export async function startParcours(
   inscriptionId: string,
-): Promise<{ ok: boolean; error?: string }> {
+): Promise<{ ok: boolean; error?: string; sent?: boolean }> {
   // Action exportée (endpoint) : se garde elle-même. Les appels internes
   // (createInscription, setInscriptionStatut) ont déjà une session même-organisme.
   const session = await auth();
@@ -98,6 +98,9 @@ export async function startParcours(
     attachments: progPdf
       ? [{ name: "Programme-formation.pdf", content: toBase64(progPdf.data) }]
       : undefined,
+    // Envoi depuis l'expéditeur de l'ORGANISME (pas l'expéditeur global) →
+    // identité correcte en multi-tenant + meilleure délivrabilité.
+    organismeId: insc.organismeId,
   });
   await prisma.emailLog.create({
     data: {
@@ -113,7 +116,7 @@ export async function startParcours(
 
   revalidatePath(`/candidats/${insc.candidatId}`);
   revalidatePath(`/sessions/${insc.sessionId}`);
-  return { ok: true };
+  return { ok: true, sent: res.sent };
 }
 
 const PARCOURS_STAFF = ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"];

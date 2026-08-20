@@ -96,7 +96,8 @@ export async function sendProspectIntakeLink(
       emailSignoff("Cordialement,", org.representant),
   });
 
-  const res = await sendEmail({ to: c.email, subject, html });
+  // Expéditeur de l'ORGANISME (identité multi-tenant correcte + délivrabilité).
+  const res = await sendEmail({ to: c.email, subject, html, organismeId: session.user.organismeId });
 
   await db.candidat.update({
     where: { id: candidatId },
