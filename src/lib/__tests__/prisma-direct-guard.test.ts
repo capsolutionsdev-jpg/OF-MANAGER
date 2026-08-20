@@ -90,6 +90,12 @@ const ACTIONS_ALLOWLIST = new Set([
   "emargement-signature-actions.ts",
   "apprenant-actions.ts",
   "manual-send-actions.ts",
+  // Compte client B2B (rôle ENTREPRISE) : même motif que apprenant-actions —
+  // lit l'Entreprise via getTenantDb() (findFirst { id, organismeId }) AVANT toute
+  // écriture, puis crée/lie le User via le client brut (entité GLOBALE, unicité
+  // e-mail cross-tenant). Vérifier-puis-muter respecté (l'AuditLog, lui, passe
+  // par getTenantDb()).
+  "entreprise-account-actions.ts",
   "document-actions.ts",
   "session-guard-actions.ts",
   "session-validation-actions.ts",
