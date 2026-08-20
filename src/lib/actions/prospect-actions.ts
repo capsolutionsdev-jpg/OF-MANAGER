@@ -119,7 +119,7 @@ export async function sendProspectIntakeLink(
   revalidatePath(`/candidats/${candidatId}`);
   return {
     ok: true,
-    error: res.sent ? undefined : "E-mail non envoyé (mode démo : configurez Brevo).",
+    error: res.sent ? undefined : "E-mail non envoyé (mode démo : configurez Resend).",
   };
 }
 

@@ -105,7 +105,7 @@ export function InscriptionActionsMenu({
       }
       toast.success(
         res.demo
-          ? "Lien généré (mode démo : e-mail non envoyé — configurez Brevo)."
+          ? "Lien généré (mode démo : e-mail non envoyé — configurez Resend)."
           : "Lien d'inscription envoyé au candidat par e-mail.",
       );
       router.refresh();
