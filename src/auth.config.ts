@@ -3,6 +3,7 @@ import type { Role } from "@prisma/client";
 // Source UNIQUE de la matrice rôles↔sections (module sans dépendance runtime →
 // compatible edge/middleware). Fini la duplication (cf. audit ARC-02).
 import { SECTION_ROLES, STAFF_FILTRES } from "@/lib/section-roles";
+import { isEntrepriseAllowedPath } from "@/lib/entreprise-routes";
 import {
   applyImpersonationStart,
   applyImpersonationStop,
@@ -79,6 +80,14 @@ export const authConfig = {
           path.startsWith("/ma-") ||
           extras.some((p) => path === p || path.startsWith(`${p}/`));
         return ok ? true : Response.redirect(new URL("/mes-sessions", nextUrl));
+      }
+
+      // Espace ENTREPRISE (client professionnel) : confiné à /espace-entreprise/*,
+      // jamais le back-office ni un autre espace. Toute autre URL → /espace-entreprise.
+      if (role === "ENTREPRISE") {
+        return isEntrepriseAllowedPath(path)
+          ? true
+          : Response.redirect(new URL("/espace-entreprise", nextUrl));
       }
 
       // Administration (gestion des comptes) : réservée au gérant (ADMIN).
