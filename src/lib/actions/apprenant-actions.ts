@@ -73,18 +73,36 @@ export async function createApprenantAccount(
     // par organisme et masquerait un utilisateur d'un autre organisme (ou à
     // organisme nul), ce qui provoquait une collision de contrainte unique au
     // `user.create` → exception non gérée → crash. Cf. lib/tenant.ts.
-    const existingUser = await prisma.user.findUnique({ where: { email } });
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+      select: { id: true, role: true, apprenant: { select: { id: true } } },
+    });
+
+    // Ne JAMAIS rétrograder un compte privilégié (admin/formateur…) en apprenant :
+    // une même adresse peut être à la fois collaborateur ET inscrite à une formation.
+    const PRIVILEGED_ROLES = ["SUPERADMIN", "ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT", "FORMATEUR"];
 
     if (apprenant.userId) {
-      // Compte déjà lié → réinitialise le mot de passe.
+      // Compte déjà lié → réinitialise le mot de passe (sans toucher au rôle).
       await prisma.user.update({
         where: { id: apprenant.userId },
-        data: { passwordHash, role: "APPRENANT", isActive: true },
+        data: { passwordHash, isActive: true },
       });
     } else if (existingUser) {
+      // `Apprenant.userId` est UNIQUE : si cet utilisateur (même e-mail) est déjà
+      // l'apprenant d'un AUTRE candidat, on ne peut pas le relier ici (c'était la
+      // cause du crash — violation de contrainte unique lors du rattachement).
+      if (existingUser.apprenant) {
+        return {
+          ok: false,
+          error:
+            "Un compte apprenant existe déjà pour cette adresse e-mail (rattaché à un autre candidat). Utilisez une autre adresse e-mail pour ce candidat.",
+        };
+      }
+      const keepRole = PRIVILEGED_ROLES.includes(existingUser.role);
       await prisma.user.update({
         where: { id: existingUser.id },
-        data: { passwordHash, role: "APPRENANT", isActive: true, name },
+        data: { passwordHash, isActive: true, name, ...(keepRole ? {} : { role: "APPRENANT" }) },
       });
       await prisma.apprenant.update({
         where: { id: apprenant.id },
@@ -129,9 +147,19 @@ export async function createApprenantAccount(
       /* le journal ne doit jamais masquer l'erreur d'origine */
     }
     console.error("[createApprenantAccount]", e);
+    const code = (e as { code?: string })?.code;
+    if (code === "P2002" || msg.includes("Unique constraint")) {
+      return {
+        ok: false,
+        error:
+          "Ce compte (adresse e-mail) est déjà utilisé ou déjà rattaché à un autre apprenant. Utilisez une autre adresse e-mail pour ce candidat.",
+      };
+    }
+    // Action réservée au staff → on remonte un extrait de la cause réelle pour le
+    // diagnostic (le message générique masquait le vrai problème).
     return {
       ok: false,
-      error: "Création de l'accès impossible. Réessayez, ou contactez le support si le problème persiste.",
+      error: `Création de l'accès impossible. Détail : ${msg.slice(0, 160)}`,
     };
   }
 }
