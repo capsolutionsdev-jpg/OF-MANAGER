@@ -6,10 +6,10 @@ import { Maximize2, Minimize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 /**
- * Mode « plein écran » : masque les barres (rail latéral + barre du haut) pour
- * maximiser la surface de travail, et tente le vrai plein écran du navigateur.
- * Un bouton flottant permet de revenir à l'affichage normal (les barres étant
- * masquées, on ne peut plus utiliser le bouton d'origine).
+ * Mode « plein écran » : masque la barre du haut (recherche/notifications) et
+ * élargit le contenu, tout en GARDANT le rail de navigation ; tente aussi le vrai
+ * plein écran du navigateur. Un bouton flottant permet de revenir à l'affichage
+ * normal (la barre du haut — donc le bouton d'origine — étant masquée).
  */
 export function FocusModeToggle() {
   const [on, setOn] = useState(false);
@@ -48,7 +48,7 @@ export function FocusModeToggle() {
         variant="ghost"
         size="icon"
         className="text-muted-foreground"
-        aria-label="Plein écran (masquer les barres)"
+        aria-label="Plein écran (masquer la barre du haut)"
         title="Plein écran"
         onClick={() => setOn((v) => !v)}
       >
