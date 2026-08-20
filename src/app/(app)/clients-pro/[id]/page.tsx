@@ -19,6 +19,7 @@ import {
   detacherCandidat,
 } from "@/lib/actions/client-pro-actions";
 import { ConventionDialog } from "@/components/conventions/convention-dialog";
+import { CreateAccessButton } from "@/components/clients-pro/create-access-button";
 
 export const dynamic = "force-dynamic";
 
@@ -127,6 +128,7 @@ export default async function ClientProPage({
             >
               <FileText className="mr-1.5 h-4 w-4" /> Bon de convention (PDF)
             </Button>
+            <CreateAccessButton entrepriseId={client.id} hasAccess={!!client.userId} />
           </div>
         </CardContent>
       </Card>
