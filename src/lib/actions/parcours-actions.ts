@@ -42,7 +42,7 @@ import {
  */
 export async function startParcours(
   inscriptionId: string,
-): Promise<{ ok: boolean; error?: string; sent?: boolean }> {
+): Promise<{ ok: boolean; error?: string; sent?: boolean; emailReason?: string }> {
   // Action exportée (endpoint) : se garde elle-même. Les appels internes
   // (createInscription, setInscriptionStatut) ont déjà une session même-organisme.
   const session = await auth();
@@ -116,7 +116,7 @@ export async function startParcours(
 
   revalidatePath(`/candidats/${insc.candidatId}`);
   revalidatePath(`/sessions/${insc.sessionId}`);
-  return { ok: true, sent: res.sent };
+  return { ok: true, sent: res.sent, emailReason: res.reason };
 }
 
 const PARCOURS_STAFF = ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"];

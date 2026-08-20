@@ -68,7 +68,7 @@ async function resolveSender(organismeId?: string | null): Promise<Sender> {
 async function sendViaResend(
   params: { to: string; subject: string; body?: string; html?: string; attachments?: EmailAttachment[] },
   sender: Sender,
-): Promise<{ sent: boolean }> {
+): Promise<{ sent: boolean; reason?: string }> {
   const fromEmail = process.env.RESEND_SENDER || sender.email;
   const payload: Record<string, unknown> = {
     from: `${sender.name} <${fromEmail}>`,
@@ -92,9 +92,23 @@ async function sendViaResend(
       },
       body: JSON.stringify(payload),
     });
-    return { sent: res.ok };
-  } catch {
-    return { sent: false };
+    if (res.ok) return { sent: true };
+    // Échec Resend (cause fréquente : expéditeur/domaine « from » non vérifié) →
+    // on remonte le message d'erreur réel de Resend pour un diagnostic clair.
+    let reason = `Resend a refusé l'envoi (HTTP ${res.status}).`;
+    try {
+      const body = (await res.json()) as { message?: string; name?: string };
+      if (body?.message) reason = `Resend : ${body.message} (expéditeur : ${fromEmail})`;
+      else if (body?.name) reason = `Resend : ${body.name} (expéditeur : ${fromEmail})`;
+    } catch {
+      /* corps non JSON : on garde le message générique */
+    }
+    console.error("[email] Resend refus", res.status, "from:", fromEmail, "-", reason);
+    return { sent: false, reason };
+  } catch (e) {
+    const reason = `Resend injoignable : ${e instanceof Error ? e.message : String(e)}`;
+    console.error("[email]", reason);
+    return { sent: false, reason };
   }
 }
 
@@ -108,7 +122,7 @@ export async function sendEmail(params: {
   attachments?: EmailAttachment[];
   /** Tenant émetteur (utilise son compte Brevo si configuré). */
   organismeId?: string | null;
-}): Promise<{ sent: boolean }> {
+}): Promise<{ sent: boolean; reason?: string }> {
   // Bac à sable démo : un tenant de démonstration n'émet JAMAIS de vrai e-mail.
   // On simule un envoi réussi (expérience réaliste côté prospect) sans rien transmettre.
   if (await isDemoSender(params.organismeId)) {
@@ -123,8 +137,12 @@ export async function sendEmail(params: {
   }
 
   if (!sender.apiKey) {
-    // Mode démo : pas d'envoi réel (l'e-mail est seulement journalisé).
-    return { sent: false };
+    // Aucun fournisseur configuré → « mode démo » : rien n'est envoyé.
+    return {
+      sent: false,
+      reason:
+        "Aucun fournisseur e-mail configuré (mode démo). Définissez RESEND_API_KEY et RESEND_SENDER en variables d'environnement.",
+    };
   }
 
   try {
@@ -149,9 +167,9 @@ export async function sendEmail(params: {
       },
       body: JSON.stringify(payload),
     });
-    return { sent: res.ok };
+    return { sent: res.ok, reason: res.ok ? undefined : `Brevo a refusé l'envoi (HTTP ${res.status}).` };
   } catch {
-    return { sent: false };
+    return { sent: false, reason: "Brevo injoignable." };
   }
 }
 

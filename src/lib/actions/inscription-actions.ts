@@ -108,7 +108,10 @@ export async function inviterInscriptionDistance(input: {
     ok: true,
     candidatId: candidat.id,
     sent: started.sent,
-    error: started.ok ? undefined : started.error,
+    // Si l'e-mail n'est pas parti, on remonte la RAISON réelle (Resend / mode démo).
+    error: started.sent
+      ? undefined
+      : (started.emailReason ?? started.error ?? "E-mail non envoyé."),
   };
 }
 
