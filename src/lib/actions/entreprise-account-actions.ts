@@ -59,6 +59,20 @@ export async function createEntrepriseAccount(entrepriseId: string): Promise<Res
   });
   await prisma.entreprise.update({ where: { id: ent.id }, data: { userId: user.id } });
 
+  try {
+    await db.auditLog.create({
+      data: {
+        userId: session.user.id,
+        action: "ENTREPRISE_ACCOUNT",
+        entityType: "Entreprise",
+        entityId: ent.id,
+      },
+    });
+  } catch (e) {
+    // Le journal ne doit jamais empêcher la création de l'accès (déjà effective).
+    console.error("[createEntrepriseAccount] audit log failed", e);
+  }
+
   const link = `${appBaseUrl()}/definir-mot-de-passe/${inviteToken}`;
   const html = emailShell({
     organisme: ent.raisonSociale,
@@ -76,7 +90,7 @@ export async function createEntrepriseAccount(entrepriseId: string): Promise<Res
     ok: true,
     error: res.sent
       ? undefined
-      : `Compte créé, mais l'e-mail d'invitation n'a pas pu être envoyé${res.reason ? ` (${res.reason})` : ""}. L'invitation pourra être renvoyée depuis la fiche.`,
+      : `Compte créé, mais l'e-mail d'invitation n'a pas pu être envoyé${res.reason ? ` (${res.reason})` : ""}. Vérifiez la configuration e-mail, puis transmettez ce lien au client : ${link}`,
   };
 }
 

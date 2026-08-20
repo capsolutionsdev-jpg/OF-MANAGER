@@ -115,7 +115,10 @@ export default async function AppLayout({
   // NB : la connexion d'un tenant SUSPENDU est déjà refusée (auth) ; ce garde
   // couvre les sessions déjà ouvertes au moment de la suspension.
   const suspended = org?.statut === "SUSPENDU";
-  if (trial.expired || suspended) {
+  // Un client ENTREPRISE (B2B) est un tiers de l'OF, pas un abonné de la
+  // plateforme : il ne doit jamais voir l'état d'abonnement de son fournisseur
+  // ni être bloqué par son essai/sa suspension.
+  if ((trial.expired || suspended) && session.user.role !== "ENTREPRISE") {
     const isAdmin = session.user.role === "ADMIN";
     const { plans, popular } = await getResolvedPlans();
     const ordered = PLAN_ORDER.map((k) => plans[k]);
@@ -250,7 +253,7 @@ export default async function AppLayout({
             notifications={notifications}
           />
           {session.user.imp && <ImpersonationBanner orgNom={session.user.imp.orgNom} />}
-          {trial.isTrial && (
+          {trial.isTrial && session.user.role !== "ENTREPRISE" && (
             <div className="flex items-center justify-center gap-2 bg-warning/10 px-4 py-2 text-center text-xs font-medium text-warning">
               <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
               Essai gratuit — il vous reste{" "}

@@ -66,6 +66,17 @@ describe("D1 — le FORMATEUR et le CANDIDAT ne voient jamais le back-office adm
       expect(check("APPRENANT", p)).toEqual({ allow: true });
     }
   });
+
+  it("ENTREPRISE : toute page admin → redirigé vers /espace-entreprise", () => {
+    for (const p of PAGES_STAFF) {
+      expect(check("ENTREPRISE", p)).toEqual({ allow: false, to: "/espace-entreprise" });
+    }
+  });
+
+  it("ENTREPRISE : garde l'accès à SON espace (page racine + sous-page)", () => {
+    expect(check("ENTREPRISE", "/espace-entreprise")).toEqual({ allow: true });
+    expect(check("ENTREPRISE", "/espace-entreprise/documents")).toEqual({ allow: true });
+  });
 });
 
 describe("Console éditeur & Administration", () => {
