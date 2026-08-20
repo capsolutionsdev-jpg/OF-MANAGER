@@ -11,7 +11,7 @@ import {
 import { createInscription } from "@/lib/actions/inscription-actions";
 
 export type ActionResult =
-  | { ok: true; id: string }
+  | { ok: true; id: string; inscriptionId?: string; warning?: string }
   | { ok: false; error: string };
 
 const clean = (s?: string) => (s && s.trim() !== "" ? s.trim() : null);
@@ -145,23 +145,32 @@ export async function createCandidat(
   // Rattachement direct à une session choisie (#1) → crée l'inscription en
   // EN_ATTENTE (pré-rattachement, sans déclencher le parcours/e-mails). Best-effort :
   // un échec (déjà inscrit, session pleine…) ne doit pas faire échouer la création.
+  let inscriptionId: string | undefined;
+  let warning: string | undefined;
   const sessionId = parsed.data.sessionId?.trim();
   if (sessionId && parsed.data.formationSouhaiteeId) {
     try {
-      await createInscription({
+      const insc = await createInscription({
         candidatId: candidat.id,
         sessionId,
         financementType: parsed.data.financementType ?? "",
         statut: InscriptionStatut.EN_ATTENTE,
         montant: "",
       });
+      // Id de l'inscription créée → permet au formulaire de proposer la signature
+      // « sur place » immédiatement après la création (point d'entrée inscription).
+      // On remonte aussi l'avertissement éventuel (ex. session complète).
+      if (insc.ok) {
+        inscriptionId = insc.inscriptionId;
+        warning = insc.warning;
+      }
     } catch (e) {
       console.error("[createCandidat] rattachement à la session échoué", e);
     }
   }
 
   revalidatePath("/candidats");
-  return { ok: true, id: candidat.id };
+  return { ok: true, id: candidat.id, inscriptionId, warning };
 }
 
 export async function updateCandidat(
