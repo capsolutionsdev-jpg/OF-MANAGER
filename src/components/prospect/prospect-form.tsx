@@ -11,7 +11,11 @@ import {
   FINANCEMENT_LABELS,
   SOURCE_CONNAISSANCE_OPTIONS,
   DIPLOME_OPTIONS,
+  CNAPS_STATUT_LABELS,
 } from "@/lib/validators/candidat";
+import { NATIONALITES } from "@/lib/data/pays";
+import { DEPARTEMENTS } from "@/lib/data/departements";
+import { formationPrereq } from "@/lib/inscription/prerequis";
 import { PhotoCapture } from "@/components/parcours/photo-capture";
 import {
   submitProspectForm,
@@ -28,7 +32,7 @@ export function ProspectForm({
 }: {
   token: string;
   defaults: Partial<ProspectFormValues>;
-  formations: { id: string; titre: string }[];
+  formations: { id: string; titre: string; reference?: string | null }[];
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -48,12 +52,36 @@ export function ProspectForm({
     sourceConnaissance: defaults.sourceConnaissance ?? "",
     formationSouhaiteeId: defaults.formationSouhaiteeId ?? "",
     financementType: defaults.financementType ?? "",
+    nationalite: defaults.nationalite ?? "",
+    departementNaissance: defaults.departementNaissance ?? "",
+    cnapsStatut: defaults.cnapsStatut ?? "",
+    carteProNumero: defaults.carteProNumero ?? "",
+    carteProValidite: defaults.carteProValidite ?? "",
+    ssiapNiveau: defaults.ssiapNiveau ?? "",
+    ssiapDiplomeNumero: defaults.ssiapDiplomeNumero ?? "",
+    ssiapDiplomeDate: defaults.ssiapDiplomeDate ?? "",
     photoDataUrl: defaults.photoDataUrl ?? "",
     consent: false,
   });
 
   const set = (k: keyof ProspectFormValues, val: string | boolean) =>
     setV((p) => ({ ...p, [k]: val }));
+
+  // Prérequis conditionnels selon la formation choisie (formationPrereq est
+  // client-safe : il n'importe que le catalogue pur). Mêmes libellés CNAPS que le
+  // formulaire interne : en MAC APS / A3P / vidéoprotection, l'autorisation préalable
+  // OU la carte pro sont valables.
+  const selectedFormation = formations.find((f) => f.id === v.formationSouhaiteeId);
+  const prereq = selectedFormation ? formationPrereq(selectedFormation) : {};
+  const showCnaps = !!(prereq.cnaps || prereq.carteProAlternative);
+  const showSsiap = !!prereq.ssiap;
+  const carteProAcceptee = !!prereq.carteProAlternative;
+  const cnapsNumeroLabel = carteProAcceptee
+    ? "N° autorisation préalable / carte professionnelle"
+    : "N° autorisation préalable";
+  const cnapsValiditeLabel = carteProAcceptee
+    ? "Validité autorisation / carte pro"
+    : "Validité autorisation";
 
   // ── Signature ──
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -118,8 +146,15 @@ export function ProspectForm({
       return;
     }
     const dataUrl = canvasRef.current?.toDataURL("image/png") ?? "";
+    // On ne persiste les prérequis que si leur bloc est visible pour la formation
+    // choisie (le prospect a pu les saisir puis changer de formation → bloc masqué).
+    const payload: ProspectFormValues = {
+      ...v,
+      ...(showCnaps ? {} : { cnapsStatut: "", carteProNumero: "", carteProValidite: "" }),
+      ...(showSsiap ? {} : { ssiapNiveau: "", ssiapDiplomeNumero: "", ssiapDiplomeDate: "" }),
+    };
     startTransition(async () => {
-      const res = await submitProspectForm(token, v, dataUrl);
+      const res = await submitProspectForm(token, payload, dataUrl);
       if (res.ok) {
         toast.success("Fiche enregistrée et signée. Merci !");
         router.refresh();
@@ -157,6 +192,24 @@ export function ProspectForm({
         <div className="grid gap-1.5">
           <Label htmlFor="paysNaissance">Pays de naissance</Label>
           <Input id="paysNaissance" placeholder="France" value={v.paysNaissance} onChange={(e) => set("paysNaissance", e.target.value)} />
+        </div>
+        <div className="grid gap-1.5">
+          <Label htmlFor="nationalite">Nationalité</Label>
+          <select id="nationalite" className={sx} value={v.nationalite} onChange={(e) => set("nationalite", e.target.value)}>
+            <option value="">— Sélectionner —</option>
+            {NATIONALITES.map((n) => (
+              <option key={n} value={n}>{n}</option>
+            ))}
+          </select>
+        </div>
+        <div className="grid gap-1.5">
+          <Label htmlFor="departementNaissance">Département de naissance</Label>
+          <select id="departementNaissance" className={sx} value={v.departementNaissance} onChange={(e) => set("departementNaissance", e.target.value)}>
+            <option value="">— Sélectionner —</option>
+            {DEPARTEMENTS.map((d) => (
+              <option key={d.code} value={d.code}>{d.code} — {d.nom}</option>
+            ))}
+          </select>
         </div>
         <div className="grid gap-1.5 sm:col-span-2">
           <Label htmlFor="adresse">Adresse</Label>
@@ -227,6 +280,60 @@ export function ProspectForm({
           </datalist>
         </div>
       </div>
+
+      {/* Sécurité privée (CNAPS) — affiché seulement si la formation le requiert */}
+      {showCnaps && (
+        <div className="rounded-lg border p-4">
+          <p className="mb-3 text-sm font-medium">Sécurité privée (CNAPS)</p>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="grid gap-1.5">
+              <Label htmlFor="cnapsStatut">Autorisation préalable CNAPS</Label>
+              <select id="cnapsStatut" className={sx} value={v.cnapsStatut} onChange={(e) => set("cnapsStatut", e.target.value)}>
+                <option value="">— À renseigner —</option>
+                {Object.entries(CNAPS_STATUT_LABELS).map(([k, l]) => (
+                  <option key={k} value={k}>{l}</option>
+                ))}
+              </select>
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="carteProNumero">{cnapsNumeroLabel}</Label>
+              <Input id="carteProNumero" value={v.carteProNumero} onChange={(e) => set("carteProNumero", e.target.value)} />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="carteProValidite">{cnapsValiditeLabel}</Label>
+              <Input id="carteProValidite" type="date" value={v.carteProValidite} onChange={(e) => set("carteProValidite", e.target.value)} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Diplôme SSIAP détenu — recyclage / remise à niveau */}
+      {showSsiap && (
+        <div className="rounded-lg border p-4">
+          <p className="mb-3 text-sm font-medium">
+            Diplôme SSIAP {prereq.ssiap?.niveau ?? ""} détenu (recyclage / remise à niveau)
+          </p>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="grid gap-1.5">
+              <Label htmlFor="ssiapNiveau">Niveau du diplôme</Label>
+              <select id="ssiapNiveau" className={sx} value={v.ssiapNiveau} onChange={(e) => set("ssiapNiveau", e.target.value)}>
+                <option value="">— Non concerné —</option>
+                <option value="1">SSIAP 1</option>
+                <option value="2">SSIAP 2</option>
+                <option value="3">SSIAP 3</option>
+              </select>
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="ssiapDiplomeNumero">N° du diplôme</Label>
+              <Input id="ssiapDiplomeNumero" value={v.ssiapDiplomeNumero} onChange={(e) => set("ssiapDiplomeNumero", e.target.value)} />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="ssiapDiplomeDate">Date d&apos;obtention</Label>
+              <Input id="ssiapDiplomeDate" type="date" value={v.ssiapDiplomeDate} onChange={(e) => set("ssiapDiplomeDate", e.target.value)} />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Signature */}
       <div className="space-y-3 rounded-lg border bg-muted/30 p-4">

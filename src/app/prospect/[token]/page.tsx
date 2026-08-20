@@ -27,9 +27,12 @@ export default async function ProspectPage({
   if (expiringTokenExpired(token, LINK_TTL_DAYS.SIGNATURE)) notFound();
   const org = await orgConfigFor(c.organismeId);
 
+  // Page PUBLIQUE (token, pas de session) : la requête n'est pas scopée par un tenant
+  // courant → on cloisonne MANUELLEMENT à l'organisme du prospect, sinon on exposerait
+  // le catalogue de tous les OF (fuite multi-tenant).
   const formations = await prisma.formation.findMany({
-    where: { isArchived: false },
-    select: { id: true, titre: true },
+    where: { isArchived: false, organismeId: c.organismeId },
+    select: { id: true, titre: true, reference: true },
     orderBy: { titre: "asc" },
   });
 
@@ -94,6 +97,18 @@ export default async function ProspectPage({
                 sourceConnaissance: c.sourceConnaissance ?? "",
                 formationSouhaiteeId: c.formationSouhaiteeId ?? "",
                 financementType: c.financementType ?? "",
+                nationalite: c.nationalite ?? "",
+                departementNaissance: c.departementNaissance ?? "",
+                cnapsStatut: c.cnapsStatut ?? "",
+                carteProNumero: c.carteProNumero ?? "",
+                carteProValidite: c.carteProValidite
+                  ? c.carteProValidite.toISOString().slice(0, 10)
+                  : "",
+                ssiapNiveau: c.ssiapNiveau != null ? String(c.ssiapNiveau) : "",
+                ssiapDiplomeNumero: c.ssiapDiplomeNumero ?? "",
+                ssiapDiplomeDate: c.ssiapDiplomeDate
+                  ? c.ssiapDiplomeDate.toISOString().slice(0, 10)
+                  : "",
               }}
             />
           </CardContent>
