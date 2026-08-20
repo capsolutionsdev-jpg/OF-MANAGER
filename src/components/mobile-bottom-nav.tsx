@@ -2,58 +2,77 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { navigationGroups } from "@/lib/navigation-groups";
+import { Home, type LucideIcon } from "lucide-react";
+import type { Role } from "@prisma/client";
+import { getVisibleGroups } from "@/lib/navigation-groups";
 import { cn } from "@/lib/utils";
 
 /**
- * Phase 3.5 — Mobile Bottom Navigation
- * 6 main métiers accessible from bottom on mobile
+ * Barre de navigation basse (mobile) pour les rôles « pilotage » (ADMIN /
+ * RESPONSABLE_FORMATION) : Accueil + jusqu'à 4 métiers, en libellés COURTS.
+ * Filtrée par rôle/permissions/fonctionnalités, avec zone sûre (barre gestuelle).
+ * Masquée dès `md`. Les rôles formateur/apprenant utilisent MobileTabBar.
  */
-export function MobileBottomNav() {
+export function MobileBottomNav({
+  role,
+  permissions,
+  fonctionnalites,
+}: {
+  role: Role;
+  permissions: string[];
+  fonctionnalites: string[];
+}) {
   const pathname = usePathname();
+  const groups = getVisibleGroups(role, permissions, fonctionnalites);
+  if (groups.length === 0) return null;
 
-  // Get first 6 groups (one per tab)
-  const groups = navigationGroups.slice(0, 6);
+  // Libellé court = ce qui précède le « & » (Formations & Catalogue → Formations).
+  const short = (label: string) => label.split(" & ")[0].trim();
 
-  type NavGroup = (typeof navigationGroups)[number];
-  const getGroupHref = (group: NavGroup) => {
-    // Navigate to first item in group
-    return group.items[0]?.href || "/dashboard";
-  };
-
-  const isGroupActive = (group: NavGroup) => {
-    return group.items.some((item) => pathname.startsWith(item.href));
-  };
+  type Tab = { key: string; label: string; href: string; icon: LucideIcon; active: boolean };
+  const tabs: Tab[] = [
+    {
+      key: "home",
+      label: "Accueil",
+      href: "/dashboard",
+      icon: Home,
+      active: pathname === "/dashboard",
+    },
+    ...groups.slice(0, 4).map((g): Tab => ({
+      key: g.key,
+      label: short(g.label),
+      href: g.items[0]?.href ?? "/dashboard",
+      icon: g.icon,
+      active: g.items.some((it) => pathname === it.href || pathname.startsWith(`${it.href}/`)),
+    })),
+  ];
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 md:hidden border-t bg-background z-40"
-      aria-label="Navigation mobile"
+      aria-label="Navigation principale"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/90 backdrop-blur-md md:hidden"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      <div className="flex justify-around">
-        {groups.map((group) => {
-          const href = getGroupHref(group);
-          const isActive = isGroupActive(group);
-
-          return (
+      <ul className="flex items-stretch justify-around">
+        {tabs.map((t) => (
+          <li key={t.key} className="flex-1">
             <Link
-              key={group.key}
-              href={href}
+              href={t.href}
+              aria-current={t.active ? "page" : undefined}
               className={cn(
-                "flex-1 flex flex-col items-center justify-center py-3 px-2 text-xs font-medium transition-colors",
-                "min-h-16", // 48px minimum touch target
-                isActive
-                  ? "text-primary border-t-2 border-primary"
-                  : "text-muted-foreground hover:text-foreground"
+                "relative flex min-h-[3.25rem] flex-col items-center justify-center gap-1 px-1 pb-1.5 pt-2 text-[11px] font-medium transition-colors",
+                t.active ? "text-primary" : "text-muted-foreground hover:text-foreground",
               )}
-              aria-current={isActive ? "page" : undefined}
             >
-              <group.icon className="h-6 w-6 mb-1" />
-              <span className="truncate">{group.label}</span>
+              {t.active && (
+                <span className="absolute inset-x-4 top-0 h-0.5 rounded-full bg-primary" />
+              )}
+              <t.icon className={cn("h-[22px] w-[22px]", t.active && "stroke-[2.4]")} />
+              <span className="max-w-full truncate">{t.label}</span>
             </Link>
-          );
-        })}
-      </div>
+          </li>
+        ))}
+      </ul>
     </nav>
   );
 }
