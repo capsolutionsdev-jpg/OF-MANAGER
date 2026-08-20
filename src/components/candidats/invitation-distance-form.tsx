@@ -66,7 +66,7 @@ export function InvitationDistanceForm({
           toast.success("Invitation envoyée au candidat par e-mail.");
         } else {
           toast.warning(
-            "Inscription créée, mais l'e-mail n'a pas pu être envoyé (vérifiez la configuration e-mail). Vous pourrez renvoyer le lien depuis la fiche.",
+            `Inscription créée, mais l'e-mail n'a pas pu être envoyé. ${res.error ?? "Vérifiez la configuration e-mail."} Vous pourrez renvoyer le lien depuis la fiche.`,
           );
         }
         if (res.candidatId) router.push(`/candidats/${res.candidatId}`);
