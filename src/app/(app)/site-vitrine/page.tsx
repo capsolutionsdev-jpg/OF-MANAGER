@@ -23,7 +23,7 @@ import { VitrineTable, type VitrineRow } from "@/components/site-vitrine/vitrine
 export const metadata = { title: "Site vitrine" };
 
 // URL publique du site vitrine (lecture seule pour l'ADMIN, ouverte en onglet).
-const VITRINE_URL = "https://ofmanager.fr";
+const VITRINE_URL = "https://ofmanager.info";
 
 // Mappe l'académie (côté manager) vers la catégorie/slug d'URL du site vitrine.
 const ACADEMY_TO_CATEGORIE: Record<Academy, string> = {

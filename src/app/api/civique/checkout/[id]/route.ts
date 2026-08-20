@@ -5,7 +5,7 @@ import { civicCors, fulfillCivicCheckout } from "@/lib/civique-api";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const VITRINE_BASE = process.env.VITRINE_URL ?? "https://ofmanager.fr";
+const VITRINE_BASE = process.env.VITRINE_URL ?? "https://ofmanager.info";
 
 // GET /api/civique/checkout/:id — appelé par la page de succès du vitrine.
 // Vérifie le paiement auprès de Stripe puis exécute le fulfillment (idempotent)

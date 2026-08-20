@@ -18,20 +18,20 @@ afterEach(() => {
 
 describe("appBaseUrl() — liens publics jamais protégés", () => {
   it("utilise APP_URL propre et retire le slash final", () => {
-    process.env.APP_URL = "https://app.ofmanager.fr/";
-    expect(appBaseUrl()).toBe("https://app.ofmanager.fr");
+    process.env.APP_URL = "https://ofmanager.info/";
+    expect(appBaseUrl()).toBe("https://ofmanager.info");
   });
 
   it("REFUSE une URL *.vercel.app (mur de connexion) et retombe sur le domaine public en prod", () => {
     process.env.APP_URL = "https://ofmanager-commercial-xyz.vercel.app";
     process.env.VERCEL = "1";
-    expect(appBaseUrl()).toBe("https://app.ofmanager.fr");
+    expect(appBaseUrl()).toBe("https://ofmanager.info");
     expect(appBaseUrl()).not.toContain(".vercel.app");
   });
 
   it("sur Vercel sans URL explicite → domaine public connu", () => {
     process.env.VERCEL = "1";
-    expect(appBaseUrl()).toBe("https://app.ofmanager.fr");
+    expect(appBaseUrl()).toBe("https://ofmanager.info");
   });
 
   it("en local (hors Vercel) → localhost", () => {

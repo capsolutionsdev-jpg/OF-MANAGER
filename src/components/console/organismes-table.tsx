@@ -106,7 +106,7 @@ export function OrganismesTable({ rows, initialQuery = "" }: { rows: OrgRow[]; i
                       )}
                     </div>
                     <div className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
-                      <span>{r.sousDomaine ? `${r.sousDomaine}.ofmanager.fr` : "—"}</span>
+                      <span>{r.sousDomaine ? `${r.sousDomaine}.ofmanager.info` : "—"}</span>
                       {r.appUrl && (
                         <a
                           href={r.appUrl}

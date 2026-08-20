@@ -109,7 +109,7 @@ export function TeamCard({ editors, currentId }: { editors: Editor[]; currentId:
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Ajouter un éditeur</p>
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="space-y-1.5"><Label htmlFor="t-name">Nom</Label><Input id="t-name" name="name" placeholder="Prénom NOM" /></div>
-            <div className="space-y-1.5"><Label htmlFor="t-email">E-mail</Label><Input id="t-email" name="email" type="email" autoComplete="off" placeholder="editeur@ofmanager.fr" /></div>
+            <div className="space-y-1.5"><Label htmlFor="t-email">E-mail</Label><Input id="t-email" name="email" type="email" autoComplete="off" placeholder="editeur@ofmanager.info" /></div>
             <div className="space-y-1.5"><Label htmlFor="t-password">Mot de passe</Label><Input id="t-password" name="password" type="text" autoComplete="off" placeholder="8 caractères min." /></div>
           </div>
           <Notice state={state} okText="Compte éditeur créé." />

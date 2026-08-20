@@ -29,12 +29,12 @@ describe("parseResendEmailEvent()", () => {
   it("email.clicked → email_clic (avec lien, destinataire en chaîne)", () => {
     const evt = parseResendEmailEvent({
       type: "email.clicked",
-      data: { to: "Jean@OF.fr", click: { link: "https://app.ofmanager.fr/login" } },
+      data: { to: "Jean@OF.fr", click: { link: "https://ofmanager.info/login" } },
     });
     expect(evt).toEqual({
       type: "email_clic",
       email: "jean@of.fr", // normalisé en minuscules
-      link: "https://app.ofmanager.fr/login",
+      link: "https://ofmanager.info/login",
       subject: null,
     });
   });

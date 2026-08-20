@@ -56,10 +56,10 @@ describe("emailShell()", () => {
     const withLogo = emailShell({
       organisme: "AGUYSE",
       representant: "M. D.",
-      logoUrl: "https://app.ofmanager.fr/api/public/organisme/org1/logo",
+      logoUrl: "https://ofmanager.info/api/public/organisme/org1/logo",
       body: emailParagraph("x"),
     });
-    expect(withLogo).toContain('<img src="https://app.ofmanager.fr/api/public/organisme/org1/logo"');
+    expect(withLogo).toContain('<img src="https://ofmanager.info/api/public/organisme/org1/logo"');
     expect(withLogo).not.toContain("🎓");
   });
 });

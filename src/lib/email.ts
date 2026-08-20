@@ -48,7 +48,7 @@ type Sender = { name: string; email: string; apiKey: string | undefined };
 async function resolveSender(organismeId?: string | null): Promise<Sender> {
   const fallback: Sender = {
     name: "OFManager",
-    email: process.env.BREVO_SENDER ?? "contact@ofmanager.fr",
+    email: process.env.BREVO_SENDER ?? "contact@ofmanager.info",
     apiKey: process.env.BREVO_API_KEY,
   };
   if (!organismeId) return fallback;

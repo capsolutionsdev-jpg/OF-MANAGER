@@ -19,7 +19,7 @@ import { setArticleStatutAction } from "@/lib/actions/article-actions";
 
 export const metadata = { title: "Blog" };
 
-const VITRINE_URL = "https://ofmanager.fr";
+const VITRINE_URL = "https://ofmanager.info";
 
 const STATUT_BADGE: Record<
   VitrineStatut,

@@ -49,7 +49,7 @@ export function CreateOrganismeForm({ plans }: { plans?: Plan[] }) {
             <div className="flex items-center gap-2 rounded-md border p-3 text-sm">
               <Globe className="h-4 w-4 shrink-0 text-muted-foreground" />
               Instance accessible sur{" "}
-              <span className="font-medium">{state.sousDomaine}.ofmanager.fr</span>
+              <span className="font-medium">{state.sousDomaine}.ofmanager.info</span>
             </div>
           )}
           <Button render={<Link href={`/console/${state.id}`} />}>
@@ -97,12 +97,12 @@ export function CreateOrganismeForm({ plans }: { plans?: Plan[] }) {
                 }}
               />
               <span className="flex items-center bg-muted px-3 text-sm text-muted-foreground">
-                .ofmanager.fr
+                .ofmanager.info
               </span>
             </div>
             <p className="text-[11px] text-muted-foreground">
               Généré automatiquement depuis le nom — modifiable. L&apos;OF sera accessible sur{" "}
-              <span className="font-medium">{effectiveSub || "votre-of"}.ofmanager.fr</span>.
+              <span className="font-medium">{effectiveSub || "votre-of"}.ofmanager.info</span>.
             </p>
           </div>
 

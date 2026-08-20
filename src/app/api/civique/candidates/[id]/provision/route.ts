@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 // Rôles autorisés à provisionner un accès e-learning candidat.
 const STAFF = ["SUPERADMIN", "ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"];
-const VITRINE_BASE = process.env.VITRINE_URL ?? "https://ofmanager.fr";
+const VITRINE_BASE = process.env.VITRINE_URL ?? "https://ofmanager.info";
 
 /**
  * POST /api/civique/candidates/:id/provision

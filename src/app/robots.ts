@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/site-url";
 
-// robots.txt généré. Le domaine vient de NEXT_PUBLIC_SITE_URL (défaut ofmanager.fr) —
+// robots.txt généré. Le domaine vient de NEXT_PUBLIC_SITE_URL (défaut ofmanager.info) —
 // changer de domaine = 1 variable d'env, sans toucher au code.
 const BASE = SITE_URL;
 

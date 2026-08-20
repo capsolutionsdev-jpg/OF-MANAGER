@@ -451,7 +451,7 @@ export function EditOrganismeForm({ org, plans }: { org: OrgFormData; plans?: Pl
           <Card>
             <CardHeader className="py-3"><CardTitle className="text-sm text-muted-foreground">Communication & e-mails</CardTitle></CardHeader>
             <CardContent className="grid gap-4 sm:grid-cols-2">
-              <Field name="sousDomaine" label="Sous-domaine" value={org.sousDomaine} placeholder="mon-of" hint="mon-of.ofmanager.fr" />
+              <Field name="sousDomaine" label="Sous-domaine" value={org.sousDomaine} placeholder="mon-of" hint="mon-of.ofmanager.info" />
               <Field name="emailExpediteurNom" label="Nom expéditeur e-mail" value={org.emailExpediteurNom} />
               <Field name="emailExpediteur" label="E-mail d'envoi" value={org.emailExpediteur} placeholder="contact@mon-of.fr" />
             </CardContent>
@@ -525,7 +525,7 @@ export function EditOrganismeForm({ org, plans }: { org: OrgFormData; plans?: Pl
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="rounded-lg border p-3">
                   <div className="flex items-center gap-2 text-sm font-medium"><Server className="h-4 w-4 text-primary" /> Hébergé par OFManager (SaaS)</div>
-                  <p className="mt-1 text-xs text-muted-foreground">L&apos;OF utilise son sous-domaine <code>{org.sousDomaine || "mon-of"}.ofmanager.fr</code>. Tout est piloté ici, mises à jour incluses.</p>
+                  <p className="mt-1 text-xs text-muted-foreground">L&apos;OF utilise son sous-domaine <code>{org.sousDomaine || "mon-of"}.ofmanager.info</code>. Tout est piloté ici, mises à jour incluses.</p>
                 </div>
                 <div className="rounded-lg border p-3">
                   <div className="flex items-center gap-2 text-sm font-medium"><Download className="h-4 w-4 text-primary" /> Auto-hébergé (chez le client)</div>

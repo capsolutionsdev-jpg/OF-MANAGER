@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/site-url";
 
 // Sitemap XML des pages publiques (marketing). Domaine via NEXT_PUBLIC_SITE_URL
-// (défaut ofmanager.fr). Les espaces privés (app) sont exclus — ils redirigent
+// (défaut ofmanager.info). Les espaces privés (app) sont exclus — ils redirigent
 // vers /login et n'ont pas vocation à être indexés.
 const BASE = SITE_URL;
 

@@ -41,7 +41,7 @@ function accessUntil(days: number): Date {
   return new Date(Date.now() + Math.max(1, days) * 24 * 60 * 60 * 1000);
 }
 
-const VITRINE = process.env.VITRINE_URL ?? "https://ofmanager.fr";
+const VITRINE = process.env.VITRINE_URL ?? "https://ofmanager.info";
 const CONNEXION_URL = `${VITRINE}/cap-language-academy/examen-civique/connexion`;
 
 /**

@@ -211,7 +211,7 @@ export function generateDeploymentNotification(version: string): string {
     "- [ ] Tester sur votre appareil",
     "- [ ] Signaler tout problème",
     "",
-    "**Support**: contact@ofmanager.fr",
+    "**Support**: contact@ofmanager.info",
   ];
 
   return lines.join("\n");

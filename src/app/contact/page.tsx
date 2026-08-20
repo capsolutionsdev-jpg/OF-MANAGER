@@ -25,7 +25,7 @@ export default function ContactPage() {
           <h1 className="mt-5 text-3xl font-bold leading-tight sm:text-4xl">Parlons de votre <span className="text-[#2C53C0]">organisme</span></h1>
           <p className="mt-4 max-w-md text-slate-600">Une question, un projet, besoin d'un accompagnement ? Laissez-nous vos coordonnées — un conseiller OFManager vous recontacte rapidement.</p>
           <ul className="mt-7 space-y-3 text-sm text-slate-700">
-            <li className="flex items-center gap-2.5"><Mail className="h-4 w-4 text-[#2C53C0]" /> contact@ofmanager.fr</li>
+            <li className="flex items-center gap-2.5"><Mail className="h-4 w-4 text-[#2C53C0]" /> contact@ofmanager.info</li>
             <li className="flex items-center gap-2.5"><Phone className="h-4 w-4 text-[#2C53C0]" /> 01 23 45 67 89</li>
             <li className="flex items-center gap-2.5"><Clock className="h-4 w-4 text-[#2C53C0]" /> Réponse sous 24 h ouvrées</li>
           </ul>

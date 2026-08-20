@@ -7,7 +7,7 @@ import { civicCors } from "@/lib/civique-api";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const VITRINE_BASE = process.env.VITRINE_URL ?? "https://ofmanager.fr";
+const VITRINE_BASE = process.env.VITRINE_URL ?? "https://ofmanager.info";
 
 const MENTION_TO_DB: Record<string, CivicMention> = {
   csp: CivicMention.CSP,

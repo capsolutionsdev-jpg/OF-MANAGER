@@ -12,7 +12,7 @@ import {
 
 /**
  * Aligne le catalogue de l'organisme sur le CATALOGUE OFFICIEL de référence
- * (source ofmanager.fr) : crée/complète les 30 fiches officielles et archive
+ * (source ofmanager.info) : crée/complète les 30 fiches officielles et archive
  * (réversible) celles qui n'en font pas partie. Réservé à l'organisme de la
  * vitrine (garde côté action).
  */

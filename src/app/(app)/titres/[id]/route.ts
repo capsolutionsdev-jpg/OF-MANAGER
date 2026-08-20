@@ -75,7 +75,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   // QR de vérification (attestations) : encode l'URL publique + le numéro.
   let qrDataUri: string | null = null;
   if (def.kind === "attestation") {
-    const base = process.env.VITRINE_BASE_URL || "https://ofmanager.fr";
+    const base = process.env.VITRINE_BASE_URL || "https://ofmanager.info";
     const url = `${base}/verification?n=${encodeURIComponent(titre.numeroVerification)}`;
     qrDataUri = await QRCode.toDataURL(url, { margin: 1, width: 260 });
   }
@@ -92,7 +92,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       nda: org.nda,
       agrement: agrementPourTypeCode(titre.typeCode, readAgrements(org.documentsConfig)),
     },
-    { logoUri, signatureUri: org.signatureUrl, cachetUri: org.cachetUrl, verifUrl: "ofmanager.fr/verification", qrDataUri },
+    { logoUri, signatureUri: org.signatureUrl, cachetUri: org.cachetUrl, verifUrl: "ofmanager.info/verification", qrDataUri },
   );
 
   const pdf = await htmlToPdf(html, { landscape: true });

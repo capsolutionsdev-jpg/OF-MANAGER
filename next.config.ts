@@ -108,7 +108,7 @@ const nextConfig: NextConfig = {
       // de Server Action). Défense en profondeur (les cookies SameSite=Lax
       // atténuent déjà le CSRF cross-site).
       // TODO CAP SOLUTIONS : remplacer par le domaine réel + le slug du projet Vercel du fork.
-      allowedOrigins: ["app.ofmanager.fr", "ofmanager-commercial-*.vercel.app"],
+      allowedOrigins: ["ofmanager.info", "www.ofmanager.info", "of-manager-*.vercel.app"],
     },
   },
   async headers() {
