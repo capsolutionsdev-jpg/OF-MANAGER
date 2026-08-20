@@ -65,7 +65,7 @@ export function NouvelleInscription({
           sessions={sessions}
         />
       ) : (
-        <InvitationDistanceForm formations={formations} />
+        <InvitationDistanceForm formations={formations} sessions={sessions} />
       )}
     </div>
   );

@@ -39,6 +39,80 @@ export type ActionResult =
 export type SimpleResult = { ok: boolean; error?: string };
 
 /**
+ * Inscription « à distance » rattachée à une SESSION : crée le candidat + une
+ * inscription EN_ATTENTE à la session choisie, puis envoie le lien de parcours
+ * (le candidat complète son dossier, consulte ses documents et signe en ligne).
+ * Réservé au staff (tenant courant). `sent` = e-mail réellement transmis.
+ */
+export async function inviterInscriptionDistance(input: {
+  nom: string;
+  prenom: string;
+  email: string;
+  formationSouhaiteeId: string;
+  sessionId: string;
+}): Promise<{ ok: boolean; candidatId?: string; error?: string; sent?: boolean }> {
+  const session = await auth();
+  if (!session?.user) return { ok: false, error: "Non autorisé." };
+  const { db } = await requireStaffTenant();
+
+  const nom = input.nom?.trim();
+  const prenom = input.prenom?.trim();
+  const email = input.email?.trim().toLowerCase();
+  if (!nom || !prenom) return { ok: false, error: "Nom et prénom sont requis." };
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+    return { ok: false, error: "Adresse e-mail invalide." };
+  if (!input.formationSouhaiteeId || !input.sessionId)
+    return { ok: false, error: "Choisissez une formation et une session." };
+
+  // Formation + session doivent appartenir à l'organisme (db scopé tenant).
+  const [formation, sess] = await Promise.all([
+    db.formation.findFirst({ where: { id: input.formationSouhaiteeId }, select: { id: true } }),
+    db.session.findFirst({ where: { id: input.sessionId }, select: { id: true } }),
+  ]);
+  if (!formation || !sess)
+    return { ok: false, error: "Formation ou session introuvable." };
+
+  const candidat = await db.candidat.create({
+    data: {
+      nom,
+      prenom,
+      email,
+      formationSouhaiteeId: formation.id,
+      statut: "NOUVEAU",
+      createdById: session.user.id,
+    },
+    select: { id: true },
+  });
+  await db.auditLog.create({
+    data: {
+      userId: session.user.id,
+      action: "CREATE",
+      entityType: "Candidat",
+      entityId: candidat.id,
+    },
+  });
+
+  // Inscription EN_ATTENTE + démarrage du parcours (e-mail : compléter + signer).
+  const insc = await createInscription({
+    candidatId: candidat.id,
+    sessionId: input.sessionId,
+    financementType: "",
+    statut: InscriptionStatut.EN_ATTENTE,
+    montant: "",
+  });
+  if (!insc.ok) {
+    return { ok: true, candidatId: candidat.id, sent: false, error: insc.error };
+  }
+  const started = await startParcours(insc.inscriptionId);
+  return {
+    ok: true,
+    candidatId: candidat.id,
+    sent: started.sent,
+    error: started.ok ? undefined : started.error,
+  };
+}
+
+/**
  * Change le statut d'une inscription (Confirmer / Suspendre / Annuler).
  * Confirmer (VALIDEE) garantit le dossier apprenant, passe le candidat à
  * INSCRIT et démarre le parcours automatisé s'il ne l'est pas déjà.
