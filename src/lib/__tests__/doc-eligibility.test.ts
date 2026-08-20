@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isDocApplicable, type DocContext } from "@/lib/documents/families";
+import { isDocApplicable, PRESIGN_DOC_TYPES, type DocContext } from "@/lib/documents/families";
 
 // Éligibilité des documents selon l'inscription (particulier/entreprise, examen,
 // financement). Garde-fou : le dossier ne doit plus générer tout le catalogue.
@@ -98,6 +98,33 @@ describe("isDocApplicable — documents selon l'inscription", () => {
       expect(signesPour(ctx)).toEqual(
         expect.arrayContaining(["FICHE_INSCRIPTION", "REGLEMENT_INTERIEUR"]),
       );
+    }
+  });
+
+  // BUG GRAVE : avant signature, le candidat ne doit consulter QUE les documents
+  // contractuels (fiche, contrat XOR convention, CGV, règlement, programme) — jamais
+  // d'attestation de réussite/entrée/fin ni de certificat (la formation n'a pas eu lieu).
+  it("sous-ensemble « à consulter avant signature » : les 5 docs, jamais d'attestation", () => {
+    const presignPour = (ctx: DocContext) =>
+      PRESIGN_DOC_TYPES.filter((t) => isDocApplicable(t, ctx)).sort();
+
+    expect(presignPour(particulierExamen)).toEqual(
+      ["CONDITIONS_GENERALES", "CONTRAT_FORMATION", "FICHE_INSCRIPTION", "PROGRAMME", "REGLEMENT_INTERIEUR"].sort(),
+    );
+    expect(presignPour(entrepriseRecyclageOpco)).toEqual(
+      ["CONDITIONS_GENERALES", "CONVENTION_FORMATION", "FICHE_INSCRIPTION", "PROGRAMME", "REGLEMENT_INTERIEUR"].sort(),
+    );
+
+    // L'ensemble de consultation ne contient JAMAIS d'attestation / certificat / convocation.
+    for (const forbidden of [
+      "ATTESTATION_REUSSITE",
+      "ATTESTATION_ENTREE",
+      "ATTESTATION_FIN",
+      "CERTIFICAT_REALISATION",
+      "CONVOCATION",
+      "CONVOCATION_EXAMEN",
+    ]) {
+      expect(PRESIGN_DOC_TYPES).not.toContain(forbidden);
     }
   });
 });

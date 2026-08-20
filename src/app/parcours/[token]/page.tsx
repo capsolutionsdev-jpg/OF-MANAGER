@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { orgConfigFor } from "@/lib/org-identity";
 import { linkExpired } from "@/lib/token";
 import { formationPrereq } from "@/lib/inscription/prerequis";
+import { isB2BFinancement } from "@/lib/documents/families";
 import {
   Card,
   CardContent,
@@ -17,15 +18,6 @@ import { DossierUpload } from "@/components/parcours/dossier-upload";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
-
-// Documents contractuels que le candidat doit consulter avant de signer.
-const DOCS_CONTRACTUELS = [
-  "Fiche d'inscription",
-  "Contrat de formation",
-  "Convention de formation",
-  "Programme de la formation",
-  "Règlement intérieur",
-];
 
 function Step({
   done,
@@ -94,6 +86,22 @@ export default async function ParcoursPage({
   const prereq = formationPrereq(insc.session.formation);
   const showCnaps = !!(prereq.cnaps || prereq.carteProAlternative);
   const showSsiap = !!prereq.ssiap;
+  // Documents à consulter avant signature (mêmes 5 que le PDF `presignOnly`) :
+  // contrat (particulier) XOR convention (B2B) + CGV + règlement + programme.
+  const isB2B = isB2BFinancement({
+    formation: insc.session.formation,
+    hasEntreprise: !!insc.entrepriseId,
+    financementType: insc.financementType,
+  });
+  const docsContractuels = [
+    "Fiche d'inscription",
+    isB2B
+      ? "Convention de formation professionnelle"
+      : "Contrat de formation professionnelle",
+    "Conditions générales de vente (CGV)",
+    "Règlement intérieur",
+    "Programme de formation",
+  ];
   const formDone = !!insc.formCompletedAt;
   const docsLus = !!insc.docsLusAt;
   const signed = !!insc.signedAt;
@@ -200,7 +208,7 @@ export default async function ParcoursPage({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <DocsLire token={token} documents={DOCS_CONTRACTUELS} />
+              <DocsLire token={token} documents={docsContractuels} />
             </CardContent>
           </Card>
         )}
