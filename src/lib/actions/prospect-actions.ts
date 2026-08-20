@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { clientIpFromHeaders } from "@/lib/rate-limit";
 import { headers } from "next/headers";
-import { FinancementType } from "@prisma/client";
+import { CnapsStatut, FinancementType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireStaffTenant } from "@/lib/tenant";
 import { auth } from "@/auth";
@@ -38,6 +38,15 @@ export type ProspectFormValues = {
   sourceConnaissance: string;
   formationSouhaiteeId: string;
   financementType: string;
+  // ── Prérequis conditionnels selon la formation (sécurité privée CNAPS / SSIAP) ──
+  nationalite?: string;
+  departementNaissance?: string;
+  cnapsStatut?: string;
+  carteProNumero?: string;
+  carteProValidite?: string;
+  ssiapNiveau?: string;
+  ssiapDiplomeNumero?: string;
+  ssiapDiplomeDate?: string;
   photoDataUrl?: string; // photo d'identité (data URL JPEG compressée côté client)
   consent: boolean;
 };
@@ -172,6 +181,13 @@ export async function creerProspectEtInviter(input: {
 }
 
 const clean = (s?: string) => (s && s.trim() !== "" ? s.trim() : null);
+// Parse sûr d'une date issue d'une entrée PUBLIQUE non fiable : renvoie null si
+// vide OU invalide (un « Invalid Date » ferait planter la requête Prisma / un POST forgé).
+const toDate = (s?: string) => {
+  if (!s || !s.trim()) return null;
+  const d = new Date(s);
+  return Number.isNaN(d.getTime()) ? null : d;
+};
 
 /** Soumission publique de la fiche prospect (informations + signature dessinée). */
 export async function submitProspectForm(
@@ -218,7 +234,7 @@ export async function submitProspectForm(
     where: { id: c.id },
     data: {
       telephone: clean(v.telephone),
-      dateNaissance: v.dateNaissance ? new Date(v.dateNaissance) : null,
+      dateNaissance: toDate(v.dateNaissance),
       lieuNaissance: clean(v.lieuNaissance),
       paysNaissance: clean(v.paysNaissance),
       adresse: clean(v.adresse),
@@ -230,8 +246,25 @@ export async function submitProspectForm(
       posteOccupe: clean(v.posteOccupe),
       dernierDiplome: clean(v.dernierDiplome),
       sourceConnaissance: clean(v.sourceConnaissance),
+      nationalite: clean(v.nationalite),
+      departementNaissance: clean(v.departementNaissance),
       formationSouhaiteeId,
       financementType: finType,
+      // Sécurité privée (CNAPS) — n° stocké dans carteProNumero (autorisation OU carte
+      // pro, comme le formulaire interne). Statut validé contre l'enum (entrée publique).
+      cnapsStatut:
+        v.cnapsStatut && (Object.values(CnapsStatut) as string[]).includes(v.cnapsStatut)
+          ? (v.cnapsStatut as CnapsStatut)
+          : null,
+      carteProNumero: clean(v.carteProNumero),
+      carteProValidite: toDate(v.carteProValidite),
+      // Diplôme SSIAP détenu (recyclage / remise à niveau)
+      ssiapNiveau:
+        v.ssiapNiveau && /^[123]$/.test(v.ssiapNiveau.trim())
+          ? Number(v.ssiapNiveau.trim())
+          : null,
+      ssiapDiplomeNumero: clean(v.ssiapDiplomeNumero),
+      ssiapDiplomeDate: toDate(v.ssiapDiplomeDate),
       // Photo d'identité : uniquement si fournie et bien une image encodée
       ...(v.photoDataUrl?.startsWith("data:image/")
         ? { photoUrl: v.photoDataUrl }
