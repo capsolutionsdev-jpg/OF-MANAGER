@@ -58,17 +58,29 @@ export const DOCUMENTS: Record<string, { label: string; html: string }> = {
       "Fiche d'inscription",
       `<p>Demande d'inscription à une action de formation dispensée par {{organisme}}.</p>
       <h2>Stagiaire</h2>
+      <div style="display:flex;gap:16px;align-items:flex-start">
+        <table class="doc-table" style="flex:1">
+          <tr><td>Nom</td><td>{{nom}}</td></tr>
+          <tr><td>Prénom</td><td>{{prenom}}</td></tr>
+          <tr><td>Date de naissance</td><td>{{date_naissance}}</td></tr>
+          <tr><td>Lieu de naissance</td><td>{{lieu_naissance}}</td></tr>
+          <tr><td>Département de naissance</td><td>{{departement_naissance}}</td></tr>
+          <tr><td>Pays de naissance</td><td>{{pays_naissance}}</td></tr>
+          <tr><td>Nationalité</td><td>{{nationalite}}</td></tr>
+          <tr><td>Email</td><td>{{email}}</td></tr>
+          <tr><td>Téléphone</td><td>{{telephone}}</td></tr>
+          <tr><td>Adresse</td><td>{{adresse_candidat}}</td></tr>
+          <tr><td>Dernier diplôme obtenu</td><td>{{dernier_diplome}}</td></tr>
+        </table>
+        <div style="width:104px;flex:none;text-align:center">{{photo}}</div>
+      </div>
+      <h2>Situation professionnelle</h2>
       <table class="doc-table">
-        <tr><td>Nom</td><td>{{nom}}</td></tr>
-        <tr><td>Prénom</td><td>{{prenom}}</td></tr>
-        <tr><td>Date de naissance</td><td>{{date_naissance}}</td></tr>
-        <tr><td>Lieu de naissance</td><td>{{lieu_naissance}}</td></tr>
-        <tr><td>Pays de naissance</td><td>{{pays_naissance}}</td></tr>
-        <tr><td>Email</td><td>{{email}}</td></tr>
-        <tr><td>Téléphone</td><td>{{telephone}}</td></tr>
-        <tr><td>Adresse</td><td>{{adresse_candidat}}</td></tr>
-        <tr><td>Dernier diplôme obtenu</td><td>{{dernier_diplome}}</td></tr>
+        <tr><td>Situation</td><td>{{situation_pro}}</td></tr>
+        <tr><td>Employeur</td><td>{{employeur}}</td></tr>
+        <tr><td>Poste occupé</td><td>{{poste_occupe}}</td></tr>
       </table>
+      {{bloc_prerequis}}
       <h2>Formation</h2>
       <table class="doc-table">
         <tr><td>Intitulé</td><td>{{formation}}</td></tr>
@@ -861,6 +873,10 @@ const TRUSTED_HTML_VARS = new Set([
   "public_vise",
   "methodes_pedagogiques",
   "modalites_evaluation",
+  // Photo d'identité (<img> data URL) + bloc prérequis (HTML construit dans
+  // resolve.ts, valeurs dynamiques déjà échappées à la source).
+  "photo",
+  "bloc_prerequis",
 ]);
 
 /**
