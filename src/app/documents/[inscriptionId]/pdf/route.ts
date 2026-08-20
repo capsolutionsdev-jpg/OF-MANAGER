@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { getInscriptionDossierPdf } from "@/lib/documents/pdf-cache";
+import { buildInscriptionPdf } from "@/lib/documents/build-pdf";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -28,8 +29,16 @@ export async function GET(
     return new Response("Non autorisé", { status: 403 });
   }
 
-  const fresh = new URL(req.url).searchParams.get("fresh") === "1";
-  const pdf = await getInscriptionDossierPdf(inscriptionId, fresh);
+  const sp = new URL(req.url).searchParams;
+  const presign = sp.get("presign") === "1";
+  const fresh = sp.get("fresh") === "1";
+  // Consultation AVANT signature (?presign=1) : uniquement les documents à consulter
+  // (fiche, contrat/convention, CGV, règlement, programme) — jamais d'attestations
+  // ni de convocation. Généré à la volée (sous-ensemble), pas depuis le cache du
+  // dossier complet. Sinon : dossier complet (cache).
+  const pdf = presign
+    ? await buildInscriptionPdf(inscriptionId, { presignOnly: true, includeCertificat: false })
+    : await getInscriptionDossierPdf(inscriptionId, fresh);
   if (!pdf) return new Response("Introuvable", { status: 404 });
 
   return new Response(new Uint8Array(pdf.data), {
