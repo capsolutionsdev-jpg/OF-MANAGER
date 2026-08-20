@@ -58,7 +58,7 @@ export default async function LoginPage({
 
       <div className="relative z-10 mx-auto grid min-h-screen max-w-6xl items-center gap-10 px-6 py-12 lg:grid-cols-[1.05fr_.95fr] lg:px-14">
         {/* Marque */}
-        <div>
+        <div className="flex flex-col items-center text-center lg:block lg:text-left">
           <span className="login-in login-d1 inline-flex items-center rounded-xl bg-white px-4 py-3 shadow-[0_10px_30px_-10px_rgba(0,0,0,.5)]">
             {brand.logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -75,6 +75,8 @@ export default async function LoginPage({
             )}
           </span>
 
+          {/* Bloc marketing : desktop uniquement — sur mobile (app) on va droit au but. */}
+          <div className="hidden lg:block">
           <div className="login-in login-d2 mt-7 mb-3.5 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.24em] text-white/45">
             <span className="login-pulse" /> Espace de pilotage
           </div>
@@ -102,6 +104,7 @@ export default async function LoginPage({
               </li>
             ))}
           </ul>
+          </div>
         </div>
 
         {/* Carte de connexion (verre, contexte sombre pour le formulaire) */}

@@ -241,12 +241,12 @@ export default async function DashboardPage() {
                 Voici un aperçu de l&apos;activité de votre centre de formation.
               </p>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <Button variant="outline" size="lg" render={<Link href="/dashboard/statistiques" />}>
-                <BarChart3 className="mr-1.5 h-4 w-4" /> Statistiques
-              </Button>
-              <Button size="lg" render={<Link href="/candidats/nouveau" />}>
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
+              <Button size="lg" className="w-full sm:w-auto" render={<Link href="/candidats/nouveau" />}>
                 <Users className="mr-1.5 h-4 w-4" /> Commencer une inscription
+              </Button>
+              <Button variant="outline" size="lg" className="w-full sm:w-auto" render={<Link href="/dashboard/statistiques" />}>
+                <BarChart3 className="mr-1.5 h-4 w-4" /> Statistiques
               </Button>
               {estStaff && (
                 <ConventionDialog entreprises={entreprisesConv} sessions={conventionSessions} />
@@ -254,8 +254,8 @@ export default async function DashboardPage() {
             </div>
           </div>
 
-          {/* 4 KPI cards */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {/* 4 KPI cards — tuiles 2 colonnes sur mobile (façon widgets), 4 en desktop */}
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
             {kpis.map((s) => (
               <KpiCardV2
                 key={s.label}
