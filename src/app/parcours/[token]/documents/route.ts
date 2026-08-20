@@ -25,11 +25,13 @@ export async function GET(
   const preview = new URL(req.url).searchParams.get("preview") === "1";
 
   try {
-    // Aperçu/téléchargement : uniquement les documents à signer APPLICABLES au
-    // profil (particulier → contrat ; professionnel → convention), cf. #10.
+    // Aperçu AVANT signature (?preview=1) : uniquement les documents à consulter
+    // (fiche, contrat XOR convention selon profil, CGV, règlement, programme) —
+    // jamais d'attestations/convocations (le candidat vient de s'inscrire), cf. #10.
+    // Téléchargement (après signature) : les documents effectivement signés.
     const pdf = preview
       ? await buildInscriptionPdf(insc.id, {
-          signedOnly: true,
+          presignOnly: true,
           includeCertificat: false,
         })
       : await buildInscriptionPdf(insc.id, { signedOnly: true });

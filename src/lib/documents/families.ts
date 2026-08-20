@@ -109,6 +109,19 @@ export const SESSION_ONLY_DOCS = new Set<string>([
   "REMISE_SUPPORTS",
 ]);
 
+// Documents à CONSULTER avant signature (aperçu candidat — sur place ET à distance).
+// = documents à signer + CGV + programme. JAMAIS d'attestations / convocations /
+// certificats de réussite : le candidat vient de s'inscrire, la formation n'a pas
+// eu lieu. `isDocApplicable` choisit ensuite contrat (particulier) XOR convention (B2B).
+export const PRESIGN_DOC_TYPES = [
+  "FICHE_INSCRIPTION",
+  "CONTRAT_FORMATION",
+  "CONVENTION_FORMATION",
+  "CONDITIONS_GENERALES",
+  "REGLEMENT_INTERIEUR",
+  "PROGRAMME",
+];
+
 /**
  * Le financement fait-il de l'inscription un dossier B2B (entreprise/OPCO paie) ?
  * C'est le TYPE DE FINANCEMENT qui décide contrat (particulier) vs convention

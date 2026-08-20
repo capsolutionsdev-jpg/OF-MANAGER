@@ -85,14 +85,14 @@ export function SignerSurPlaceDialog({
             className="w-full justify-start"
             render={
               <a
-                href={`/documents/${inscriptionId}/pdf`}
+                href={`/documents/${inscriptionId}/pdf?presign=1`}
                 target="_blank"
                 rel="noopener noreferrer"
               />
             }
           >
             <FileText className="mr-2 h-4 w-4" />
-            Consulter les documents (contrat, règlement intérieur, CGV)
+            Consulter les documents à signer
             <ExternalLink className="ml-auto h-3.5 w-3.5" />
           </Button>
 
@@ -104,8 +104,9 @@ export function SignerSurPlaceDialog({
               onChange={(e) => setLu(e.target.checked)}
             />
             <span>
-              Le candidat a <b>consulté et accepté</b> le contrat de formation, le
-              règlement intérieur et les conditions générales (CGV).
+              Le candidat a <b>consulté et accepté</b> la fiche d&apos;inscription, le
+              contrat de formation, les conditions générales (CGV), le règlement
+              intérieur et le programme de formation.
             </span>
           </label>
 

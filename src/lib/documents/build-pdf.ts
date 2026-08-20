@@ -19,7 +19,7 @@ import {
 } from "@/lib/documents/signature-proof";
 import { buildCertificatPdf } from "@/lib/documents/certificat-signature";
 import { htmlToPdf, htmlToPdfMany } from "@/lib/pdf";
-import { docContextFromInscription, isDocApplicable } from "@/lib/documents/families";
+import { docContextFromInscription, isDocApplicable, PRESIGN_DOC_TYPES } from "@/lib/documents/families";
 
 // Types de documents à signer par le candidat
 export const SIGNED_DOC_TYPES = [
@@ -84,7 +84,13 @@ function safeName(s: string) {
  */
 export async function buildInscriptionPdf(
   inscriptionId: string,
-  opts?: { only?: string[]; includeCertificat?: boolean; signedOnly?: boolean },
+  opts?: {
+    only?: string[];
+    includeCertificat?: boolean;
+    signedOnly?: boolean;
+    /** Sous-ensemble « à consulter avant signature » (cf. PRESIGN_DOC_TYPES). */
+    presignOnly?: boolean;
+  },
 ): Promise<PdfResult> {
   const inscription = await prisma.inscription.findUnique({
     where: { id: inscriptionId },
@@ -143,11 +149,13 @@ export async function buildInscriptionPdf(
   //  - sinon : l'ensemble APPLICABLE à cette inscription.
   const ctx = docContextFromInscription(inscription);
   const entries = Object.entries(DOCUMENTS).filter(([type]) =>
-    opts?.signedOnly
-      ? SIGNED_DOC_TYPES.includes(type) && isDocApplicable(type, ctx)
-      : opts?.only
-        ? opts.only.includes(type)
-        : isDocApplicable(type, ctx),
+    opts?.presignOnly
+      ? PRESIGN_DOC_TYPES.includes(type) && isDocApplicable(type, ctx)
+      : opts?.signedOnly
+        ? SIGNED_DOC_TYPES.includes(type) && isDocApplicable(type, ctx)
+        : opts?.only
+          ? opts.only.includes(type)
+          : isDocApplicable(type, ctx),
   );
 
   const htmls = entries.map(([, doc]) => {
