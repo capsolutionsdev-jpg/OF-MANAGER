@@ -6,7 +6,8 @@ import { prisma } from "@/lib/prisma";
 import { getTenantDb } from "@/lib/tenant";
 import { auth } from "@/auth";
 import { generateToken, appBaseUrl } from "@/lib/token";
-import { INVITE_TTL_DAYS } from "@/lib/entreprise-invite";
+import { INVITE_TTL_DAYS, inviteTokenExpired } from "@/lib/entreprise-invite";
+import { isPasswordPwned } from "@/lib/security/password";
 import { sendEmail } from "@/lib/email";
 import { emailShell, emailParagraph, emailButton, emailHeading } from "@/lib/email-templates";
 
@@ -77,4 +78,26 @@ export async function createEntrepriseAccount(entrepriseId: string): Promise<Res
       ? undefined
       : `Compte créé, mais l'e-mail d'invitation n'a pas pu être envoyé${res.reason ? ` (${res.reason})` : ""}. L'invitation pourra être renvoyée depuis la fiche.`,
   };
+}
+
+/** Le titulaire d'un lien d'invitation valide définit son mot de passe. */
+export async function setPasswordFromInvite(token: string, password: string): Promise<Res> {
+  if (!password || password.length < 8)
+    return { ok: false, error: "Mot de passe : 8 caractères minimum." };
+  if (await isPasswordPwned(password))
+    return { ok: false, error: "Ce mot de passe figure dans une fuite connue — choisissez-en un autre." };
+
+  const user = await prisma.user.findUnique({
+    where: { inviteToken: token },
+    select: { id: true, inviteTokenExpiry: true },
+  });
+  if (!user || inviteTokenExpired(user.inviteTokenExpiry))
+    return { ok: false, error: "Lien invalide ou expiré. Demandez un nouvel accès à votre organisme." };
+
+  const passwordHash = await bcrypt.hash(password, 12);
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { passwordHash, isActive: true, inviteToken: null, inviteTokenExpiry: null },
+  });
+  return { ok: true };
 }
