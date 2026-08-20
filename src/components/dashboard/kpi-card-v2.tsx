@@ -111,14 +111,14 @@ export function KpiCardV2({
     : "text-success";
 
   return (
-    <div className="group relative flex flex-col justify-between rounded-2xl border border-border bg-card p-5 transition-shadow hover:shadow-md">
+    <div className="group relative flex flex-col justify-between rounded-2xl border border-border bg-card p-4 transition-shadow hover:shadow-md sm:p-5">
       <div className="flex items-start justify-between gap-3">
-        <div className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-xl", s.bg)}>
+        <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-xl sm:h-11 sm:w-11", s.bg)}>
           <Icon className={cn("h-5 w-5", s.text)} />
         </div>
         <div className="min-w-0 flex-1 text-right">
           <p className="text-sm font-medium text-muted-foreground">{label}</p>
-          <p className="mt-0.5 font-mono text-3xl font-bold tracking-tight tabular-nums text-foreground">
+          <p className="mt-0.5 font-mono text-2xl font-bold tracking-tight tabular-nums text-foreground sm:text-3xl">
             {typeof value === "number" ? <AnimatedNumber value={value} /> : value}
           </p>
         </div>
