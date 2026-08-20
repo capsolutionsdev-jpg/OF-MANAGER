@@ -110,7 +110,7 @@ export default async function EmargementSallePage({
       <div className="mx-auto w-full max-w-md space-y-6">
         <div className="flex flex-col items-center text-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={org.logoUrl ?? "/cap-competences-logo.png"} alt={org.name} className="mb-3 h-12 w-auto object-contain" />
+          <img src={org.logoUrl ?? "/ofmanager-logo.png"} alt={org.name} className="mb-3 h-12 w-auto object-contain" />
           <h1 className="text-xl font-bold">Émargement de la journée</h1>
           <p className="text-sm text-muted-foreground">{sess.formation.titre}</p>
           <p className="mt-1 text-sm font-medium capitalize">{dayLabel}</p>

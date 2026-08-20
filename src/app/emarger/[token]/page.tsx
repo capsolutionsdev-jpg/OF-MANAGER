@@ -46,7 +46,7 @@ export default async function EmargerPage({
         <div className="flex flex-col items-center text-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={org.logoUrl ?? "/cap-competences-logo.png"}
+            src={org.logoUrl ?? "/ofmanager-logo.png"}
             alt={org.name}
             className="mb-3 h-12 w-auto object-contain"
           />

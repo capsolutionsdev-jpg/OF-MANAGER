@@ -47,8 +47,8 @@ type Sender = { name: string; email: string; apiKey: string | undefined };
 /** Résout l'expéditeur Brevo : config de l'OF si fournie, sinon globale. */
 async function resolveSender(organismeId?: string | null): Promise<Sender> {
   const fallback: Sender = {
-    name: "CAP Compétences",
-    email: process.env.BREVO_SENDER ?? "contact@cap-competences.fr",
+    name: "OFManager",
+    email: process.env.BREVO_SENDER ?? "contact@ofmanager.fr",
     apiKey: process.env.BREVO_API_KEY,
   };
   if (!organismeId) return fallback;

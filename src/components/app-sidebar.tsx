@@ -189,7 +189,7 @@ export function SidebarBrand({
         </span>
       ) : (
         <span className="rail-label font-heading text-[15px] font-semibold tracking-tight text-[#eaf0ff]">
-          {brand?.nom ?? "CAP Compétences"}
+          {brand?.nom ?? "OFManager"}
         </span>
       )}
       <span className="rail-label ml-auto rounded bg-[#1f2d47] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[#a8b9d1]">

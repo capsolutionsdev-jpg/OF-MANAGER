@@ -8,14 +8,14 @@ import { getCurrentOrganisme } from "@/lib/org";
 import catalogue from "@/lib/data/catalogue-officiel.json";
 
 /**
- * Import du CATALOGUE OFFICIEL de CAP Compétences (source : capacademy.fr, exact
- * et conforme Qualiopi). Contrairement à `importerCatalogueSecurite` (bibliothèque
- * générique, non destructive), cette action est SPÉCIFIQUE à CAP :
+ * Import du CATALOGUE OFFICIEL de référence (exact et conforme Qualiopi).
+ * Contrairement à `importerCatalogueSecurite` (bibliothèque générique, non
+ * destructive), cette action est SPÉCIFIQUE à l'organisme de la vitrine :
  *  - crée/complète les 30 formations officielles (Sécurité + Transport) ;
  *  - MET À JOUR les fiches existantes avec les données officielles (le tarif et le
  *    numéro d'agrément propres à l'organisme ne sont pas touchés) ;
  *  - ARCHIVE (réversible, ne supprime pas) les formations hors catalogue officiel.
- * Réservée à l'ADMIN et au tenant CAP (garde `VITRINE_ORGANISME_ID`).
+ * Réservée à l'ADMIN et au tenant de la vitrine (garde `VITRINE_ORGANISME_ID`).
  */
 
 export type ImportOfficielRapport = {
@@ -81,10 +81,10 @@ export async function importerCatalogueOfficiel(): Promise<ImportOfficielRapport
   const org = await getCurrentOrganisme();
   if (!org) return { ...vide, error: "Organisme introuvable." };
 
-  // Garde tenant : ce catalogue est propre à CAP Compétences.
-  const capId = process.env.VITRINE_ORGANISME_ID;
-  if (capId && org.id !== capId) {
-    return { ...vide, error: "Le catalogue officiel n'est disponible que pour CAP Compétences." };
+  // Garde tenant : ce catalogue est propre à l'organisme de la vitrine.
+  const vitrineId = process.env.VITRINE_ORGANISME_ID;
+  if (vitrineId && org.id !== vitrineId) {
+    return { ...vide, error: "Le catalogue officiel est réservé à l'organisme de la vitrine." };
   }
 
   const db = await getTenantDb();

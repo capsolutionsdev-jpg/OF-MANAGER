@@ -49,7 +49,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: "OFManager — Logiciel des organismes de formation",
   description:
-    "OFManager : le logiciel des organismes de formation (sécurité privée, incendie, secourisme, prévention) — conforme Qualiopi, à votre marque. Édité par CAP Compétences.",
+    "OFManager : le logiciel des organismes de formation (sécurité privée, incendie, secourisme, prévention) — conforme Qualiopi, à votre marque. Édité par CAP SOLUTIONS.",
   applicationName: "OFManager",
   // PWA : rend l'app « app-like » sur iOS (Safari « Ajouter à l'écran d'accueil »).
   // Le manifeste (app/manifest.ts) couvre Android / desktop.

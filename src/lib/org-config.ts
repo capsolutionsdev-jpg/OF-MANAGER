@@ -1,15 +1,16 @@
-// Informations légales de l'organisme de formation — utilisées dans les
-// documents générés (convention, contrat, attestations…).
-// À ajuster avec les informations officielles de l'organisme.
+// Identité de repli de l'organisme de formation, utilisée UNIQUEMENT quand un
+// enregistrement n'a pas d'organisme rattaché. Produit multi-tenant : chaque
+// client renseigne sa propre identité (modèle Organisme). Éditeur : CAP SOLUTIONS.
+// TODO CAP SOLUTIONS : compléter avec les informations officielles (Kbis à venir).
 export const orgConfig = {
-  name: "CAP Compétences",
-  representant: "Moussa HAMOUMI",
-  siret: "991 407 198 00019",
-  nda: "11 93 12064 93",
-  adresse: "145 rue de Noisy-le-Sec, 93260 Les Lilas",
-  email: "infocap.comp@gmail.com",
-  telephone: "+33 6 26 42 63 25",
-  ville: "Les Lilas",
-  certificateur: "Up&Co'm Certification — Webmarketing & co'm",
-  qualiopi: "Certifié Qualiopi (Actions de formation)",
+  name: "CAP SOLUTIONS",
+  representant: "[À COMPLÉTER]",
+  siret: "[À COMPLÉTER — Kbis]",
+  nda: "[À COMPLÉTER]",
+  adresse: "[À COMPLÉTER]",
+  email: "[À COMPLÉTER]",
+  telephone: "[À COMPLÉTER]",
+  ville: "[À COMPLÉTER]",
+  certificateur: "",
+  qualiopi: "",
 };

@@ -53,7 +53,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   // Logo : préférence à celui de l'organisme, repli sur l'asset public.
   let logoUri = org.logoUrl ?? "";
   if (!logoUri) {
-    const buf = await fs.readFile(path.join(process.cwd(), "public", "cap-competences-logo.png"));
+    const buf = await fs.readFile(path.join(process.cwd(), "public", "ofmanager-logo.png"));
     logoUri = `data:image/png;base64,${buf.toString("base64")}`;
   }
 

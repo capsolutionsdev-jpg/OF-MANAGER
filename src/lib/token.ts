@@ -72,7 +72,9 @@ export function expiringTokenExpired(
 /** Domaine public de la plateforme (liens de signature/inscription envoyés par
  * e-mail). Les URL Vercel (`*.vercel.app`) sont protégées par un mur de connexion
  * Vercel → JAMAIS utilisées pour ces liens publics. */
-const DEFAULT_PUBLIC_URL = "https://app.capacademy.fr";
+// TODO CAP SOLUTIONS : domaine commercial définitif (repli utilisé seulement si
+// APP_URL / AUTH_URL / NEXTAUTH_URL ne sont pas définis en prod).
+const DEFAULT_PUBLIC_URL = "https://app.ofmanager.fr";
 
 /** URL de base de l'application (pour les liens envoyés par e-mail).
  * Priorité : APP_URL / AUTH_URL / NEXTAUTH_URL (le vrai domaine public). En prod

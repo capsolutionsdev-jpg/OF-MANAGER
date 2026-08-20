@@ -87,7 +87,7 @@ export default async function TraficPage() {
         </Link>
         <PageHeader
           title="Trafic du site vitrine"
-          subtitle="Fréquentation de capacademy.fr — mesure privacy-first, sans cookie ni donnée personnelle."
+          subtitle="Fréquentation de votre site vitrine — mesure privacy-first, sans cookie ni donnée personnelle."
         />
       </div>
 

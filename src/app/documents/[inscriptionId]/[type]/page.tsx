@@ -5,6 +5,7 @@ import { getTenantDb } from "@/lib/tenant";
 import {
   DOCUMENTS,
   EMPTY_IMAGE,
+  STAMP_PLACEHOLDER,
   isDocType,
   renderTemplate,
 } from "@/lib/documents/templates";
@@ -38,9 +39,9 @@ export default async function DocumentPage({
   const org = await orgConfigFor(inscription.organismeId);
   const vars = buildVariables(inscription, org);
   const html = renderTemplate(DOCUMENTS[type].html, vars)
-    .split("/cap-competences-logo.png")
-    .join(org.logoUrl ?? "/cap-competences-logo.png")
-    .split("/signature-cap-competences.png")
+    .split("/ofmanager-logo.png")
+    .join(org.logoUrl ?? "/ofmanager-logo.png")
+    .split(STAMP_PLACEHOLDER)
     .join(org.cachetUrl ?? EMPTY_IMAGE);
 
   // Document fourni par l'OF (remplace notre modèle pour les docs réglementaires)

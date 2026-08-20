@@ -67,7 +67,7 @@ export default function PartenairesPage() {
         </div>
       </section>
 
-      <footer className="bg-[#221F19] py-8 text-center text-xs text-[#9fb0d0]">© 2026 OFManager — une solution <strong className="text-white">CAP Compétences</strong>.</footer>
+      <footer className="bg-[#221F19] py-8 text-center text-xs text-[#9fb0d0]">© 2026 OFManager — une solution <strong className="text-white">CAP SOLUTIONS</strong>.</footer>
     </main>
   );
 }

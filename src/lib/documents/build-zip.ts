@@ -3,7 +3,7 @@ import path from "node:path";
 import JSZip from "jszip";
 import HTMLtoDOCX from "@turbodocx/html-to-docx";
 import { prisma } from "@/lib/prisma";
-import { DOCUMENTS, EMPTY_IMAGE, renderTemplate } from "@/lib/documents/templates";
+import { DOCUMENTS, EMPTY_IMAGE, STAMP_PLACEHOLDER, renderTemplate } from "@/lib/documents/templates";
 import { buildVariables } from "@/lib/documents/resolve";
 import { docContextFromInscription, isDocApplicable } from "@/lib/documents/families";
 import { orgConfigFor } from "@/lib/org-identity";
@@ -73,14 +73,14 @@ export async function buildInscriptionDocsZip(
 
   // Images encodées en base64 (html-to-docx ne charge pas les URL).
   const pub = path.join(process.cwd(), "public");
-  const logoBuf = await fs.readFile(path.join(pub, "cap-competences-logo.png"));
+  const logoBuf = await fs.readFile(path.join(pub, "ofmanager-logo.png"));
   const logo64 = org.logoUrl ?? `data:image/png;base64,${logoBuf.toString("base64")}`;
-  // Cachet/signature = UNIQUEMENT celui du tenant. Jamais l'asset CAP (marque blanche).
+  // Cachet/signature = UNIQUEMENT celui du tenant. Jamais d'asset de marque (marque blanche).
   const stamp64 = org.cachetUrl ?? EMPTY_IMAGE;
   const inlineImages = (html: string) =>
     html
-      .split("/cap-competences-logo.png").join(logo64)
-      .split("/signature-cap-competences.png").join(stamp64);
+      .split("/ofmanager-logo.png").join(logo64)
+      .split(STAMP_PLACEHOLDER).join(stamp64);
 
   const zip = new JSZip();
   const safeName = (vars.nom_complet || "candidat")

@@ -30,7 +30,7 @@ export default function ContactPage() {
             <li className="flex items-center gap-2.5"><Clock className="h-4 w-4 text-[#2C53C0]" /> Réponse sous 24 h ouvrées</li>
           </ul>
           <p className="mt-8 flex items-center gap-2 text-xs text-slate-400">
-            <Image src="/ofmanager-logo.png" alt="" width={20} height={20} className="h-4 w-auto opacity-70" /> Une solution éditée par <span className="font-semibold text-slate-500">CAP Compétences</span>
+            <Image src="/ofmanager-logo.png" alt="" width={20} height={20} className="h-4 w-auto opacity-70" /> Une solution éditée par <span className="font-semibold text-slate-500">CAP SOLUTIONS</span>
           </p>
         </div>
         <ContactForm />

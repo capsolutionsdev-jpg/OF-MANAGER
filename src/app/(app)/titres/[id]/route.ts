@@ -53,7 +53,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
   let logoUri = org.logoUrl ?? "";
   if (!logoUri) {
-    const buf = await fs.readFile(path.join(process.cwd(), "public", "cap-competences-logo.png"));
+    const buf = await fs.readFile(path.join(process.cwd(), "public", "ofmanager-logo.png"));
     logoUri = `data:image/png;base64,${buf.toString("base64")}`;
   }
 
@@ -75,7 +75,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   // QR de vérification (attestations) : encode l'URL publique + le numéro.
   let qrDataUri: string | null = null;
   if (def.kind === "attestation") {
-    const base = process.env.VITRINE_BASE_URL || "https://capacademy.fr";
+    const base = process.env.VITRINE_BASE_URL || "https://ofmanager.fr";
     const url = `${base}/verification?n=${encodeURIComponent(titre.numeroVerification)}`;
     qrDataUri = await QRCode.toDataURL(url, { margin: 1, width: 260 });
   }
@@ -92,7 +92,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       nda: org.nda,
       agrement: agrementPourTypeCode(titre.typeCode, readAgrements(org.documentsConfig)),
     },
-    { logoUri, signatureUri: org.signatureUrl, cachetUri: org.cachetUrl, verifUrl: "capacademy.fr/verification", qrDataUri },
+    { logoUri, signatureUri: org.signatureUrl, cachetUri: org.cachetUrl, verifUrl: "ofmanager.fr/verification", qrDataUri },
   );
 
   const pdf = await htmlToPdf(html, { landscape: true });

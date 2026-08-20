@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 
 export const metadata: Metadata = {
-  title: "Inscription — CAP Compétences",
+  title: "Inscription — OFManager",
   description: "Formulaire d'inscription à nos formations.",
 };
 
@@ -39,7 +39,7 @@ export default async function PublicInscriptionPage() {
           <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground">
             <GraduationCap className="h-6 w-6" />
           </div>
-          <h1 className="text-xl font-bold">CAP Compétences</h1>
+          <h1 className="text-xl font-bold">OFManager</h1>
           <p className="text-sm text-muted-foreground">
             Organisme de formation certifié Qualiopi
           </p>

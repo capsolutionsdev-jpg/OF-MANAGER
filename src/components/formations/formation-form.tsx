@@ -169,7 +169,7 @@ export function FormationForm({
             <Input id="tarif" type="number" step="0.01" placeholder="1500" {...register("tarif")} />
           </div>
           <div className="grid gap-2 sm:col-span-2">
-            <Label htmlFor="vitrineStatut">Site vitrine (capacademy.fr)</Label>
+            <Label htmlFor="vitrineStatut">Site vitrine</Label>
             <select id="vitrineStatut" className={selectClass} {...register("vitrineStatut")}>
               {Object.entries(VITRINE_STATUT_LABELS).map(([v, l]) => (
                 <option key={v} value={v}>

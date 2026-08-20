@@ -19,7 +19,7 @@ import { setArticleStatutAction } from "@/lib/actions/article-actions";
 
 export const metadata = { title: "Blog" };
 
-const VITRINE_URL = "https://capacademy.fr";
+const VITRINE_URL = "https://ofmanager.fr";
 
 const STATUT_BADGE: Record<
   VitrineStatut,
@@ -51,7 +51,7 @@ export default async function BlogPage() {
     <div className="space-y-6">
       <PageHeader
         title="Blog"
-        subtitle={`${articles.length} article${articles.length > 1 ? "s" : ""} — ${nbPubli} en ligne sur capacademy.fr. Les publications apparaissent sur le site sous ~5 min.`}
+        subtitle={`${articles.length} article${articles.length > 1 ? "s" : ""} — ${nbPubli} en ligne sur votre site vitrine. Les publications apparaissent sur le site sous ~5 min.`}
       >
         <Button
           variant="outline"

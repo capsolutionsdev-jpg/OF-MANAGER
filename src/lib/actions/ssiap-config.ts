@@ -16,7 +16,7 @@ const SSIAP_CONFIG = {
 };
 
 /**
- * Met à jour la config SSIAP des formations CAP Compétences.
+ * Met à jour la config SSIAP des formations de l'organisme de la vitrine.
  * À exécuter une fois au déploiement pour synchroniser l'état.
  */
 export async function configureSsiapFormations() {
@@ -25,12 +25,15 @@ export async function configureSsiapFormations() {
   // invocable sans authentification (constat d'audit §3.3).
   await requireSuperAdmin();
 
-  const CAP_ID = process.env.VITRINE_ORGANISME_ID || "cmqc20ql20000uv5wlclphbg8";
+  const VITRINE_ID = process.env.VITRINE_ORGANISME_ID;
+  // Sans organisme de vitrine défini, on ne cible aucun tenant (évite un
+  // updateMany qui, avec organismeId=undefined, s'appliquerait à TOUS les tenants).
+  if (!VITRINE_ID) return [];
   const results = [];
 
   for (const [ref, config] of Object.entries(SSIAP_CONFIG)) {
     const updated = await prisma.formation.updateMany({
-      where: { reference: ref, organismeId: CAP_ID },
+      where: { reference: ref, organismeId: VITRINE_ID },
       data: {
         nbJury: config.nbJury,
         grilleInrs: config.grilleInrs,

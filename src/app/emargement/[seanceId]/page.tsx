@@ -102,7 +102,7 @@ export default async function FeuilleEmargementPage({
           <div className="doc-header">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={org.logoUrl ?? "/cap-competences-logo.png"}
+              src={org.logoUrl ?? "/ofmanager-logo.png"}
               alt={org.name}
               className="doc-logo"
             />

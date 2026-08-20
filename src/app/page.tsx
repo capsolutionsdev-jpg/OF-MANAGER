@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   title:
     "OFManager — Logiciel de gestion pour organismes de formation | Sécurité privée & VTC-Taxi",
   description:
-    "OFManager : le logiciel des organismes de formation en sécurité privée (TFP APS, SSIAP, SST) et VTC/Taxi (examen T3P, RS 5635/5637). Génère 95 % de vos documents, prépare vos audits Qualiopi et sécurise vos données (RGPD, hébergement France). Édité par CAP Compétences.",
+    "OFManager : le logiciel des organismes de formation en sécurité privée (TFP APS, SSIAP, SST) et VTC/Taxi (examen T3P, RS 5635/5637). Génère 95 % de vos documents, prépare vos audits Qualiopi et sécurise vos données (RGPD, hébergement France). Édité par CAP SOLUTIONS.",
   keywords: [
     "logiciel organisme de formation",
     "logiciel OF",
@@ -386,7 +386,7 @@ export default async function HomePage() {
         url: base,
         logo: `${base}/ofmanager-logo.png`,
         description:
-          "Logiciel de gestion des organismes de formation en sécurité privée (APS, SSIAP, SST…) et VTC/Taxi (examen T3P) — conforme Qualiopi. Édité par CAP Compétences.",
+          "Logiciel de gestion des organismes de formation en sécurité privée (APS, SSIAP, SST…) et VTC/Taxi (examen T3P) — conforme Qualiopi. Édité par CAP SOLUTIONS.",
       },
       {
         "@type": "WebSite",
@@ -884,7 +884,7 @@ export default async function HomePage() {
             <div>
               <Image src="/ofmanager-logo.png" alt="OFManager" width={150} height={48} className="h-9 w-auto" style={{ marginBottom: "10px" }} />
               <p style={{ maxWidth: "280px" }}>Le logiciel des organismes de formation réglementés : sécurité privée &amp; VTC/Taxi.</p>
-              <p>Édité par <b style={{ color: "#fff" }}>CAP Compétences</b></p>
+              <p>Édité par <b style={{ color: "#fff" }}>CAP SOLUTIONS</b></p>
             </div>
             <div>
               <h4>Produit</h4>
@@ -909,7 +909,7 @@ export default async function HomePage() {
               <a href="#">RGPD</a>
             </div>
           </div>
-          <div className="foot-bottom">© 2026 OFManager — une solution CAP Compétences. Tous droits réservés.</div>
+          <div className="foot-bottom">© 2026 OFManager — une solution CAP SOLUTIONS. Tous droits réservés.</div>
         </div>
       </footer>
     </main>

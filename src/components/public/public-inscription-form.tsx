@@ -414,8 +414,8 @@ export function PublicInscriptionForm({
           {...register("consentement")}
         />
         <span>
-          J&apos;accepte que mes données soient traitées par CAP Compétences dans
-          le cadre de ma demande d&apos;inscription (RGPD). *
+          J&apos;accepte que mes données soient traitées par l&apos;organisme de
+          formation dans le cadre de ma demande d&apos;inscription (RGPD). *
         </span>
       </label>
       <ErrorText msg={errors.consentement?.message} />

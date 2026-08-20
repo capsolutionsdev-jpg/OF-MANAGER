@@ -141,7 +141,7 @@ export default async function FeuilleEmargementSessionPage({
         <div key={page} className="emarge-sheet emarge-page mx-auto bg-white p-6 text-black shadow-sm">
           <div className="mb-4 flex items-center gap-4 border-b pb-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={org.logoUrl ?? "/cap-competences-logo.png"} alt={org.name} className="h-14 w-auto" />
+            <img src={org.logoUrl ?? "/ofmanager-logo.png"} alt={org.name} className="h-14 w-auto" />
             <div className="text-[11px] leading-snug">
               <strong className="text-sm">{org.name}</strong> — {org.qualiopi}
               <br />

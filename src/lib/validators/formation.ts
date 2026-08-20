@@ -114,10 +114,10 @@ export const MODALITE_LABELS: Record<Modalite, string> = {
 };
 
 export const ACADEMY_LABELS: Record<Academy, string> = {
-  DIGITAL: "CAP Digital Academy",
-  SAFETY: "CAP Safety Academy",
-  TRANSPORT: "CAP Transport Academy",
-  LANGUE: "CAP Language Academy",
+  DIGITAL: "Digital",
+  SAFETY: "Sécurité",
+  TRANSPORT: "Transport",
+  LANGUE: "Langues",
 };
 
 export const ACADEMY_ORDER: Academy[] = ["DIGITAL", "SAFETY", "TRANSPORT", "LANGUE"];

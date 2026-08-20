@@ -107,7 +107,8 @@ const nextConfig: NextConfig = {
       // tout *.vercel.app, qui autoriserait un déploiement tiers comme origine
       // de Server Action). Défense en profondeur (les cookies SameSite=Lax
       // atténuent déjà le CSRF cross-site).
-      allowedOrigins: ["app.capacademy.fr", "cap-competence-manager-*.vercel.app"],
+      // TODO CAP SOLUTIONS : remplacer par le domaine réel + le slug du projet Vercel du fork.
+      allowedOrigins: ["app.ofmanager.fr", "ofmanager-commercial-*.vercel.app"],
     },
   },
   async headers() {

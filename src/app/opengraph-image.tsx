@@ -111,7 +111,7 @@ export default function OgImage() {
             RGPD · Hébergement France
           </div>
           <div style={{ display: "flex", marginLeft: "auto", color: "#8fa0c6" }}>
-            Édité par CAP Compétences
+            Édité par CAP SOLUTIONS
           </div>
         </div>
       </div>

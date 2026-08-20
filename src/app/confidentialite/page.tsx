@@ -36,9 +36,10 @@ export default async function ConfidentialitePage() {
       <div className="mt-8 space-y-8 text-sm leading-relaxed text-foreground/90">
         <section>
           <h2 className="text-lg font-semibold text-foreground">1. Responsable du traitement</h2>
+          {/* TODO CAP SOLUTIONS: revoir mentions légales avec le Kbis */}
           <p className="mt-2">
             {nom} est un logiciel de gestion destiné aux organismes de formation, édité par
-            CAP Compétences. Chaque organisme de formation utilisant {nom} est responsable des
+            CAP SOLUTIONS. Chaque organisme de formation utilisant {nom} est responsable des
             données de ses propres candidats, apprenants et clients ; l&apos;éditeur agit en tant
             que sous-traitant au sens du RGPD, dans le cadre d&apos;un contrat de sous-traitance.
           </p>

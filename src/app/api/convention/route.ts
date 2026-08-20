@@ -3,7 +3,7 @@ import path from "node:path";
 import { PDFDocument } from "pdf-lib";
 import { auth } from "@/auth";
 import { getTenantDb } from "@/lib/tenant";
-import { DOCUMENTS, EMPTY_IMAGE, renderTemplate } from "@/lib/documents/templates";
+import { DOCUMENTS, EMPTY_IMAGE, STAMP_PLACEHOLDER, renderTemplate } from "@/lib/documents/templates";
 import { htmlToPdf } from "@/lib/pdf";
 import { orgConfigFor } from "@/lib/org-identity";
 import { FINANCEMENT_LABELS } from "@/lib/validators/candidat";
@@ -118,14 +118,14 @@ export async function POST(req: Request) {
 
   // Images de l'organisme en base64
   const pub = path.join(process.cwd(), "public");
-  const logoBuf = await fs.readFile(path.join(pub, "cap-competences-logo.png"));
+  const logoBuf = await fs.readFile(path.join(pub, "ofmanager-logo.png"));
   const logo64 = org.logoUrl ?? `data:image/png;base64,${logoBuf.toString("base64")}`;
-  // Cachet/signature = UNIQUEMENT celui du tenant. Jamais l'asset CAP (marque blanche).
+  // Cachet/signature = UNIQUEMENT celui du tenant. Jamais d'asset de marque (marque blanche).
   const stamp64 = org.cachetUrl ?? EMPTY_IMAGE;
   const inline = (html: string) =>
     html
-      .split("/cap-competences-logo.png").join(logo64)
-      .split("/signature-cap-competences.png").join(stamp64);
+      .split("/ofmanager-logo.png").join(logo64)
+      .split(STAMP_PLACEHOLDER).join(stamp64);
 
   const tpl = DOCUMENTS["CONVENTION_ENTREPRISE"].html;
 

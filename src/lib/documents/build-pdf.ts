@@ -4,6 +4,7 @@ import { nbJoursFormateur, parseAnimation } from "@/lib/formateurs/animation";
 import {
   DOCUMENTS,
   EMPTY_IMAGE,
+  STAMP_PLACEHOLDER,
   renderTemplate,
   compteRenduFormateurHtml,
   contratFormateurHtml,
@@ -137,8 +138,8 @@ export async function buildInscriptionPdf(
   const stamp64 = org.cachetUrl ?? EMPTY_IMAGE;
   const inlineImages = (html: string) =>
     html
-      .split("/cap-competences-logo.png").join(logo64)
-      .split("/signature-cap-competences.png").join(stamp64);
+      .split("/ofmanager-logo.png").join(logo64)
+      .split(STAMP_PLACEHOLDER).join(stamp64);
 
   // Sélection des documents :
   //  - signedOnly : le sous-ensemble « documents à signer » (fiche, règlement,
@@ -262,7 +263,7 @@ export async function buildSatisfactionPdf(
     <p class="mt">Fait le ${new Date().toLocaleDateString("fr-FR")}.</p>
     <div class="doc-signatures">
       <div><div class="sig-label">Signature du stagiaire — ${esc(i.candidat.prenom)} ${esc(i.candidat.nom)}</div><div class="sig-box">${sig}</div></div>
-      <div><div class="sig-label">Cachet de l'organisme</div><div class="sig-box"><img src="/signature-cap-competences.png" class="doc-stamp" alt="Cachet" /></div></div>
+      <div><div class="sig-label">Cachet de l'organisme</div><div class="sig-box"><img src="${STAMP_PLACEHOLDER}" class="doc-stamp" alt="Cachet" /></div></div>
     </div>`;
 
   // Logo = UNIQUEMENT celui du tenant (org.logoUrl). Jamais de repli sur l'asset
@@ -274,8 +275,8 @@ export async function buildSatisfactionPdf(
   // documents. Vide tant que le tenant ne l'a pas chargé (console superadmin).
   const stamp64 = org.cachetUrl ?? EMPTY_IMAGE;
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8" />${DOC_STYLE}</head><body>${inner}</body></html>`
-    .split("/cap-competences-logo.png").join(logo64)
-    .split("/signature-cap-competences.png").join(stamp64);
+    .split("/ofmanager-logo.png").join(logo64)
+    .split(STAMP_PLACEHOLDER).join(stamp64);
 
   const data = await htmlToPdf(html);
   return {
@@ -367,8 +368,8 @@ export async function buildContratFormateurPdf(
   // documents. Vide tant que le tenant ne l'a pas chargé (console superadmin).
   const stamp64 = org.cachetUrl ?? EMPTY_IMAGE;
   const inner = renderTemplate(contratFormateurHtml(), vars)
-    .split("/cap-competences-logo.png").join(logo64)
-    .split("/signature-cap-competences.png").join(stamp64);
+    .split("/ofmanager-logo.png").join(logo64)
+    .split(STAMP_PLACEHOLDER).join(stamp64);
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8" />${DOC_STYLE}</head><body>${inner}</body></html>`;
   const data = await htmlToPdf(html);
   return {
@@ -428,8 +429,8 @@ export async function buildCompteRenduPdf(
   // documents. Vide tant que le tenant ne l'a pas chargé (console superadmin).
   const stamp64 = org.cachetUrl ?? EMPTY_IMAGE;
   const inner = renderTemplate(compteRenduFormateurHtml(), vars)
-    .split("/cap-competences-logo.png").join(logo64)
-    .split("/signature-cap-competences.png").join(stamp64);
+    .split("/ofmanager-logo.png").join(logo64)
+    .split(STAMP_PLACEHOLDER).join(stamp64);
 
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8" />${DOC_STYLE}</head><body>${inner}</body></html>`;
   const data = await htmlToPdf(html);

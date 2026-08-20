@@ -23,7 +23,7 @@ import { VitrineTable, type VitrineRow } from "@/components/site-vitrine/vitrine
 export const metadata = { title: "Site vitrine" };
 
 // URL publique du site vitrine (lecture seule pour l'ADMIN, ouverte en onglet).
-const VITRINE_URL = "https://capacademy.fr";
+const VITRINE_URL = "https://ofmanager.fr";
 
 // Mappe l'académie (côté manager) vers la catégorie/slug d'URL du site vitrine.
 const ACADEMY_TO_CATEGORIE: Record<Academy, string> = {
@@ -125,7 +125,7 @@ export default async function SiteVitrinePage() {
     <div className="space-y-6">
       <PageHeader
         title="Site vitrine"
-        subtitle="Pilotez ce qui s'affiche sur capacademy.fr : publication, tarif et durée de chaque formation. Les changements apparaissent sur le site public sous ~5 min."
+        subtitle="Pilotez ce qui s'affiche sur votre site vitrine : publication, tarif et durée de chaque formation. Les changements apparaissent sur le site public sous ~5 min."
       >
         {canBlog && (
           <Button variant="outline" render={<Link href="/blog" />}>

@@ -56,7 +56,7 @@ export function ArticleForm({
       slug: "",
       extrait: "",
       contenu: "",
-      auteur: "L'équipe CAP Compétences",
+      auteur: "L'équipe OFManager",
       categorie: "",
       imageUrl: "",
       imageAlt: "",

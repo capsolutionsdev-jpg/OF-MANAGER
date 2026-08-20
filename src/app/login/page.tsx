@@ -9,7 +9,7 @@ import { designVars, getDesign } from "@/lib/themes";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
-  title: "Connexion — CAP Compétence Manager",
+  title: "Connexion — OFManager",
 };
 
 const points = [

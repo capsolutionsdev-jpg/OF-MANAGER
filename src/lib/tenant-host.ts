@@ -37,7 +37,7 @@ export async function getPublicBranding() {
     // remplace par sa propre marque (nom + logo).
     nom: org?.nom ?? "OFManager",
     logoUrl: org?.logoUrl ?? null,
-    couleurPrimaire: org?.couleurPrimaire ?? "#2C53C0",
+    couleurPrimaire: org?.couleurPrimaire ?? "#1A5FD4",
     theme: org?.theme ?? null,
     design: org?.design ?? null,
   };

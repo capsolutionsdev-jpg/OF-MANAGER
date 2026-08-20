@@ -91,7 +91,7 @@ export function AppTopNav({
             <img src={brand.logoUrl} alt={brand.nom} className="h-8 w-auto" />
           ) : (
             <span className="font-display text-base font-bold tracking-tight text-foreground">
-              {brand?.nom ?? "CAP Compétences"}
+              {brand?.nom ?? "OFManager"}
             </span>
           )}
         </Link>

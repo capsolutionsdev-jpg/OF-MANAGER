@@ -48,7 +48,7 @@ export default function DemoPage() {
           </ul>
           <p className="mt-8 flex items-center gap-2 text-xs text-slate-400">
             <Image src="/ofmanager-logo.png" alt="" width={20} height={20} className="h-4 w-auto opacity-70" />
-            Une solution éditée par <span className="font-semibold text-slate-500">CAP Compétences</span>
+            Une solution éditée par <span className="font-semibold text-slate-500">CAP SOLUTIONS</span>
           </p>
         </div>
 

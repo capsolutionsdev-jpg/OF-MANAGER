@@ -9,7 +9,7 @@ import { escapeHtml } from "@/lib/documents/escape";
 
 const header = `
 <div class="doc-header">
-  <img src="/cap-competences-logo.png" alt="CAP Compétences" class="doc-logo" />
+  <img src="/ofmanager-logo.png" alt="Logo de l'organisme" class="doc-logo" />
   <div class="doc-org">
     <strong>{{organisme}}</strong> — {{qualiopi}}<br/>
     {{organisme_adresse}}<br/>
@@ -30,8 +30,15 @@ const footer = `
 export const EMPTY_IMAGE =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M8AAAMBAQDJ/pLvAAAAAElFTkSuQmCC";
 
+// Marqueur interne (placeholder) du cachet/signature de l'organisme. Il est
+// TOUJOURS remplacé au moment de la génération par le cachet réel du tenant, ou
+// par EMPTY_IMAGE (pixel transparent) s'il n'en a pas — jamais servi tel quel.
+// Chaîne neutre volontairement distincte de EMPTY_IMAGE (sinon collision avec le
+// repli logo, remplacé en premier) et sans référence de marque.
+export const STAMP_PLACEHOLDER = "/__org-cachet__.png";
+
 // Cachet + signature de l'organisme (image), à apposer sur tous les documents.
-const stamp = `<img src="/signature-cap-competences.png" alt="Cachet et signature de l'organisme" class="doc-stamp" />`;
+const stamp = `<img src="${STAMP_PLACEHOLDER}" alt="Cachet et signature de l'organisme" class="doc-stamp" />`;
 
 // Bloc cachet seul (pour les documents sans signature à deux parties).
 const orgStampBlock = `<div class="org-stamp-block"><div class="sig-label">Cachet et signature de l'organisme</div>${stamp}</div>`;

@@ -11,9 +11,10 @@ import {
 } from "@/lib/actions/catalogue-officiel-actions";
 
 /**
- * Aligne le catalogue de l'organisme sur le CATALOGUE OFFICIEL CAP Compétences
- * (source capacademy.fr) : crée/complète les 30 fiches officielles et archive
- * (réversible) celles qui n'en font pas partie. Réservé à CAP (garde côté action).
+ * Aligne le catalogue de l'organisme sur le CATALOGUE OFFICIEL de référence
+ * (source ofmanager.fr) : crée/complète les 30 fiches officielles et archive
+ * (réversible) celles qui n'en font pas partie. Réservé à l'organisme de la
+ * vitrine (garde côté action).
  */
 export function ImportCatalogueOfficielButton() {
   const router = useRouter();
@@ -46,14 +47,14 @@ export function ImportCatalogueOfficielButton() {
         <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true">
           <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-xl border bg-card p-5 shadow-lg">
             <h2 className="flex items-center gap-2 text-base font-semibold">
-              <BadgeCheck className="h-5 w-5 text-primary" /> Catalogue officiel CAP Compétences
+              <BadgeCheck className="h-5 w-5 text-primary" /> Catalogue officiel
             </h2>
 
             {!rapport ? (
               <>
                 <p className="mt-2 text-sm text-muted-foreground">
                   Aligne votre catalogue sur les <strong>30 formations officielles</strong>{" "}
-                  (Sécurité + Transport) telles que publiées sur <strong>capacademy.fr</strong> :
+                  (Sécurité + Transport) du catalogue de référence :
                   programme, durée, prérequis, public, évaluation, certification et réglage
                   « soumis à examen ». Les fiches existantes sont mises à jour.
                 </p>

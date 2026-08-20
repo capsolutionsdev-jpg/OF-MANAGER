@@ -198,7 +198,7 @@ export function renderTitreHtml(
       <div class="sig"><div class="role">Le Président du Jury</div><div class="line"></div><div class="who">${president}</div></div>
     </div></div>`;
   } else {
-    const verifUrl = assets.verifUrl || "capacademy.fr/verification";
+    const verifUrl = assets.verifUrl || "ofmanager.fr/verification";
     const qrHtml = assets.qrDataUri
       ? `<img src="${assets.qrDataUri}" alt="QR de vérification" style="width:100%;height:100%;object-fit:contain" />`
       : qrPreview(seedFrom(data.numero));

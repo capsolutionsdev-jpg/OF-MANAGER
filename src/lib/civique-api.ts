@@ -24,7 +24,7 @@ import {
   MUTED,
 } from "@/lib/email-templates";
 
-const VITRINE_BASE = process.env.VITRINE_URL ?? "https://capacademy.fr";
+const VITRINE_BASE = process.env.VITRINE_URL ?? "https://ofmanager.fr";
 const MENTION_NOM_LISIBLE: Record<CivicMention, string> = {
   CSP: "Carte de séjour pluriannuelle (CSP)",
   CR: "Carte de résident (CR)",

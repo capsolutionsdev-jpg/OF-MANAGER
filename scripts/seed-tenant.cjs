@@ -1,27 +1,28 @@
+// Gabarit — ne pas exécuter tel quel sur le fork commercial.
 const { PrismaClient } = require("@prisma/client");
 const p = new PrismaClient();
 (async () => {
-  // 1er tenant = CAP Compétences (valeurs reprises de lib/org-config.ts)
-  const existing = await p.organisme.findFirst({ where: { nom: "CAP Compétences" } });
+  // Gabarit d'organisme neutre — renseigner les valeurs réelles avant exécution.
+  const existing = await p.organisme.findFirst({ where: { nom: "Organisme de formation" } });
   const org = existing
     ? existing
     : await p.organisme.create({
         data: {
-          nom: "CAP Compétences",
-          representant: "Moussa HAMOUMI",
+          nom: "Organisme de formation",
+          representant: "",
           representantQualite: "Gérant",
-          siret: "991 407 198 00019",
-          nda: "11 93 12064 93",
-          adresse: "145 rue de Noisy-le-Sec, 93260 Les Lilas",
-          codePostal: "93260",
-          ville: "Les Lilas",
-          email: "infocap.comp@gmail.com",
-          telephone: "+33 6 26 42 63 25",
-          certificateur: "Up&Co'm Certification — Webmarketing & co'm",
+          siret: "",
+          nda: "",
+          adresse: "",
+          codePostal: "",
+          ville: "",
+          email: "contact@ofmanager.fr",
+          telephone: "",
+          certificateur: "",
           qualiopiNumero: "Certifié Qualiopi (Actions de formation)",
           couleurPrimaire: "#1A5FD4",
-          emailExpediteurNom: "CAP Compétences",
-          emailExpediteur: "contact@cap-competences.fr",
+          emailExpediteurNom: "OFManager",
+          emailExpediteur: "contact@ofmanager.fr",
           statut: "ACTIF",
           fonctionnalites: [
             "crm", "candidats", "clients-pro", "formations", "sessions",
@@ -32,7 +33,7 @@ const p = new PrismaClient();
       });
   console.log("Organisme:", org.nom, org.id, existing ? "(existant)" : "(créé)");
 
-  // Rattacher tous les comptes sans tenant à CAP
+  // Rattacher tous les comptes sans tenant à cet organisme
   const users = await p.user.findMany({ where: { organismeId: null }, select: { id: true, email: true } });
   for (const u of users) {
     await p.user.update({ where: { id: u.id }, data: { organismeId: org.id } });
