@@ -26,6 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PhotoCapture } from "@/components/parcours/photo-capture";
 import { SignerSurPlaceDialog } from "@/components/inscriptions/signer-sur-place-dialog";
 
 const selectClass =
@@ -57,6 +58,8 @@ export function CandidatForm({
   // Sur place : confirmer + signer l'inscription juste après la création.
   const [confirmerSigner, setConfirmerSigner] = useState(false);
   const [signState, setSignState] = useState<{ inscriptionId: string; candidatId: string } | null>(null);
+  // Photo d'identité (caméra ou upload) — reportée sur la fiche d'inscription.
+  const [photoDataUrl, setPhotoDataUrl] = useState(defaultValues?.photoDataUrl ?? "");
 
   // Situation professionnelle : liste + « Autre » (champ libre).
   const dvSituation = defaultValues?.situationPro ?? "";
@@ -157,6 +160,7 @@ export function CandidatForm({
     if (values.situationPro === SITUATION_AUTRE) {
       payload.situationPro = situationAutre.trim() || SITUATION_AUTRE;
     }
+    payload.photoDataUrl = photoDataUrl || undefined;
     startTransition(async () => {
       const res = candidatId
         ? await updateCandidat(candidatId, payload)
@@ -188,6 +192,13 @@ export function CandidatForm({
           <CardTitle className="text-base">Informations personnelles</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid gap-2 sm:col-span-2">
+            <Label>Photo d&apos;identité</Label>
+            <PhotoCapture
+              value={photoDataUrl || undefined}
+              onChange={(dataUrl) => setPhotoDataUrl(dataUrl ?? "")}
+            />
+          </div>
           <div className="grid gap-2">
             <Label htmlFor="nom">Nom *</Label>
             <Input id="nom" {...register("nom")} />

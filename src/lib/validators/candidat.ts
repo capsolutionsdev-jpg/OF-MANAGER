@@ -46,6 +46,8 @@ export const candidatFormSchema = z.object({
   // Accessibilité (Qualiopi ind. 26)
   situationHandicap: z.boolean().optional(),
   besoinsAdaptation: optionalText,
+  // Photo d'identité (data URL compressée) — figure sur la fiche d'inscription.
+  photoDataUrl: z.string().optional(),
 });
 
 /** Libellés du suivi de l'autorisation préalable CNAPS. */

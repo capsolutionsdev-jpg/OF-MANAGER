@@ -1,7 +1,7 @@
 import type { Candidat, Entreprise, Formation, Inscription, Salle, Session } from "@prisma/client";
 import { DEFAULT_ORG_IDENTITY, type OrgIdentity } from "@/lib/org-identity";
 import { MODALITE_LABELS } from "@/lib/validators/formation";
-import { FINANCEMENT_LABELS } from "@/lib/validators/candidat";
+import { FINANCEMENT_LABELS, CNAPS_STATUT_LABELS } from "@/lib/validators/candidat";
 import { ssiapNiveauOfFormation } from "@/lib/documents/families";
 import { escapeHtml } from "@/lib/documents/escape";
 
@@ -71,6 +71,37 @@ export function buildVariables(
     source_connaissance: c.sourceConnaissance ?? "—",
     adresse_candidat:
       [c.adresse, c.codePostal, c.ville].filter(Boolean).join(", ") || "—",
+    // Situation professionnelle
+    situation_pro: c.situationPro ?? "—",
+    employeur: c.employeur ?? "—",
+    poste_occupe: c.posteOccupe ?? "—",
+    // Photo d'identité (data URL compressée) → <img>, sinon vide (rien sur la fiche).
+    photo:
+      c.photoUrl && c.photoUrl.startsWith("data:image/")
+        ? `<img src="${c.photoUrl}" alt="Photo du stagiaire" style="width:96px;height:96px;object-fit:cover;border:1px solid #999;border-radius:4px" />`
+        : "",
+    // Bloc « prérequis & spécificités » : sections affichées SEULEMENT si des
+    // données ont été saisies (CNAPS sécurité privée, diplôme SSIAP détenu,
+    // accessibilité). Les valeurs dynamiques sont échappées à la source.
+    bloc_prerequis: [
+      c.cnapsStatut || c.carteProNumero || c.carteProValidite
+        ? `<h2>Sécurité privée (CNAPS)</h2><table class="doc-table">` +
+          `<tr><td>Autorisation préalable CNAPS</td><td>${c.cnapsStatut ? escapeHtml(CNAPS_STATUT_LABELS[c.cnapsStatut] ?? c.cnapsStatut) : "—"}</td></tr>` +
+          `<tr><td>N° autorisation préalable / carte pro</td><td>${escapeHtml(c.carteProNumero ?? "—")}</td></tr>` +
+          `<tr><td>Validité</td><td>${d(c.carteProValidite) || "—"}</td></tr></table>`
+        : "",
+      c.ssiapNiveau || c.ssiapDiplomeNumero || c.ssiapDiplomeDate
+        ? `<h2>Diplôme SSIAP détenu</h2><table class="doc-table">` +
+          `<tr><td>Niveau</td><td>${c.ssiapNiveau ? `SSIAP ${c.ssiapNiveau}` : "—"}</td></tr>` +
+          `<tr><td>N° du diplôme</td><td>${escapeHtml(c.ssiapDiplomeNumero ?? "—")}</td></tr>` +
+          `<tr><td>Date d'obtention</td><td>${d(c.ssiapDiplomeDate) || "—"}</td></tr></table>`
+        : "",
+      c.situationHandicap
+        ? `<h2>Accessibilité (handicap)</h2><table class="doc-table">` +
+          `<tr><td>Situation de handicap déclarée</td><td>Oui</td></tr>` +
+          `<tr><td>Besoins d'adaptation</td><td>${c.besoinsAdaptation ? escapeHtml(c.besoinsAdaptation).replace(/\n/g, "<br/>") : "—"}</td></tr></table>`
+        : "",
+    ].join(""),
     // Formation
     formation: f.titre,
     reference_formation: f.reference,

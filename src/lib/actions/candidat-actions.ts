@@ -49,6 +49,11 @@ function toData(v: CandidatFormValues) {
     ssiapDiplomeDate: v.ssiapDiplomeDate ? new Date(v.ssiapDiplomeDate) : null,
     situationHandicap: !!v.situationHandicap,
     besoinsAdaptation: clean(v.besoinsAdaptation),
+    // Photo d'identité : uniquement si fournie (image valide) → n'écrase pas la
+    // photo existante lors d'une mise à jour sans nouvelle photo.
+    ...(v.photoDataUrl && v.photoDataUrl.startsWith("data:image/")
+      ? { photoUrl: v.photoDataUrl }
+      : {}),
   };
 }
 
