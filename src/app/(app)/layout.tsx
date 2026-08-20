@@ -31,6 +31,8 @@ import { cn } from "@/lib/utils";
 import { RailProvider } from "@/components/rail-context";
 import { isNativeApp } from "@/lib/native-app";
 import { PushRegistrar } from "@/components/push/push-registrar";
+import { NativeLinkHandler } from "@/components/native/native-link-handler";
+import { PdfViewerModal } from "@/components/native/pdf-viewer-modal";
 import { CommandPalette } from "@/components/command-palette";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
@@ -222,6 +224,9 @@ export default async function AppLayout({
     >
       {/* Enregistrement push — actif seulement dans l'app native. */}
       <PushRegistrar />
+      {/* Documents/PDF ouverts dans l'afficheur intégré (app native). */}
+      <NativeLinkHandler />
+      <PdfViewerModal />
       {/* Anti-flash : applique l'état replié du rail avant le rendu (localStorage). */}
       <script
         dangerouslySetInnerHTML={{
