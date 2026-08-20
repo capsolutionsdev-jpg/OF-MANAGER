@@ -26,6 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SignerSurPlaceDialog } from "@/components/inscriptions/signer-sur-place-dialog";
 
 const selectClass =
   "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50 dark:bg-input/30";
@@ -53,6 +54,9 @@ export function CandidatForm({
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  // Sur place : confirmer + signer l'inscription juste après la création.
+  const [confirmerSigner, setConfirmerSigner] = useState(false);
+  const [signState, setSignState] = useState<{ inscriptionId: string; candidatId: string } | null>(null);
 
   // Situation professionnelle : liste + « Autre » (champ libre).
   const dvSituation = defaultValues?.situationPro ?? "";
@@ -112,6 +116,7 @@ export function CandidatForm({
   // Prérequis conditionnels selon la formation souhaitée.
   const formationId = watch("formationSouhaiteeId");
   const situationPro = watch("situationPro");
+  const sessionId = watch("sessionId");
   const selectedFormation = formations.find((f) => f.id === formationId);
   const prereq = selectedFormation ? formationPrereq(selectedFormation) : {};
   const showCnaps = !!(prereq.cnaps || prereq.carteProAlternative);
@@ -134,10 +139,17 @@ export function CandidatForm({
 
   // Sessions à venir de la formation choisie (rattachement direct — #1).
   const sessionsPourFormation = sessions.filter((s) => s.formationId === formationId);
-  // Réinitialise la session choisie quand la formation change.
+  // Réinitialise la session choisie quand la formation change (et le flag « signer
+  // maintenant », qui n'a de sens qu'avec une session rattachée).
   useEffect(() => {
     setValue("sessionId", "");
+    setConfirmerSigner(false);
   }, [formationId, setValue]);
+
+  // « Confirmer & signer » n'est effectif qu'avec une session rattachée : on dérive
+  // le libellé du bouton ET la décision d'ouvrir la signature de cette condition,
+  // pour éviter un bouton qui promet une signature qui ne se déclenche pas.
+  const signerMaintenant = !!sessionId && confirmerSigner;
 
   function onSubmit(values: CandidatFormValues) {
     // « Autre » → reporte le texte libre dans situationPro.
@@ -151,6 +163,14 @@ export function CandidatForm({
         : await createCandidat(payload);
       if (res.ok) {
         toast.success(candidatId ? "Candidat mis à jour." : "Candidat créé.");
+        // Avertissement éventuel remonté par le rattachement (ex. session complète).
+        if (res.warning) toast.warning(res.warning);
+        // Sur place : si demandé ET une inscription a été rattachée à une session,
+        // on enchaîne directement sur la consultation des documents + la signature.
+        if (!candidatId && signerMaintenant && res.inscriptionId) {
+          setSignState({ inscriptionId: res.inscriptionId, candidatId: res.id });
+          return;
+        }
         router.push(`/candidats/${res.id}`);
         router.refresh();
       } else {
@@ -160,6 +180,7 @@ export function CandidatForm({
   }
 
   return (
+    <>
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       {/* Informations personnelles */}
       <Card>
@@ -322,6 +343,21 @@ export function CandidatForm({
               )}
             </div>
           )}
+          {sessionId && (
+            <label className="flex items-start gap-2 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm sm:col-span-2">
+              <input
+                type="checkbox"
+                className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
+                checked={confirmerSigner}
+                onChange={(e) => setConfirmerSigner(e.target.checked)}
+              />
+              <span>
+                <b>Confirmer et faire signer l&apos;inscription maintenant</b> (candidat présent).
+                Après l&apos;enregistrement, la consultation des documents et la signature
+                s&apos;ouvrent directement. Sinon l&apos;inscription reste «&nbsp;en attente&nbsp;».
+              </span>
+            </label>
+          )}
           <div className="grid gap-2">
             <Label htmlFor="financementType">Financement envisagé</Label>
             <select id="financementType" className={selectClass} {...register("financementType")}>
@@ -433,9 +469,29 @@ export function CandidatForm({
         <Button type="button" variant="outline" onClick={() => router.back()}>Annuler</Button>
         <Button type="submit" disabled={isPending}>
           <Save className="mr-2 h-4 w-4" />
-          {isPending ? "Enregistrement…" : "Enregistrer"}
+          {isPending
+            ? "Enregistrement…"
+            : signerMaintenant
+              ? "Enregistrer et signer"
+              : "Enregistrer"}
         </Button>
       </div>
     </form>
+      {signState && (
+        <SignerSurPlaceDialog
+          inscriptionId={signState.inscriptionId}
+          open
+          onOpenChange={(o) => {
+            if (!o) {
+              // Fermé (signé OU annulé) → on ouvre la fiche du candidat.
+              const cid = signState.candidatId;
+              setSignState(null);
+              router.push(`/candidats/${cid}`);
+              router.refresh();
+            }
+          }}
+        />
+      )}
+    </>
   );
 }
