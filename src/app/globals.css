@@ -912,7 +912,10 @@ summary:focus-visible,
    Masque les barres de navigation (rail latéral + barre du haut)
    et libère toute la largeur pour le contenu. Cf. components/focus-mode-toggle.
    ============================================================ */
-.focus-mode [data-app-chrome] {
+/* En plein écran on masque UNIQUEMENT la barre du haut (recherche/notifications) :
+   le rail de navigation reste visible pour ne pas perdre la navigation. Le contenu
+   prend toute la largeur restante. (Le rail peut être replié via son propre bouton.) */
+.focus-mode [data-app-topbar] {
   display: none !important;
 }
 .focus-mode [data-app-main] {

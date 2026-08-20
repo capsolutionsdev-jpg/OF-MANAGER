@@ -55,6 +55,7 @@ export function AppTopbar({
   return (
     <header
       data-app-chrome
+      data-app-topbar
       className="sticky top-0 z-30 flex min-h-16 items-center gap-4 border-b border-border bg-background px-4 pt-[env(safe-area-inset-top)] md:px-6"
     >
       {/* Tiroir de navigation (mobile / tablette) */}
