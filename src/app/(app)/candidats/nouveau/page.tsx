@@ -10,8 +10,10 @@ export default async function NouveauCandidatPage() {
   const db = await getTenantDb();
   const [formations, collaborateurs, sessions] = await Promise.all([
     db.formation.findMany({
-      // Uniquement les formations publiées sur le site vitrine.
-      where: { isArchived: false, vitrineStatut: "PUBLIEE" },
+      // TOUTES les formations actives de l'organisme : l'inscription ne dépend PAS
+      // de la publication sur la vitrine. Un OF qui ne publie pas (ex. ASPR) doit
+      // quand même pouvoir inscrire à ses formations (sinon liste vide).
+      where: { isArchived: false },
       select: { id: true, titre: true, reference: true },
       orderBy: { titre: "asc" },
     }),
