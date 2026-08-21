@@ -64,6 +64,27 @@ describe("publierDocumentsAutoParDate — cron sans session (prisma brut)", () =
     expect(prisma.documentGenere.create).toHaveBeenCalledTimes(15);
   });
 
+  it("borne les TENTATIVES Chromium MÊME EN ÉCHEC (le budget paie le rendu, pas le succès)", async () => {
+    const many = Array.from({ length: 30 }, (_, i) => ({ id: `i${i}`, sessionId: "s", organismeId: "org-A" }));
+    prisma.inscription.findMany.mockResolvedValue(many);
+    buildSingleDocPdf.mockResolvedValue(null); // rendu non applicable / en échec pour tous
+    const counts = await publierDocumentsAutoParDate();
+    expect(counts.entree).toBe(0);
+    // Le point clé : on tente 15 rendus, PAS 30 — sinon un échec systémique ferait
+    // exploser le temps d'exécution (blocker de revue).
+    expect(buildSingleDocPdf).toHaveBeenCalledTimes(15);
+    expect(prisma.documentGenere.create).not.toHaveBeenCalled();
+  });
+
+  it("un document déjà publié (ignore) ne consomme AUCUN budget", async () => {
+    const many = Array.from({ length: 20 }, (_, i) => ({ id: `i${i}`, sessionId: "s", organismeId: "org-A" }));
+    prisma.inscription.findMany.mockResolvedValue(many);
+    prisma.documentGenere.findFirst.mockResolvedValue({ id: "deja" }); // tous déjà publiés
+    const counts = await publierDocumentsAutoParDate();
+    expect(counts.entree).toBe(0);
+    expect(buildSingleDocPdf).not.toHaveBeenCalled(); // ignore = aucun rendu, gratuit
+  });
+
   it("convention SIGNEE → RI + CGV + convocation, organismeId propagé", async () => {
     prisma.convention.findMany.mockResolvedValue([
       { organismeId: "org-B", inscriptions: [{ id: "i9", sessionId: "s9" }] },

@@ -22,26 +22,35 @@ import { ETAPE_CONVENTION, ETAPE_ENTREE } from "@/lib/documents/publish";
 // Garde-fou anti-timeout : ~15 PDF/exécution (Chromium ≈ 2-3 s/doc → marge < 60 s).
 const MAX_DOCS_PER_RUN = 15;
 
+/**
+ * Résultat d'une tentative de publication. Le budget anti-timeout paie le TRAVAIL
+ * Chromium (rendu PDF), pas le succès : « ignore » (déjà publié) est gratuit, mais
+ * « cree » ET « echec » ont tous deux invoqué buildSingleDocPdf → consomment le budget.
+ */
+type PublierResultat = "cree" | "ignore" | "echec";
+
 /** Publie UN document via prisma brut (organismeId explicite). Idempotent. */
 async function publierRaw(
   organismeId: string | null,
   inscriptionId: string,
   sessionId: string | null,
   type: DocumentType,
-): Promise<boolean> {
+): Promise<PublierResultat> {
+  // Idempotence : pas de filtre organisme volontairement — `inscriptionId` est un
+  // cuid globalement unique, donc la recherche ne peut pas franchir de tenant.
   const existing = await prisma.documentGenere.findFirst({
     where: { inscriptionId, type, fileUrl: { not: null } },
     select: { id: true },
   });
-  if (existing) return false; // déjà publié → rien à faire
+  if (existing) return "ignore"; // déjà publié → aucun rendu (gratuit)
 
   let pdf: Awaited<ReturnType<typeof buildSingleDocPdf>>;
   try {
     pdf = await buildSingleDocPdf(inscriptionId, type);
   } catch {
-    return false; // un doc en échec ne doit pas casser tout le lot
+    return "echec"; // un doc en échec ne doit pas casser tout le lot (mais Chromium a été tenté)
   }
-  if (!pdf) return false; // document non applicable à cette inscription
+  if (!pdf) return "echec"; // document non applicable à cette inscription
 
   let fileUrl: string;
   try {
@@ -52,13 +61,13 @@ async function publierRaw(
       contentType: "application/pdf",
     });
   } catch {
-    return false;
+    return "echec";
   }
 
   await prisma.documentGenere.create({
     data: { organismeId, type, inscriptionId, sessionId, fileUrl },
   });
-  return true;
+  return "cree";
 }
 
 export type AutoPublishCounts = { convention: number; entree: number; scanned: number };
@@ -91,10 +100,9 @@ export async function publierDocumentsAutoParDate(
       counts.scanned++;
       for (const type of ETAPE_CONVENTION) {
         if (budget <= 0) return counts;
-        if (await publierRaw(c.organismeId, insc.id, insc.sessionId, type)) {
-          counts.convention++;
-          budget--;
-        }
+        const r = await publierRaw(c.organismeId, insc.id, insc.sessionId, type);
+        if (r === "cree") counts.convention++;
+        if (r !== "ignore") budget--; // toute TENTATIVE Chromium (cree|echec) paie le budget
       }
     }
   }
@@ -114,10 +122,9 @@ export async function publierDocumentsAutoParDate(
     counts.scanned++;
     for (const type of ETAPE_ENTREE) {
       if (budget <= 0) return counts;
-      if (await publierRaw(insc.organismeId, insc.id, insc.sessionId, type)) {
-        counts.entree++;
-        budget--;
-      }
+      const r = await publierRaw(insc.organismeId, insc.id, insc.sessionId, type);
+      if (r === "cree") counts.entree++;
+      if (r !== "ignore") budget--; // toute TENTATIVE Chromium (cree|echec) paie le budget
     }
   }
 
