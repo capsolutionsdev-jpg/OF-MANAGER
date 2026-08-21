@@ -183,6 +183,11 @@ model ContratPrestation {
   engagement     EngagementPrestation    @default(MENSUEL)
   montantMensuel Decimal   @db.Decimal(10, 2)
   remisePct      Int       @default(0)
+  packs          String[]  @default([]) // clés de packs métier (cf. lib/options)
+  fraisMiseEnService Int?  // frais d'installation one-time (HT) ; 0 = offert
+  pionnier       Boolean   @default(false) // offre de lancement « Pionniers »
+  pionnierVariante String? // MENSUEL_6M | ANNUEL_12M_PREPAYE
+  prixGele       Boolean   @default(false) // prix gelé à vie sur le palier souscrit
   dateDebut      DateTime?
   statut         ContratPrestationStatut @default(BROUILLON)
   // Signature électronique interne : lien public + tracé manuscrit + IP + horodatage.

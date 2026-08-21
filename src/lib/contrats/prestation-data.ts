@@ -51,13 +51,18 @@ export function clientFromOrg(org: Organisme): ClientIdentite {
 
 /** Données d'affichage/PDF à partir d'un ContratPrestation. */
 export function contratDataFrom(c: ContratPrestation): ContratData {
+  const palier = c.formule as FormuleKey;
   return {
     reference: c.reference,
-    formuleNom: PLANS[c.formule as FormuleKey]?.name ?? c.formule,
+    palier,
+    formuleNom: PLANS[palier]?.name ?? c.formule,
     montantMensuel: Number(c.montantMensuel),
     remisePct: c.remisePct,
     engagement: c.engagement as EngagementType,
     options: c.options,
+    packs: c.packs ?? [],
+    fraisMiseEnService: c.fraisMiseEnService ?? 0,
+    pionnier: c.pionnier ? { variante: c.pionnierVariante, prixGele: c.prixGele } : null,
     dateDebut: c.dateDebut,
     signataireNom: c.signataireNom,
     signatureUrl: c.signatureUrl,
