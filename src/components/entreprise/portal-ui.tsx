@@ -92,6 +92,19 @@ export function CertificationBadge({ resultat }: { resultat: string }) {
   return <Badge tone={m.tone}>{m.label}</Badge>;
 }
 
+/** Badge de statut d'une demande d'inscription. */
+export function DemandeBadge({ statut }: { statut: string }) {
+  const map: Record<string, { label: string; tone: "neutral" | "success" | "warning" | "danger" | "info" }> = {
+    EN_ATTENTE: { label: "En attente", tone: "warning" },
+    CONTRE_PROPOSEE: { label: "Autre date proposée", tone: "info" },
+    CONFIRMEE: { label: "Confirmée", tone: "success" },
+    REFUSEE: { label: "Refusée", tone: "danger" },
+    ANNULEE: { label: "Annulée", tone: "neutral" },
+  };
+  const m = map[statut] ?? { label: statut, tone: "neutral" as const };
+  return <Badge tone={m.tone}>{m.label}</Badge>;
+}
+
 /** Libellé lisible d'un type de document. */
 export function documentTypeLabel(type: string): string {
   const map: Record<string, string> = {

@@ -1,8 +1,8 @@
-import { ClipboardList, CalendarDays, MapPin } from "lucide-react";
+import { ClipboardList, CalendarDays, MapPin, Send } from "lucide-react";
 import { requireEntreprise } from "@/lib/entreprise-portal";
-import { getEntrepriseInscriptions } from "@/lib/entreprise-data";
+import { getEntrepriseInscriptions, getEntrepriseDemandes } from "@/lib/entreprise-data";
 import { sessionPhase } from "@/lib/candidat-portal";
-import { RubriqueHeader, EmptyState, InscriptionBadge, fmtDate } from "@/components/entreprise/portal-ui";
+import { RubriqueHeader, EmptyState, InscriptionBadge, DemandeBadge, fmtDate } from "@/components/entreprise/portal-ui";
 
 export const dynamic = "force-dynamic";
 
@@ -52,7 +52,10 @@ function Section({ title, items }: { title: string; items: Inscription[] }) {
 
 export default async function InscriptionsPage() {
   const entreprise = await requireEntreprise();
-  const inscriptions = await getEntrepriseInscriptions(entreprise.id);
+  const [inscriptions, demandes] = await Promise.all([
+    getEntrepriseInscriptions(entreprise.id),
+    getEntrepriseDemandes(entreprise.id),
+  ]);
 
   const groups: Record<"EN_COURS" | "AVENIR" | "TERMINEE", Inscription[]> = {
     EN_COURS: [],
@@ -63,17 +66,48 @@ export default async function InscriptionsPage() {
     groups[sessionPhase(i.session.dateDebut, i.session.dateFin)].push(i);
   }
 
+  // On masque les demandes déjà confirmées (elles deviennent des inscriptions).
+  const demandesVisibles = demandes.filter((d) => d.statut !== "CONFIRMEE");
+
   return (
     <div className="space-y-6">
       <RubriqueHeader
         title="Inscriptions"
-        subtitle="Les inscriptions de vos salariés, classées par période."
+        subtitle="Vos demandes en cours de traitement et les inscriptions de vos salariés."
       />
-      {inscriptions.length === 0 ? (
+
+      {demandesVisibles.length > 0 && (
+        <section className="space-y-2">
+          <h3 className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
+            <Send className="h-3.5 w-3.5" /> Demandes d&apos;inscription
+          </h3>
+          <div className="grid gap-2">
+            {demandesVisibles.map((d) => {
+              const nb = Array.isArray(d.salariesJson) ? d.salariesJson.length : 0;
+              return (
+                <div key={d.id} className="flex flex-wrap items-start justify-between gap-2 rounded-xl border bg-card p-4">
+                  <div className="min-w-0">
+                    <p className="font-medium">{d.session.formation.titre}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {fmtDate(d.session.dateDebut)} · {nb} salarié{nb > 1 ? "s" : ""} · demandé le {fmtDate(d.createdAt)}
+                    </p>
+                    {d.statut === "REFUSEE" && d.motif && (
+                      <p className="mt-1 text-xs text-destructive">Motif : {d.motif}</p>
+                    )}
+                  </div>
+                  <DemandeBadge statut={d.statut} />
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {inscriptions.length === 0 && demandesVisibles.length === 0 ? (
         <EmptyState
           icon={<ClipboardList className="h-8 w-8" />}
           title="Aucune inscription"
-          hint="Les inscriptions de vos salariés apparaîtront ici une fois enregistrées par votre organisme."
+          hint="Depuis l'onglet Formations, demandez l'inscription de vos salariés à une session."
         />
       ) : (
         <>

@@ -1,6 +1,8 @@
 import { CalendarDays, MapPin, Users } from "lucide-react";
-import { getEntreprisePlanning } from "@/lib/entreprise-data";
+import { requireEntreprise } from "@/lib/entreprise-portal";
+import { getEntreprisePlanning, getEntrepriseCandidats } from "@/lib/entreprise-data";
 import { RubriqueHeader, EmptyState, Badge, fmtDate } from "@/components/entreprise/portal-ui";
+import { DemandeInscriptionDialog } from "@/components/entreprise/demande-inscription-dialog";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +13,11 @@ const MODALITE_LABEL: Record<string, string> = {
 };
 
 export default async function FormationPage() {
-  const sessions = await getEntreprisePlanning();
+  const entreprise = await requireEntreprise();
+  const [sessions, candidats] = await Promise.all([
+    getEntreprisePlanning(),
+    getEntrepriseCandidats(entreprise.id),
+  ]);
   return (
     <div>
       <RubriqueHeader
@@ -51,6 +57,13 @@ export default async function FormationPage() {
                     ? `${s.placesRestantes} place${s.placesRestantes > 1 ? "s" : ""}`
                     : "Complet"}
                 </Badge>
+              </div>
+              <div className="mt-3 flex justify-end border-t pt-3">
+                <DemandeInscriptionDialog
+                  sessionId={s.id}
+                  sessionLabel={`${s.titre} — ${fmtDate(s.dateDebut)}`}
+                  candidats={candidats}
+                />
               </div>
             </div>
           ))}

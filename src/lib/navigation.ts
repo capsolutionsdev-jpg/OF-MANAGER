@@ -275,6 +275,13 @@ export const navItems: NavItem[] = [
     permission: "clients-pro",
   },
   {
+    label: "Demandes",
+    href: "/demandes-inscription",
+    icon: Inbox,
+    roles: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
+    // Pas de `permission` → visible pour tous les rôles autorisés (demandes B2B).
+  },
+  {
     label: "Formations",
     href: "/formations",
     icon: BookOpen,
@@ -422,7 +429,7 @@ const GROUP_BY_HREF: Record<string, string> = {
   "/crm": "Commercial", "/simulateur-financement": "Commercial", "/kanban": "Commercial", "/taches": "Commercial", "/validations": "Commercial",
   "/notifications": "Commercial", "/leads-multicanal": "Commercial",
   "/scoring": "Commercial", "/portail-client": "Commercial",
-  "/candidats": "Formation", "/clients-pro": "Formation", "/formations": "Formation",
+  "/candidats": "Formation", "/clients-pro": "Formation", "/demandes-inscription": "Formation", "/formations": "Formation",
   "/sessions": "Formation", "/planning": "Formation", "/salles": "Formation",
   "/elearning": "Formation", "/examen-civique": "Formation", "/formateurs": "Formation",
   "/diplomes": "Formation", "/jurys": "Formation",

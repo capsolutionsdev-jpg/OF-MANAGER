@@ -40,7 +40,7 @@ export async function getNotifications(): Promise<NotificationsData> {
     const now = new Date();
     const since = new Date(now.getTime() - 14 * 24 * 3600 * 1000); // 14 jours
 
-    const [leads, relances, devis, taches, factures, signatures, user] =
+    const [leads, relances, devis, taches, factures, signatures, demandes, user] =
       await Promise.all([
         db.candidat.findMany({
           where: { statut: "NOUVEAU", createdAt: { gte: since } },
@@ -93,6 +93,17 @@ export async function getNotifications(): Promise<NotificationsData> {
         db.signatureRequest.findMany({
           where: { statut: { in: ["EN_ATTENTE", "ENVOYEE"] } },
           select: { id: true, createdAt: true },
+          orderBy: { createdAt: "desc" },
+          take: 20,
+        }),
+        db.demandeInscription.findMany({
+          where: { statut: "EN_ATTENTE" },
+          select: {
+            id: true,
+            createdAt: true,
+            entreprise: { select: { raisonSociale: true } },
+            session: { select: { formation: { select: { titre: true } } } },
+          },
           orderBy: { createdAt: "desc" },
           take: 20,
         }),
@@ -167,6 +178,17 @@ export async function getNotifications(): Promise<NotificationsData> {
         title: `Document en attente de signature`,
         href: `/signatures`,
         date: s.createdAt.toISOString(),
+        severity: "warn",
+      });
+    }
+    for (const d of demandes) {
+      items.push({
+        key: `demande:${d.id}`,
+        category: "Demande d'inscription",
+        title: `Nouvelle demande : ${d.entreprise.raisonSociale}`,
+        detail: d.session.formation.titre,
+        href: `/demandes-inscription`,
+        date: d.createdAt.toISOString(),
         severity: "warn",
       });
     }

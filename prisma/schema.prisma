@@ -928,6 +928,8 @@ model Session {
   evaluations  Evaluation[]
   documents    DocumentGenere[]
   conventions  Convention[]
+  demandesInscription DemandeInscription[] @relation("DemandeSession")
+  demandesProposees   DemandeInscription[] @relation("DemandeSessionProposee")
   emailLogs    EmailLog[]
   emargementSignatures EmargementSignature[]
   facturesFormateur FactureFormateur[]
@@ -1438,6 +1440,7 @@ model Entreprise {
   interactions CrmInteraction[]
   devis        Devis[]
   factures     Facture[]
+  demandesInscription DemandeInscription[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1445,6 +1448,40 @@ model Entreprise {
   @@index([stage])
   @@index([organismeId])
   @@index([portalToken])
+}
+
+/// Demande d'inscription self-service émise par un client B2B (rôle ENTREPRISE)
+/// depuis son espace : le client choisit des salariés pour une session, l'OF
+/// valide (→ createConventionEntreprise) ou propose d'autres dates / refuse.
+model DemandeInscription {
+  id           String     @id @default(cuid())
+  organismeId  String? // tenant (multi-OF)
+  entrepriseId String
+  entreprise   Entreprise @relation(fields: [entrepriseId], references: [id], onDelete: Cascade)
+  sessionId    String
+  session      Session    @relation("DemandeSession", fields: [sessionId], references: [id])
+  // Salariés demandés : [{ candidatId } | { nom, prenom, email }]
+  salariesJson Json
+  statut       DemandeInscriptionStatut @default(EN_ATTENTE)
+  // Contre-proposition de l'OF : autre session suggérée.
+  sessionProposeeId String?
+  sessionProposee   Session? @relation("DemandeSessionProposee", fields: [sessionProposeeId], references: [id])
+  motif        String? // motif de refus / note OF
+  traiteeParId String? // collaborateur ayant traité
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([organismeId])
+  @@index([entrepriseId])
+  @@index([statut])
+}
+
+enum DemandeInscriptionStatut {
+  EN_ATTENTE
+  CONTRE_PROPOSEE
+  CONFIRMEE
+  REFUSEE
+  ANNULEE
 }
 
 model CrmInteraction {

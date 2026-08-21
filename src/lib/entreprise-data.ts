@@ -105,6 +105,33 @@ export async function getEntrepriseDocuments(entrepriseId: string) {
   });
 }
 
+/** Salariés (candidats) rattachés à l'entreprise — pour le choix dans la demande. */
+export async function getEntrepriseCandidats(entrepriseId: string) {
+  const db = await getTenantDb();
+  return db.candidat.findMany({
+    where: { entrepriseId },
+    select: { id: true, nom: true, prenom: true },
+    orderBy: { nom: "asc" },
+  });
+}
+
+/** Demandes d'inscription self-service de l'entreprise (avec statut). */
+export async function getEntrepriseDemandes(entrepriseId: string) {
+  const db = await getTenantDb();
+  return db.demandeInscription.findMany({
+    where: { entrepriseId },
+    select: {
+      id: true,
+      statut: true,
+      motif: true,
+      createdAt: true,
+      salariesJson: true,
+      session: { select: { dateDebut: true, formation: { select: { titre: true } } } },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+}
+
 /** Factures de l'entreprise (PDF déposé par l'admin, téléchargeable). */
 export async function getEntrepriseFactures(entrepriseId: string) {
   const db = await getTenantDb();
