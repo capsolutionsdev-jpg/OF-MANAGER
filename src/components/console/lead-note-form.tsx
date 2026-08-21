@@ -6,6 +6,7 @@ import { setLeadStatut, setLeadNotes } from "@/lib/actions/console-actions";
 import { addLeadNote } from "@/lib/actions/growth-actions";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { STATUT_OPTIONS } from "@/components/console/lead-statut";
 
 /**
  * Petits composants clients de la fiche lead (/console/prospects/[id]) :
@@ -15,13 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
  * Regroupés ici pour garder la page en Server Component pur.
  */
 
-const STATUTS = [
-  { key: "NOUVEAU", label: "Nouveau" },
-  { key: "A_RAPPELER", label: "À rappeler" },
-  { key: "RAPPELE", label: "Rappelé" },
-  { key: "CONVERTI", label: "Converti" },
-  { key: "PERDU", label: "Perdu" },
-];
+const STATUTS = STATUT_OPTIONS;
 
 /** Formulaire d'ajout d'une note à la timeline du lead. */
 export function LeadNoteForm({ leadId }: { leadId: string }) {

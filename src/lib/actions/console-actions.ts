@@ -93,7 +93,7 @@ export async function setSupportStatut(ticketId: string, statut: string): Promis
 
 // ── Leads commerciaux (prospects du site vitrine) ────────────────────────────
 
-/** Change le statut d'un lead (Nouveau / À rappeler / Rappelé / Converti / Perdu). */
+/** Change le statut d'un lead dans le pipeline (8 étapes + Perdu). */
 export async function setLeadStatut(id: string, statut: string): Promise<void> {
   await requireSuperAdmin();
   if (!LEAD_STATUTS.has(statut)) return;
@@ -103,7 +103,7 @@ export async function setLeadStatut(id: string, statut: string): Promise<void> {
     data: {
       statut: statut as LeadStatut,
       lu: true,
-      ...(statut === "RAPPELE" ? { rappeleAt: new Date() } : {}),
+      ...(statut === "CONTACTE" ? { rappeleAt: new Date() } : {}),
     },
   });
   if (before && before.statut !== statut) {
@@ -115,6 +115,41 @@ export async function setLeadStatut(id: string, statut: string): Promise<void> {
   revalidatePath("/console/prospects");
   revalidatePath(`/console/prospects/${id}`);
   revalidatePath("/console");
+}
+
+/** Enregistre la qualification commerciale d'un prospect (5 axes, plan feuille 6). */
+export async function setLeadQualification(
+  leadId: string,
+  data: {
+    verticale?: string | null;
+    outilActuel?: string | null;
+    echeanceQualiopi?: string | null;
+    volumeStagiairesMois?: number | null;
+    malARemplir?: boolean | null;
+    decideur?: string | null;
+  },
+): Promise<{ ok: boolean }> {
+  await requireSuperAdmin();
+  const pick = (v: string | null | undefined, allowed: string[]) =>
+    v && allowed.includes(v) ? v : null;
+  await prisma.lead.update({
+    where: { id: leadId },
+    data: {
+      verticale: pick(data.verticale, ["securite", "transport", "autre"]),
+      outilActuel: pick(data.outilActuel, ["aucun", "excel", "concurrent", "inconnu"]),
+      echeanceQualiopi: pick(data.echeanceQualiopi, ["moins_6_mois", "plus_6_mois", "non_concerne", "inconnu"]),
+      volumeStagiairesMois:
+        typeof data.volumeStagiairesMois === "number" && data.volumeStagiairesMois >= 0
+          ? Math.floor(data.volumeStagiairesMois)
+          : null,
+      malARemplir: typeof data.malARemplir === "boolean" ? data.malARemplir : null,
+      decideur: data.decideur?.trim() || null,
+      lu: true,
+    },
+  });
+  revalidatePath(`/console/prospects/${leadId}`);
+  revalidatePath("/console/prospects");
+  return { ok: true };
 }
 
 /** Enregistre les notes internes d'un lead. */
@@ -207,7 +242,7 @@ export async function convertLeadToClient(leadId: string): Promise<ConvertLeadRe
 
   await prisma.lead.update({
     where: { id: leadId },
-    data: { statut: LeadStatut.CONVERTI, lu: true },
+    data: { statut: LeadStatut.SIGNE, lu: true },
   });
   await logLeadEvent(leadId, "conversion", {
     titre: mode === "demo_promue" ? "Converti en client (démo promue)" : "Converti en client",

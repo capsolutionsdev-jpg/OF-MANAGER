@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useConfirm } from "@/components/ui/confirm-dialog";
-import { TONE_CLASSES } from "@/components/ui/status-badge";
+import { STATUT_OPTIONS, statutTone, statutLabel, STATUTS_A_TRAITER } from "@/components/console/lead-statut";
 import { cn } from "@/lib/utils";
 
 export type LeadRow = {
@@ -26,26 +26,19 @@ export type LeadRow = {
   lu: boolean;
   rappeleAt: Date | null;
   createdAt: Date;
+  verticale: string | null;
+  outilActuel: string | null;
+  echeanceQualiopi: string | null;
+  volumeStagiairesMois: number | null;
+  malARemplir: boolean | null;
+  decideur: string | null;
 };
 
-const STATUTS = [
-  { key: "NOUVEAU", label: "Nouveau" },
-  { key: "A_RAPPELER", label: "À rappeler" },
-  { key: "RAPPELE", label: "Rappelé" },
-  { key: "CONVERTI", label: "Converti" },
-  { key: "PERDU", label: "Perdu" },
-];
-const STATUT_BADGE: Record<string, string> = {
-  NOUVEAU: TONE_CLASSES.info,
-  A_RAPPELER: TONE_CLASSES.warning,
-  RAPPELE: TONE_CLASSES.info,
-  CONVERTI: TONE_CLASSES.success,
-  PERDU: TONE_CLASSES.neutral,
-};
+const STATUTS = STATUT_OPTIONS;
 const FILTERS = [
   { key: "ACTIFS", label: "À traiter" },
   { key: "TOUS", label: "Tous" },
-  { key: "CONVERTI", label: "Convertis" },
+  { key: "SIGNE", label: "Signés" },
 ];
 
 function fmt(d: Date) {
@@ -75,7 +68,7 @@ function LeadCard({ lead }: { lead: LeadRow }) {
             </p>
           </div>
           <div className="ml-auto flex items-center gap-2">
-            <Badge className={cn("text-[11px]", STATUT_BADGE[lead.statut])}>{STATUTS.find((s) => s.key === lead.statut)?.label}</Badge>
+            <Badge className={cn("text-[11px]", statutTone(lead.statut))}>{statutLabel(lead.statut)}</Badge>
             <select
               defaultValue={lead.statut}
               disabled={pending}
@@ -110,9 +103,9 @@ function LeadCard({ lead }: { lead: LeadRow }) {
             />
           </div>
           {savingNotes && <Loader2 className="mt-2 h-4 w-4 animate-spin text-muted-foreground" />}
-          {lead.statut !== "RAPPELE" && lead.statut !== "CONVERTI" && (
-            <Button size="sm" variant="outline" className="h-9 gap-1.5" disabled={pending} onClick={() => start(() => setLeadStatut(lead.id, "RAPPELE"))}>
-              <PhoneCall className="h-3.5 w-3.5" /> Marquer rappelé
+          {lead.statut === "FICHIER" && (
+            <Button size="sm" variant="outline" className="h-9 gap-1.5" disabled={pending} onClick={() => start(() => setLeadStatut(lead.id, "CONTACTE"))}>
+              <PhoneCall className="h-3.5 w-3.5" /> Marquer contacté
             </Button>
           )}
           <Button size="sm" variant="ghost" className="h-9 text-muted-foreground hover:text-destructive" disabled={pending} onClick={async () => { if (await confirm({ title: "Supprimer ce lead ?", description: "Cette action est définitive.", destructive: true, confirmLabel: "Supprimer" })) start(() => deleteLead(lead.id)); }} aria-label="Supprimer">
@@ -128,13 +121,13 @@ export function LeadsTable({ leads }: { leads: LeadRow[] }) {
   const [filter, setFilter] = useState("ACTIFS");
   const shown = leads.filter((l) => {
     if (filter === "TOUS") return true;
-    if (filter === "CONVERTI") return l.statut === "CONVERTI";
-    return l.statut === "NOUVEAU" || l.statut === "A_RAPPELER"; // À traiter
+    if (filter === "SIGNE") return l.statut === "SIGNE";
+    return STATUTS_A_TRAITER.includes(l.statut); // À traiter
   });
   const counts = {
-    ACTIFS: leads.filter((l) => l.statut === "NOUVEAU" || l.statut === "A_RAPPELER").length,
+    ACTIFS: leads.filter((l) => STATUTS_A_TRAITER.includes(l.statut)).length,
     TOUS: leads.length,
-    CONVERTI: leads.filter((l) => l.statut === "CONVERTI").length,
+    SIGNE: leads.filter((l) => l.statut === "SIGNE").length,
   };
 
   return (

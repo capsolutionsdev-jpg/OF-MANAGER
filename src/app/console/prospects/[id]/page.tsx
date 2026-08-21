@@ -14,24 +14,18 @@ import {
   LeadStatutSelect,
 } from "@/components/console/lead-note-form";
 import { ConvertLeadButton } from "@/components/console/convert-lead-button";
+import { LeadQualificationForm } from "@/components/console/lead-qualification-form";
+import { statutLabel, statutTone } from "@/components/console/lead-statut";
+import { temperature, type QualifInput } from "@/lib/growth/qualification";
 import { TONE_CLASSES } from "@/components/ui/status-badge";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
-const STATUT_LABELS: Record<string, string> = {
-  NOUVEAU: "Nouveau",
-  A_RAPPELER: "À rappeler",
-  RAPPELE: "Rappelé",
-  CONVERTI: "Converti",
-  PERDU: "Perdu",
-};
-const STATUT_BADGE: Record<string, string> = {
-  NOUVEAU: TONE_CLASSES.info,
-  A_RAPPELER: TONE_CLASSES.warning,
-  RAPPELE: TONE_CLASSES.info,
-  CONVERTI: TONE_CLASSES.success,
-  PERDU: TONE_CLASSES.neutral,
+const TEMP_META: Record<string, { label: string; cls: string }> = {
+  chaud: { label: "Chaud", cls: TONE_CLASSES.success },
+  tiede: { label: "Tiède", cls: TONE_CLASSES.warning },
+  froid: { label: "Froid", cls: TONE_CLASSES.neutral },
 };
 const SOURCE_LABELS: Record<string, string> = {
   demo: "Démo",
@@ -78,6 +72,15 @@ export default async function FicheProspectPage({
   const source = lead.source ? (SOURCE_LABELS[lead.source] ?? lead.source) : "Contact";
   const tachesOuvertes = lead.tasks.filter((t) => !t.done).length;
 
+  const qualif: QualifInput = {
+    verticale: lead.verticale as QualifInput["verticale"],
+    outilActuel: lead.outilActuel as QualifInput["outilActuel"],
+    echeanceQualiopi: lead.echeanceQualiopi as QualifInput["echeanceQualiopi"],
+    volumeStagiairesMois: lead.volumeStagiairesMois,
+    malARemplir: lead.malARemplir,
+  };
+  const temp = TEMP_META[temperature(qualif)];
+
   // Client déjà créé depuis ce prospect ? (organismeId dans la meta de l'événement).
   const convEvent = lead.events.find((e) => e.type === "conversion");
   const convertedOrgId =
@@ -98,9 +101,10 @@ export default async function FicheProspectPage({
         title={lead.nom}
         subtitle={`${lead.organisme ? `${lead.organisme} · ` : ""}Créé le ${fmtDate(lead.createdAt)}`}
       >
-        <Badge className={cn("text-[11px]", STATUT_BADGE[lead.statut])}>
-          {STATUT_LABELS[lead.statut] ?? lead.statut}
+        <Badge className={cn("text-[11px]", statutTone(lead.statut))}>
+          {statutLabel(lead.statut)}
         </Badge>
+        <Badge className={cn("text-[11px]", temp.cls)}>{temp.label}</Badge>
         <Badge className={cn("text-[11px]", scoreClasse(lead.score))}>Score {lead.score}</Badge>
         <Badge variant="outline" className="text-[11px]">
           {source}
@@ -174,6 +178,23 @@ export default async function FicheProspectPage({
                   <p className="whitespace-pre-wrap">{lead.message}</p>
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="py-3">
+              <CardTitle className="text-sm text-muted-foreground">Qualification</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <LeadQualificationForm
+                leadId={lead.id}
+                verticale={lead.verticale}
+                outilActuel={lead.outilActuel}
+                echeanceQualiopi={lead.echeanceQualiopi}
+                volumeStagiairesMois={lead.volumeStagiairesMois}
+                malARemplir={lead.malARemplir}
+                decideur={lead.decideur}
+              />
             </CardContent>
           </Card>
 
