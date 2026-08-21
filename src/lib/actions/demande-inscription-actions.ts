@@ -129,11 +129,8 @@ export async function confirmerDemandeInscription(
     .filter((s): s is { nom: string; prenom: string; email?: string } => !isExistant(s))
     .map((s) => ({ nom: s.nom, prenom: s.prenom, email: s.email }));
 
-  const nbSalaries = candidatIdsExistants.length + nouveaux.length;
   const prix = opts?.prixParCandidat;
   const prixParCandidat = prix != null && Number.isFinite(prix) && prix >= 0 ? prix : undefined;
-  // Montant de la convention = prix PAR CANDIDAT × nombre de salariés.
-  const total = prixParCandidat != null ? Math.round(prixParCandidat * nbSalaries * 100) / 100 : undefined;
 
   const res = await createConventionEntreprise({
     sessionId: demande.sessionId,
@@ -141,7 +138,6 @@ export async function confirmerDemandeInscription(
     nouveaux,
     candidatIdsExistants,
     financementType: demande.financementType ?? "ENTREPRISE",
-    montant: total != null ? String(total) : undefined,
   });
   if (!res.ok) {
     // Échec de la convention → on relâche le verrou pour permettre une nouvelle tentative.
@@ -150,6 +146,14 @@ export async function confirmerDemandeInscription(
       data: { statut: "EN_ATTENTE", traiteeParId: null },
     });
     return { ok: false, error: res.error };
+  }
+
+  // Montant = prix PAR CANDIDAT × nombre RÉEL d'inscrits (res.inscrits) — reste
+  // cohérent avec l'effectif de la convention même si un salarié était déjà inscrit
+  // (dé-doublonné par createConventionEntreprise).
+  if (prixParCandidat != null) {
+    const total = Math.round(prixParCandidat * res.inscrits * 100) / 100;
+    await db.convention.update({ where: { id: res.conventionId }, data: { montant: total } });
   }
 
   // OPCO précisé par l'admin (quand le financement est OPCO) → mémorisé sur

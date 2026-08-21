@@ -9,6 +9,7 @@ const fakeDb = {
   session: { findFirst: vi.fn() },
   candidat: { findMany: vi.fn() },
   demandeInscription: { create: vi.fn(), findFirst: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
+  convention: { update: vi.fn() },
   entreprise: { update: vi.fn() },
 };
 const requireStaffTenant = vi.fn();
@@ -171,10 +172,12 @@ describe("confirmerDemandeInscription — réutilise createConventionEntreprise"
     createConventionEntreprise.mockResolvedValue({ ok: true, conventionId: "cv1", inscrits: 2 });
     fakeDb.entreprise.update.mockResolvedValue({});
 
+    fakeDb.convention.update.mockResolvedValue({});
     const r = await confirmerDemandeInscription("d1", { prixParCandidat: 100, opco: "AKTO" });
     expect(r.ok).toBe(true);
-    // total = 100 € × 2 salariés = 200 €
-    expect(createConventionEntreprise.mock.calls[0][0].montant).toBe("200");
+    // total = 100 € × nombre RÉEL d'inscrits (res.inscrits = 2) = 200 € → sur la convention
+    expect(fakeDb.convention.update.mock.calls[0][0].where.id).toBe("cv1");
+    expect(fakeDb.convention.update.mock.calls[0][0].data.montant).toBe(200);
     // OPCO mémorisé sur l'entreprise (financement OPCO)
     expect(fakeDb.entreprise.update.mock.calls[0][0].where.id).toBe("ent-A");
     expect(fakeDb.entreprise.update.mock.calls[0][0].data.opco).toBe("AKTO");
