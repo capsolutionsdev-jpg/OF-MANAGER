@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/superadmin-guard";
 import { getResolvedPlans } from "@/lib/pricing";
 import { planKeyForOrg } from "@/lib/plans";
+import { computeContratTotals } from "@/lib/contrats/prestation";
+import { contratDataFrom } from "@/lib/contrats/prestation-data";
 import { appBaseUrl } from "@/lib/token";
 
 export type ConsoleBillingState = { ok?: boolean; error?: string; url?: string };
@@ -23,9 +25,28 @@ export async function createSepaSetupForClient(organismeId: string): Promise<Con
   if (!org) return { error: "Organisme introuvable." };
   if (org.isDemo) return { error: "Impossible pour un organisme de démonstration." };
 
+  // Base de facturation : le dernier contrat de prestation SIGNÉ (montant net +
+  // options + packs, périodicité de son engagement — l'offre Pionniers y est déjà
+  // cuite) ; sinon repli sur le prix du palier.
+  const contrat = await prisma.contratPrestation.findFirst({
+    where: { organismeId, statut: "SIGNE" },
+    orderBy: { createdAt: "desc" },
+  });
   const { plans } = await getResolvedPlans();
   const key = planKeyForOrg(org.formule, org.fonctionnalites);
   const plan = plans[key];
+
+  let interval: "month" | "year" = "month";
+  let unitAmount = plan.price * 100;
+  let libelle = `OF Manager — formule ${plan.name}`;
+  if (contrat) {
+    const data = contratDataFrom(contrat);
+    const t = computeContratTotals(data);
+    const annuel = data.engagement === "ANNUEL";
+    interval = annuel ? "year" : "month";
+    unitAmount = Math.round(t.recurrentMois * (annuel ? 12 : 1) * 100);
+    libelle = `OF Manager — ${data.formuleNom} (contrat ${contrat.reference})`;
+  }
 
   // Client Stripe : réutilise s'il existe, sinon le crée et le mémorise.
   let customerId = org.stripeCustomerId;
@@ -49,9 +70,9 @@ export async function createSepaSetupForClient(organismeId: string): Promise<Con
         quantity: 1,
         price_data: {
           currency: "eur",
-          unit_amount: plan.price * 100,
-          recurring: { interval: "month" },
-          product_data: { name: `OF Manager — formule ${plan.name}` },
+          unit_amount: unitAmount,
+          recurring: { interval },
+          product_data: { name: libelle },
         },
       },
     ],
