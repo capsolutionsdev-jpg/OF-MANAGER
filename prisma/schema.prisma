@@ -1544,6 +1544,7 @@ model Facture {
   tva           Decimal       @default(20) @db.Decimal(5, 2)
   montantTTC    Decimal       @default(0) @db.Decimal(10, 2)
   lignesJson    Json?
+  fileUrl       String? // PDF déposé par l'admin (fait sur un autre logiciel) → téléchargé par le client B2B depuis son espace
   statut        FactureStatut @default(BROUILLON)
   datePaiement  DateTime?
   financementType FinancementType?

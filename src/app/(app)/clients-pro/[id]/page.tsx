@@ -20,6 +20,7 @@ import {
 } from "@/lib/actions/client-pro-actions";
 import { ConventionDialog } from "@/components/conventions/convention-dialog";
 import { CreateAccessButton } from "@/components/clients-pro/create-access-button";
+import { DepositFactureForm } from "@/components/clients-pro/deposit-facture-form";
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +44,7 @@ export default async function ClientProPage({
         },
       },
       conventions: { orderBy: { createdAt: "desc" } },
+      factures: { orderBy: { dateEmission: "desc" } },
     },
   });
   if (!client) notFound();
@@ -216,6 +218,42 @@ export default async function ClientProPage({
               ))}
             </ul>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Factures — dépôt du PDF par le staff, téléchargement côté client */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Factures ({client.factures.length})</CardTitle>
+          <CardDescription>
+            Déposez le PDF d&apos;une facture (établie sur votre logiciel de facturation) — le
+            client la télécharge ensuite depuis son espace.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {client.factures.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Aucune facture déposée.</p>
+          ) : (
+            <ul className="space-y-2 text-sm">
+              {client.factures.map((f) => (
+                <li key={f.id} className="flex flex-wrap items-center justify-between gap-2 border-b pb-2 last:border-0">
+                  <span className="font-medium">{f.reference}</span>
+                  <span className="text-muted-foreground">
+                    {Number(f.montantTTC)} € · {fmt(f.dateEmission)}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline">{f.statut}</Badge>
+                    {f.fileUrl && (
+                      <a href={f.fileUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                        PDF
+                      </a>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+          <DepositFactureForm entrepriseId={client.id} />
         </CardContent>
       </Card>
 

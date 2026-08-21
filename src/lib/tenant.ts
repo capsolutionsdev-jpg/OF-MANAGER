@@ -156,7 +156,10 @@ export async function requireTenant() {
 // Rôles à login mais NON-staff : élèves e-learning et formateurs. Ils ont un
 // organisme rattaché, donc `getTenantDb()`/`requireTenant()` les laisserait
 // invoquer les mutations de gestion via leur action-ID (BFLA — audit P2-1).
-const NON_STAFF_ROLES = new Set(["APPRENANT", "FORMATEUR"]);
+// ENTREPRISE (client B2B) est un tiers de l'OF, jamais du personnel : il ne doit
+// pouvoir déclencher AUCUNE Server Action de gestion, même en forgeant la requête
+// (il est déjà confiné à /espace-entreprise/* côté routes).
+const NON_STAFF_ROLES = new Set(["APPRENANT", "FORMATEUR", "ENTREPRISE"]);
 
 /**
  * Comme `requireTenant()`, mais réservé au PERSONNEL de l'organisme : rejette

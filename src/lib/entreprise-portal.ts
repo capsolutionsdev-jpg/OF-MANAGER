@@ -1,4 +1,5 @@
 import "server-only";
+import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { getTenantDb } from "@/lib/tenant";
 
@@ -15,4 +16,15 @@ export async function getCurrentEntreprise() {
     where: { userId: session.user.id },
     select: { id: true, raisonSociale: true },
   });
+}
+
+/**
+ * Garde de page du portail entreprise : renvoie l'entreprise connectée ou
+ * redirige vers /login. Défense en profondeur au-dessus du confinement de
+ * routes (`authorized()`) et de la garde du layout.
+ */
+export async function requireEntreprise() {
+  const entreprise = await getCurrentEntreprise();
+  if (!entreprise) redirect("/login");
+  return entreprise;
 }
