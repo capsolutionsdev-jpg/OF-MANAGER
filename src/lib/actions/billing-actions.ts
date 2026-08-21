@@ -29,7 +29,10 @@ async function requireAdminOrg() {
  * au prix ÉDITÉ dans la console (price_data inline → pas de Price à pré-créer).
  * Renvoie l'URL de redirection vers Stripe.
  */
-export async function createCheckout(formule: FormuleKey): Promise<BillingState> {
+export async function createCheckout(
+  formule: FormuleKey,
+  periode: "mensuel" | "annuel" = "mensuel",
+): Promise<BillingState> {
   const ctx = await requireAdminOrg();
   if (!ctx) return { error: "Seul le gérant du compte peut souscrire." };
   if (!FORMULE_KEYS.has(formule)) return { error: "Formule inconnue." };
@@ -43,6 +46,12 @@ export async function createCheckout(formule: FormuleKey): Promise<BillingState>
 
   const { plans } = await getResolvedPlans();
   const plan = plans[formule];
+  const annuel = periode === "annuel";
+  if (annuel && plan.priceYear == null) {
+    return { error: "Facturation annuelle indisponible pour cette formule (sur devis)." };
+  }
+  const unitAmount = (annuel ? (plan.priceYear as number) : plan.price) * 100;
+  const interval: "month" | "year" = annuel ? "year" : "month";
 
   // Client Stripe : réutilise s'il existe, sinon le crée et le mémorise.
   let customerId = org.stripeCustomerId;
@@ -65,9 +74,9 @@ export async function createCheckout(formule: FormuleKey): Promise<BillingState>
         quantity: 1,
         price_data: {
           currency: "eur",
-          unit_amount: plan.price * 100,
-          recurring: { interval: "month" },
-          product_data: { name: `OFManager — formule ${plan.name}` },
+          unit_amount: unitAmount,
+          recurring: { interval },
+          product_data: { name: `OFManager — formule ${plan.name}${annuel ? " (annuel −15 %)" : ""}` },
         },
       },
     ],
