@@ -584,7 +584,8 @@ export const DOCUMENTS: Record<string, { label: string; html: string }> = {
 
       <h2>Article 5 — Dispositions financières</h2>
       <table class="doc-table">
-        <tr><td>Prix de l'action (net de taxe)</td><td><strong>{{tarif}}</strong></td></tr>
+        <tr><td>Prix par participant (net de taxe)</td><td><strong>{{prix_unitaire}}</strong></td></tr>
+        <tr><td>Nombre de participants</td><td>{{effectif}}</td></tr>
         <tr><td>Frais pédagogiques</td><td>Inclus</td></tr>
         <tr><td><strong>TOTAL NET DE TAXES</strong></td><td><strong>{{tarif}}</strong></td></tr>
         <tr><td>Mode de financement</td><td>{{financement}} {{entreprise_opco}}</td></tr>

@@ -112,6 +112,10 @@ export function buildVariables(
       : i.montant
         ? `${Number(i.montant)} €`
         : "—",
+    // Convention de groupe : ces variables sont surchargées par le générateur
+    // (convention-pdf.ts). En flux mono-inscription : 1 participant.
+    prix_unitaire: f.tarif ? `${Number(f.tarif)} € net de taxe` : i.montant ? `${Number(i.montant)} €` : "—",
+    effectif: "1",
     modalite: MODALITE_LABELS[f.modalite],
     financement: i.financementType ? FINANCEMENT_LABELS[i.financementType] : "—",
     // Contenu pédagogique détaillé (programme Qualiopi)

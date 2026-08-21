@@ -73,7 +73,7 @@ export async function generateAndStoreConventionPdf(conventionId: string): Promi
           horaires: true,
           lieu: true,
           modalite: true,
-          formation: { select: { titre: true, reference: true } },
+          formation: { select: { titre: true, reference: true, duree: true, dureeHeures: true } },
         },
       },
       inscriptions: {
@@ -99,15 +99,17 @@ export async function generateAndStoreConventionPdf(conventionId: string): Promi
   const fin = conv.inscriptions.find((i) => i.financementType)?.financementType ?? null;
   const financementLabel = fin ? (FINANCEMENT_LABELS[fin as FinancementType] ?? fin) : "—";
 
-  const montantNum = conv.montant != null ? Number(conv.montant) : 0;
+  const nb = conv.inscriptions.length;
+  const montantNum = conv.montant != null ? Number(conv.montant) : 0; // TOTAL
   const tarif = montantNum > 0 ? `${montantNum} € net de taxe` : "—";
+  // Prix PAR PARTICIPANT (le total est prix unitaire × nb).
+  const unitaire = nb > 0 ? Math.round((montantNum / nb) * 100) / 100 : montantNum;
+  const prix_unitaire = unitaire > 0 ? `${unitaire} € net de taxe` : "—";
 
-  // Durée estimée (jours) à partir des dates de session.
-  let duree = "—";
-  if (sess?.dateDebut && sess?.dateFin) {
-    const jours = Math.max(1, Math.round((sess.dateFin.getTime() - sess.dateDebut.getTime()) / 86_400_000) + 1);
-    duree = `${jours} jour${jours > 1 ? "s" : ""}`;
-  }
+  // Durée = heures de la formation (source Qualiopi : Formation.duree / dureeHeures),
+  // et non les jours calendaires de la session.
+  const f = sess?.formation;
+  const duree = f?.duree ? f.duree : f?.dureeHeures ? `${f.dureeHeures} heures` : "—";
 
   const vars: Record<string, string> = {
     organisme: org.name,
@@ -139,6 +141,8 @@ export async function generateAndStoreConventionPdf(conventionId: string): Promi
     lieu: sess?.lieu ?? "—",
     modalite: sess?.modalite ? (MODALITE_LABEL[sess.modalite] ?? sess.modalite) : "—",
     tarif,
+    prix_unitaire,
+    effectif: String(nb),
     financement: financementLabel,
     date_jour: new Date().toLocaleDateString("fr-FR"),
   };

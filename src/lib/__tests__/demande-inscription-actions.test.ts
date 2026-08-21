@@ -9,6 +9,7 @@ const fakeDb = {
   session: { findFirst: vi.fn() },
   candidat: { findMany: vi.fn() },
   demandeInscription: { create: vi.fn(), findFirst: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
+  entreprise: { update: vi.fn() },
 };
 const requireStaffTenant = vi.fn();
 vi.mock("@/lib/tenant", () => ({
@@ -145,11 +146,38 @@ describe("confirmerDemandeInscription — réutilise createConventionEntreprise"
     createConventionEntreprise.mockResolvedValue({ ok: true, conventionId: "cv1", inscrits: 1 });
     generateAndStoreConventionPdf.mockResolvedValueOnce(null); // échec de génération PDF
 
-    const r = await confirmerDemandeInscription("d1", 500);
+    const r = await confirmerDemandeInscription("d1", { prixParCandidat: 500 });
     expect(r.ok).toBe(true);
     expect(r.warning).toBeTruthy();
     // Pas de rollback (un seul updateMany = le verrou) : la convention reste créée.
     expect(fakeDb.demandeInscription.updateMany).toHaveBeenCalledTimes(1);
+  });
+
+  it("prix PAR CANDIDAT × nb = total, et enregistre l'OPCO sur l'entreprise", async () => {
+    requireStaffTenant.mockResolvedValue({ db: fakeDb, session: { user: { id: "staff-1" } }, organismeId: "org-1" });
+    fakeDb.demandeInscription.findFirst.mockResolvedValue({
+      id: "d1",
+      entrepriseId: "ent-A",
+      sessionId: "s1",
+      statut: "EN_ATTENTE",
+      financementType: "OPCO",
+      session: { formation: { titre: "F" } },
+      salariesJson: [
+        { nom: "A", prenom: "B" },
+        { nom: "C", prenom: "D" },
+      ], // 2 salariés
+    });
+    fakeDb.demandeInscription.updateMany.mockResolvedValue({ count: 1 });
+    createConventionEntreprise.mockResolvedValue({ ok: true, conventionId: "cv1", inscrits: 2 });
+    fakeDb.entreprise.update.mockResolvedValue({});
+
+    const r = await confirmerDemandeInscription("d1", { prixParCandidat: 100, opco: "AKTO" });
+    expect(r.ok).toBe(true);
+    // total = 100 € × 2 salariés = 200 €
+    expect(createConventionEntreprise.mock.calls[0][0].montant).toBe("200");
+    // OPCO mémorisé sur l'entreprise (financement OPCO)
+    expect(fakeDb.entreprise.update.mock.calls[0][0].where.id).toBe("ent-A");
+    expect(fakeDb.entreprise.update.mock.calls[0][0].data.opco).toBe("AKTO");
   });
 
   it("double-confirm concurrent : le 2e n'obtient pas le verrou (count 0) → pas de convention", async () => {

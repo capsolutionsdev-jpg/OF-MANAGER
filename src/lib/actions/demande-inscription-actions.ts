@@ -91,7 +91,7 @@ export async function createDemandeInscription(input: {
  */
 export async function confirmerDemandeInscription(
   demandeId: string,
-  montant?: number,
+  opts?: { prixParCandidat?: number; opco?: string },
 ): Promise<{ ok: boolean; error?: string; warning?: string }> {
   const { db, session, organismeId } = await requireStaffTenant();
 
@@ -129,7 +129,11 @@ export async function confirmerDemandeInscription(
     .filter((s): s is { nom: string; prenom: string; email?: string } => !isExistant(s))
     .map((s) => ({ nom: s.nom, prenom: s.prenom, email: s.email }));
 
-  const montantValide = montant != null && Number.isFinite(montant) && montant >= 0 ? montant : undefined;
+  const nbSalaries = candidatIdsExistants.length + nouveaux.length;
+  const prix = opts?.prixParCandidat;
+  const prixParCandidat = prix != null && Number.isFinite(prix) && prix >= 0 ? prix : undefined;
+  // Montant de la convention = prix PAR CANDIDAT × nombre de salariés.
+  const total = prixParCandidat != null ? Math.round(prixParCandidat * nbSalaries * 100) / 100 : undefined;
 
   const res = await createConventionEntreprise({
     sessionId: demande.sessionId,
@@ -137,7 +141,7 @@ export async function confirmerDemandeInscription(
     nouveaux,
     candidatIdsExistants,
     financementType: demande.financementType ?? "ENTREPRISE",
-    montant: montantValide != null ? String(montantValide) : undefined,
+    montant: total != null ? String(total) : undefined,
   });
   if (!res.ok) {
     // Échec de la convention → on relâche le verrou pour permettre une nouvelle tentative.
@@ -146,6 +150,15 @@ export async function confirmerDemandeInscription(
       data: { statut: "EN_ATTENTE", traiteeParId: null },
     });
     return { ok: false, error: res.error };
+  }
+
+  // OPCO précisé par l'admin (quand le financement est OPCO) → mémorisé sur
+  // l'entreprise pour figurer dans la convention (§5) et les documents suivants.
+  if (opts?.opco?.trim() && demande.financementType === "OPCO") {
+    await db.entreprise.update({
+      where: { id: demande.entrepriseId },
+      data: { opco: opts.opco.trim() },
+    });
   }
 
   // Génère et stocke le PDF de la convention (Qualiopi). Best-effort : en cas

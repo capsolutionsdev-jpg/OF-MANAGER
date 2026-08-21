@@ -18,7 +18,7 @@ export default async function DemandesInscriptionPage() {
     db.demandeInscription.findMany({
       where: { statut: { in: ["EN_ATTENTE", "CONTRE_PROPOSEE"] } },
       include: {
-        entreprise: { select: { raisonSociale: true } },
+        entreprise: { select: { raisonSociale: true, opco: true } },
         session: { select: { formationId: true, dateDebut: true, lieu: true, formation: { select: { titre: true, tarif: true } } } },
         sessionProposee: { select: { dateDebut: true, lieu: true, formation: { select: { titre: true } } } },
       },
@@ -90,10 +90,11 @@ export default async function DemandesInscriptionPage() {
                         .filter((o) => o.formationId === d.session.formationId && o.id !== d.sessionId)
                         .map(({ id, label }) => ({ id, label }))}
                       montantSuggere={
-                        d.session.formation.tarif != null
-                          ? Number(d.session.formation.tarif) * salaries.length
-                          : undefined
+                        d.session.formation.tarif != null ? Number(d.session.formation.tarif) : undefined
                       }
+                      nbSalaries={salaries.length}
+                      financementType={d.financementType}
+                      opcoActuel={d.entreprise.opco}
                     />
                   ) : (
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">

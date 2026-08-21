@@ -15,12 +15,19 @@ export async function storeUpload(opts: {
 }): Promise<string> {
   const { data, folder, ext, contentType } = opts;
   if (process.env.BLOB_READ_WRITE_TOKEN) {
-    const blob = await put(`${folder}/${Date.now()}.${ext}`, Buffer.from(data), {
-      access: "public",
-      addRandomSuffix: true,
-      contentType: contentType || undefined,
-    });
-    return blob.url;
+    try {
+      const blob = await put(`${folder}/${Date.now()}.${ext}`, Buffer.from(data), {
+        access: "public",
+        addRandomSuffix: true,
+        contentType: contentType || undefined,
+      });
+      return blob.url;
+    } catch (e) {
+      // Blob indisponible / token invalide / store mal configuré : on ne perd
+      // JAMAIS l'upload → repli sur une data: URL (servie via les routes de
+      // téléchargement). L'erreur est loggée pour diagnostic (token à vérifier).
+      console.error("storeUpload: échec Vercel Blob, repli data: URL —", e);
+    }
   }
   const b64 = Buffer.from(data).toString("base64");
   return `data:${contentType || "application/octet-stream"};base64,${b64}`;
