@@ -24,9 +24,10 @@ const FILTERS = [
 ];
 
 const PLAN_BADGE: Record<string, string> = {
-  BASIQUE: TONE_CLASSES.neutral,
-  MEDIUM: TONE_CLASSES.info,
-  COMPLET: TONE_CLASSES.info,
+  INDEPENDANT: TONE_CLASSES.neutral,
+  PRO: TONE_CLASSES.info,
+  CROISSANCE: TONE_CLASSES.info,
+  RESEAU: TONE_CLASSES.info,
 };
 
 export function OrganismesTable({ rows, initialQuery = "" }: { rows: OrgRow[]; initialQuery?: string }) {

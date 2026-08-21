@@ -7,7 +7,7 @@ import { FEATURES, FEATURE_GROUPS, type Feature } from "@/lib/features";
 
 export const metadata: Metadata = {
   title: "Tarifs — OFManager",
-  description: "Trois formules pour digitaliser votre organisme de formation : Basique, Medium, Complet. Conforme Qualiopi, 100% à votre marque.",
+  description: "Quatre formules pour digitaliser votre organisme de formation : Indépendant, Pro, Croissance, Réseau. Conforme Qualiopi, 100% à votre marque.",
 };
 
 // Les tarifs sont éditables dans la console → on rend la page dynamiquement
@@ -51,7 +51,7 @@ export default async function TarifsPage() {
       </section>
 
       {/* Pricing cards */}
-      <section className="mx-auto grid max-w-5xl gap-5 px-6 sm:grid-cols-3">
+      <section className="mx-auto grid max-w-6xl gap-5 px-6 sm:grid-cols-2 lg:grid-cols-4">
         {PLAN_ORDER.map((key) => {
           const p = plans[key];
           const isPopular = key === popular;
@@ -68,7 +68,7 @@ export default async function TarifsPage() {
                   Le plus choisi
                 </span>
               )}
-              <div className="text-sm font-semibold" style={{ color: key === "BASIQUE" ? "#9fb0d0" : key === "MEDIUM" ? "#7B93E8" : "#b794ff" }}>
+              <div className="text-sm font-semibold" style={{ color: key === "INDEPENDANT" ? "#9fb0d0" : key === "PRO" ? "#7B93E8" : key === "CROISSANCE" ? "#b794ff" : "#e0a34a" }}>
                 {p.name}
               </div>
               <div className="mt-2 flex items-end gap-1">

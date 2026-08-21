@@ -53,7 +53,7 @@ export async function getOrgUsage(
 ): Promise<OrgUsage> {
   const now = new Date();
   const { start, end } = moisBornes(now);
-  const plan = (formule && PLANS[formule as FormuleKey]) || PLANS.BASIQUE;
+  const plan = (formule && PLANS[formule as FormuleKey]) || PLANS.INDEPENDANT;
 
   const [emails, inscriptions] = await Promise.all([
     prisma.emailLog.count({
