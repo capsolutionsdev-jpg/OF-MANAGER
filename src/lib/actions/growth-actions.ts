@@ -83,10 +83,43 @@ export type ImportResult = {
   ignores?: number; // doublons (e-mail déjà présent) ou lignes invalides
 };
 
+/** Normalise une verticale libre → securite | transport | autre (null si vide). */
+function parseVerticale(v?: string): string | null {
+  const s = (v ?? "").toLowerCase();
+  if (!s.trim()) return null;
+  if (/s[ée]cu/.test(s)) return "securite";
+  if (/transp|vtc|taxi|t3p|fimo|fco/.test(s)) return "transport";
+  return "autre";
+}
+/** Normalise l'outil actuel → aucun | excel | concurrent | inconnu (null si vide). */
+function parseOutil(v?: string): string | null {
+  const s = (v ?? "").toLowerCase().trim();
+  if (!s) return null;
+  if (/aucun|rien|^non$/.test(s)) return "aucun";
+  if (/excel|papier|tableur|word/.test(s)) return "excel";
+  if (/digiforma|dendreo|smartof|hector|qualiobee|concurrent|^oui$/.test(s)) return "concurrent";
+  return "inconnu";
+}
+/** Volume mensuel de stagiaires depuis un champ libre (null si non chiffrable). */
+function parseVolume(v?: string): number | null {
+  const n = parseInt((v ?? "").replace(/[^\d]/g, ""), 10);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+/** Échéance Qualiopi → moins_6_mois | plus_6_mois | non_concerne | inconnu. */
+function parseQualiopi(v?: string): string | null {
+  const s = (v ?? "").toLowerCase();
+  if (!s.trim()) return null;
+  if (/6\s*mois|urgent|<\s*6|bient|imminent/.test(s)) return "moins_6_mois";
+  if (/non|pas conc|aucun/.test(s)) return "non_concerne";
+  if (/mois|an|202\d/.test(s)) return "plus_6_mois";
+  return "inconnu";
+}
+
 /**
  * Importe des leads depuis un fichier CSV (en-tête obligatoire ; colonnes
  * reconnues, dans n'importe quel ordre : nom, email, organisme, telephone,
- * message/notes). Dédoublonne par e-mail (les leads existants sont ignorés).
+ * message/notes, verticale, volume (stagiaires/mois), outil (actuel),
+ * qualiopi (échéance)). Dédoublonne par e-mail (les leads existants sont ignorés).
  */
 export async function importLeadsCsv(formData: FormData): Promise<ImportResult> {
   await requireSuperAdmin();
@@ -106,6 +139,10 @@ export async function importLeadsCsv(formData: FormData): Promise<ImportResult> 
   const iOrg = col(["organisme", "organisation", "societe", "entreprise", "company"]);
   const iTel = col(["telephone", "tel", "phone", "portable", "mobile"]);
   const iMsg = col(["message", "notes", "note", "commentaire"]);
+  const iVerticale = col(["verticale", "metier", "secteur", "domaine"]);
+  const iVolume = col(["volume", "stagiaires", "stagiaires/mois", "volume stagiaires", "stagiaires par mois"]);
+  const iOutil = col(["outil", "outil actuel", "logiciel"]);
+  const iQualiopi = col(["qualiopi", "echeance qualiopi", "audit qualiopi", "audit"]);
   if (iEmail < 0) return { ok: false, error: "Colonne « email » introuvable dans l'en-tête." };
 
   const rows = lines.slice(1, 1 + MAX_ROWS);
@@ -124,6 +161,10 @@ export async function importLeadsCsv(formData: FormData): Promise<ImportResult> 
         organisme: (iOrg >= 0 && cells[iOrg]) || null,
         telephone: (iTel >= 0 && cells[iTel]) || null,
         message: (iMsg >= 0 && cells[iMsg]) || null,
+        verticale: iVerticale >= 0 ? parseVerticale(cells[iVerticale]) : null,
+        volumeStagiairesMois: iVolume >= 0 ? parseVolume(cells[iVolume]) : null,
+        outilActuel: iOutil >= 0 ? parseOutil(cells[iOutil]) : null,
+        echeanceQualiopi: iQualiopi >= 0 ? parseQualiopi(cells[iQualiopi]) : null,
         source: "import",
         lu: true, // import en masse ≠ nouveaux à signaler un par un
       },

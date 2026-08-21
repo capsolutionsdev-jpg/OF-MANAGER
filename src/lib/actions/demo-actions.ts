@@ -98,3 +98,71 @@ export async function submitContact(
   }
   return { ok: true, demo: !sent };
 }
+
+/**
+ * Questionnaire de qualification public (page d'atterrissage) : enregistre un
+ * prospect DÉJÀ QUALIFIÉ (verticale, outil actuel, volume, échéance Qualiopi,
+ * enjeu) + créneau de rappel souhaité. Le scoring « 3 chaud » se calcule ensuite
+ * côté console. Notifie l'éditeur.
+ */
+export async function submitQualification(
+  _prev: DemoState | undefined,
+  formData: FormData,
+): Promise<DemoState> {
+  const nom = s(formData, "nom");
+  const organisme = s(formData, "organisme");
+  const email = s(formData, "email").toLowerCase();
+  const telephone = s(formData, "telephone");
+  const verticale = s(formData, "verticale") || null;
+  const outilActuel = s(formData, "outilActuel") || null;
+  const echeanceQualiopi = s(formData, "echeanceQualiopi") || null;
+  const volumeStr = s(formData, "volume").replace(/[^\d]/g, "");
+  const volumeStagiairesMois = volumeStr ? parseInt(volumeStr, 10) || null : null;
+  const remplit = s(formData, "remplit");
+  const malARemplir = remplit === "oui" ? true : remplit === "non" ? false : null;
+  const rappel = s(formData, "rappel");
+  const message = s(formData, "message");
+
+  if (!nom) return { error: "Indiquez votre nom." };
+  if (!EMAIL_RE.test(email)) return { error: "E-mail invalide." };
+
+  const note = [rappel && `Rappel souhaité : ${rappel}`, message].filter(Boolean).join("\n") || null;
+
+  try {
+    const lead = await prisma.lead.create({
+      data: {
+        nom,
+        organisme: organisme || null,
+        email,
+        telephone: telephone || null,
+        source: "qualification",
+        verticale,
+        outilActuel,
+        echeanceQualiopi,
+        volumeStagiairesMois,
+        malARemplir,
+        notes: note,
+        message: message || null,
+      },
+      select: { id: true },
+    });
+    await logLeadEvent(lead.id, "creation", { meta: { source: "qualification" } });
+    await logLeadEvent(lead.id, "demo_demandee"); // intention forte
+  } catch {
+    /* non bloquant */
+  }
+
+  const body =
+    `Nouveau prospect QUALIFIÉ — OFManager\n\n` +
+    `Nom : ${nom}\nOrganisme : ${organisme || "—"}\nE-mail : ${email}\nTéléphone : ${telephone || "—"}\n` +
+    `Verticale : ${verticale || "—"}\nOutil actuel : ${outilActuel || "—"}\n` +
+    `Volume : ${volumeStagiairesMois ?? "—"} stagiaires/mois\nÉchéance Qualiopi : ${echeanceQualiopi || "—"}\n` +
+    `Remplit ses sessions : ${malARemplir === true ? "a du mal" : malARemplir === false ? "carnet plein" : "—"}\n` +
+    `Rappel souhaité : ${rappel || "—"}\n\nMessage :\n${message || "—"}\n`;
+  let sent = false;
+  const to = notifyTo();
+  if (to) {
+    try { sent = (await sendEmail({ to, subject: `Prospect qualifié — ${organisme || nom}`, body })).sent; } catch { /* non bloquant */ }
+  }
+  return { ok: true, demo: !sent };
+}
