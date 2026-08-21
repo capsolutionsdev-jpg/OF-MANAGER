@@ -108,6 +108,7 @@ model Organisme {
   // Matrice d'automatisations Brevo configurable : { "<event>": { on, channel, trigger } }
   automationsConfig Json?
   maxSmsMois        Int? // quota SMS / mois (selon formule)
+  smsSolde          Int  @default(0) // solde SMS prépayé (packs) consommé en dépassement du quota
 
   // Fonctionnalités activées (clés de features cochées dans la console)
   fonctionnalites String[] @default([])

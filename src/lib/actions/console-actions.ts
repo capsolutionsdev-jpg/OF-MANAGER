@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { OrganismeStatut, SupportStatut, LeadStatut } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { smsPackByKey } from "@/lib/options";
 import { requireSuperAdmin } from "@/lib/superadmin-guard";
 import { sendEmail } from "@/lib/email";
 import { logLeadEvent } from "@/lib/growth/events";
@@ -176,6 +177,22 @@ export async function deleteLead(id: string): Promise<void> {
   });
   revalidatePath("/console/prospects");
   revalidatePath("/console");
+}
+
+/** Crédite un pack SMS prépayé sur le solde d'un organisme. SUPERADMIN. */
+export async function crediterSmsPack(
+  organismeId: string,
+  packKey: string,
+): Promise<{ ok: boolean; error?: string }> {
+  await requireSuperAdmin();
+  const pack = smsPackByKey(packKey);
+  if (!pack) return { ok: false, error: "Pack SMS inconnu." };
+  await prisma.organisme.update({
+    where: { id: organismeId },
+    data: { smsSolde: { increment: pack.sms } },
+  });
+  revalidatePath(`/console/${organismeId}`);
+  return { ok: true };
 }
 
 export type ConvertLeadResult = {
