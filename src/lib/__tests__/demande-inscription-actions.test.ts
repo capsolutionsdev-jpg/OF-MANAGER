@@ -20,8 +20,9 @@ const createConventionEntreprise = vi.fn();
 vi.mock("@/lib/actions/convention-actions", () => ({
   createConventionEntreprise: (i: unknown) => createConventionEntreprise(i),
 }));
+const generateAndStoreConventionPdf = vi.fn(async (_id: string) => "blob://conv.pdf" as string | null);
 vi.mock("@/lib/documents/convention-pdf", () => ({
-  generateAndStoreConventionPdf: vi.fn(async () => "blob://conv.pdf"),
+  generateAndStoreConventionPdf: (id: string) => generateAndStoreConventionPdf(id),
 }));
 vi.mock("@/lib/emails/demande-emails", () => ({
   notifyClientDemande: vi.fn(async () => {}),
@@ -126,6 +127,28 @@ describe("confirmerDemandeInscription — réutilise createConventionEntreprise"
     expect(claim.data.traiteeParId).toBe("staff-1");
     expect(claim.where.statut).toBe("EN_ATTENTE");
     // Pas de rollback → un seul updateMany.
+    expect(fakeDb.demandeInscription.updateMany).toHaveBeenCalledTimes(1);
+  });
+
+  it("confirme quand même si le PDF échoue (warning), sans rollback de la convention", async () => {
+    requireStaffTenant.mockResolvedValue({ db: fakeDb, session: { user: { id: "staff-1" } } });
+    fakeDb.demandeInscription.findFirst.mockResolvedValue({
+      id: "d1",
+      entrepriseId: "ent-A",
+      sessionId: "s1",
+      statut: "EN_ATTENTE",
+      financementType: "OPCO",
+      session: { formation: { titre: "Formation X" } },
+      salariesJson: [{ nom: "A", prenom: "B" }],
+    });
+    fakeDb.demandeInscription.updateMany.mockResolvedValue({ count: 1 });
+    createConventionEntreprise.mockResolvedValue({ ok: true, conventionId: "cv1", inscrits: 1 });
+    generateAndStoreConventionPdf.mockResolvedValueOnce(null); // échec de génération PDF
+
+    const r = await confirmerDemandeInscription("d1", 500);
+    expect(r.ok).toBe(true);
+    expect(r.warning).toBeTruthy();
+    // Pas de rollback (un seul updateMany = le verrou) : la convention reste créée.
     expect(fakeDb.demandeInscription.updateMany).toHaveBeenCalledTimes(1);
   });
 

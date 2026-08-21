@@ -18,9 +18,15 @@ vi.mock("@/lib/blob", () => ({
   storeUpload: vi.fn(async () => "blob://signed.pdf"),
 }));
 
+const generateAndStoreConventionPdf = vi.fn();
+vi.mock("@/lib/documents/convention-pdf", () => ({
+  generateAndStoreConventionPdf: (id: string) => generateAndStoreConventionPdf(id),
+}));
+
 import {
   uploadConventionSigneeClient,
   uploadConventionSigneeStaff,
+  regenererConventionPdf,
 } from "@/lib/actions/convention-signature-actions";
 
 const DATA_URL = "data:application/pdf;base64,JVBERi0=";
@@ -69,5 +75,32 @@ describe("uploadConventionSigneeStaff — personnel du tenant", () => {
     const r = await uploadConventionSigneeStaff("cv-x", DATA_URL);
     expect(r.ok).toBe(false);
     expect(fakeDb.convention.update).not.toHaveBeenCalled();
+  });
+});
+
+describe("garde re-dépôt + régénération (revue Phase 3)", () => {
+  it("client : refuse de redéposer si la convention est déjà validée (SIGNEE)", async () => {
+    getCurrentEntreprise.mockResolvedValue({ id: "ent-A", raisonSociale: "A" });
+    fakeDb.convention.findFirst.mockResolvedValue({ id: "cv1", signatureStatut: "SIGNEE" });
+    const r = await uploadConventionSigneeClient("cv1", DATA_URL);
+    expect(r.ok).toBe(false);
+    expect(fakeDb.convention.update).not.toHaveBeenCalled();
+  });
+
+  it("regenererConventionPdf : ok si le PDF est (re)généré", async () => {
+    requireStaffTenant.mockResolvedValue({ db: fakeDb });
+    fakeDb.convention.findFirst.mockResolvedValue({ id: "cv1", entrepriseId: "ent-A" });
+    generateAndStoreConventionPdf.mockResolvedValue("blob://conv.pdf");
+    const r = await regenererConventionPdf("cv1");
+    expect(r.ok).toBe(true);
+    expect(generateAndStoreConventionPdf).toHaveBeenCalledWith("cv1");
+  });
+
+  it("regenererConventionPdf : erreur si la génération échoue (null)", async () => {
+    requireStaffTenant.mockResolvedValue({ db: fakeDb });
+    fakeDb.convention.findFirst.mockResolvedValue({ id: "cv1", entrepriseId: "ent-A" });
+    generateAndStoreConventionPdf.mockResolvedValue(null);
+    const r = await regenererConventionPdf("cv1");
+    expect(r.ok).toBe(false);
   });
 });
