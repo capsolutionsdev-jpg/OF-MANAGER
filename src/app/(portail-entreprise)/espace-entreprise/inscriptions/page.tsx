@@ -3,6 +3,7 @@ import { requireEntreprise } from "@/lib/entreprise-portal";
 import { getEntrepriseInscriptions, getEntrepriseDemandes } from "@/lib/entreprise-data";
 import { sessionPhase } from "@/lib/candidat-portal";
 import { RubriqueHeader, EmptyState, InscriptionBadge, DemandeBadge, fmtDate } from "@/components/entreprise/portal-ui";
+import { ContrePropositionActions } from "@/components/entreprise/contre-proposition-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -85,17 +86,31 @@ export default async function InscriptionsPage() {
             {demandesVisibles.map((d) => {
               const nb = Array.isArray(d.salariesJson) ? d.salariesJson.length : 0;
               return (
-                <div key={d.id} className="flex flex-wrap items-start justify-between gap-2 rounded-xl border bg-card p-4">
-                  <div className="min-w-0">
-                    <p className="font-medium">{d.session.formation.titre}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {fmtDate(d.session.dateDebut)} · {nb} salarié{nb > 1 ? "s" : ""} · demandé le {fmtDate(d.createdAt)}
-                    </p>
-                    {d.statut === "REFUSEE" && d.motif && (
-                      <p className="mt-1 text-xs text-destructive">Motif : {d.motif}</p>
-                    )}
+                <div key={d.id} className="rounded-xl border bg-card p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="font-medium">{d.session.formation.titre}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {fmtDate(d.session.dateDebut)} · {nb} salarié{nb > 1 ? "s" : ""} · demandé le {fmtDate(d.createdAt)}
+                      </p>
+                      {d.statut === "REFUSEE" && d.motif && (
+                        <p className="mt-1 text-xs text-destructive">Motif : {d.motif}</p>
+                      )}
+                    </div>
+                    <DemandeBadge statut={d.statut} />
                   </div>
-                  <DemandeBadge statut={d.statut} />
+                  {d.statut === "CONTRE_PROPOSEE" && d.sessionProposee && (
+                    <div className="mt-3 rounded-lg border border-primary/30 bg-primary/5 p-3">
+                      <p className="text-sm font-medium">Votre organisme vous propose une autre date :</p>
+                      <p className="mt-0.5 text-sm text-muted-foreground">
+                        {d.sessionProposee.formation.titre} — {fmtDate(d.sessionProposee.dateDebut)}
+                        {d.sessionProposee.lieu ? ` (${d.sessionProposee.lieu})` : ""}
+                      </p>
+                      <div className="mt-2 flex justify-end">
+                        <ContrePropositionActions demandeId={d.id} />
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}

@@ -1,4 +1,4 @@
-import { Inbox, Building2, CalendarDays } from "lucide-react";
+import { Inbox, Building2, CalendarDays, CalendarClock } from "lucide-react";
 import { getTenantDb } from "@/lib/tenant";
 import { DemandeActions } from "@/components/demandes/demande-actions";
 
@@ -8,16 +8,32 @@ type Salarie = { candidatId?: string; nom?: string; prenom?: string };
 
 export default async function DemandesInscriptionPage() {
   const db = await getTenantDb();
-  const demandes = await db.demandeInscription.findMany({
-    where: { statut: { in: ["EN_ATTENTE", "CONTRE_PROPOSEE"] } },
-    include: {
-      entreprise: { select: { raisonSociale: true } },
-      session: { select: { dateDebut: true, lieu: true, formation: { select: { titre: true } } } },
-    },
-    orderBy: { createdAt: "asc" },
-  });
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+
+  const [demandes, sessionsRaw] = await Promise.all([
+    db.demandeInscription.findMany({
+      where: { statut: { in: ["EN_ATTENTE", "CONTRE_PROPOSEE"] } },
+      include: {
+        entreprise: { select: { raisonSociale: true } },
+        session: { select: { dateDebut: true, lieu: true, formation: { select: { titre: true } } } },
+        sessionProposee: { select: { dateDebut: true, lieu: true, formation: { select: { titre: true } } } },
+      },
+      orderBy: { createdAt: "asc" },
+    }),
+    db.session.findMany({
+      where: { isArchived: false, statut: { in: ["PLANIFIEE", "OUVERTE"] }, dateDebut: { gte: start } },
+      select: { id: true, dateDebut: true, lieu: true, formation: { select: { titre: true } } },
+      orderBy: { dateDebut: "asc" },
+      take: 100,
+    }),
+  ]);
 
   const fmt = (d: Date) => d.toLocaleDateString("fr-FR");
+  const sessionOptions = sessionsRaw.map((s) => ({
+    id: s.id,
+    label: `${s.formation.titre} — ${fmt(s.dateDebut)}${s.lieu ? ` (${s.lieu})` : ""}`,
+  }));
 
   return (
     <div className="space-y-6">
@@ -25,7 +41,7 @@ export default async function DemandesInscriptionPage() {
         <h1 className="text-2xl font-bold tracking-tight">Demandes d&apos;inscription</h1>
         <p className="text-sm text-muted-foreground">
           Les demandes envoyées par vos clients professionnels depuis leur espace. Confirmer crée la
-          convention de groupe et les inscriptions.
+          convention de groupe et les inscriptions ; vous pouvez aussi proposer une autre date.
         </p>
       </div>
 
@@ -63,8 +79,24 @@ export default async function DemandesInscriptionPage() {
                       ))}
                     </ul>
                   </div>
-                  <DemandeActions demandeId={d.id} />
+                  {d.statut === "EN_ATTENTE" ? (
+                    <DemandeActions demandeId={d.id} sessions={sessionOptions} />
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+                      <CalendarClock className="h-3.5 w-3.5" />
+                      En attente de réponse du client
+                    </span>
+                  )}
                 </div>
+                {d.statut === "CONTRE_PROPOSEE" && d.sessionProposee && (
+                  <div className="mt-3 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
+                    Autre date proposée :{" "}
+                    <span className="font-medium">
+                      {d.sessionProposee.formation.titre} — {fmt(d.sessionProposee.dateDebut)}
+                      {d.sessionProposee.lieu ? ` (${d.sessionProposee.lieu})` : ""}
+                    </span>
+                  </div>
+                )}
               </div>
             );
           })}

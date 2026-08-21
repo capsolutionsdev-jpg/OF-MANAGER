@@ -127,6 +127,7 @@ export async function getEntrepriseDemandes(entrepriseId: string) {
       createdAt: true,
       salariesJson: true,
       session: { select: { dateDebut: true, formation: { select: { titre: true } } } },
+      sessionProposee: { select: { dateDebut: true, lieu: true, formation: { select: { titre: true } } } },
     },
     orderBy: { createdAt: "desc" },
   });

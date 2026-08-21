@@ -24,6 +24,9 @@ vi.mock("@/lib/actions/convention-actions", () => ({
 import {
   createDemandeInscription,
   confirmerDemandeInscription,
+  proposerAutreDate,
+  accepterContreProposition,
+  refuserContreProposition,
 } from "@/lib/actions/demande-inscription-actions";
 
 beforeEach(() => vi.clearAllMocks());
@@ -112,7 +115,7 @@ describe("confirmerDemandeInscription — réutilise createConventionEntreprise"
     const claim = fakeDb.demandeInscription.updateMany.mock.calls[0][0];
     expect(claim.data.statut).toBe("CONFIRMEE");
     expect(claim.data.traiteeParId).toBe("staff-1");
-    expect(claim.where.statut).toEqual({ in: ["EN_ATTENTE", "CONTRE_PROPOSEE"] });
+    expect(claim.where.statut).toBe("EN_ATTENTE");
     // Pas de rollback → un seul updateMany.
     expect(fakeDb.demandeInscription.updateMany).toHaveBeenCalledTimes(1);
   });
@@ -165,5 +168,79 @@ describe("confirmerDemandeInscription — réutilise createConventionEntreprise"
     expect(r.ok).toBe(false);
     expect(createConventionEntreprise).not.toHaveBeenCalled();
     expect(fakeDb.demandeInscription.updateMany).not.toHaveBeenCalled();
+  });
+});
+
+describe("proposerAutreDate — staff, contre-proposition", () => {
+  it("passe en CONTRE_PROPOSEE avec la session proposée (ouverte + différente)", async () => {
+    requireStaffTenant.mockResolvedValue({ db: fakeDb, session: { user: { id: "staff-1" } } });
+    fakeDb.demandeInscription.findFirst.mockResolvedValue({ id: "d1", statut: "EN_ATTENTE", sessionId: "s1" });
+    fakeDb.session.findFirst.mockResolvedValue({ id: "s2" });
+    fakeDb.demandeInscription.updateMany.mockResolvedValue({ count: 1 });
+
+    const r = await proposerAutreDate("d1", "s2");
+    expect(r.ok).toBe(true);
+    const upd = fakeDb.demandeInscription.updateMany.mock.calls[0][0];
+    expect(upd.data.statut).toBe("CONTRE_PROPOSEE");
+    expect(upd.data.sessionProposeeId).toBe("s2");
+    expect(upd.where.statut).toBe("EN_ATTENTE");
+  });
+
+  it("refuse de proposer la même session que la demande", async () => {
+    requireStaffTenant.mockResolvedValue({ db: fakeDb, session: { user: { id: "staff-1" } } });
+    fakeDb.demandeInscription.findFirst.mockResolvedValue({ id: "d1", statut: "EN_ATTENTE", sessionId: "s1" });
+    const r = await proposerAutreDate("d1", "s1");
+    expect(r.ok).toBe(false);
+    expect(fakeDb.demandeInscription.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("refuse une session proposée non ouverte", async () => {
+    requireStaffTenant.mockResolvedValue({ db: fakeDb, session: { user: { id: "staff-1" } } });
+    fakeDb.demandeInscription.findFirst.mockResolvedValue({ id: "d1", statut: "EN_ATTENTE", sessionId: "s1" });
+    fakeDb.session.findFirst.mockResolvedValue(null);
+    const r = await proposerAutreDate("d1", "s2");
+    expect(r.ok).toBe(false);
+  });
+});
+
+describe("accepter/refuser contre-proposition — client, scopé entreprise", () => {
+  it("accepter repointe la demande sur la session proposée + repasse EN_ATTENTE", async () => {
+    getCurrentEntreprise.mockResolvedValue({ id: "ent-A", raisonSociale: "A" });
+    fakeDb.demandeInscription.findFirst.mockResolvedValue({ id: "d1", statut: "CONTRE_PROPOSEE", sessionProposeeId: "s2" });
+    fakeDb.demandeInscription.updateMany.mockResolvedValue({ count: 1 });
+
+    const r = await accepterContreProposition("d1");
+    expect(r.ok).toBe(true);
+    const upd = fakeDb.demandeInscription.updateMany.mock.calls[0][0];
+    expect(upd.where.entrepriseId).toBe("ent-A"); // anti-IDOR
+    expect(upd.where.statut).toBe("CONTRE_PROPOSEE");
+    expect(upd.data.sessionId).toBe("s2");
+    expect(upd.data.sessionProposeeId).toBe(null);
+    expect(upd.data.statut).toBe("EN_ATTENTE");
+  });
+
+  it("accepter échoue si la demande n'appartient pas à l'entreprise", async () => {
+    getCurrentEntreprise.mockResolvedValue({ id: "ent-A", raisonSociale: "A" });
+    fakeDb.demandeInscription.findFirst.mockResolvedValue(null); // pas trouvée pour ent-A
+    const r = await accepterContreProposition("d1");
+    expect(r.ok).toBe(false);
+    expect(fakeDb.demandeInscription.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("refuser annule la demande (ANNULEE), scopé entreprise", async () => {
+    getCurrentEntreprise.mockResolvedValue({ id: "ent-A", raisonSociale: "A" });
+    fakeDb.demandeInscription.updateMany.mockResolvedValue({ count: 1 });
+    const r = await refuserContreProposition("d1");
+    expect(r.ok).toBe(true);
+    const upd = fakeDb.demandeInscription.updateMany.mock.calls[0][0];
+    expect(upd.where.entrepriseId).toBe("ent-A");
+    expect(upd.where.statut).toBe("CONTRE_PROPOSEE");
+    expect(upd.data.statut).toBe("ANNULEE");
+  });
+
+  it("refuser (non authentifié comme entreprise) est rejeté", async () => {
+    getCurrentEntreprise.mockResolvedValue(null);
+    const r = await refuserContreProposition("d1");
+    expect(r.ok).toBe(false);
   });
 });

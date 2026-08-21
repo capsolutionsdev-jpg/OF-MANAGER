@@ -94,7 +94,9 @@ export async function confirmerDemandeInscription(
     select: { id: true, entrepriseId: true, sessionId: true, statut: true, salariesJson: true },
   });
   if (!demande) return { ok: false, error: "Demande introuvable." };
-  if (demande.statut !== "EN_ATTENTE" && demande.statut !== "CONTRE_PROPOSEE") {
+  // On ne confirme que depuis EN_ATTENTE : une CONTRE_PROPOSEE doit d'abord être
+  // acceptée par le client (ce qui la repointe sur la nouvelle session → EN_ATTENTE).
+  if (demande.statut !== "EN_ATTENTE") {
     return { ok: false, error: "Cette demande a déjà été traitée." };
   }
 
@@ -102,7 +104,7 @@ export async function confirmerDemandeInscription(
   // en attente. Si deux collaborateurs cliquent simultanément, un seul obtient
   // count===1 → évite une double convention / double inscription (TOCTOU).
   const claim = await db.demandeInscription.updateMany({
-    where: { id: demandeId, statut: { in: ["EN_ATTENTE", "CONTRE_PROPOSEE"] } },
+    where: { id: demandeId, statut: "EN_ATTENTE" },
     data: { statut: "CONFIRMEE", traiteeParId: session.user.id },
   });
   if (claim.count !== 1) return { ok: false, error: "Cette demande vient d'être traitée." };
@@ -152,6 +154,90 @@ export async function refuserDemandeInscription(
     data: { statut: "REFUSEE", motif: motif?.trim() || null },
   });
 
+  revalidatePath("/demandes-inscription");
+  return { ok: true };
+}
+
+/**
+ * STAFF : propose une AUTRE session au client (contre-proposition). La demande
+ * passe en CONTRE_PROPOSEE — la balle est dans le camp du client (accepter/refuser).
+ */
+export async function proposerAutreDate(
+  demandeId: string,
+  sessionProposeeId: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const { db } = await requireStaffTenant();
+
+  const demande = await db.demandeInscription.findFirst({
+    where: { id: demandeId },
+    select: { id: true, statut: true, sessionId: true },
+  });
+  if (!demande) return { ok: false, error: "Demande introuvable." };
+  if (demande.statut !== "EN_ATTENTE") return { ok: false, error: "Cette demande a déjà été traitée." };
+  if (sessionProposeeId === demande.sessionId) return { ok: false, error: "Choisissez une session différente." };
+
+  const sess = await db.session.findFirst({
+    where: { id: sessionProposeeId, isArchived: false, statut: { in: ["PLANIFIEE", "OUVERTE"] } },
+    select: { id: true },
+  });
+  if (!sess) return { ok: false, error: "La session proposée n'est pas ouverte aux inscriptions." };
+
+  const claim = await db.demandeInscription.updateMany({
+    where: { id: demandeId, statut: "EN_ATTENTE" },
+    data: { statut: "CONTRE_PROPOSEE", sessionProposeeId },
+  });
+  if (claim.count !== 1) return { ok: false, error: "Cette demande vient d'être traitée." };
+
+  revalidatePath("/demandes-inscription");
+  return { ok: true };
+}
+
+/**
+ * CLIENT : accepte la contre-proposition → la demande est repointée sur la
+ * session proposée et repasse EN_ATTENTE (l'OF n'a plus qu'à la confirmer).
+ */
+export async function accepterContreProposition(
+  demandeId: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const entreprise = await getCurrentEntreprise();
+  if (!entreprise) return { ok: false, error: "Non autorisé." };
+  const db = await getTenantDb();
+
+  const demande = await db.demandeInscription.findFirst({
+    where: { id: demandeId, entrepriseId: entreprise.id },
+    select: { id: true, statut: true, sessionProposeeId: true },
+  });
+  if (!demande) return { ok: false, error: "Demande introuvable." };
+  if (demande.statut !== "CONTRE_PROPOSEE" || !demande.sessionProposeeId) {
+    return { ok: false, error: "Aucune date proposée à accepter." };
+  }
+
+  const claim = await db.demandeInscription.updateMany({
+    where: { id: demandeId, entrepriseId: entreprise.id, statut: "CONTRE_PROPOSEE" },
+    data: { sessionId: demande.sessionProposeeId, sessionProposeeId: null, statut: "EN_ATTENTE" },
+  });
+  if (claim.count !== 1) return { ok: false, error: "Cette demande a déjà évolué." };
+
+  revalidatePath("/espace-entreprise/inscriptions");
+  revalidatePath("/demandes-inscription");
+  return { ok: true };
+}
+
+/** CLIENT : refuse la contre-proposition → la demande est annulée. */
+export async function refuserContreProposition(
+  demandeId: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const entreprise = await getCurrentEntreprise();
+  if (!entreprise) return { ok: false, error: "Non autorisé." };
+  const db = await getTenantDb();
+
+  const claim = await db.demandeInscription.updateMany({
+    where: { id: demandeId, entrepriseId: entreprise.id, statut: "CONTRE_PROPOSEE" },
+    data: { statut: "ANNULEE" },
+  });
+  if (claim.count !== 1) return { ok: false, error: "Aucune date proposée à refuser." };
+
+  revalidatePath("/espace-entreprise/inscriptions");
   revalidatePath("/demandes-inscription");
   return { ok: true };
 }
