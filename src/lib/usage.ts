@@ -22,6 +22,8 @@ export type UsageMetric = {
 export type OrgUsage = {
   emails: UsageMetric;
   inscriptions: UsageMetric;
+  sms: UsageMetric;
+  smsSolde: number; // solde SMS prépayé (packs)
   moisLabel: string;
 };
 
@@ -55,18 +57,28 @@ export async function getOrgUsage(
   const { start, end } = moisBornes(now);
   const plan = (formule && PLANS[formule as FormuleKey]) || PLANS.INDEPENDANT;
 
-  const [emails, inscriptions] = await Promise.all([
+  const [emails, inscriptions, sms, org] = await Promise.all([
     prisma.emailLog.count({
       where: { organismeId, statut: EmailStatut.ENVOYE, sentAt: { gte: start, lt: end } },
     }),
     prisma.inscription.count({
       where: { organismeId, createdAt: { gte: start, lt: end } },
     }),
+    prisma.smsLog.count({
+      where: { organismeId, statut: "ENVOYE", createdAt: { gte: start, lt: end } },
+    }),
+    prisma.organisme.findUnique({
+      where: { id: organismeId },
+      select: { smsSolde: true, maxSmsMois: true },
+    }),
   ]);
+  const smsLimit = org?.maxSmsMois ?? plan.smsMois;
 
   return {
     emails: usageStatus(emails, plan.emailsMois),
     inscriptions: usageStatus(inscriptions, plan.inscriptionsMois),
+    sms: usageStatus(sms, smsLimit),
+    smsSolde: org?.smsSolde ?? 0,
     moisLabel: now.toLocaleDateString("fr-FR", { month: "long", year: "numeric" }),
   };
 }

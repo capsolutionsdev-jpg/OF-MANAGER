@@ -4,6 +4,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { decryptSecret } from "@/lib/crypto";
+import { planForOrg } from "@/lib/plans";
 
 type SmsSender = { name: string; apiKey: string | undefined };
 
@@ -97,19 +98,25 @@ export async function sendSms(params: {
     return { sent: false, demo: true };
   }
 
-  // Quota SMS mensuel (maxSmsMois) : refuse l'envoi au-delà.
+  // Quota SMS mensuel de la formule + solde prépayé (packs) en dépassement.
   if (organismeId) {
     const org = await prisma.organisme.findUnique({
       where: { id: organismeId },
-      select: { maxSmsMois: true },
+      select: { maxSmsMois: true, smsSolde: true, formule: true, fonctionnalites: true },
     });
-    if (org?.maxSmsMois != null) {
+    const quota = org?.maxSmsMois ?? planForOrg(org?.formule, org?.fonctionnalites).smsMois;
+    if (quota != null) {
       const used = await prisma.smsLog.count({
         where: { organismeId, statut: "ENVOYE", createdAt: { gte: monthStart() } },
       });
-      if (used >= org.maxSmsMois) {
-        await logSms({ ...params, to: recipient }, "QUOTA");
-        return { sent: false, demo: false, error: "Quota SMS mensuel atteint." };
+      if (used >= quota) {
+        // Au-delà du quota mensuel : on puise dans le solde prépayé (packs).
+        if ((org?.smsSolde ?? 0) > 0) {
+          await prisma.organisme.update({ where: { id: organismeId }, data: { smsSolde: { decrement: 1 } } });
+        } else {
+          await logSms({ ...params, to: recipient }, "QUOTA");
+          return { sent: false, demo: false, error: "Quota SMS mensuel atteint — créditez un pack SMS." };
+        }
       }
     }
   }

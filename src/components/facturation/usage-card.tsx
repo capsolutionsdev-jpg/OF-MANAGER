@@ -35,9 +35,9 @@ function Ligne({ label, m }: { label: string; m: UsageMetric }) {
  * Présentationnelle : les données viennent de getOrgUsage() côté serveur.
  */
 export function UsageCard({ usage, title = "Consommation du mois" }: { usage: OrgUsage; title?: string }) {
-  const alerte = usage.emails.over || usage.inscriptions.over
+  const alerte = usage.emails.over || usage.inscriptions.over || usage.sms.over
     ? "over"
-    : usage.emails.near || usage.inscriptions.near
+    : usage.emails.near || usage.inscriptions.near || usage.sms.near
       ? "near"
       : null;
   return (
@@ -51,6 +51,11 @@ export function UsageCard({ usage, title = "Consommation du mois" }: { usage: Or
       <CardContent className="space-y-3">
         <Ligne label="E-mails envoyés" m={usage.emails} />
         <Ligne label="Inscriptions (élèves)" m={usage.inscriptions} />
+        <Ligne label="SMS envoyés" m={usage.sms} />
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <span>Solde SMS prépayé</span>
+          <span className="font-medium text-foreground">{usage.smsSolde}</span>
+        </div>
         {alerte && (
           <p className={`flex items-start gap-1.5 text-xs ${alerte === "over" ? "text-red-600 dark:text-red-400" : "text-amber-600 dark:text-amber-400"}`}>
             <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />

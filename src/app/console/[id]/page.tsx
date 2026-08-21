@@ -9,6 +9,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { EditOrganismeForm } from "@/components/console/edit-organisme-form";
 import { FormationsConfigForm } from "@/components/console/formations-config-form";
 import { UsageCard } from "@/components/facturation/usage-card";
+import { SmsPackCredit } from "@/components/console/sms-pack-credit";
 import { getResolvedPlans } from "@/lib/pricing";
 import { PLAN_ORDER } from "@/lib/plans";
 import { getOrgUsage } from "@/lib/usage";
@@ -54,6 +55,8 @@ export default async function ConsoleOrganismePage({
     {
       emails: { used: 0, limit: null, pct: 0, near: false, over: false },
       inscriptions: { used: 0, limit: null, pct: 0, near: false, over: false },
+      sms: { used: 0, limit: null, pct: 0, near: false, over: false },
+      smsSolde: 0,
       moisLabel: "",
     },
     "usage",
@@ -240,6 +243,7 @@ export default async function ConsoleOrganismePage({
         {/* USAGE — consommation facturable du mois */}
         <TabsContent value="usage" className="space-y-6 pt-4">
           <UsageCard usage={usage} title="Consommation facturable" />
+          <SmsPackCredit organismeId={org.id} solde={usage.smsSolde} />
         </TabsContent>
 
         {/* CONFIGURATION — catalogue + paramètres de l'instance */}

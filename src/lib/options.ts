@@ -94,3 +94,17 @@ export const FRAIS_MISE_EN_SERVICE: Record<FormuleKey, number> = {
 export function fraisMiseEnService(palier: FormuleKey): number {
   return FRAIS_MISE_EN_SERVICE[palier];
 }
+
+// ── Packs SMS prépayés (feuille 11 du plan) ──────────────────────────────────
+export type SmsPack = { key: string; sms: number; prix: number };
+
+export const SMS_PACKS: SmsPack[] = [
+  { key: "sms-200", sms: 200, prix: 19 },
+  { key: "sms-500", sms: 500, prix: 39 },
+  { key: "sms-1000", sms: 1000, prix: 69 },
+  { key: "sms-2500", sms: 2500, prix: 159 },
+  { key: "sms-5000", sms: 5000, prix: 299 },
+];
+
+const SMS_PACK_BY_KEY = new Map(SMS_PACKS.map((p) => [p.key, p]));
+export const smsPackByKey = (key: string): SmsPack | undefined => SMS_PACK_BY_KEY.get(key);
