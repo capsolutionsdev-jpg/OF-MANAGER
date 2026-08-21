@@ -27,7 +27,7 @@ const GROUPS: Group[] = [
   ] },
   { title: "Commercial", items: [
     { href: "/console/prospects", label: "Prospects", icon: PhoneCall },
-    { href: "#", label: "Devis & contrats", icon: FileSignature, soon: true },
+    { href: "/console/devis", label: "Devis & contrats", icon: FileSignature },
   ] },
   { title: "Clients", items: [
     { href: "/console/organismes", label: "Organismes", icon: Building2 },
