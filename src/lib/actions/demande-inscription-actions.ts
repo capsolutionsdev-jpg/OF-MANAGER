@@ -142,17 +142,13 @@ export async function refuserDemandeInscription(
 ): Promise<{ ok: boolean; error?: string }> {
   const { db } = await requireStaffTenant();
 
-  const demande = await db.demandeInscription.findFirst({
-    where: { id: demandeId },
-    select: { id: true, statut: true },
-  });
-  if (!demande) return { ok: false, error: "Demande introuvable." };
-  if (demande.statut === "CONFIRMEE") return { ok: false, error: "Cette demande est déjà confirmée." };
-
-  await db.demandeInscription.update({
-    where: { id: demandeId },
+  // Verrou atomique : on ne refuse que depuis EN_ATTENTE (une CONTRE_PROPOSEE est
+  // dans les mains du client). Évite d'écraser un état concurrent (accept/confirm).
+  const claim = await db.demandeInscription.updateMany({
+    where: { id: demandeId, statut: "EN_ATTENTE" },
     data: { statut: "REFUSEE", motif: motif?.trim() || null },
   });
+  if (claim.count !== 1) return { ok: false, error: "Cette demande n'est plus en attente." };
 
   revalidatePath("/demandes-inscription");
   return { ok: true };
@@ -170,7 +166,7 @@ export async function proposerAutreDate(
 
   const demande = await db.demandeInscription.findFirst({
     where: { id: demandeId },
-    select: { id: true, statut: true, sessionId: true },
+    select: { id: true, statut: true, sessionId: true, session: { select: { formationId: true } } },
   });
   if (!demande) return { ok: false, error: "Demande introuvable." };
   if (demande.statut !== "EN_ATTENTE") return { ok: false, error: "Cette demande a déjà été traitée." };
@@ -178,9 +174,13 @@ export async function proposerAutreDate(
 
   const sess = await db.session.findFirst({
     where: { id: sessionProposeeId, isArchived: false, statut: { in: ["PLANIFIEE", "OUVERTE"] } },
-    select: { id: true },
+    select: { id: true, formationId: true },
   });
   if (!sess) return { ok: false, error: "La session proposée n'est pas ouverte aux inscriptions." };
+  // La contre-proposition doit rester la MÊME formation (identité du contrat / Qualiopi).
+  if (sess.formationId !== demande.session.formationId) {
+    return { ok: false, error: "La session proposée doit concerner la même formation." };
+  }
 
   const claim = await db.demandeInscription.updateMany({
     where: { id: demandeId, statut: "EN_ATTENTE" },

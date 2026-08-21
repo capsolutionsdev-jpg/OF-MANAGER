@@ -109,7 +109,15 @@ export function DemandeActions({
           ))}
         </select>
         <div className="flex gap-2">
-          <Button size="sm" variant="ghost" onClick={() => setMode("idle")} disabled={pending}>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              setMode("idle");
+              setSessionProposeeId("");
+            }}
+            disabled={pending}
+          >
             Annuler
           </Button>
           <Button size="sm" onClick={proposer} disabled={pending}>

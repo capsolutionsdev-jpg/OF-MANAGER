@@ -16,14 +16,14 @@ export default async function DemandesInscriptionPage() {
       where: { statut: { in: ["EN_ATTENTE", "CONTRE_PROPOSEE"] } },
       include: {
         entreprise: { select: { raisonSociale: true } },
-        session: { select: { dateDebut: true, lieu: true, formation: { select: { titre: true } } } },
+        session: { select: { formationId: true, dateDebut: true, lieu: true, formation: { select: { titre: true } } } },
         sessionProposee: { select: { dateDebut: true, lieu: true, formation: { select: { titre: true } } } },
       },
       orderBy: { createdAt: "asc" },
     }),
     db.session.findMany({
       where: { isArchived: false, statut: { in: ["PLANIFIEE", "OUVERTE"] }, dateDebut: { gte: start } },
-      select: { id: true, dateDebut: true, lieu: true, formation: { select: { titre: true } } },
+      select: { id: true, formationId: true, dateDebut: true, lieu: true, formation: { select: { titre: true } } },
       orderBy: { dateDebut: "asc" },
       take: 100,
     }),
@@ -32,6 +32,7 @@ export default async function DemandesInscriptionPage() {
   const fmt = (d: Date) => d.toLocaleDateString("fr-FR");
   const sessionOptions = sessionsRaw.map((s) => ({
     id: s.id,
+    formationId: s.formationId,
     label: `${s.formation.titre} — ${fmt(s.dateDebut)}${s.lieu ? ` (${s.lieu})` : ""}`,
   }));
 
@@ -80,7 +81,12 @@ export default async function DemandesInscriptionPage() {
                     </ul>
                   </div>
                   {d.statut === "EN_ATTENTE" ? (
-                    <DemandeActions demandeId={d.id} sessions={sessionOptions} />
+                    <DemandeActions
+                      demandeId={d.id}
+                      sessions={sessionOptions
+                        .filter((o) => o.formationId === d.session.formationId && o.id !== d.sessionId)
+                        .map(({ id, label }) => ({ id, label }))}
+                    />
                   ) : (
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
                       <CalendarClock className="h-3.5 w-3.5" />

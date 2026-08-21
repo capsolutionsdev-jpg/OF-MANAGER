@@ -24,6 +24,7 @@ vi.mock("@/lib/actions/convention-actions", () => ({
 import {
   createDemandeInscription,
   confirmerDemandeInscription,
+  refuserDemandeInscription,
   proposerAutreDate,
   accepterContreProposition,
   refuserContreProposition,
@@ -172,10 +173,12 @@ describe("confirmerDemandeInscription — réutilise createConventionEntreprise"
 });
 
 describe("proposerAutreDate — staff, contre-proposition", () => {
-  it("passe en CONTRE_PROPOSEE avec la session proposée (ouverte + différente)", async () => {
+  it("passe en CONTRE_PROPOSEE avec la session proposée (ouverte + différente + même formation)", async () => {
     requireStaffTenant.mockResolvedValue({ db: fakeDb, session: { user: { id: "staff-1" } } });
-    fakeDb.demandeInscription.findFirst.mockResolvedValue({ id: "d1", statut: "EN_ATTENTE", sessionId: "s1" });
-    fakeDb.session.findFirst.mockResolvedValue({ id: "s2" });
+    fakeDb.demandeInscription.findFirst.mockResolvedValue({
+      id: "d1", statut: "EN_ATTENTE", sessionId: "s1", session: { formationId: "f1" },
+    });
+    fakeDb.session.findFirst.mockResolvedValue({ id: "s2", formationId: "f1" });
     fakeDb.demandeInscription.updateMany.mockResolvedValue({ count: 1 });
 
     const r = await proposerAutreDate("d1", "s2");
@@ -184,6 +187,17 @@ describe("proposerAutreDate — staff, contre-proposition", () => {
     expect(upd.data.statut).toBe("CONTRE_PROPOSEE");
     expect(upd.data.sessionProposeeId).toBe("s2");
     expect(upd.where.statut).toBe("EN_ATTENTE");
+  });
+
+  it("refuse une session proposée d'une AUTRE formation", async () => {
+    requireStaffTenant.mockResolvedValue({ db: fakeDb, session: { user: { id: "staff-1" } } });
+    fakeDb.demandeInscription.findFirst.mockResolvedValue({
+      id: "d1", statut: "EN_ATTENTE", sessionId: "s1", session: { formationId: "f1" },
+    });
+    fakeDb.session.findFirst.mockResolvedValue({ id: "s2", formationId: "f2" });
+    const r = await proposerAutreDate("d1", "s2");
+    expect(r.ok).toBe(false);
+    expect(fakeDb.demandeInscription.updateMany).not.toHaveBeenCalled();
   });
 
   it("refuse de proposer la même session que la demande", async () => {
@@ -241,6 +255,28 @@ describe("accepter/refuser contre-proposition — client, scopé entreprise", ()
   it("refuser (non authentifié comme entreprise) est rejeté", async () => {
     getCurrentEntreprise.mockResolvedValue(null);
     const r = await refuserContreProposition("d1");
+    expect(r.ok).toBe(false);
+  });
+});
+
+describe("refuserDemandeInscription — staff, verrou atomique EN_ATTENTE", () => {
+  it("refuse via updateMany conditionné à EN_ATTENTE", async () => {
+    requireStaffTenant.mockResolvedValue({ db: fakeDb, session: { user: { id: "staff-1" } } });
+    fakeDb.demandeInscription.updateMany.mockResolvedValue({ count: 1 });
+    const r = await refuserDemandeInscription("d1", "pas de place");
+    expect(r.ok).toBe(true);
+    const upd = fakeDb.demandeInscription.updateMany.mock.calls[0][0];
+    expect(upd.where.statut).toBe("EN_ATTENTE");
+    expect(upd.data.statut).toBe("REFUSEE");
+    expect(upd.data.motif).toBe("pas de place");
+    // Ne passe JAMAIS par un update() non gardé.
+    expect(fakeDb.demandeInscription.update).not.toHaveBeenCalled();
+  });
+
+  it("no-op si la demande n'est plus EN_ATTENTE (count 0, ex. déjà contre-proposée)", async () => {
+    requireStaffTenant.mockResolvedValue({ db: fakeDb, session: { user: { id: "staff-1" } } });
+    fakeDb.demandeInscription.updateMany.mockResolvedValue({ count: 0 });
+    const r = await refuserDemandeInscription("d1");
     expect(r.ok).toBe(false);
   });
 });
