@@ -97,6 +97,7 @@ export async function getEntrepriseDocuments(entrepriseId: string) {
       id: true,
       type: true,
       fileUrl: true,
+      variablesJson: true,
       createdAt: true,
       session: { select: { formation: { select: { titre: true } } } },
       inscription: { select: { candidat: { select: { prenom: true, nom: true } } } },

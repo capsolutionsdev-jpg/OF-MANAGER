@@ -3,6 +3,7 @@ import type { DocumentType } from "@prisma/client";
 import { getTenantDb } from "@/lib/tenant";
 import { buildSingleDocPdf } from "@/lib/documents/build-pdf";
 import { storeUpload } from "@/lib/blob";
+import { isRecyclageOuRemiseANiveau, attestationRecyclageDocType } from "@/lib/documents/families";
 
 /**
  * Cycle de vie documentaire B2B : génère un document (template → PDF), le stocke
@@ -102,9 +103,12 @@ export async function publierEtapeEntree(conventionId: string, generatedById?: s
 }
 
 /**
- * Étape « dernier jour » : attestation de fin + certificat + (si examen & réussi)
- * attestation de réussite + enquête de satisfaction entreprise. Conditionnel par
- * inscription (résultat, examen).
+ * Étape « dernier jour ». Conditionnel PAR INSCRIPTION selon la formation :
+ *  - attestation de FIN — ou, pour un RECYCLAGE / une remise à niveau (SSIAP…),
+ *    l'attestation de recyclage / RAN correspondante (cf. attestationRecyclageDocType) ;
+ *  - certificat de réalisation + enquête de satisfaction entreprise (toujours) ;
+ *  - attestation de RÉUSSITE uniquement si la formation a un examen ET est réussie
+ *    (jamais pour un recyclage : ces formations ne sont pas certifiantes, cf. #13).
  */
 export async function publierEtapeFin(conventionId: string, generatedById?: string | null): Promise<number> {
   const db = await getTenantDb();
@@ -116,7 +120,9 @@ export async function publierEtapeFin(conventionId: string, generatedById?: stri
           id: true,
           sessionId: true,
           resultatCertification: true,
-          session: { select: { formation: { select: { examen: true } } } },
+          session: {
+            select: { formation: { select: { examen: true, reference: true, titre: true } } },
+          },
         },
       },
     },
@@ -125,8 +131,12 @@ export async function publierEtapeFin(conventionId: string, generatedById?: stri
 
   let count = 0;
   for (const insc of conv.inscriptions) {
-    const types: DocumentType[] = ["ATTESTATION_FIN", "CERTIFICAT_REALISATION", "SATISFACTION_ENTREPRISE"];
-    if (insc.session.formation.examen && insc.resultatCertification === "CERTIFIE") {
+    const f = insc.session.formation;
+    const recyclage = isRecyclageOuRemiseANiveau(f);
+    // Attestation de base : recyclage/RAN → doc dédié ; sinon attestation de fin.
+    const attestationBase = (recyclage ? attestationRecyclageDocType(f) : "ATTESTATION_FIN") as DocumentType;
+    const types: DocumentType[] = [attestationBase, "CERTIFICAT_REALISATION", "SATISFACTION_ENTREPRISE"];
+    if (!recyclage && f.examen && insc.resultatCertification === "CERTIFIE") {
       types.push("ATTESTATION_REUSSITE");
     }
     count += await publierPour(db, [{ id: insc.id, sessionId: insc.sessionId }], types, generatedById);

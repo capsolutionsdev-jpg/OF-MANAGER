@@ -101,4 +101,24 @@ describe("publierEtapeFin — documents conditionnels", () => {
     const types = buildSingleDocPdf.mock.calls.map((c) => c[1]);
     expect(types).not.toContain("ATTESTATION_REUSSITE");
   });
+
+  it("recyclage SSIAP → attestation de RECYCLAGE (jamais ATTESTATION_FIN ni RÉUSSITE)", async () => {
+    fakeDb.convention.findFirst.mockResolvedValue({
+      inscriptions: [
+        {
+          id: "i1",
+          sessionId: "s1",
+          resultatCertification: "CERTIFIE",
+          session: { formation: { examen: true, reference: "SSIAP1-REC", titre: "Recyclage SSIAP 1" } },
+        },
+      ],
+    });
+    await publierEtapeFin("cv1");
+    const types = buildSingleDocPdf.mock.calls.map((c) => c[1]);
+    expect(types).toContain("ATTESTATION_RECYCLAGE");
+    expect(types).toContain("CERTIFICAT_REALISATION");
+    expect(types).toContain("SATISFACTION_ENTREPRISE");
+    expect(types).not.toContain("ATTESTATION_FIN");
+    expect(types).not.toContain("ATTESTATION_REUSSITE");
+  });
 });

@@ -52,6 +52,7 @@ const PDF_ENTRYPOINTS = [
   "/api/pdf-test",
   "/api/convention",
   "/api/cron/parcours",
+  "/api/cron/documents-b2b", // cycle de vie documentaire B2B (auto par date)
   "/api/candidats", // expression-besoin
   "/api/inscriptions", // attestation-reussite
   "/api/parcours-t3p", // fiche de suivi du parcours T3P
