@@ -148,21 +148,27 @@ export async function confirmerDemandeInscription(
     return { ok: false, error: res.error };
   }
 
-  // Montant = prix PAR CANDIDAT × nombre RÉEL d'inscrits (res.inscrits) — reste
-  // cohérent avec l'effectif de la convention même si un salarié était déjà inscrit
-  // (dé-doublonné par createConventionEntreprise).
-  if (prixParCandidat != null) {
-    const total = Math.round(prixParCandidat * res.inscrits * 100) / 100;
-    await db.convention.update({ where: { id: res.conventionId }, data: { montant: total } });
-  }
-
-  // OPCO précisé par l'admin (quand le financement est OPCO) → mémorisé sur
-  // l'entreprise pour figurer dans la convention (§5) et les documents suivants.
-  if (opts?.opco?.trim() && demande.financementType === "OPCO") {
-    await db.entreprise.update({
-      where: { id: demande.entrepriseId },
-      data: { opco: opts.opco.trim() },
-    });
+  // Prix + OPCO : best-effort (comme la génération PDF). La convention/les
+  // inscriptions sont déjà créées ; un échec ici ne doit pas casser la confirmation
+  // (sinon la demande resterait CONFIRMEE sans recours). Le PDF reflétera l'état.
+  try {
+    // Montant = prix PAR CANDIDAT × nombre RÉEL d'inscrits (res.inscrits) — reste
+    // cohérent avec l'effectif de la convention même si un salarié était déjà inscrit
+    // (dé-doublonné par createConventionEntreprise).
+    if (prixParCandidat != null) {
+      const total = Math.round(prixParCandidat * res.inscrits * 100) / 100;
+      await db.convention.update({ where: { id: res.conventionId }, data: { montant: total } });
+    }
+    // OPCO précisé par l'admin (quand le financement est OPCO) → mémorisé sur
+    // l'entreprise pour figurer dans la convention (§5) et les documents suivants.
+    if (opts?.opco?.trim() && demande.financementType === "OPCO") {
+      await db.entreprise.update({
+        where: { id: demande.entrepriseId },
+        data: { opco: opts.opco.trim() },
+      });
+    }
+  } catch {
+    /* prix/OPCO non enregistrés — non bloquant ; régénérer la convention après correction */
   }
 
   // Génère et stocke le PDF de la convention (Qualiopi). Best-effort : en cas
