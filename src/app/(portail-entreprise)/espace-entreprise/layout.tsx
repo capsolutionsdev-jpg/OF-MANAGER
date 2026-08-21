@@ -1,6 +1,9 @@
 import type { CSSProperties } from "react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { LogOut } from "lucide-react";
+import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
 import { requireEntreprise } from "@/lib/entreprise-portal";
 import { getBranding } from "@/lib/org";
 import { designVars, getDesign } from "@/lib/themes";
@@ -22,6 +25,19 @@ export default async function PortailEntrepriseLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // Défense en profondeur (parité avec le layout (app)) : compte encore actif +
+  // session unique (déconnecte si le compte a été désactivé ou repris ailleurs).
+  const session = await auth();
+  if (!session?.user) redirect("/login");
+  const account = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { isActive: true, activeSessionId: true },
+  });
+  if (!account?.isActive) redirect("/deconnexion");
+  if (account.activeSessionId && account.activeSessionId !== session.user.sid) {
+    redirect("/deconnexion?reason=autre-appareil");
+  }
+
   const entreprise = await requireEntreprise();
   const branding = await getBranding();
   const design = getDesign(branding.design);

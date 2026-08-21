@@ -29,7 +29,7 @@ export function DepositFactureForm({ entrepriseId }: { entrepriseId: string }) {
     if (!reference.trim()) return toast.error("Indiquez la référence de la facture.");
     if (!file) return toast.error("Sélectionnez le PDF de la facture.");
     if (file.type !== "application/pdf") return toast.error("Le fichier doit être un PDF.");
-    if (file.size > 8 * 1024 * 1024) return toast.error("PDF trop volumineux (max 8 Mo).");
+    if (file.size > 3.5 * 1024 * 1024) return toast.error("PDF trop volumineux (max 3,5 Mo).");
 
     start(async () => {
       try {

@@ -5,7 +5,10 @@ import { Prisma } from "@prisma/client";
 import { requireStaffTenant } from "@/lib/tenant";
 import { storeUpload, parseDataUrl, detectFileType } from "@/lib/blob";
 
-const MAX_FACTURE_BYTES = 8 * 1024 * 1024; // 8 Mo
+// ~3,5 Mo : le PDF transite en data-URL base64 (~+33 %) via une Server Action,
+// dont la limite de corps est de 5 Mo (next.config bodySizeLimit). On plafonne
+// donc en-deçà pour un refus explicite plutôt qu'un échec de transport opaque.
+const MAX_FACTURE_BYTES = Math.floor(3.5 * 1024 * 1024);
 
 /**
  * Dépose une facture (PDF fait sur un autre logiciel) pour une entreprise
@@ -32,6 +35,17 @@ export async function depositFacture(input: {
   const reference = input.reference.trim();
   if (!reference) return { ok: false, error: "La référence de la facture est obligatoire." };
 
+  // Montant : jamais négatif (par défaut 0 si absent/invalide).
+  const montantTTC =
+    input.montantTTC != null && Number.isFinite(input.montantTTC) && input.montantTTC >= 0
+      ? input.montantTTC
+      : 0;
+
+  // Pré-vérification du doublon de référence (unicité par organisme) AVANT
+  // l'upload : évite un fichier Blob orphelin et donne un message clair.
+  const existing = await db.facture.findFirst({ where: { reference }, select: { id: true } });
+  if (existing) return { ok: false, error: "Une facture porte déjà cette référence." };
+
   const parsed = parseDataUrl(input.dataUrl);
   if (!parsed) return { ok: false, error: "Fichier illisible." };
   // Double contrôle : entête déclarée ET signature réelle (magic bytes) = PDF.
@@ -40,7 +54,7 @@ export async function depositFacture(input: {
     return { ok: false, error: "Le fichier doit être un PDF." };
   }
   if (parsed.data.byteLength > MAX_FACTURE_BYTES) {
-    return { ok: false, error: "PDF trop volumineux (max 8 Mo)." };
+    return { ok: false, error: "PDF trop volumineux (max 3,5 Mo)." };
   }
 
   const fileUrl = await storeUpload({
@@ -55,7 +69,7 @@ export async function depositFacture(input: {
       data: {
         entrepriseId: input.entrepriseId,
         reference,
-        montantTTC: input.montantTTC ?? 0,
+        montantTTC,
         fileUrl,
         statut: "ENVOYEE",
       },
