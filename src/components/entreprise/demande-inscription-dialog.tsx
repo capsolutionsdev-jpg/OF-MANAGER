@@ -14,7 +14,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import type { FinancementType } from "@prisma/client";
 import { createDemandeInscription, type SalarieDemande } from "@/lib/actions/demande-inscription-actions";
+
+const FINANCEMENTS: { value: FinancementType; label: string }[] = [
+  { value: "OPCO", label: "OPCO" },
+  { value: "AUTOFINANCEMENT", label: "Autofinancement (l'entreprise règle)" },
+  { value: "FRANCE_TRAVAIL", label: "France Travail" },
+  { value: "AUTRE", label: "Autre" },
+];
 
 type Row = { nom: string; prenom: string; email: string };
 type Candidat = { id: string; nom: string; prenom: string };
@@ -32,6 +40,7 @@ export function DemandeInscriptionDialog({
   const [pending, start] = useTransition();
   const [existants, setExistants] = useState<string[]>([]);
   const [rows, setRows] = useState<Row[]>([]);
+  const [financement, setFinancement] = useState<FinancementType | "">("");
 
   function toggle(id: string) {
     setExistants((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
@@ -51,8 +60,12 @@ export function DemandeInscriptionDialog({
       toast.error("Sélectionnez ou ajoutez au moins un salarié.");
       return;
     }
+    if (!financement) {
+      toast.error("Précisez le mode de financement.");
+      return;
+    }
     start(async () => {
-      const res = await createDemandeInscription({ sessionId, salaries });
+      const res = await createDemandeInscription({ sessionId, salaries, financementType: financement });
       if (!res.ok) {
         toast.error(res.error ?? "L'envoi a échoué.");
         return;
@@ -61,6 +74,7 @@ export function DemandeInscriptionDialog({
       setOpen(false);
       setExistants([]);
       setRows([]);
+      setFinancement("");
     });
   }
 
@@ -78,6 +92,23 @@ export function DemandeInscriptionDialog({
           </DialogHeader>
 
           <div className="space-y-5 py-1">
+            <div className="space-y-1.5">
+              <Label htmlFor="financement">Mode de financement</Label>
+              <select
+                id="financement"
+                value={financement}
+                onChange={(e) => setFinancement(e.target.value as FinancementType | "")}
+                className="h-9 w-full rounded-md border bg-card px-3 text-sm"
+              >
+                <option value="">— Choisir —</option>
+                {FINANCEMENTS.map((f) => (
+                  <option key={f.value} value={f.value}>
+                    {f.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {candidats.length > 0 && (
               <div className="space-y-2">
                 <Label>Vos salariés</Label>

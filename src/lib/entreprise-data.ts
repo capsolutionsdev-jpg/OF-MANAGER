@@ -133,6 +133,26 @@ export async function getEntrepriseDemandes(entrepriseId: string) {
   });
 }
 
+/** Conventions de l'entreprise (PDF généré + version signée + statut). */
+export async function getEntrepriseConventions(entrepriseId: string) {
+  const db = await getTenantDb();
+  const conventions = await db.convention.findMany({
+    where: { entrepriseId },
+    select: {
+      id: true,
+      reference: true,
+      montant: true,
+      signatureStatut: true,
+      fileUrl: true,
+      fileUrlSigne: true,
+      createdAt: true,
+      session: { select: { dateDebut: true, formation: { select: { titre: true } } } },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+  return conventions.map((c) => ({ ...c, montant: c.montant != null ? Number(c.montant) : null }));
+}
+
 /** Factures de l'entreprise (PDF déposé par l'admin, téléchargeable). */
 export async function getEntrepriseFactures(entrepriseId: string) {
   const db = await getTenantDb();

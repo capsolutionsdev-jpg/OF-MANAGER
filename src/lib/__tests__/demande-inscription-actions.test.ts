@@ -20,6 +20,12 @@ const createConventionEntreprise = vi.fn();
 vi.mock("@/lib/actions/convention-actions", () => ({
   createConventionEntreprise: (i: unknown) => createConventionEntreprise(i),
 }));
+vi.mock("@/lib/documents/convention-pdf", () => ({
+  generateAndStoreConventionPdf: vi.fn(async () => "blob://conv.pdf"),
+}));
+vi.mock("@/lib/emails/demande-emails", () => ({
+  notifyClientDemande: vi.fn(async () => {}),
+}));
 
 import {
   createDemandeInscription,
@@ -96,6 +102,8 @@ describe("confirmerDemandeInscription — réutilise createConventionEntreprise"
       entrepriseId: "ent-A",
       sessionId: "s1",
       statut: "EN_ATTENTE",
+      financementType: "OPCO",
+      session: { formation: { titre: "Formation X" } },
       salariesJson: [
         { candidatId: "c1", nom: "Doe", prenom: "John" },
         { nom: "New", prenom: "Guy", email: "g@x.fr" },
@@ -176,9 +184,10 @@ describe("proposerAutreDate — staff, contre-proposition", () => {
   it("passe en CONTRE_PROPOSEE avec la session proposée (ouverte + différente + même formation)", async () => {
     requireStaffTenant.mockResolvedValue({ db: fakeDb, session: { user: { id: "staff-1" } } });
     fakeDb.demandeInscription.findFirst.mockResolvedValue({
-      id: "d1", statut: "EN_ATTENTE", sessionId: "s1", session: { formationId: "f1" },
+      id: "d1", statut: "EN_ATTENTE", sessionId: "s1", entrepriseId: "ent-A",
+      session: { formationId: "f1", formation: { titre: "Formation X" } },
     });
-    fakeDb.session.findFirst.mockResolvedValue({ id: "s2", formationId: "f1" });
+    fakeDb.session.findFirst.mockResolvedValue({ id: "s2", formationId: "f1", dateDebut: new Date("2026-09-01") });
     fakeDb.demandeInscription.updateMany.mockResolvedValue({ count: 1 });
 
     const r = await proposerAutreDate("d1", "s2");

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarDays, ClipboardList, GraduationCap, FileText, Receipt, ArrowRight } from "lucide-react";
+import { CalendarDays, ClipboardList, GraduationCap, FileText, Receipt, FileSignature, ArrowRight } from "lucide-react";
 
 const CARDS = [
   {
@@ -13,6 +13,12 @@ const CARDS = [
     icon: ClipboardList,
     title: "Inscriptions",
     desc: "Les inscriptions de vos salariés : en cours, à venir, passées.",
+  },
+  {
+    href: "/espace-entreprise/convention",
+    icon: FileSignature,
+    title: "Convention",
+    desc: "Télécharger votre convention et déposer la version signée.",
   },
   {
     href: "/espace-entreprise/suivi",

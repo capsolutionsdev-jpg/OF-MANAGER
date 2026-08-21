@@ -16,7 +16,7 @@ export default async function DemandesInscriptionPage() {
       where: { statut: { in: ["EN_ATTENTE", "CONTRE_PROPOSEE"] } },
       include: {
         entreprise: { select: { raisonSociale: true } },
-        session: { select: { formationId: true, dateDebut: true, lieu: true, formation: { select: { titre: true } } } },
+        session: { select: { formationId: true, dateDebut: true, lieu: true, formation: { select: { titre: true, tarif: true } } } },
         sessionProposee: { select: { dateDebut: true, lieu: true, formation: { select: { titre: true } } } },
       },
       orderBy: { createdAt: "asc" },
@@ -86,6 +86,11 @@ export default async function DemandesInscriptionPage() {
                       sessions={sessionOptions
                         .filter((o) => o.formationId === d.session.formationId && o.id !== d.sessionId)
                         .map(({ id, label }) => ({ id, label }))}
+                      montantSuggere={
+                        d.session.formation.tarif != null
+                          ? Number(d.session.formation.tarif) * salaries.length
+                          : undefined
+                      }
                     />
                   ) : (
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">

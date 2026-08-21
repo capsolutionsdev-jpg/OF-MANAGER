@@ -2,9 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
+import type { FinancementType } from "@prisma/client";
 import { getCurrentEntreprise } from "@/lib/entreprise-portal";
 import { getTenantDb, requireStaffTenant } from "@/lib/tenant";
 import { createConventionEntreprise } from "@/lib/actions/convention-actions";
+import { generateAndStoreConventionPdf } from "@/lib/documents/convention-pdf";
+import { notifyClientDemande } from "@/lib/emails/demande-emails";
 
 /** Un salarié d'une demande : soit un candidat existant, soit un nouveau. */
 export type SalarieDemande = { candidatId: string } | { nom: string; prenom: string; email?: string };
@@ -21,6 +24,7 @@ function isExistant(s: SalarieDemande): s is { candidatId: string } {
 export async function createDemandeInscription(input: {
   sessionId: string;
   salaries: SalarieDemande[];
+  financementType?: FinancementType;
 }): Promise<{ ok: boolean; error?: string }> {
   const entreprise = await getCurrentEntreprise();
   if (!entreprise) return { ok: false, error: "Non autorisé." };
@@ -70,6 +74,7 @@ export async function createDemandeInscription(input: {
       entrepriseId: entreprise.id,
       sessionId: input.sessionId,
       salariesJson: salariesJson as unknown as Prisma.InputJsonValue,
+      financementType: input.financementType ?? null,
       statut: "EN_ATTENTE",
     },
   });
@@ -86,12 +91,21 @@ export async function createDemandeInscription(input: {
  */
 export async function confirmerDemandeInscription(
   demandeId: string,
+  montant?: number,
 ): Promise<{ ok: boolean; error?: string; warning?: string }> {
-  const { db, session } = await requireStaffTenant();
+  const { db, session, organismeId } = await requireStaffTenant();
 
   const demande = await db.demandeInscription.findFirst({
     where: { id: demandeId },
-    select: { id: true, entrepriseId: true, sessionId: true, statut: true, salariesJson: true },
+    select: {
+      id: true,
+      entrepriseId: true,
+      sessionId: true,
+      statut: true,
+      salariesJson: true,
+      financementType: true,
+      session: { select: { formation: { select: { titre: true } } } },
+    },
   });
   if (!demande) return { ok: false, error: "Demande introuvable." };
   // On ne confirme que depuis EN_ATTENTE : une CONTRE_PROPOSEE doit d'abord être
@@ -115,12 +129,15 @@ export async function confirmerDemandeInscription(
     .filter((s): s is { nom: string; prenom: string; email?: string } => !isExistant(s))
     .map((s) => ({ nom: s.nom, prenom: s.prenom, email: s.email }));
 
+  const montantValide = montant != null && Number.isFinite(montant) && montant >= 0 ? montant : undefined;
+
   const res = await createConventionEntreprise({
     sessionId: demande.sessionId,
     entrepriseId: demande.entrepriseId,
     nouveaux,
     candidatIdsExistants,
-    financementType: "ENTREPRISE",
+    financementType: demande.financementType ?? "ENTREPRISE",
+    montant: montantValide != null ? String(montantValide) : undefined,
   });
   if (!res.ok) {
     // Échec de la convention → on relâche le verrou pour permettre une nouvelle tentative.
@@ -131,7 +148,17 @@ export async function confirmerDemandeInscription(
     return { ok: false, error: res.error };
   }
 
+  // Génère et stocke le PDF de la convention (Qualiopi), puis notifie le client.
+  await generateAndStoreConventionPdf(res.conventionId);
+  await notifyClientDemande({
+    entrepriseId: demande.entrepriseId,
+    organismeId,
+    kind: "confirmee",
+    formationTitre: demande.session.formation.titre,
+  });
+
   revalidatePath("/demandes-inscription");
+  revalidatePath(`/clients-pro/${demande.entrepriseId}`);
   return { ok: true, warning: res.warning };
 }
 
@@ -140,7 +167,7 @@ export async function refuserDemandeInscription(
   demandeId: string,
   motif?: string,
 ): Promise<{ ok: boolean; error?: string }> {
-  const { db } = await requireStaffTenant();
+  const { db, organismeId } = await requireStaffTenant();
 
   // Verrou atomique : on ne refuse que depuis EN_ATTENTE (une CONTRE_PROPOSEE est
   // dans les mains du client). Évite d'écraser un état concurrent (accept/confirm).
@@ -149,6 +176,20 @@ export async function refuserDemandeInscription(
     data: { statut: "REFUSEE", motif: motif?.trim() || null },
   });
   if (claim.count !== 1) return { ok: false, error: "Cette demande n'est plus en attente." };
+
+  const d = await db.demandeInscription.findFirst({
+    where: { id: demandeId },
+    select: { entrepriseId: true, session: { select: { formation: { select: { titre: true } } } } },
+  });
+  if (d) {
+    await notifyClientDemande({
+      entrepriseId: d.entrepriseId,
+      organismeId,
+      kind: "refusee",
+      formationTitre: d.session.formation.titre,
+      extra: motif?.trim() || null,
+    });
+  }
 
   revalidatePath("/demandes-inscription");
   return { ok: true };
@@ -162,11 +203,17 @@ export async function proposerAutreDate(
   demandeId: string,
   sessionProposeeId: string,
 ): Promise<{ ok: boolean; error?: string }> {
-  const { db } = await requireStaffTenant();
+  const { db, organismeId } = await requireStaffTenant();
 
   const demande = await db.demandeInscription.findFirst({
     where: { id: demandeId },
-    select: { id: true, statut: true, sessionId: true, session: { select: { formationId: true } } },
+    select: {
+      id: true,
+      statut: true,
+      sessionId: true,
+      entrepriseId: true,
+      session: { select: { formationId: true, formation: { select: { titre: true } } } },
+    },
   });
   if (!demande) return { ok: false, error: "Demande introuvable." };
   if (demande.statut !== "EN_ATTENTE") return { ok: false, error: "Cette demande a déjà été traitée." };
@@ -174,7 +221,7 @@ export async function proposerAutreDate(
 
   const sess = await db.session.findFirst({
     where: { id: sessionProposeeId, isArchived: false, statut: { in: ["PLANIFIEE", "OUVERTE"] } },
-    select: { id: true, formationId: true },
+    select: { id: true, formationId: true, dateDebut: true },
   });
   if (!sess) return { ok: false, error: "La session proposée n'est pas ouverte aux inscriptions." };
   // La contre-proposition doit rester la MÊME formation (identité du contrat / Qualiopi).
@@ -187,6 +234,14 @@ export async function proposerAutreDate(
     data: { statut: "CONTRE_PROPOSEE", sessionProposeeId },
   });
   if (claim.count !== 1) return { ok: false, error: "Cette demande vient d'être traitée." };
+
+  await notifyClientDemande({
+    entrepriseId: demande.entrepriseId,
+    organismeId,
+    kind: "contre_proposee",
+    formationTitre: demande.session.formation.titre,
+    extra: `Nouvelle date proposée : ${sess.dateDebut.toLocaleDateString("fr-FR")}.`,
+  });
 
   revalidatePath("/demandes-inscription");
   return { ok: true };

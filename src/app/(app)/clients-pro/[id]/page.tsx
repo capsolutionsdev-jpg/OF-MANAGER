@@ -21,6 +21,7 @@ import {
 import { ConventionDialog } from "@/components/conventions/convention-dialog";
 import { CreateAccessButton } from "@/components/clients-pro/create-access-button";
 import { DepositFactureForm } from "@/components/clients-pro/deposit-facture-form";
+import { ConventionRowActions } from "@/components/clients-pro/convention-row-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -206,14 +207,27 @@ export default async function ClientProPage({
               Aucune convention. Elle est générée depuis l&apos;inscription du salarié à une session.
             </p>
           ) : (
-            <ul className="space-y-2 text-sm">
+            <ul className="space-y-3 text-sm">
               {client.conventions.map((cv) => (
-                <li key={cv.id} className="flex items-center justify-between gap-2 border-b pb-2 last:border-0">
-                  <span className="font-medium">{cv.reference}</span>
-                  <span className="text-muted-foreground">
-                    {cv.montant ? `${Number(cv.montant)} €` : "—"} · signée : {fmt(cv.dateSignature)}
-                  </span>
-                  <Badge variant="outline">{cv.signatureStatut}</Badge>
+                <li key={cv.id} className="space-y-2 border-b pb-3 last:border-0">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="font-medium">{cv.reference}</span>
+                    <span className="text-muted-foreground">{cv.montant ? `${Number(cv.montant)} €` : "—"}</span>
+                    <Badge variant="outline">{cv.signatureStatut}</Badge>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    {cv.fileUrl && (
+                      <a href={cv.fileUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">
+                        Convention (PDF)
+                      </a>
+                    )}
+                    {cv.fileUrlSigne && (
+                      <a href={cv.fileUrlSigne} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">
+                        Version signée
+                      </a>
+                    )}
+                    <ConventionRowActions conventionId={cv.id} isSignee={cv.signatureStatut === "SIGNEE"} />
+                  </div>
                 </li>
               ))}
             </ul>

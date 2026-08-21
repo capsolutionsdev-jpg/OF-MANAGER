@@ -555,42 +555,86 @@ export const DOCUMENTS: Record<string, { label: string; html: string }> = {
       ci-après « <strong>l'entreprise bénéficiaire</strong> », <strong>D'AUTRE PART,</strong></p>
       <p>il est conclu la présente convention de formation professionnelle.</p>
 
+      <p>Est conclue la présente convention en application des dispositions du Livre III
+      de la sixième partie du Code du travail relatives à la formation professionnelle continue.</p>
+
       <h2>Article 1 — Objet, nature et durée de la formation</h2>
       <table class="doc-table">
         <tr><td>Action de formation</td><td><strong>{{formation}}</strong> (réf. {{reference_formation}})</td></tr>
-        <tr><td>Certification visée</td><td>{{certification}}</td></tr>
-        <tr><td>Stagiaire</td><td><strong>{{nom_complet}}</strong>, salarié(e) de l'entreprise</td></tr>
+        <tr><td>Nature de l'action</td><td>Action de formation ({{certification}})</td></tr>
+        <tr><td>Salarié(s) bénéficiaire(s)</td><td><strong>{{nom_complet}}</strong></td></tr>
         <tr><td>Dates</td><td>du {{date_debut}} au {{date_fin}} — {{horaires}}</td></tr>
         <tr><td>Durée</td><td>{{duree}}</td></tr>
-        <tr><td>Lieu</td><td>{{lieu}} — {{modalite}}</td></tr>
+        <tr><td>Lieu et modalité</td><td>{{lieu}} — {{modalite}}</td></tr>
       </table>
 
-      <h2>Article 2 — Engagements de l'organisme</h2>
-      <p>L'organisme s'engage à réaliser l'action prévue, à fournir le programme,
-      à assurer le suivi de l'exécution (feuilles d'émargement signées) et à délivrer
-      en fin de formation les attestations et le certificat de réalisation.</p>
+      <h2>Article 2 — Objectifs et programme</h2>
+      <p>Les objectifs, le contenu détaillé et le déroulé pédagogique de l'action figurent
+      dans le programme de formation remis à l'entreprise et annexé à la présente convention.</p>
 
-      <h2>Article 3 — Dispositions financières</h2>
+      <h2>Article 3 — Engagement de participation</h2>
+      <p>L'entreprise bénéficiaire s'engage à assurer la présence de son (ses) salarié(s)
+      aux dates et lieux prévus pour l'action de formation.</p>
+
+      <h2>Article 4 — Moyens pédagogiques, techniques et suivi de l'exécution</h2>
+      <p>L'organisme met en œuvre les moyens pédagogiques et techniques décrits au programme.
+      Une feuille d'émargement signée par le(s) stagiaire(s) et le formateur, par demi-journée,
+      justifie de la réalisation de la prestation. Les acquis de la formation font l'objet
+      d'une évaluation en fin d'action.</p>
+
+      <h2>Article 5 — Dispositions financières</h2>
       <table class="doc-table">
         <tr><td>Prix de l'action (net de taxe)</td><td><strong>{{tarif}}</strong></td></tr>
+        <tr><td>Frais pédagogiques</td><td>Inclus</td></tr>
+        <tr><td><strong>TOTAL NET DE TAXES</strong></td><td><strong>{{tarif}}</strong></td></tr>
         <tr><td>Mode de financement</td><td>{{financement}} {{entreprise_opco}}</td></tr>
       </table>
-      <p>En cas de prise en charge partielle par le financeur, le solde reste dû par
-      l'entreprise bénéficiaire.</p>
+      <p>L'organisme de formation atteste être exonéré de TVA (article 261-4-4°a du Code général
+      des impôts). En cas de subrogation de paiement, le financeur règle directement l'organisme ;
+      à défaut de prise en charge totale, le solde reste dû par l'entreprise bénéficiaire.</p>
 
-      <h2>Article 4 — Non-réalisation ou abandon</h2>
-      <p>En cas de résiliation par l'entreprise à moins de 7 jours du début de l'action,
-      ou d'abandon en cours de formation du fait du stagiaire, l'organisme facturera
-      au prorata les sommes réellement dues au titre des heures réalisées.</p>
+      <h2>Article 6 — Modalités de règlement</h2>
+      <p>Le paiement est dû en totalité à réception d'une facture émise par l'organisme de
+      formation à destination du bénéficiaire (ou du financeur en cas de subrogation).</p>
 
-      <h2>Article 5 — Différends</h2>
-      <p>En cas de litige non résolu à l'amiable, le tribunal compétent du siège de
-      l'organisme de formation sera seul compétent.</p>
+      <h2>Article 7 — Sanction de la formation</h2>
+      <p>En application de l'article L.6353-1 du Code du travail, une attestation mentionnant
+      les objectifs, la nature et la durée de l'action ainsi que les résultats de l'évaluation
+      des acquis est remise au(x) stagiaire(s) à l'issue de la formation.</p>
+
+      <h2>Article 8 — Non-réalisation de la prestation</h2>
+      <p>En application de l'article L.6354-1 du Code du travail, en cas de résiliation totale ou
+      partielle de la prestation, l'organisme rembourse au cocontractant les sommes indûment
+      perçues de ce fait.</p>
+
+      <h2>Article 9 — Dédommagement, réparation ou dédit</h2>
+      <p>En cas de renoncement par le bénéficiaire avant le début de l'action :</p>
+      <ul>
+        <li>plus d'1 mois avant le début : 50 % du coût de la formation est dû ;</li>
+        <li>entre 1 mois et 2 semaines avant le début : 70 % du coût est dû ;</li>
+        <li>moins de 2 semaines avant le début : 100 % du coût est dû.</li>
+      </ul>
+      <p>Ces sommes ne peuvent faire l'objet d'une demande de prise en charge par le financeur.</p>
+
+      <h2>Article 10 — Accessibilité aux personnes en situation de handicap</h2>
+      <p>L'organisme de formation est engagé dans une démarche d'accessibilité. Toute situation
+      de handicap peut être signalée au référent handicap de l'organisme
+      (contact&nbsp;: {{organisme_email}} — {{organisme_telephone}}) afin d'étudier les adaptations
+      nécessaires au bon déroulement de la formation.</p>
+
+      <h2>Article 11 — Protection des données</h2>
+      <p>Les données personnelles des stagiaires sont traitées par l'organisme aux seules fins de
+      gestion de la formation, conformément au RGPD. Un droit d'accès, de rectification et
+      d'effacement peut être exercé auprès de l'organisme.</p>
+
+      <h2>Article 12 — Différends</h2>
+      <p>Si une contestation ou un différend ne peut être réglé à l'amiable, le tribunal compétent
+      du ressort du siège de l'organisme de formation sera seul compétent.</p>
 
       <p class="mt">Fait à {{organisme_ville}}, le {{date_jour}}, en deux exemplaires.</p>
       <div class="doc-signatures">
-        <div><div class="sig-label">Pour l'organisme — {{organisme_representant}}</div><div class="sig-box">${stamp}</div></div>
-        <div><div class="sig-label">Pour l'entreprise — {{entreprise_representant}}<br/>(cachet et signature)</div><div class="sig-box"></div></div>
+        <div><div class="sig-label">Pour l'organisme de formation<br/>{{organisme_representant}}</div><div class="sig-box">${stamp}</div></div>
+        <div><div class="sig-label">Pour l'entreprise bénéficiaire<br/>{{entreprise_representant}} ({{entreprise_fonction}})<br/>(cachet et signature)</div><div class="sig-box"></div></div>
       </div>`,
     ),
   },

@@ -18,6 +18,9 @@ const fakeDb = {
   inscription: recorder("inscription"),
   documentGenere: recorder("documentGenere"),
   facture: recorder("facture"),
+  convention: recorder("convention"),
+  candidat: recorder("candidat"),
+  demandeInscription: recorder("demandeInscription"),
   session: recorder("session"),
 };
 vi.mock("@/lib/tenant", () => ({ getTenantDb: vi.fn(async () => fakeDb) }));
@@ -27,6 +30,9 @@ import {
   getEntrepriseSuivi,
   getEntrepriseDocuments,
   getEntrepriseFactures,
+  getEntrepriseConventions,
+  getEntrepriseCandidats,
+  getEntrepriseDemandes,
   getEntreprisePlanning,
 } from "@/lib/entreprise-data";
 
@@ -59,6 +65,21 @@ describe("Isolation entreprise — chaque requête par entreprise filtre par ent
   it("getEntrepriseFactures filtre par entrepriseId", async () => {
     await getEntrepriseFactures("ent-A");
     expect(lastWhere("facture").entrepriseId).toBe("ent-A");
+  });
+
+  it("getEntrepriseConventions filtre par entrepriseId", async () => {
+    await getEntrepriseConventions("ent-A");
+    expect(lastWhere("convention").entrepriseId).toBe("ent-A");
+  });
+
+  it("getEntrepriseCandidats filtre par entrepriseId", async () => {
+    await getEntrepriseCandidats("ent-A");
+    expect(lastWhere("candidat").entrepriseId).toBe("ent-A");
+  });
+
+  it("getEntrepriseDemandes filtre par entrepriseId", async () => {
+    await getEntrepriseDemandes("ent-A");
+    expect(lastWhere("demandeInscription").entrepriseId).toBe("ent-A");
   });
 
   it("deux entreprises différentes ne partagent pas le même filtre", async () => {

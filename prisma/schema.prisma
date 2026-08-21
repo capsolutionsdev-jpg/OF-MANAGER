@@ -1332,7 +1332,8 @@ model Convention {
   montant       Decimal? @db.Decimal(10, 2)
   dateSignature DateTime?
   signatureStatut SignatureStatut @default(EN_ATTENTE)
-  fileUrl       String?
+  fileUrl       String? // PDF de la convention GÉNÉRÉE (non signée) par l'OF
+  fileUrlSigne  String? // PDF SIGNÉ, déposé par le client B2B ou par l'OF (reçu par mail)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   @@index([organismeId])
@@ -1462,6 +1463,8 @@ model DemandeInscription {
   session      Session    @relation("DemandeSession", fields: [sessionId], references: [id])
   // Salariés demandés : [{ candidatId } | { nom, prenom, email }]
   salariesJson Json
+  // Mode de financement précisé par le client (OPCO, autofinancement…).
+  financementType FinancementType?
   statut       DemandeInscriptionStatut @default(EN_ATTENTE)
   // Contre-proposition de l'OF : autre session suggérée.
   sessionProposeeId String?
