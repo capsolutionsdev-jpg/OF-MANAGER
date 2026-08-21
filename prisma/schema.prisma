@@ -2072,10 +2072,14 @@ model SupportMessage {
 //  de tenant) : gérés depuis la console SUPERADMIN /console/prospects.
 // =============================================================
 enum LeadStatut {
-  NOUVEAU
-  A_RAPPELER
-  RAPPELE
-  CONVERTI
+  FICHIER
+  CONTACTE
+  ENGAGE
+  QUALIFIE
+  DEMO_PLANIFIEE
+  DEMO_REALISEE
+  PROPOSITION
+  SIGNE
   PERDU
 }
 
@@ -2089,14 +2093,21 @@ model Lead {
   source      String?    // "contact" | "demo"
   hebergement String?    // préférence d'hébergement (demande de démo)
   formations  String[]   @default([]) // formations concernées (demande de démo)
-  statut      LeadStatut @default(NOUVEAU)
+  statut      LeadStatut @default(FICHIER)
   notes       String?    @db.Text // notes internes de l'équipe OFManager
-  rappeleAt   DateTime?  // date du rappel effectué
+  rappeleAt   DateTime?  // date du 1er contact effectué
   lu          Boolean    @default(false) // consulté par l'éditeur (badge)
   // Démo auto-provisionnée pour ce prospect (tenant Organisme isDemo=true).
   demoOrganismeId String?
   // Score d'engagement (console growth) : recalculé à chaque LeadEvent.
   score       Int        @default(0)
+  // Qualification commerciale (plan de lancement, feuille 6) — scoring 5 axes.
+  verticale            String? // securite | transport | autre
+  outilActuel          String? // aucun | excel | concurrent | inconnu
+  echeanceQualiopi     String? // moins_6_mois | plus_6_mois | non_concerne | inconnu
+  volumeStagiairesMois Int?
+  malARemplir          Boolean? // « dit avoir du mal à remplir ses sessions »
+  decideur             String? // décideur identifié (nom / fonction)
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 

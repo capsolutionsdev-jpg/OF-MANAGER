@@ -2,11 +2,13 @@
 
 import { useTransition } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, ListTodo, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, ListTodo, Loader2, Flame } from "lucide-react";
 import { setLeadStatut } from "@/lib/actions/console-actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TONE_CLASSES } from "@/components/ui/status-badge";
+import { STATUT_OPTIONS } from "@/components/console/lead-statut";
+import { temperature, appelUrgent, type QualifInput } from "@/lib/growth/qualification";
 import { cn } from "@/lib/utils";
 import type { LeadRow } from "@/components/console/leads-table";
 
@@ -16,25 +18,36 @@ export type LeadKanbanRow = LeadRow & {
   tasks: { id: string }[];
 };
 
-/** Colonnes du pipeline, dans l'ordre de progression commerciale. */
-const COLONNES = [
-  { key: "NOUVEAU", label: "Nouveau", accent: "bg-info" },
-  { key: "A_RAPPELER", label: "À rappeler", accent: "bg-warning" },
-  { key: "RAPPELE", label: "Rappelé", accent: "bg-info" },
-  { key: "CONVERTI", label: "Converti", accent: "bg-success" },
-  { key: "PERDU", label: "Perdu", accent: "bg-muted-foreground" },
-] as const;
+/** Colonnes du pipeline (8 étapes + Perdu), dans l'ordre de progression. */
+const COLONNES = STATUT_OPTIONS;
 
 function fmt(d: Date) {
   return new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "2-digit" });
 }
 
-/** Teinte du badge de score : chaud (émeraude) → tiède (ambre) → froid (ardoise). */
+/** Teinte du badge de score d'engagement : chaud → tiède → froid. */
 function scoreBadgeClass(score: number) {
   if (score >= 50) return TONE_CLASSES.success;
   if (score >= 25) return TONE_CLASSES.warning;
   return TONE_CLASSES.neutral;
 }
+
+/** Attributs de qualification (5 axes) extraits du lead. */
+function qualifOf(l: LeadKanbanRow): QualifInput {
+  return {
+    verticale: l.verticale as QualifInput["verticale"],
+    outilActuel: l.outilActuel as QualifInput["outilActuel"],
+    echeanceQualiopi: l.echeanceQualiopi as QualifInput["echeanceQualiopi"],
+    volumeStagiairesMois: l.volumeStagiairesMois,
+    malARemplir: l.malARemplir,
+  };
+}
+
+const TEMP_META: Record<string, { label: string; cls: string }> = {
+  chaud: { label: "Chaud", cls: TONE_CLASSES.success },
+  tiede: { label: "Tiède", cls: TONE_CLASSES.warning },
+  froid: { label: "Froid", cls: TONE_CLASSES.neutral },
+};
 
 function KanbanCard({ lead, colIndex }: { lead: LeadKanbanRow; colIndex: number }) {
   const [pending, start] = useTransition();
@@ -45,6 +58,10 @@ function KanbanCard({ lead, colIndex }: { lead: LeadKanbanRow; colIndex: number 
     start(() => setLeadStatut(lead.id, cible.key));
   };
 
+  const q = qualifOf(lead);
+  const temp = TEMP_META[temperature(q)];
+  const urgent = appelUrgent(q);
+
   return (
     <div
       className={cn(
@@ -53,7 +70,6 @@ function KanbanCard({ lead, colIndex }: { lead: LeadKanbanRow; colIndex: number 
         pending && "opacity-60",
       )}
     >
-      {/* Toute la carte ouvre la fiche du prospect (les contrôles restent au-dessus). */}
       <Link
         href={`/console/prospects/${lead.id}`}
         className="absolute inset-0 rounded-lg"
@@ -68,8 +84,13 @@ function KanbanCard({ lead, colIndex }: { lead: LeadKanbanRow; colIndex: number 
       <p className="truncate text-xs text-muted-foreground">{lead.email}</p>
 
       <div className="mt-2 flex flex-wrap items-center gap-1.5">
+        <Badge className={cn("text-[11px]", temp.cls)}>{temp.label}</Badge>
         <Badge className={cn("text-[11px]", scoreBadgeClass(lead.score))}>Score {lead.score}</Badge>
-        <Badge variant="outline" className="text-[11px]">{lead.source === "demo" ? "Démo" : "Contact"}</Badge>
+        {urgent && (
+          <span className="relative z-10 inline-flex items-center gap-0.5 rounded-full bg-destructive/10 px-1.5 py-0.5 text-[10px] font-semibold text-destructive">
+            <Flame className="h-3 w-3" /> Appel 24 h
+          </span>
+        )}
       </div>
 
       <div className="mt-2 flex items-center justify-between gap-2">
@@ -78,7 +99,7 @@ function KanbanCard({ lead, colIndex }: { lead: LeadKanbanRow; colIndex: number 
           {lead.tasks.length > 0 && (
             <span className="inline-flex items-center gap-0.5 font-medium text-warning">
               <ListTodo className="h-3 w-3" />
-              {lead.tasks.length} tâche{lead.tasks.length > 1 ? "s" : ""}
+              {lead.tasks.length}
             </span>
           )}
         </p>
@@ -89,7 +110,7 @@ function KanbanCard({ lead, colIndex }: { lead: LeadKanbanRow; colIndex: number 
             variant="ghost"
             disabled={pending || colIndex === 0}
             onClick={() => move(-1)}
-            aria-label={`Déplacer ${lead.nom} vers ${COLONNES[colIndex - 1]?.label ?? ""}`}
+            aria-label={`Reculer ${lead.nom}`}
           >
             <ChevronLeft />
           </Button>
@@ -98,7 +119,7 @@ function KanbanCard({ lead, colIndex }: { lead: LeadKanbanRow; colIndex: number 
             variant="ghost"
             disabled={pending || colIndex === COLONNES.length - 1}
             onClick={() => move(1)}
-            aria-label={`Déplacer ${lead.nom} vers ${COLONNES[colIndex + 1]?.label ?? ""}`}
+            aria-label={`Avancer ${lead.nom}`}
           >
             <ChevronRight />
           </Button>
@@ -108,16 +129,15 @@ function KanbanCard({ lead, colIndex }: { lead: LeadKanbanRow; colIndex: number 
   );
 }
 
-/** Vue pipeline des prospects : 5 colonnes par statut, déplacement par flèches. */
+/** Vue pipeline : 8 étapes + Perdu, scroll horizontal, déplacement par flèches. */
 export function LeadsKanban({ leads }: { leads: LeadKanbanRow[] }) {
   return (
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+    <div className="flex gap-3 overflow-x-auto pb-3">
       {COLONNES.map((col, colIndex) => {
         const items = leads.filter((l) => l.statut === col.key);
         return (
-          <div key={col.key} className="flex flex-col rounded-xl border bg-muted/30">
+          <div key={col.key} className="flex w-64 shrink-0 flex-col rounded-xl border bg-muted/30">
             <div className="flex items-center gap-2 border-b px-3 py-2">
-              <span className={cn("h-2 w-2 rounded-full", col.accent)} />
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{col.label}</p>
               <span className="ml-auto rounded-full bg-muted px-1.5 text-[11px] font-medium text-muted-foreground">
                 {items.length}
@@ -125,7 +145,7 @@ export function LeadsKanban({ leads }: { leads: LeadKanbanRow[] }) {
             </div>
             <div className="max-h-[65vh] space-y-2 overflow-y-auto p-2">
               {items.length === 0 ? (
-                <p className="p-3 text-center text-xs text-muted-foreground">Aucun prospect</p>
+                <p className="p-3 text-center text-xs text-muted-foreground">—</p>
               ) : (
                 items.map((lead) => <KanbanCard key={lead.id} lead={lead} colIndex={colIndex} />)
               )}

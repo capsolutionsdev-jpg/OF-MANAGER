@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { LeadsViewSwitch } from "@/components/console/leads-view-switch";
 import { LeadsImport } from "@/components/console/leads-import";
 import type { LeadKanbanRow } from "@/components/console/leads-kanban";
+import { STATUTS_A_TRAITER } from "@/components/console/lead-statut";
 
 export const dynamic = "force-dynamic";
 
@@ -13,14 +14,14 @@ export default async function ConsoleProspectsPage() {
     include: { tasks: { where: { done: false } } },
   })) as LeadKanbanRow[];
 
-  const aTraiter = leads.filter((l) => l.statut === "NOUVEAU" || l.statut === "A_RAPPELER").length;
+  const aTraiter = leads.filter((l) => STATUTS_A_TRAITER.includes(l.statut)).length;
   const nouveaux = leads.filter((l) => !l.lu).length;
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Prospects"
-        subtitle={`${leads.length} prospect${leads.length > 1 ? "s" : ""} issus du site · ${aTraiter} à rappeler${nouveaux ? ` · ${nouveaux} nouveau${nouveaux > 1 ? "x" : ""}` : ""}`}
+        subtitle={`${leads.length} prospect${leads.length > 1 ? "s" : ""} issus du site · ${aTraiter} à traiter${nouveaux ? ` · ${nouveaux} nouveau${nouveaux > 1 ? "x" : ""}` : ""}`}
       >
         <LeadsImport />
       </PageHeader>

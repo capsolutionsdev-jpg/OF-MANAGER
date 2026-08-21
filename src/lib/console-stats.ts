@@ -76,7 +76,7 @@ export async function getGrowthFunnel(): Promise<GrowthFunnel> {
     prisma.lead.count({ where: { demoOrganismeId: { not: null } } }),
     // Leads DISTINCTS ayant au moins un événement de connexion à la démo.
     prisma.leadEvent.groupBy({ by: ["leadId"], where: { type: "demo_connexion" } }),
-    prisma.lead.count({ where: { statut: "CONVERTI" } }),
+    prisma.lead.count({ where: { statut: "SIGNE" } }),
   ]);
 
   return {
@@ -106,7 +106,7 @@ export async function getConsoleHealth(): Promise<ConsoleHealth> {
   const now = new Date();
   const [leadsNouveaux, leadsARappeler, relancesEnRetard, ticketsNonLus] = await Promise.all([
     prisma.lead.count({ where: { lu: false } }),
-    prisma.lead.count({ where: { statut: "A_RAPPELER" } }),
+    prisma.lead.count({ where: { statut: "ENGAGE" } }),
     prisma.leadTask.count({ where: { done: false, dueAt: { lt: now } } }),
     prisma.supportTicket.count({ where: { nonLuSupport: true } }),
   ]);
