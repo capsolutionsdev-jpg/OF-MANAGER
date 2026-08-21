@@ -22,6 +22,7 @@ import { ConventionDialog } from "@/components/conventions/convention-dialog";
 import { CreateAccessButton } from "@/components/clients-pro/create-access-button";
 import { DepositFactureForm } from "@/components/clients-pro/deposit-facture-form";
 import { ConventionRowActions } from "@/components/clients-pro/convention-row-actions";
+import { ConventionDocumentsPanel } from "@/components/clients-pro/convention-documents-panel";
 
 export const dynamic = "force-dynamic";
 // La régénération de la convention depuis la fiche génère un PDF (Chromium).
@@ -234,6 +235,7 @@ export default async function ClientProPage({
                       hasFileUrl={!!cv.fileUrl}
                     />
                   </div>
+                  <ConventionDocumentsPanel conventionId={cv.id} />
                 </li>
               ))}
             </ul>

@@ -111,8 +111,13 @@ export function documentTypeLabel(type: string): string {
     CONVENTION: "Convention",
     CONVENTION_ENTREPRISE: "Convention",
     CONVOCATION: "Convocation",
+    CONVOCATION_EXAMEN: "Convocation à l'examen",
     ATTESTATION: "Attestation",
+    ATTESTATION_ENTREE: "Attestation d'entrée",
     ATTESTATION_FIN: "Attestation de fin",
+    ATTESTATION_REUSSITE: "Attestation de réussite",
+    ATTESTATION_RECYCLAGE: "Attestation de recyclage",
+    ATTESTATION_REMISE_NIVEAU: "Attestation de remise à niveau",
     CERTIFICAT: "Certificat",
     CERTIFICAT_REALISATION: "Certificat de réalisation",
     EMARGEMENT: "Émargement",
@@ -120,6 +125,8 @@ export function documentTypeLabel(type: string): string {
     DEVIS: "Devis",
     FACTURE: "Facture",
     REGLEMENT_INTERIEUR: "Règlement intérieur",
+    CONDITIONS_GENERALES: "Conditions générales (CGV)",
+    SATISFACTION_ENTREPRISE: "Enquête de satisfaction",
   };
   return map[type] ?? type.replace(/_/g, " ").toLowerCase();
 }

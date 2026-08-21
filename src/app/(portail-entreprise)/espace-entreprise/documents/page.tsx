@@ -26,7 +26,7 @@ export default async function DocumentsPage() {
     <div className="space-y-6">
       <RubriqueHeader
         title="Documents"
-        subtitle="Convocations, attestations et certificats de vos salariés."
+        subtitle="Convocations, attestations, certificats… Le règlement intérieur, les CGV et la convocation sont à remettre à vos salariés."
       />
       {docs.length === 0 ? (
         <EmptyState

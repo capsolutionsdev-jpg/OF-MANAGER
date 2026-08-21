@@ -7,6 +7,7 @@ import { UploadCloud, CheckCircle2, Loader2, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { uploadConventionSigneeStaff, regenererConventionPdf } from "@/lib/actions/convention-signature-actions";
 import { signerConvention } from "@/lib/actions/convention-actions";
+import { publierEtapeDocuments } from "@/lib/actions/document-lifecycle-actions";
 
 function readAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -72,6 +73,16 @@ export function ConventionRowActions({
         return;
       }
       toast.success("Convention validée — inscriptions confirmées.");
+      // Publie automatiquement l'étape « convention signée » (RI, CGV, convocation)
+      // dans l'espace client — requête séparée pour ne pas ralentir la validation.
+      try {
+        const pub = await publierEtapeDocuments(conventionId, "convention");
+        if (pub.ok && pub.count) {
+          toast.success(`${pub.count} document(s) mis à disposition du client.`);
+        }
+      } catch {
+        /* l'admin peut publier depuis le panneau « Documents » de la convention */
+      }
       router.refresh();
     });
   }
