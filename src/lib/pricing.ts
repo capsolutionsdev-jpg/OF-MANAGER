@@ -12,7 +12,7 @@ import { PLANS, PLAN_ORDER, type Plan, type FormuleKey } from "@/lib/plans";
 export type ResolvedPlan = Plan & { populaire: boolean };
 
 /** Formule par défaut mise en avant si aucune n'est marquée « populaire ». */
-const DEFAULT_POPULAR: FormuleKey = "MEDIUM";
+const DEFAULT_POPULAR: FormuleKey = "PRO";
 
 /**
  * Renvoie les 3 plans résolus (défauts + overrides DB) et la formule à mettre
@@ -69,8 +69,9 @@ export async function resolveFeaturesForFormule(key: FormuleKey): Promise<string
 export async function getPlanPrices(): Promise<Record<FormuleKey, number>> {
   const { plans } = await getResolvedPlans();
   return {
-    BASIQUE: plans.BASIQUE.price,
-    MEDIUM: plans.MEDIUM.price,
-    COMPLET: plans.COMPLET.price,
+    INDEPENDANT: plans.INDEPENDANT.price,
+    PRO: plans.PRO.price,
+    CROISSANCE: plans.CROISSANCE.price,
+    RESEAU: plans.RESEAU.price,
   };
 }

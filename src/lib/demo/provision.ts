@@ -92,7 +92,7 @@ export async function provisionDemo(input: ProvisionInput): Promise<ProvisionRes
       email,
       sousDomaine: `demo-${slug(nomBase)}-${short}`.slice(0, 60),
       statut: "ACTIF",
-      formule: "COMPLET",
+      formule: "RESEAU",
       couleurPrimaire: "#7C3AED",
       design: "defaut",
       fonctionnalites: { set: ALL_FEATURES },

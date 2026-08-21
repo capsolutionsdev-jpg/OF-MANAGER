@@ -34,7 +34,7 @@ export async function computeCurrentMrr(): Promise<MrrComputation> {
     where: { isDemo: false },
     select: { id: true, statut: true, formule: true, fonctionnalites: true },
   });
-  const byFormule: MrrByFormule = { BASIQUE: 0, MEDIUM: 0, COMPLET: 0 };
+  const byFormule: MrrByFormule = { INDEPENDANT: 0, PRO: 0, CROISSANCE: 0, RESEAU: 0 };
   const byOrg: Record<string, number> = {};
   let total = 0;
   let actifs = 0;

@@ -18,7 +18,7 @@ const GROUP_LABEL: Record<string, string> = {
  * createOrganisme / updateOrganisme.
  */
 export function FormuleSelector({
-  defaultFormule = "MEDIUM",
+  defaultFormule = "PRO",
   defaultFeatures,
   plans,
 }: {
@@ -60,7 +60,7 @@ export function FormuleSelector({
       {/* 1. Formules */}
       <div className="space-y-2">
         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">1. Formule d&apos;abonnement</p>
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {PLAN_ORDER.map((key) => {
             const p = planByKey[key];
             const active = formule === key;

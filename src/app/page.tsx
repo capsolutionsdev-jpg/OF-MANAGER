@@ -46,31 +46,40 @@ export const metadata: Metadata = {
 // la tagline (desc) et le badge « le plus choisi » sont pilotés depuis la console
 // (PlanTarif) et résolus côté serveur via getResolvedPlans (cf. HomePage).
 const PLAN_MARKETING: Record<string, { period: string; features: string[] }> = {
-  BASIQUE: {
+  INDEPENDANT: {
     period: "/ mois",
     features: [
+      "100 stagiaires/mois · 1 formateur",
       "Cœur métier (CRM, sessions, candidats)",
-      "Conformité Qualiopi · BPF · RGPD",
-      "Documents & signatures",
-      "Marque blanche",
+      "Qualiopi · BPF · RGPD · documents & signatures",
+      "Devis & facturation inclus",
     ],
   },
-  MEDIUM: {
+  PRO: {
     period: "/ mois",
     features: [
-      "Tout Basique +",
-      "Gestion étendue (B2B, e-learning, compta)",
-      "Notifications, tâches, rapports",
-      "Kanban & scoring",
+      "300 stagiaires/mois · 3 formateurs",
+      "Tout Indépendant +",
+      "Clients B2B, CPF/OPCO, e-learning",
+      "Kanban, scoring, SMS & relances",
     ],
   },
-  COMPLET: {
+  CROISSANCE: {
     period: "/ mois",
     features: [
-      "Tout Medium +",
-      "Assistant IA & SMS",
-      "Leads multicanal & portail client",
-      "Support prioritaire",
+      "800 stagiaires/mois · formateurs illimités",
+      "Tout Pro +",
+      "Site vitrine, capture de leads, assistant IA",
+      "Communication & réseaux sociaux",
+    ],
+  },
+  RESEAU: {
+    period: "/ mois",
+    features: [
+      "Stagiaires & formateurs illimités",
+      "Tout Croissance +",
+      "Multi-sites, API, marque blanche",
+      "Support dédié",
     ],
   },
 };

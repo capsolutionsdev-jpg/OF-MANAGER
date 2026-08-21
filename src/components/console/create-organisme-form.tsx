@@ -125,7 +125,7 @@ export function CreateOrganismeForm({ plans }: { plans?: Plan[] }) {
           </div>
 
           <div className="rounded-lg border p-4">
-            <FormuleSelector defaultFormule="MEDIUM" plans={plans} />
+            <FormuleSelector defaultFormule="PRO" plans={plans} />
           </div>
 
           {state?.error && (

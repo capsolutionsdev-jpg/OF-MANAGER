@@ -36,9 +36,10 @@ enum OrganismeStatut {
 
 // Formule d'abonnement vendue à l'organisme (cf. lib/plans.ts).
 enum FormuleAbonnement {
-  BASIQUE
-  MEDIUM
-  COMPLET
+  INDEPENDANT
+  PRO
+  CROISSANCE
+  RESEAU
 }
 
 enum SupportPriorite {
