@@ -8,7 +8,7 @@ vi.mock("@/lib/entreprise-portal", () => ({ getCurrentEntreprise: () => getCurre
 const fakeDb = {
   session: { findFirst: vi.fn() },
   candidat: { findMany: vi.fn() },
-  demandeInscription: { create: vi.fn(), findFirst: vi.fn(), update: vi.fn() },
+  demandeInscription: { create: vi.fn(), findFirst: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
 };
 const requireStaffTenant = vi.fn();
 vi.mock("@/lib/tenant", () => ({
@@ -85,7 +85,7 @@ describe("createDemandeInscription — isolation & validation", () => {
 });
 
 describe("confirmerDemandeInscription — réutilise createConventionEntreprise", () => {
-  it("scinde salariesJson en candidatIdsExistants + nouveaux, puis passe à CONFIRMEE", async () => {
+  it("scinde salariesJson en candidatIdsExistants + nouveaux, puis passe à CONFIRMEE (verrou atomique)", async () => {
     requireStaffTenant.mockResolvedValue({ db: fakeDb, session: { user: { id: "staff-1" } } });
     fakeDb.demandeInscription.findFirst.mockResolvedValue({
       id: "d1",
@@ -97,8 +97,8 @@ describe("confirmerDemandeInscription — réutilise createConventionEntreprise"
         { nom: "New", prenom: "Guy", email: "g@x.fr" },
       ],
     });
+    fakeDb.demandeInscription.updateMany.mockResolvedValue({ count: 1 }); // verrou obtenu
     createConventionEntreprise.mockResolvedValue({ ok: true, conventionId: "cv1", inscrits: 2 });
-    fakeDb.demandeInscription.update.mockResolvedValue({});
 
     const r = await confirmerDemandeInscription("d1");
 
@@ -108,12 +108,32 @@ describe("confirmerDemandeInscription — réutilise createConventionEntreprise"
     expect(conv.entrepriseId).toBe("ent-A");
     expect(conv.candidatIdsExistants).toEqual(["c1"]);
     expect(conv.nouveaux).toEqual([{ nom: "New", prenom: "Guy", email: "g@x.fr" }]);
-    const upd = fakeDb.demandeInscription.update.mock.calls[0][0];
-    expect(upd.data.statut).toBe("CONFIRMEE");
-    expect(upd.data.traiteeParId).toBe("staff-1");
+    // Le verrou (updateMany #1) passe à CONFIRMEE et n'est pris que si encore en attente.
+    const claim = fakeDb.demandeInscription.updateMany.mock.calls[0][0];
+    expect(claim.data.statut).toBe("CONFIRMEE");
+    expect(claim.data.traiteeParId).toBe("staff-1");
+    expect(claim.where.statut).toEqual({ in: ["EN_ATTENTE", "CONTRE_PROPOSEE"] });
+    // Pas de rollback → un seul updateMany.
+    expect(fakeDb.demandeInscription.updateMany).toHaveBeenCalledTimes(1);
   });
 
-  it("n'écrit rien et remonte l'erreur si createConventionEntreprise échoue", async () => {
+  it("double-confirm concurrent : le 2e n'obtient pas le verrou (count 0) → pas de convention", async () => {
+    requireStaffTenant.mockResolvedValue({ db: fakeDb, session: { user: { id: "staff-2" } } });
+    fakeDb.demandeInscription.findFirst.mockResolvedValue({
+      id: "d1",
+      entrepriseId: "ent-A",
+      sessionId: "s1",
+      statut: "EN_ATTENTE",
+      salariesJson: [{ nom: "A", prenom: "B" }],
+    });
+    fakeDb.demandeInscription.updateMany.mockResolvedValue({ count: 0 }); // déjà pris par l'autre
+
+    const r = await confirmerDemandeInscription("d1");
+    expect(r.ok).toBe(false);
+    expect(createConventionEntreprise).not.toHaveBeenCalled();
+  });
+
+  it("relâche le verrou (rollback EN_ATTENTE) si createConventionEntreprise échoue", async () => {
     requireStaffTenant.mockResolvedValue({ db: fakeDb, session: { user: { id: "staff-1" } } });
     fakeDb.demandeInscription.findFirst.mockResolvedValue({
       id: "d1",
@@ -122,14 +142,17 @@ describe("confirmerDemandeInscription — réutilise createConventionEntreprise"
       statut: "EN_ATTENTE",
       salariesJson: [{ nom: "A", prenom: "B" }],
     });
+    fakeDb.demandeInscription.updateMany.mockResolvedValue({ count: 1 });
     createConventionEntreprise.mockResolvedValue({ ok: false, error: "capacité" });
 
     const r = await confirmerDemandeInscription("d1");
     expect(r.ok).toBe(false);
-    expect(fakeDb.demandeInscription.update).not.toHaveBeenCalled();
+    // updateMany #1 = verrou (CONFIRMEE), #2 = rollback (EN_ATTENTE).
+    expect(fakeDb.demandeInscription.updateMany).toHaveBeenCalledTimes(2);
+    expect(fakeDb.demandeInscription.updateMany.mock.calls[1][0].data.statut).toBe("EN_ATTENTE");
   });
 
-  it("refuse une demande déjà traitée", async () => {
+  it("refuse une demande déjà traitée (avant même le verrou)", async () => {
     requireStaffTenant.mockResolvedValue({ db: fakeDb, session: { user: { id: "staff-1" } } });
     fakeDb.demandeInscription.findFirst.mockResolvedValue({
       id: "d1",
@@ -141,5 +164,6 @@ describe("confirmerDemandeInscription — réutilise createConventionEntreprise"
     const r = await confirmerDemandeInscription("d1");
     expect(r.ok).toBe(false);
     expect(createConventionEntreprise).not.toHaveBeenCalled();
+    expect(fakeDb.demandeInscription.updateMany).not.toHaveBeenCalled();
   });
 });

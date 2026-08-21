@@ -98,6 +98,15 @@ export async function confirmerDemandeInscription(
     return { ok: false, error: "Cette demande a déjà été traitée." };
   }
 
+  // Verrou atomique : on passe à CONFIRMEE UNIQUEMENT si la demande est encore
+  // en attente. Si deux collaborateurs cliquent simultanément, un seul obtient
+  // count===1 → évite une double convention / double inscription (TOCTOU).
+  const claim = await db.demandeInscription.updateMany({
+    where: { id: demandeId, statut: { in: ["EN_ATTENTE", "CONTRE_PROPOSEE"] } },
+    data: { statut: "CONFIRMEE", traiteeParId: session.user.id },
+  });
+  if (claim.count !== 1) return { ok: false, error: "Cette demande vient d'être traitée." };
+
   const salaries = (Array.isArray(demande.salariesJson) ? demande.salariesJson : []) as unknown as SalarieDemande[];
   const candidatIdsExistants = salaries.filter(isExistant).map((s) => s.candidatId);
   const nouveaux = salaries
@@ -111,12 +120,14 @@ export async function confirmerDemandeInscription(
     candidatIdsExistants,
     financementType: "ENTREPRISE",
   });
-  if (!res.ok) return { ok: false, error: res.error };
-
-  await db.demandeInscription.update({
-    where: { id: demandeId },
-    data: { statut: "CONFIRMEE", traiteeParId: session.user.id },
-  });
+  if (!res.ok) {
+    // Échec de la convention → on relâche le verrou pour permettre une nouvelle tentative.
+    await db.demandeInscription.updateMany({
+      where: { id: demandeId, statut: "CONFIRMEE" },
+      data: { statut: "EN_ATTENTE", traiteeParId: null },
+    });
+    return { ok: false, error: res.error };
+  }
 
   revalidatePath("/demandes-inscription");
   return { ok: true, warning: res.warning };
