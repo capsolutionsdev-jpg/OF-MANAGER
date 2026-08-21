@@ -83,9 +83,13 @@ export async function generateAndStoreConventionPdf(conventionId: string): Promi
   });
   if (!conv) return null;
 
-  const ent = conv.entreprise;
-  const sess = conv.session;
-  const org = await orgConfigFor(conv.organismeId);
+  // Best-effort : un échec de génération (Chromium indisponible, Blob…) ne doit
+  // jamais casser l'action appelante (la convention/les inscriptions sont déjà
+  // créées). Le PDF pourra être régénéré depuis la fiche client. On renvoie null.
+  try {
+    const ent = conv.entreprise;
+    const sess = conv.session;
+    const org = await orgConfigFor(conv.organismeId);
 
   const noms = conv.inscriptions
     .map((i) => `${i.candidat.prenom} ${i.candidat.nom}`.trim())
@@ -158,10 +162,13 @@ export async function generateAndStoreConventionPdf(conventionId: string): Promi
     contentType: "application/pdf",
   });
 
-  await db.convention.update({
-    where: { id: conventionId },
-    data: { fileUrl, signatureStatut: "ENVOYEE" },
-  });
+    await db.convention.update({
+      where: { id: conventionId },
+      data: { fileUrl, signatureStatut: "ENVOYEE" },
+    });
 
-  return fileUrl;
+    return fileUrl;
+  } catch {
+    return null;
+  }
 }

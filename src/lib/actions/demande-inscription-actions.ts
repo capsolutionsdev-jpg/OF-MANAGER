@@ -148,8 +148,14 @@ export async function confirmerDemandeInscription(
     return { ok: false, error: res.error };
   }
 
-  // Génère et stocke le PDF de la convention (Qualiopi), puis notifie le client.
-  await generateAndStoreConventionPdf(res.conventionId);
+  // Génère et stocke le PDF de la convention (Qualiopi). Best-effort : en cas
+  // d'échec (renvoie null), la convention/les inscriptions restent créées ; on
+  // prévient le staff (régénération possible depuis la fiche) sans casser l'action.
+  const conventionUrl = await generateAndStoreConventionPdf(res.conventionId);
+  const pdfWarning = conventionUrl
+    ? undefined
+    : "Convention créée, mais le PDF n'a pas pu être généré — régénérez-le depuis la fiche client.";
+
   await notifyClientDemande({
     entrepriseId: demande.entrepriseId,
     organismeId,
@@ -159,7 +165,7 @@ export async function confirmerDemandeInscription(
 
   revalidatePath("/demandes-inscription");
   revalidatePath(`/clients-pro/${demande.entrepriseId}`);
-  return { ok: true, warning: res.warning };
+  return { ok: true, warning: res.warning ?? pdfWarning };
 }
 
 /** STAFF : refuse une demande (motif optionnel communiqué au client). */

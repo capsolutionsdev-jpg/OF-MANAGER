@@ -3,9 +3,9 @@
 import { useRef, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { UploadCloud, CheckCircle2, Loader2 } from "lucide-react";
+import { UploadCloud, CheckCircle2, Loader2, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { uploadConventionSigneeStaff } from "@/lib/actions/convention-signature-actions";
+import { uploadConventionSigneeStaff, regenererConventionPdf } from "@/lib/actions/convention-signature-actions";
 import { signerConvention } from "@/lib/actions/convention-actions";
 
 function readAsDataUrl(file: File): Promise<string> {
@@ -20,13 +20,27 @@ function readAsDataUrl(file: File): Promise<string> {
 export function ConventionRowActions({
   conventionId,
   isSignee,
+  hasFileUrl,
 }: {
   conventionId: string;
   isSignee: boolean;
+  hasFileUrl: boolean;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const fileRef = useRef<HTMLInputElement>(null);
+
+  function regenerer() {
+    start(async () => {
+      const res = await regenererConventionPdf(conventionId);
+      if (!res.ok) {
+        toast.error(res.error ?? "La génération a échoué.");
+        return;
+      }
+      toast.success("Convention générée.");
+      router.refresh();
+    });
+  }
 
   function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -71,8 +85,18 @@ export function ConventionRowActions({
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       <input ref={fileRef} type="file" accept="application/pdf" className="hidden" onChange={onFile} />
+      {hasFileUrl ? (
+        <Button size="sm" variant="ghost" onClick={regenerer} disabled={pending}>
+          <FileText className="mr-1.5 h-4 w-4" /> Régénérer
+        </Button>
+      ) : (
+        <Button size="sm" variant="outline" onClick={regenerer} disabled={pending}>
+          {pending ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <FileText className="mr-1.5 h-4 w-4" />}
+          Générer la convention
+        </Button>
+      )}
       <Button size="sm" variant="ghost" onClick={() => fileRef.current?.click()} disabled={pending}>
         <UploadCloud className="mr-1.5 h-4 w-4" /> Déposer le signé
       </Button>

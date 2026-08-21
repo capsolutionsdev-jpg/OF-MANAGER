@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getCurrentEntreprise } from "@/lib/entreprise-portal";
 import { getTenantDb, requireStaffTenant } from "@/lib/tenant";
 import { storeUpload, parseDataUrl, detectFileType } from "@/lib/blob";
+import { generateAndStoreConventionPdf } from "@/lib/documents/convention-pdf";
 
 const MAX_BYTES = Math.floor(3.5 * 1024 * 1024); // ~3,5 Mo (base64 < 5 Mo Server Action)
 
@@ -45,9 +46,12 @@ export async function uploadConventionSigneeClient(
 
   const conv = await db.convention.findFirst({
     where: { id: conventionId, entrepriseId: entreprise.id },
-    select: { id: true },
+    select: { id: true, signatureStatut: true },
   });
   if (!conv) return { ok: false, error: "Convention introuvable." };
+  if (conv.signatureStatut === "SIGNEE") {
+    return { ok: false, error: "Cette convention est déjà validée." };
+  }
 
   const v = validatePdf(dataUrl);
   if (!v.ok) return v;
@@ -80,6 +84,28 @@ export async function uploadConventionSigneeStaff(
 
   const fileUrlSigne = await storeSigned(conventionId, v.data);
   await db.convention.update({ where: { id: conventionId }, data: { fileUrlSigne } });
+
+  if (conv.entrepriseId) revalidatePath(`/clients-pro/${conv.entrepriseId}`);
+  return { ok: true };
+}
+
+/**
+ * STAFF : (re)génère le PDF de la convention (utile si la génération à la
+ * confirmation a échoué, ou si le prix a changé). Réservé au personnel du tenant.
+ */
+export async function regenererConventionPdf(
+  conventionId: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const { db } = await requireStaffTenant();
+
+  const conv = await db.convention.findFirst({
+    where: { id: conventionId },
+    select: { id: true, entrepriseId: true },
+  });
+  if (!conv) return { ok: false, error: "Convention introuvable." };
+
+  const url = await generateAndStoreConventionPdf(conventionId);
+  if (!url) return { ok: false, error: "La génération du PDF a échoué. Réessayez." };
 
   if (conv.entrepriseId) revalidatePath(`/clients-pro/${conv.entrepriseId}`);
   return { ok: true };

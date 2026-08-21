@@ -24,6 +24,8 @@ import { DepositFactureForm } from "@/components/clients-pro/deposit-facture-for
 import { ConventionRowActions } from "@/components/clients-pro/convention-row-actions";
 
 export const dynamic = "force-dynamic";
+// La régénération de la convention depuis la fiche génère un PDF (Chromium).
+export const maxDuration = 60;
 
 export default async function ClientProPage({
   params,
@@ -226,7 +228,11 @@ export default async function ClientProPage({
                         Version signée
                       </a>
                     )}
-                    <ConventionRowActions conventionId={cv.id} isSignee={cv.signatureStatut === "SIGNEE"} />
+                    <ConventionRowActions
+                      conventionId={cv.id}
+                      isSignee={cv.signatureStatut === "SIGNEE"}
+                      hasFileUrl={!!cv.fileUrl}
+                    />
                   </div>
                 </li>
               ))}

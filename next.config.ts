@@ -80,6 +80,10 @@ const PDF_ENTRYPOINTS = [
   "/candidats",
   "/crm",
   "/signatures",
+  // B2B : confirmer une demande génère la convention (generateAndStoreConventionPdf) ;
+  // la fiche client-pro peut régénérer la convention.
+  "/demandes-inscription",
+  "/clients-pro",
 ];
 
 const nextConfig: NextConfig = {

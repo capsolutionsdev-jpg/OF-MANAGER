@@ -3,6 +3,9 @@ import { getTenantDb } from "@/lib/tenant";
 import { DemandeActions } from "@/components/demandes/demande-actions";
 
 export const dynamic = "force-dynamic";
+// La confirmation d'une demande génère le PDF de la convention (Chromium) → laisser
+// le temps à la fonction serverless (comme les autres surfaces PDF).
+export const maxDuration = 60;
 
 type Salarie = { candidatId?: string; nom?: string; prenom?: string };
 
