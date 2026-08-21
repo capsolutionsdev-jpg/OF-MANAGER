@@ -1,9 +1,18 @@
-import { euros } from "@/lib/plans";
+import { euros, type FormuleKey } from "@/lib/plans";
+import {
+  optionByKey,
+  packByKey,
+  optionStatut,
+  totalOptionsMois,
+  totalPacksMois,
+  totalPacksActivation,
+  fraisMiseEnService,
+} from "@/lib/options";
 
 // =============================================================
 //  CONTRAT DE PRESTATION éditeur ↔ OF client (abonnement OF Manager)
 //  Helpers PURS + gabarit HTML (→ PDF via lib/pdf.ts, + aperçu page de signature).
-//  Aucune dépendance serveur : importable partout.
+//  Aucune dépendance serveur : importable partout (imports plans/options = purs).
 // =============================================================
 
 export type PrestataireIdentite = {
@@ -29,11 +38,15 @@ export type EngagementType = "MENSUEL" | "ANNUEL";
 
 export type ContratData = {
   reference: string;
+  palier: FormuleKey; // pour résoudre la disponibilité/prix des options
   formuleNom: string;
-  montantMensuel: number; // € HT / mois (avant remise)
+  montantMensuel: number; // € HT / mois (abonnement de base, avant remise)
   remisePct: number;
   engagement: EngagementType;
-  options: string[];
+  options: string[]; // clés d'options à la carte (cf. lib/options)
+  packs: string[]; // clés de packs métier
+  fraisMiseEnService: number; // one-time HT (0 = offert / aucun)
+  pionnier?: { variante: string | null; prixGele: boolean } | null;
   dateDebut?: Date | null;
   signataireNom?: string | null;
   signatureUrl?: string | null; // data URL du tracé (si signé)
@@ -52,7 +65,7 @@ export const STATUT_PRESTATION_LABELS: Record<string, string> = {
   REFUSE: "Refusé",
 };
 
-/** Montant mensuel net après remise (€ HT). */
+/** Montant mensuel net après remise (€ HT) — PUR. */
 export function montantNet(montantMensuel: number, remisePct: number): number {
   const r = Math.min(100, Math.max(0, remisePct));
   return Math.round(montantMensuel * (1 - r / 100) * 100) / 100;
@@ -61,6 +74,36 @@ export function montantNet(montantMensuel: number, remisePct: number): number {
 /** Montant total sur la période d'engagement (mensuel = 1 mois, annuel = 12). */
 export function montantEngagement(net: number, engagement: EngagementType): number {
   return engagement === "ANNUEL" ? Math.round(net * 12 * 100) / 100 : net;
+}
+
+export type ContratTotals = {
+  abonnementNet: number; // base après remise
+  optionsMois: number; // options souscrites (facturées)
+  packsMois: number; // packs métier récurrent
+  recurrentMois: number; // total mensuel récurrent (net + options + packs)
+  fraisUnique: number; // frais de mise en service (one-time)
+  activationUnique: number; // activation packs (one-time)
+  oneTimeTotal: number; // total des frais one-time
+  totalEngagement: number; // récurrent × (12 si annuel, sinon 1)
+  encaisseSignature: number; // 1er versement : récurrent (1 ou 12 mois) + one-time
+};
+
+/** Ventilation financière complète d'un contrat — PUR. */
+export function computeContratTotals(d: ContratData): ContratTotals {
+  const abonnementNet = montantNet(d.montantMensuel, d.remisePct);
+  const optionsMois = totalOptionsMois(d.options, d.palier);
+  const packsMois = totalPacksMois(d.packs);
+  const recurrentMois = Math.round((abonnementNet + optionsMois + packsMois) * 100) / 100;
+  // Cadeaux Pionniers : mise en service + activation offertes.
+  const activationUnique = d.pionnier ? 0 : totalPacksActivation(d.packs);
+  const fraisUnique = d.pionnier ? 0 : d.fraisMiseEnService;
+  const oneTimeTotal = Math.round((fraisUnique + activationUnique) * 100) / 100;
+  const totalEngagement = montantEngagement(recurrentMois, d.engagement);
+  const encaisseSignature = Math.round((totalEngagement + oneTimeTotal) * 100) / 100;
+  return {
+    abonnementNet, optionsMois, packsMois, recurrentMois,
+    fraisUnique, activationUnique, oneTimeTotal, totalEngagement, encaisseSignature,
+  };
 }
 
 function esc(v: unknown): string {
@@ -87,6 +130,12 @@ function ligneIdentite(label: string, i: PrestataireIdentite | ClientIdentite): 
   return `<p style="margin:0 0 4px"><span style="color:#64748b">${esc(label)} :</span><br>${bits.join("<br>")}</p>`;
 }
 
+const CELL_L = 'style="padding:6px 10px;border:1px solid #e2e8f0"';
+const CELL_R = 'style="padding:6px 10px;border:1px solid #e2e8f0;text-align:right"';
+function fRow(label: string, valueHtml: string): string {
+  return `<tr><td ${CELL_L}>${label}</td><td ${CELL_R}>${valueHtml}</td></tr>`;
+}
+
 /** Gabarit HTML A4 complet du contrat de prestation. */
 export function contratPrestationHtml(opts: {
   prestataire: PrestataireIdentite;
@@ -94,18 +143,48 @@ export function contratPrestationHtml(opts: {
   contrat: ContratData;
 }): string {
   const { prestataire, client, contrat } = opts;
-  const net = montantNet(contrat.montantMensuel, contrat.remisePct);
-  const totalEngagement = montantEngagement(net, contrat.engagement);
+  const t = computeContratTotals(contrat);
   const signeLe = contrat.signedAt ? fmtDate(contrat.signedAt) : null;
 
-  const optionsHtml = contrat.options.length
-    ? `<ul style="margin:6px 0 0;padding-left:18px">${contrat.options.map((o) => `<li>${esc(o)}</li>`).join("")}</ul>`
-    : `<span style="color:#94a3b8">Aucune option supplémentaire.</span>`;
+  const remiseHtml = contrat.remisePct > 0 ? fRow("Remise commerciale", `− ${contrat.remisePct} %`) : "";
 
-  const remiseHtml =
-    contrat.remisePct > 0
-      ? `<tr><td style="padding:6px 10px;border:1px solid #e2e8f0">Remise commerciale</td><td style="padding:6px 10px;border:1px solid #e2e8f0;text-align:right">− ${contrat.remisePct} %</td></tr>`
-      : "";
+  const optionRows = contrat.options
+    .map((k) => {
+      const o = optionByKey(k);
+      if (!o) return fRow(esc(k), `<span style="color:#94a3b8">—</span>`);
+      const st = optionStatut(o, contrat.palier);
+      const val =
+        st === "souscriptible" ? `${esc(euros(o.prixMois))} /mois`
+          : st === "incluse" ? `<span style="color:#16a34a">inclus</span>`
+            : `<span style="color:#94a3b8">—</span>`;
+      return fRow(esc(o.label), val);
+    })
+    .join("");
+
+  const packRows = contrat.packs
+    .map((k) => {
+      const p = packByKey(k);
+      return p ? fRow(esc(p.label), `${esc(euros(p.prixMois))} /mois`) : "";
+    })
+    .join("");
+
+  const totalEngagementRow =
+    contrat.engagement === "ANNUEL" ? fRow("Total sur 12 mois (HT)", esc(euros(t.totalEngagement))) : "";
+
+  const grossCadeaux = fraisMiseEnService(contrat.palier) + totalPacksActivation(contrat.packs);
+  const fraisSection = contrat.pionnier
+    ? `<p style="margin:0">Dans le cadre de l'<b>offre de lancement « Pionniers OFManager »</b> :</p>
+       <ul style="margin:6px 0 0;padding-left:18px">
+         <li>Mise en service et activation des packs métier <b>offertes</b>${grossCadeaux > 0 ? ` <span style="color:#94a3b8">(valeur ${esc(euros(grossCadeaux))})</span>` : ""}.</li>
+         ${contrat.pionnier.prixGele ? `<li><b>Prix gelé à vie</b> sur le palier souscrit, tant que l'abonnement reste actif.</li>` : ""}
+       </ul>
+       <p style="margin:8px 0 0"><b>À régler à la signature : ${esc(euros(t.encaisseSignature))} HT</b> (${contrat.engagement === "ANNUEL" ? "12 mois payés d'avance" : "premier mois"}, mise en service offerte).</p>`
+    : `<table>
+         ${t.fraisUnique > 0 ? fRow("Frais de mise en service", esc(euros(t.fraisUnique))) : ""}
+         ${t.activationUnique > 0 ? fRow("Activation pack(s) métier", esc(euros(t.activationUnique))) : ""}
+         ${fRow("Total à la mise en service (HT)", `<b>${esc(euros(t.oneTimeTotal))}</b>`)}
+       </table>
+       <p class="muted" style="margin:6px 0 0;font-size:11px">Prélevé avec le premier mois — une seule facture. À régler à la signature : <b>${esc(euros(t.encaisseSignature))} HT</b>.</p>`;
 
   const cachet =
     prestataire.cachetUrl && prestataire.cachetUrl.startsWith("data:image/")
@@ -149,22 +228,25 @@ export function contratPrestationHtml(opts: {
   </div>
 
   <h2>Article 1 — Objet</h2>
-  <p style="margin:0">Le Prestataire met à la disposition du Client, sous forme d'abonnement (logiciel en tant que service), la plateforme de gestion pour organismes de formation <b>OF Manager</b>, selon la formule et les options définies ci-après.</p>
+  <p style="margin:0">Le Prestataire met à la disposition du Client, sous forme d'abonnement (logiciel en tant que service), la plateforme de gestion pour organismes de formation <b>OF Manager</b>, selon la formule, les options et les packs définis ci-après.</p>
 
   <h2>Article 2 — Formule &amp; conditions financières</h2>
   <table>
-    <tr><td style="padding:6px 10px;border:1px solid #e2e8f0">Formule</td><td style="padding:6px 10px;border:1px solid #e2e8f0;text-align:right"><b>${esc(contrat.formuleNom)}</b></td></tr>
-    <tr><td style="padding:6px 10px;border:1px solid #e2e8f0">Abonnement mensuel (HT)</td><td style="padding:6px 10px;border:1px solid #e2e8f0;text-align:right">${esc(euros(contrat.montantMensuel))}</td></tr>
+    ${fRow("Formule", `<b>${esc(contrat.formuleNom)}</b>`)}
+    ${fRow("Abonnement mensuel (HT)", esc(euros(contrat.montantMensuel)))}
     ${remiseHtml}
-    <tr><td style="padding:6px 10px;border:1px solid #e2e8f0"><b>Montant mensuel net (HT)</b></td><td style="padding:6px 10px;border:1px solid #e2e8f0;text-align:right"><b>${esc(euros(net))}</b></td></tr>
-    <tr><td style="padding:6px 10px;border:1px solid #e2e8f0">Engagement</td><td style="padding:6px 10px;border:1px solid #e2e8f0;text-align:right">${esc(ENGAGEMENT_LABELS[contrat.engagement])}</td></tr>
-    ${contrat.engagement === "ANNUEL" ? `<tr><td style="padding:6px 10px;border:1px solid #e2e8f0">Total annuel (HT)</td><td style="padding:6px 10px;border:1px solid #e2e8f0;text-align:right">${esc(euros(totalEngagement))}</td></tr>` : ""}
-    <tr><td style="padding:6px 10px;border:1px solid #e2e8f0">Date d'effet</td><td style="padding:6px 10px;border:1px solid #e2e8f0;text-align:right">${fmtDate(contrat.dateDebut)}</td></tr>
+    ${fRow("Abonnement net (HT)", `<b>${esc(euros(t.abonnementNet))}</b>`)}
+    ${optionRows}
+    ${packRows}
+    ${fRow("Total mensuel récurrent (HT)", `<b>${esc(euros(t.recurrentMois))}</b>`)}
+    ${fRow("Engagement", esc(ENGAGEMENT_LABELS[contrat.engagement]))}
+    ${totalEngagementRow}
+    ${fRow("Date d'effet", fmtDate(contrat.dateDebut))}
   </table>
-  <p class="muted" style="margin:6px 0 0;font-size:11px">Prix hors taxes. Paiement par prélèvement SEPA sur mandat, à échéance mensuelle.</p>
+  <p class="muted" style="margin:6px 0 0;font-size:11px">Prix hors taxes. Paiement par prélèvement SEPA sur mandat, à échéance ${contrat.engagement === "ANNUEL" ? "annuelle (12 mois payés d'avance)" : "mensuelle"}.</p>
 
-  <h2>Article 3 — Options incluses</h2>
-  <p style="margin:0">${optionsHtml}</p>
+  <h2>Article 3 — Frais initiaux${contrat.pionnier ? " &amp; offre de lancement" : ""}</h2>
+  ${fraisSection}
 
   <h2>Article 4 — Durée, reconduction &amp; résiliation</h2>
   <p style="margin:0">Le contrat prend effet à la date d'effet ci-dessus pour la durée d'engagement indiquée, puis se reconduit tacitement par période équivalente. Chaque partie peut y mettre fin par écrit avec un préavis de trente (30) jours avant l'échéance. En cas de résiliation, l'accès est maintenu jusqu'au terme de la période réglée.</p>

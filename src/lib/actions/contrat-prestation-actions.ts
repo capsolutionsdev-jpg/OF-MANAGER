@@ -5,7 +5,9 @@ import { FormuleAbonnement, EngagementPrestation, ContratPrestationStatut } from
 import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/superadmin-guard";
 import { getResolvedPlans } from "@/lib/pricing";
-import { FORMULE_KEYS } from "@/lib/plans";
+import { FORMULE_KEYS, type FormuleKey } from "@/lib/plans";
+import { fraisMiseEnService } from "@/lib/options";
+import { appliquerPionniers, type PionnierVariante } from "@/lib/offre-lancement";
 import { generateToken, appBaseUrl } from "@/lib/token";
 import { sendEmail } from "@/lib/email";
 
@@ -36,16 +38,40 @@ export async function createContratPrestation(
   const montantMensuel = Number.isFinite(montantSaisi) && montantSaisi > 0 ? montantSaisi : prixDefaut;
 
   const remiseSaisie = Number(String(formData.get("remisePct") ?? "0"));
-  const remisePct = Number.isFinite(remiseSaisie) ? Math.min(100, Math.max(0, Math.floor(remiseSaisie))) : 0;
+  const remiseSaisiePct = Number.isFinite(remiseSaisie) ? Math.min(100, Math.max(0, Math.floor(remiseSaisie))) : 0;
 
-  const options = String(formData.get("options") ?? "")
-    .split(/[\n,]/)
-    .map((s) => s.trim())
-    .filter(Boolean)
-    .slice(0, 20);
+  const parseKeys = (name: string, max: number) =>
+    String(formData.get(name) ?? "")
+      .split(/[\n,]/)
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .slice(0, max);
+  const options = parseKeys("options", 20);
+  const packs = parseKeys("packs", 10);
 
   const dateDebutRaw = String(formData.get("dateDebut") ?? "").trim();
   const dateDebut = dateDebutRaw ? new Date(dateDebutRaw) : null;
+
+  // Offre de lancement « Pionniers » : impose la remise + l'engagement, offre les frais.
+  const variRaw = String(formData.get("pionnierVariante") ?? "").trim();
+  const isPionnier = variRaw === "MENSUEL_6M" || variRaw === "ANNUEL_12M_PREPAYE";
+  let engagementFinal: "MENSUEL" | "ANNUEL" = engagement;
+  let remisePct = remiseSaisiePct;
+  let frais: number;
+  let prixGele = false;
+  if (isPionnier) {
+    const ap = appliquerPionniers(variRaw as PionnierVariante);
+    engagementFinal = ap.engagement;
+    remisePct = ap.remisePct;
+    frais = 0; // mise en service offerte
+    prixGele = ap.prixGele;
+  } else {
+    const fraisSaisi = Number(String(formData.get("fraisMiseEnService") ?? "").replace(",", "."));
+    frais =
+      Number.isFinite(fraisSaisi) && fraisSaisi >= 0
+        ? Math.floor(fraisSaisi)
+        : fraisMiseEnService(formuleRaw as FormuleKey);
+  }
 
   const reference = `CP-${new Date().getFullYear()}-${generateToken().slice(0, 6).toUpperCase()}`;
 
@@ -54,10 +80,15 @@ export async function createContratPrestation(
       organismeId,
       reference,
       formule: formuleRaw as FormuleAbonnement,
-      engagement: engagement as EngagementPrestation,
+      engagement: engagementFinal as EngagementPrestation,
       montantMensuel,
       remisePct,
       options,
+      packs,
+      fraisMiseEnService: frais,
+      pionnier: isPionnier,
+      pionnierVariante: isPionnier ? variRaw : null,
+      prixGele,
       dateDebut,
     },
     select: { id: true },
