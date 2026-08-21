@@ -51,9 +51,7 @@ export default async function DocumentsPage() {
                     </div>
                     {d.fileUrl ? (
                       <a
-                        href={d.fileUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        href={`/espace-entreprise/download?kind=document&id=${d.id}`}
                         className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium hover:bg-muted"
                       >
                         <FileDown className="h-4 w-4" />

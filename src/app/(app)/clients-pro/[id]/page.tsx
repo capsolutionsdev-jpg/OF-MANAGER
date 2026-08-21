@@ -219,12 +219,12 @@ export default async function ClientProPage({
                   </div>
                   <div className="flex flex-wrap items-center gap-3">
                     {cv.fileUrl && (
-                      <a href={cv.fileUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">
+                      <a href={`/clients-pro/download?kind=convention&id=${cv.id}`} className="text-xs text-primary hover:underline">
                         Convention (PDF)
                       </a>
                     )}
                     {cv.fileUrlSigne && (
-                      <a href={cv.fileUrlSigne} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">
+                      <a href={`/clients-pro/download?kind=convention-signe&id=${cv.id}`} className="text-xs text-primary hover:underline">
                         Version signée
                       </a>
                     )}
@@ -264,7 +264,7 @@ export default async function ClientProPage({
                   <div className="flex items-center gap-2">
                     <Badge variant="outline">{f.statut}</Badge>
                     {f.fileUrl && (
-                      <a href={f.fileUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                      <a href={`/clients-pro/download?kind=facture&id=${f.id}`} className="text-primary hover:underline">
                         PDF
                       </a>
                     )}

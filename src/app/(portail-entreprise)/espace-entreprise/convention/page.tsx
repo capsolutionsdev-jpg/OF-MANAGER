@@ -52,9 +52,7 @@ export default async function ConventionPage() {
                 <div className="mt-3 flex flex-wrap items-center gap-2 border-t pt-3">
                   {c.fileUrl ? (
                     <a
-                      href={c.fileUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                      href={`/espace-entreprise/download?kind=convention&id=${c.id}`}
                       className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium hover:bg-muted"
                     >
                       <FileDown className="h-4 w-4" />
@@ -70,9 +68,7 @@ export default async function ConventionPage() {
                     </span>
                   ) : c.fileUrlSigne ? (
                     <a
-                      href={c.fileUrlSigne}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                      href={`/espace-entreprise/download?kind=convention-signe&id=${c.id}`}
                       className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium hover:bg-muted"
                     >
                       <FileDown className="h-4 w-4" />
