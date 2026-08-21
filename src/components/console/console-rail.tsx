@@ -31,7 +31,7 @@ const GROUPS: Group[] = [
   ] },
   { title: "Clients", items: [
     { href: "/console/organismes", label: "Organismes", icon: Building2 },
-    { href: "#", label: "Facturation", icon: ReceiptEuro, soon: true },
+    { href: "/console/facturation", label: "Facturation", icon: ReceiptEuro },
     { href: "/console/analytics", label: "Analytics", icon: BarChart3 },
   ] },
   { title: "Support", items: [
