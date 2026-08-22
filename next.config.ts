@@ -6,7 +6,8 @@ import type { NextConfig } from "next";
 // frame-ancestors self. Images : data:/blob:/https: (logos, photos, Vercel Blob).
 function contentSecurityPolicy(): string {
   const dev = process.env.NODE_ENV !== "production";
-  const scriptSrc = `script-src 'self' 'unsafe-inline'${dev ? " 'unsafe-eval'" : ""}`;
+  // challenges.cloudflare.com : widget captcha Turnstile (page publique /verification).
+  const scriptSrc = `script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com${dev ? " 'unsafe-eval'" : ""}`;
   return [
     "default-src 'self'",
     scriptSrc,
@@ -14,7 +15,7 @@ function contentSecurityPolicy(): string {
     "img-src 'self' data: blob: https:",
     "font-src 'self' data:",
     "connect-src 'self' https:",
-    "frame-src 'self' https://js.stripe.com https://hooks.stripe.com",
+    "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://challenges.cloudflare.com",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
