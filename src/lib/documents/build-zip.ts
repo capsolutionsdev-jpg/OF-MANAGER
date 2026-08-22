@@ -28,14 +28,37 @@ export type ZipResult = {
   filename: string;
 } | null;
 
+/** Enlève accents + caractères non-alphanumériques (noms de fichiers ZIP sûrs). */
+export function safeSegment(s: string): string {
+  return (s || "")
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-zA-Z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+/** Nom de dossier lisible (garde espaces/accents, retire seulement les séparateurs de chemin). */
+function safeFolderName(s: string): string {
+  return (s || "Candidat").replace(/[\\/:*?"<>|]+/g, " ").replace(/\s+/g, " ").trim() || "Candidat";
+}
+
 /**
- * Génère le ZIP de tous les documents d'une inscription.
- * `only` permet de limiter à certains types (ex. ["FICHE_INSCRIPTION", ...]).
+ * Ajoute le dossier documentaire d'UNE inscription dans un ZIP (dossier passé en
+ * `parent`) : un sous-dossier par candidat contenant tous ses documents applicables
+ * (.docx) + le certificat de signature électronique si l'inscription est signée.
+ *
+ * Réutilisable : `buildInscriptionDocsZip` (dossier candidat seul) ET
+ * `buildSessionDossierZip` (un dossier candidat par participant de la session).
+ *
+ * `opts.folderName(nomComplet, safe)` personnalise le nom du sous-dossier
+ * (défaut : `Documents-<safe>`). Renvoie le `safe` du candidat, ou null si l'inscription
+ * est introuvable.
  */
-export async function buildInscriptionDocsZip(
+export async function addInscriptionDossier(
+  parent: JSZip,
   inscriptionId: string,
-  only?: string[],
-): Promise<ZipResult> {
+  opts?: { only?: string[]; folderName?: (nomComplet: string, safe: string) => string },
+): Promise<string | null> {
   const inscription = await prisma.inscription.findUnique({
     where: { id: inscriptionId },
     include: { candidat: { include: { entreprise: true } }, session: { include: { formation: true, salle: true } } },
@@ -45,15 +68,17 @@ export async function buildInscriptionDocsZip(
   const org = await orgConfigFor(inscription.organismeId);
   const vars = buildVariables(inscription, org);
 
+  const nomComplet =
+    vars.nom_complet || `${inscription.candidat.prenom} ${inscription.candidat.nom}`;
+  const safe = safeSegment(nomComplet) || "candidat";
+
   // Preuve de signature (si l'inscription est signée)
   const signed = inscription.signedAt
     ? {
         at: inscription.signedAt,
         ip: inscription.signatureIp,
         ref: signatureRef(inscription.id, inscription.signedAt),
-        nom:
-          vars.nom_complet ||
-          `${inscription.candidat.prenom} ${inscription.candidat.nom}`,
+        nom: nomComplet,
       }
     : null;
   const mention = signed
@@ -82,18 +107,14 @@ export async function buildInscriptionDocsZip(
       .split("/ofmanager-logo.png").join(logo64)
       .split(STAMP_PLACEHOLDER).join(stamp64);
 
-  const zip = new JSZip();
-  const safeName = (vars.nom_complet || "candidat")
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/[^a-zA-Z0-9]+/g, "-");
-  const folder = zip.folder(`Documents-${safeName}`) ?? zip;
+  const folderName = opts?.folderName ? opts.folderName(nomComplet, safe) : `Documents-${safe}`;
+  const folder = parent.folder(safeFolderName(folderName)) ?? parent;
 
   // Documents applicables à cette inscription (particulier/entreprise, examen,
   // financement…) — plus de génération en vrac de tout le catalogue.
   const ctx = docContextFromInscription(inscription);
   const entries = Object.entries(DOCUMENTS).filter(([type]) =>
-    only ? only.includes(type) : isDocApplicable(type, ctx),
+    opts?.only ? opts.only.includes(type) : isDocApplicable(type, ctx),
   );
 
   for (const [, doc] of entries) {
@@ -134,9 +155,23 @@ export async function buildInscriptionDocsZip(
     folder.file("Certificat-de-signature-electronique.pdf", certif);
   }
 
+  return safe;
+}
+
+/**
+ * Génère le ZIP de tous les documents d'une inscription.
+ * `only` permet de limiter à certains types (ex. ["FICHE_INSCRIPTION", ...]).
+ */
+export async function buildInscriptionDocsZip(
+  inscriptionId: string,
+  only?: string[],
+): Promise<ZipResult> {
+  const zip = new JSZip();
+  const safe = await addInscriptionDossier(zip, inscriptionId, { only });
+  if (!safe) return null;
   const zipBuffer = await zip.generateAsync({ type: "nodebuffer" });
   return {
     data: new Uint8Array(zipBuffer),
-    filename: `documents-${safeName}.zip`,
+    filename: `documents-${safe}.zip`,
   };
 }

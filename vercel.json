@@ -2,6 +2,7 @@
   "regions": ["fra1"],
   "functions": {
     "src/app/documents/[inscriptionId]/pdf/route.ts": { "memory": 1769, "maxDuration": 60 },
+    "src/app/documents/session/[sessionId]/route.ts": { "memory": 1769, "maxDuration": 60 },
     "src/app/documents/[inscriptionId]/satisfaction/route.ts": { "memory": 1769, "maxDuration": 60 },
     "src/app/documents/contrat-formateur/[sessionId]/route.ts": { "memory": 1769, "maxDuration": 60 },
     "src/app/parcours/[token]/documents/route.ts": { "memory": 1769, "maxDuration": 60 },

@@ -72,6 +72,22 @@ export default async function SessionDetailPage({
         </div>
       </Card>
 
+      {/* Dossier complet de la session (GED) : ZIP hiérarchique téléchargeable */}
+      <Card>
+        <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold">Dossier complet de la session</p>
+            <p className="text-xs text-muted-foreground">
+              ZIP organisé : « Dossier session » (contrat &amp; compte-rendu formateur) + un dossier par participant
+              (ses documents).
+            </p>
+          </div>
+          <Button variant="outline" size="sm" render={<a href={`/documents/session/${s.id}`} />}>
+            <Download className="mr-1.5 h-4 w-4" /> Télécharger le dossier (ZIP)
+          </Button>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Détails de la session</CardTitle>

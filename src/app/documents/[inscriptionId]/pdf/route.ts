@@ -22,12 +22,16 @@ export async function GET(
   // au dossier d'un candidat d'un autre OF via un identifiant deviné (RGPD/IDOR).
   const insc = await prisma.inscription.findUnique({
     where: { id: inscriptionId },
-    select: { organismeId: true },
+    select: { organismeId: true, candidat: { select: { nom: true, prenom: true } } },
   });
   if (!insc) return new Response("Introuvable", { status: 404 });
   if (session.user.role !== "SUPERADMIN" && insc.organismeId !== session.user.organismeId) {
     return new Response("Non autorisé", { status: 403 });
   }
+
+  // Nom de fichier téléchargé : NOM_Prénom_nature.pdf (sanitise accents/séparateurs).
+  const safe = (s: string) =>
+    (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 
   const sp = new URL(req.url).searchParams;
   const presign = sp.get("presign") === "1";
@@ -41,10 +45,15 @@ export async function GET(
     : await getInscriptionDossierPdf(inscriptionId, fresh);
   if (!pdf) return new Response("Introuvable", { status: 404 });
 
+  const nature = presign ? "Documents-a-signer" : "Dossier-inscription";
+  const filename = `${safe(insc.candidat.nom)}_${safe(insc.candidat.prenom)}_${nature}.pdf`;
+
   return new Response(new Uint8Array(pdf.data), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `inline; filename="${pdf.filename}"`,
+      // attachment → déclenche le téléchargement direct (dans Téléchargements),
+      // nommé NOM_Prénom_nature.pdf (au lieu de s'ouvrir dans l'onglet).
+      "Content-Disposition": `attachment; filename="${filename}"`,
     },
   });
 }
