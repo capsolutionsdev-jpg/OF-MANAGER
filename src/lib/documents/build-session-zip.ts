@@ -1,7 +1,11 @@
 import JSZip from "jszip";
 import { prisma } from "@/lib/prisma";
-import { addInscriptionDossier, safeSegment, type ZipResult } from "@/lib/documents/build-zip";
+import { addInscriptionDossier, safeSegment, safeFolderName, type ZipResult } from "@/lib/documents/build-zip";
 import { buildContratFormateurPdf, buildCompteRenduPdf } from "@/lib/documents/build-pdf";
+
+// Garde-fou anti-timeout : au-delà, on tronque + on note (session inhabituellement
+// grande). Une session de formation dépasse rarement quelques dizaines de places.
+const MAX_PARTICIPANTS = 80;
 
 /**
  * ZIP HIÉRARCHIQUE du dossier complet d'une SESSION (GED — « travail propre ») :
@@ -56,12 +60,37 @@ export async function buildSessionDossierZip(sessionId: string): Promise<ZipResu
   }
 
   // ── Un dossier par participant ────────────────────────────────────────
-  for (const insc of session.inscriptions) {
+  // Garde-fou anti-timeout : borne le nombre de participants traités par exécution.
+  const participants = session.inscriptions.slice(0, MAX_PARTICIPANTS);
+  const tronque = session.inscriptions.length - participants.length;
+
+  // Noms de dossier UNIQUES : deux homonymes (mêmes prénom+nom) écraseraient sinon
+  // leurs dossiers l'un l'autre dans le ZIP (JSZip indexe par chemin) → perte
+  // silencieuse. On suffixe « (2) », « (3) »… en cas de collision.
+  const used = new Map<string, number>();
+  const uniqueName = (nom: string): string => {
+    const base = nom || "Candidat";
+    const key = safeFolderName(base);
+    const n = (used.get(key) ?? 0) + 1;
+    used.set(key, n);
+    return n === 1 ? base : `${base} (${n})`;
+  };
+
+  for (const insc of participants) {
     try {
-      await addInscriptionDossier(racine, insc.id, { folderName: (nom) => nom });
+      await addInscriptionDossier(racine, insc.id, { folderName: uniqueName });
     } catch {
       // dossier candidat en échec → on l'omet, le reste continue
     }
+  }
+
+  if (tronque > 0) {
+    racine.file(
+      "LISEZMOI.txt",
+      `Cette session compte ${session.inscriptions.length} participants. Pour rester dans les limites de génération, ` +
+        `seuls les ${participants.length} premiers sont inclus dans ce ZIP (${tronque} non inclus). ` +
+        `Téléchargez le dossier de chaque participant restant depuis sa fiche.`,
+    );
   }
 
   const buf = await zip.generateAsync({ type: "nodebuffer" });

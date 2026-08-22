@@ -38,7 +38,7 @@ export function safeSegment(s: string): string {
 }
 
 /** Nom de dossier lisible (garde espaces/accents, retire seulement les séparateurs de chemin). */
-function safeFolderName(s: string): string {
+export function safeFolderName(s: string): string {
   return (s || "Candidat").replace(/[\\/:*?"<>|]+/g, " ").replace(/\s+/g, " ").trim() || "Candidat";
 }
 
