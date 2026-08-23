@@ -11,7 +11,6 @@ import {
   Trash2,
   FileText,
   Send,
-  Award,
   ShieldCheck,
   PenLine,
 } from "lucide-react";
@@ -31,7 +30,7 @@ import {
   deleteInscriptionAction,
 } from "@/lib/actions/inscription-actions";
 import { relanceParcours } from "@/lib/actions/parcours-actions";
-import { genererDiplomeSsiap, genererAttestation } from "@/lib/actions/titre-actions";
+import { genererAttestation } from "@/lib/actions/titre-actions";
 import { SignerSurPlaceDialog } from "@/components/inscriptions/signer-sur-place-dialog";
 
 export function InscriptionActionsMenu({
@@ -39,15 +38,12 @@ export function InscriptionActionsMenu({
   sessionId,
   candidatId,
   statut,
-  diplomeSsiapNiveau,
   attestation,
 }: {
   inscriptionId: string;
   sessionId: string;
   candidatId: string;
   statut: InscriptionStatut;
-  /** Niveau du diplôme SSIAP délivrable (1/2/3) pour cette session, sinon null. */
-  diplomeSsiapNiveau?: 1 | 2 | 3 | null;
   /** Attestation délivrable pour cette session (recyclage/RAN/VTC/H0B0…), sinon null. */
   attestation?: { code: string; label: string } | null;
 }) {
@@ -66,20 +62,6 @@ export function InscriptionActionsMenu({
       }
       toast.success(`Attestation générée — n° ${res.numero}`);
       window.open(`/titres/${res.titreId}`, "_blank");
-      router.refresh();
-    });
-  }
-
-  function genererDiplome() {
-    if (!diplomeSsiapNiveau) return;
-    startTransition(async () => {
-      const res = await genererDiplomeSsiap(inscriptionId, diplomeSsiapNiveau);
-      if (!res.ok) {
-        toast.error(res.error ?? "Génération impossible.");
-        return;
-      }
-      toast.success(`Diplôme généré — n° ${res.numero}`);
-      window.open(`/diplomes/${res.diplomeId}/officiel`, "_blank");
       router.refresh();
     });
   }
@@ -199,12 +181,6 @@ export function InscriptionActionsMenu({
           <FileText className="mr-2 h-4 w-4" />
           Dossier (PDF)
         </DropdownMenuItem>
-        {diplomeSsiapNiveau && (
-          <DropdownMenuItem onClick={genererDiplome}>
-            <Award className="mr-2 h-4 w-4 text-amber-600" />
-            Générer le diplôme SSIAP {diplomeSsiapNiveau}
-          </DropdownMenuItem>
-        )}
         {attestation && (
           <DropdownMenuItem onClick={genererAttestationDoc}>
             <ShieldCheck className="mr-2 h-4 w-4 text-emerald-600" />

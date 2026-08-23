@@ -145,6 +145,10 @@ html,body{background:#fff}
 .qr{width:24mm;height:24mm;flex:0 0 auto;border:0.7px solid var(--navy);background:#fff;display:flex;align-items:center;justify-content:center;}.qr svg{width:88%;height:88%;}
 .verif .txt{font-size:8pt;line-height:1.42;color:#4a4a53;}.verif .txt b{color:var(--navy);}.verif .link{color:var(--gold);font-weight:600;}
 .sigwrap{display:flex;align-items:flex-end;gap:10mm;}
+.verifdip{position:absolute;left:13mm;bottom:20mm;width:44mm;display:flex;gap:2.5mm;align-items:center;text-align:left;}
+.verifdip .qr{width:14mm;height:14mm;flex:0 0 auto;border:0.6px solid var(--navy);background:#fff;padding:0.5mm;}
+.verifdip .qr svg,.verifdip .qr img{width:100%;height:100%;object-fit:contain;}
+.verifdip .txt{font-size:6.4pt;line-height:1.3;color:#5a5f6b;}.verifdip .txt b{color:var(--navy);}.verifdip .txt .link{color:var(--gold);font-weight:600;}
 .verifrow{margin-top:5mm;display:flex;justify-content:center;}
 .footer-legal{position:absolute;left:26mm;right:26mm;bottom:11mm;text-align:center;font-size:7.2pt;letter-spacing:.02em;color:#8a8578;line-height:1.5;border-top:0.5px solid rgba(176,138,62,.4);padding-top:1.6mm;}
 `;
@@ -197,6 +201,7 @@ export function renderTitreHtml(
   )}</span>, puis saisissez le n° ci-dessus <b>et la date de naissance</b> du titulaire.<br><span style="color:#8a8578">Aucune liste de titulaires n'est consultable.</span></div></div>`;
 
   let foot: string;
+  let diplomeVerif = "";
   if (def.kind === "diplome") {
     const president = data.president?.nom
       ? `${esc(data.president.nom)}${data.president.grade ? ` — ${esc(data.president.grade)}` : ""}`
@@ -207,7 +212,15 @@ export function renderTitreHtml(
       )}</div></div>
       <div class="seal">${sceau}</div>
       <div class="sig"><div class="role">Le Président du Jury</div><div class="line"></div><div class="who">${president}</div></div>
-    </div>${assets.qrDataUri ? `<div class="verifrow">${verifBlock}</div>` : ""}</div>`;
+    </div></div>`;
+    // Vérif COMPACTE en position ABSOLUE (coin bas-gauche) : ne perturbe pas la mise
+    // en page fixe du diplôme (aucun overflow, contrairement à un bloc en flux).
+    // Uniquement si un VRAI QR est fourni (jamais de QR factice sur un diplôme officiel).
+    if (assets.qrDataUri) {
+      diplomeVerif = `<div class="verifdip"><div class="qr">${qrHtml}</div><div class="txt"><b>Document authentifiable.</b><br>Scannez le QR ou <span class="link">${esc(
+        verifUrl,
+      )}</span> — n° + date de naissance du titulaire.</div></div>`;
+    }
   } else {
     foot = `<div class="foot att">
       ${verifBlock}
@@ -239,6 +252,7 @@ export function renderTitreHtml(
       <div class="body">${def.body(data, org)}${refbox}</div>
       ${foot}
     </div>
+    ${diplomeVerif}
     <div class="footer-legal">${legal}</div>
   </div>`;
 

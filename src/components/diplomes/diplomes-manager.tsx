@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
-  Award, Plus, UserPlus, PencilLine, Trash2, FileText, Loader2, CheckCircle2, Circle,
+  Award, Plus, UserPlus, PencilLine, Trash2, FileText, Loader2, CheckCircle2, Circle, Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -221,6 +221,13 @@ function DiplomeRow({
           })}
         </div>
 
+        {/* Diplôme officiel (PDF) : disponible dès qu'un numéro est saisi. */}
+        {d.numeroDiplome && (
+          <a href={`/diplomes/${d.id}/officiel`} target="_blank" rel="noreferrer"
+            className="inline-flex items-center gap-1 rounded-md border border-primary/40 bg-primary/5 px-2 py-1 text-xs font-medium text-primary hover:bg-primary/10">
+            <Download className="h-3.5 w-3.5" /> Télécharger le diplôme
+          </a>
+        )}
         {d.statut === "REMIS" && (
           <a href={`/diplomes/${d.id}/attestation`} target="_blank" rel="noreferrer"
             className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium text-primary hover:bg-muted">

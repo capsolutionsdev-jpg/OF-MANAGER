@@ -5,6 +5,9 @@ import { DiplomeStatut } from "@prisma/client";
 import { auth } from "@/auth";
 import { getTenantDb } from "@/lib/tenant";
 import { hasStrictFeature } from "@/lib/feature-guard";
+import { orgConfigFor } from "@/lib/org-identity";
+import { getTitreDef, ssiapDiplomeNiveau } from "@/lib/documents/titres";
+import { indexerTitre } from "@/lib/documents/titres/index-titre";
 
 const STAFF = ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"];
 type Result = { ok: true; id?: string } | { ok: false; error: string };
@@ -14,7 +17,10 @@ async function guard() {
   const role = session?.user?.role as string | undefined;
   if (!session?.user || !role || !STAFF.includes(role)) throw new Error("Non autorisé.");
   if (!(await hasStrictFeature("diplomes"))) throw new Error("Module diplômes non activé.");
-  return { nom: session.user.name || session.user.email || "Collaborateur" };
+  return {
+    nom: session.user.name || session.user.email || "Collaborateur",
+    organismeId: session.user.organismeId as string | undefined,
+  };
 }
 
 /**
@@ -84,15 +90,58 @@ export async function createDiplomeManuel(input: {
   return { ok: true, id: d.id };
 }
 
-/** Met à jour le n° de diplôme. */
+/**
+ * Met à jour le n° de diplôme. Pour un diplôme SSIAP 1/2/3 INITIAL, la saisie du
+ * numéro (préfectoral) l'INDEXE dans le registre vérifiable anti-fraude → il
+ * devient vérifiable en ligne et le QR du PDF officiel fonctionne. Best-effort
+ * (nécessite la date de naissance).
+ */
 export async function setDiplomeNumero(id: string, numeroDiplome: string): Promise<Result> {
-  await guard();
+  const { organismeId } = await guard();
   const db = await getTenantDb();
-  const r = await db.diplome.updateMany({
+  const num = numeroDiplome.trim() || null;
+
+  const d = await db.diplome.findFirst({
     where: { id },
-    data: { numeroDiplome: numeroDiplome.trim() || null },
+    select: {
+      nom: true, prenom: true, dateNaissance: true,
+      inscriptionId: true, sessionId: true, formationId: true,
+    },
   });
-  if (r.count === 0) return { ok: false, error: "Diplôme introuvable." };
+  if (!d) return { ok: false, error: "Diplôme introuvable." };
+
+  await db.diplome.update({ where: { id }, data: { numeroDiplome: num } });
+
+  // Indexation vérifiable dès qu'un n° est posé sur un diplôme SSIAP initial.
+  if (num && organismeId && d.formationId) {
+    const f = await db.formation.findFirst({
+      where: { id: d.formationId },
+      select: { reference: true, titre: true },
+    });
+    const niveau = f ? ssiapDiplomeNiveau({ reference: f.reference, titre: f.titre }) : null;
+    const def = niveau ? getTitreDef(`SSIAP${niveau}_DIPLOME`) : null;
+    if (def) {
+      try {
+        const org = await orgConfigFor(organismeId);
+        await indexerTitre(db, organismeId, {
+          def,
+          numero: num,
+          nom: d.nom,
+          prenom: d.prenom,
+          dateNaissance: d.dateNaissance,
+          organismeSignataire: org.name,
+          dateDelivrance: new Date(),
+          dateFinValidite: null, // diplôme SSIAP : pas d'expiration
+          inscriptionId: d.inscriptionId,
+          sessionId: d.sessionId,
+          formationId: d.formationId,
+        });
+      } catch (e) {
+        console.error("[diplome-index]", e);
+      }
+    }
+  }
+
   revalidatePath("/diplomes");
   return { ok: true };
 }

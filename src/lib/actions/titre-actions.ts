@@ -6,55 +6,9 @@ import { auth } from "@/auth";
 import { getTenantDb } from "@/lib/tenant";
 import { hasStrictFeature } from "@/lib/feature-guard";
 import { orgConfigFor } from "@/lib/org-identity";
-import { getTitreDef, genNumeroTitre, type SsiapConfig, type TitreTypeDef } from "@/lib/documents/titres";
+import { getTitreDef, genNumeroTitre, type SsiapConfig } from "@/lib/documents/titres";
 import { genSel, hashDob } from "@/lib/anti-fraude/hash";
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Db = any;
-
-/**
- * Indexe un titre dans le registre vérifiable (TitreDelivre) : hash salé de la
- * date de naissance (jamais en clair), numéro, statut, organisme signataire.
- * Best-effort pour les diplômes (nécessite la date de naissance).
- */
-async function indexerTitre(
-  db: Db,
-  organismeId: string,
-  p: {
-    def: TitreTypeDef;
-    numero: string;
-    nom: string;
-    prenom: string;
-    dateNaissance: Date | null;
-    organismeSignataire: string;
-    dateDelivrance: Date;
-    dateFinValidite?: Date | null;
-    inscriptionId?: string | null;
-    sessionId?: string | null;
-    formationId?: string | null;
-  },
-): Promise<{ ok: boolean }> {
-  if (!p.dateNaissance) return { ok: false }; // pas de date → non vérifiable
-  const sel = genSel();
-  await db.titreDelivre.create({
-    data: {
-      organismeId,
-      typeCode: p.def.code,
-      numeroVerification: p.numero,
-      hashDateNaissance: hashDob(p.dateNaissance, sel),
-      selUnique: sel,
-      nomTitulaire: p.nom,
-      prenomTitulaire: p.prenom,
-      dateDelivrance: p.dateDelivrance,
-      dateFinValidite: p.dateFinValidite ?? null,
-      organismeSignataire: p.organismeSignataire,
-      inscriptionId: p.inscriptionId ?? null,
-      sessionId: p.sessionId ?? null,
-      formationId: p.formationId ?? null,
-    },
-  });
-  return { ok: true };
-}
+import { indexerTitre } from "@/lib/documents/titres/index-titre";
 
 /**
  * Génération des TITRES officiels CAP Compétences (diplômes SSIAP).

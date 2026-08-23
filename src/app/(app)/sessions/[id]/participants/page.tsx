@@ -48,8 +48,7 @@ export default async function SessionParticipantsPage({
   const detail = await getSessionDetail(id);
   if (!detail) notFound();
 
-  const { s, candidatsDisponibles, diplomeSsiapNiv, attestationForDocs, prereq, vstate } =
-    detail;
+  const { s, candidatsDisponibles, attestationForDocs, prereq, vstate } = detail;
 
   return (
     <div className="space-y-6">
@@ -210,7 +209,6 @@ export default async function SessionParticipantsPage({
                           sessionId={s.id}
                           candidatId={i.candidatId}
                           statut={i.statut}
-                          diplomeSsiapNiveau={diplomeSsiapNiv}
                           attestation={attestationForDocs}
                         />
                       </div>

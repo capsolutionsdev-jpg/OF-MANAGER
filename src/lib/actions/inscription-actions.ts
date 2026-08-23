@@ -14,7 +14,6 @@ import {
   type InscriptionFormValues,
 } from "@/lib/validators/inscription";
 import { startParcours } from "@/lib/actions/parcours-actions";
-import { genererDiplomeSsiap } from "@/lib/actions/titre-actions";
 import { ssiapDiplomeNiveau } from "@/lib/documents/titres";
 import { isRecyclageOuRemiseANiveau } from "@/lib/documents/families";
 import { sendEmail } from "@/lib/email";
@@ -250,17 +249,14 @@ export async function setCertification(
     },
   });
 
-  // Certifié → génération AUTOMATIQUE du diplôme (best-effort, idempotent) :
-  //  • Formation SSIAP initiale → diplôme NUMÉROTÉ (n° préfectoral DEPT-AGR-NIV-
-  //    AAAA-SEQ) + indexé dans le registre vérifiable anti-fraude.
-  //  • Autre formation diplômante → enregistrement diplôme (le n° reste à saisir).
+  // Certifié → ENREGISTREMENT automatique du diplôme SANS numéro (best-effort,
+  // idempotent). Le n° (préfectoral pour SSIAP 1/2/3 initial) est saisi MANUELLEMENT
+  // sur la page Diplômes, ce qui l'indexe alors dans le registre vérifiable anti-fraude.
   if (resultat === "CERTIFIE") {
     const f = insc.session.formation;
     const ssiapNiv = ssiapDiplomeNiveau({ reference: f.reference, titre: f.titre });
     try {
-      if (ssiapNiv) {
-        await genererDiplomeSsiap(inscriptionId, ssiapNiv);
-      } else if (f.diplomante && (await hasStrictFeature("diplomes"))) {
+      if ((ssiapNiv || f.diplomante) && (await hasStrictFeature("diplomes"))) {
         const existe = await db.diplome.findFirst({ where: { inscriptionId } });
         if (!existe) {
           await db.diplome.create({
