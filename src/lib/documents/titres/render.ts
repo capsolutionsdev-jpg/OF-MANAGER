@@ -145,11 +145,14 @@ html,body{background:#fff}
 .qr{width:24mm;height:24mm;flex:0 0 auto;border:0.7px solid var(--navy);background:#fff;display:flex;align-items:center;justify-content:center;}.qr svg{width:88%;height:88%;}
 .verif .txt{font-size:8pt;line-height:1.42;color:#4a4a53;}.verif .txt b{color:var(--navy);}.verif .link{color:var(--gold);font-weight:600;}
 .sigwrap{display:flex;align-items:flex-end;gap:10mm;}
-.verifdip{position:absolute;left:13mm;bottom:20mm;width:44mm;display:flex;gap:2.5mm;align-items:center;text-align:left;}
-.verifdip .qr{width:14mm;height:14mm;flex:0 0 auto;border:0.6px solid var(--navy);background:#fff;padding:0.5mm;}
+/* Bloc de vérif du DIPLÔME : ancré en absolu dans le coin bas-gauche, hors du flux.
+   Largeur 40mm (bord droit à 53mm) → 5mm de marge avec les signatures centrées
+   (bord gauche à 58mm) ; bas à 24mm → au-dessus du pied légal (bas 11mm) même si
+   l'adresse d'un OF le fait passer sur 2-3 lignes. Ne peut pas déborder la page. */
+.verifdip{position:absolute;left:13mm;bottom:24mm;width:40mm;display:flex;gap:2.5mm;align-items:center;text-align:left;}
+.verifdip .qr{width:13mm;height:13mm;flex:0 0 auto;border:0.6px solid var(--navy);background:#fff;padding:0.5mm;}
 .verifdip .qr svg,.verifdip .qr img{width:100%;height:100%;object-fit:contain;}
-.verifdip .txt{font-size:6.4pt;line-height:1.3;color:#5a5f6b;}.verifdip .txt b{color:var(--navy);}.verifdip .txt .link{color:var(--gold);font-weight:600;}
-.verifrow{margin-top:5mm;display:flex;justify-content:center;}
+.verifdip .txt{font-size:6.2pt;line-height:1.28;color:#5a5f6b;}.verifdip .txt b{color:var(--navy);}.verifdip .txt .link{color:var(--gold);font-weight:600;}
 .footer-legal{position:absolute;left:26mm;right:26mm;bottom:11mm;text-align:center;font-size:7.2pt;letter-spacing:.02em;color:#8a8578;line-height:1.5;border-top:0.5px solid rgba(176,138,62,.4);padding-top:1.6mm;}
 `;
 
@@ -217,9 +220,9 @@ export function renderTitreHtml(
     // en page fixe du diplôme (aucun overflow, contrairement à un bloc en flux).
     // Uniquement si un VRAI QR est fourni (jamais de QR factice sur un diplôme officiel).
     if (assets.qrDataUri) {
-      diplomeVerif = `<div class="verifdip"><div class="qr">${qrHtml}</div><div class="txt"><b>Document authentifiable.</b><br>Scannez le QR ou <span class="link">${esc(
+      diplomeVerif = `<div class="verifdip"><div class="qr">${qrHtml}</div><div class="txt"><b>Authentifiable.</b> Scannez le QR ou <span class="link">${esc(
         verifUrl,
-      )}</span> — n° + date de naissance du titulaire.</div></div>`;
+      )}</span> — n° + date de naissance.</div></div>`;
     }
   } else {
     foot = `<div class="foot att">

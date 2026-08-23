@@ -9,7 +9,7 @@ import { hasStrictFeature } from "@/lib/feature-guard";
 import { readAgrements } from "@/lib/agrements";
 import {
   getTitreDef,
-  niveauFromNumero,
+  ssiapDiplomeNiveau,
   renderTitreHtml,
   type TitreData,
 } from "@/lib/documents/titres";
@@ -45,7 +45,22 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     return new Response("Ce diplôme n'a pas encore de numéro généré.", { status: 409 });
   }
 
-  const niveau = niveauFromNumero(d.numeroDiplome) ?? 1;
+  // Niveau SSIAP déduit de la FORMATION (le n° étant saisi manuellement, on ne peut
+  // pas s'y fier). Un diplôme non-SSIAP n'a pas de trame officielle → téléchargement
+  // indisponible (évite d'imprimer une trame « SSIAP 1 » par défaut sur un titre VTC/TFP).
+  const f = d.formationId
+    ? await db.formation.findFirst({
+        where: { id: d.formationId },
+        select: { reference: true, titre: true },
+      })
+    : null;
+  const niveau = f ? ssiapDiplomeNiveau({ reference: f.reference, titre: f.titre }) : null;
+  if (!niveau) {
+    return new Response(
+      "Ce diplôme n'est pas un diplôme SSIAP officiel : téléchargement indisponible.",
+      { status: 422 },
+    );
+  }
   const def = getTitreDef(`SSIAP${niveau}_DIPLOME`);
   if (!def) return new Response("Type de diplôme non pris en charge", { status: 422 });
 

@@ -17,7 +17,7 @@ type Statut = "ENVOYE_CERTIFICATEUR" | "RECU" | "REMIS";
 type Row = {
   id: string; nom: string; prenom: string; dateNaissance: string | null;
   lieuNaissance: string | null; numeroDiplome: string | null; statut: Statut;
-  formationTitre: string | null; remiseParNom: string | null; remisAt: string | null;
+  formationTitre: string | null; ssiap: boolean; remiseParNom: string | null; remisAt: string | null;
 };
 type SessionOpt = {
   id: string; label: string; formationId: string; formationTitre: string;
@@ -221,8 +221,8 @@ function DiplomeRow({
           })}
         </div>
 
-        {/* Diplôme officiel (PDF) : disponible dès qu'un numéro est saisi. */}
-        {d.numeroDiplome && (
+        {/* Diplôme officiel (PDF) : trame SSIAP 1/2/3 uniquement, dès qu'un n° est saisi. */}
+        {d.numeroDiplome && d.ssiap && (
           <a href={`/diplomes/${d.id}/officiel`} target="_blank" rel="noreferrer"
             className="inline-flex items-center gap-1 rounded-md border border-primary/40 bg-primary/5 px-2 py-1 text-xs font-medium text-primary hover:bg-primary/10">
             <Download className="h-3.5 w-3.5" /> Télécharger le diplôme

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Award, ShieldCheck, ListChecks } from "lucide-react";
 import { getTenantDb } from "@/lib/tenant";
+import { ssiapDiplomeNiveau } from "@/lib/documents/titres";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { DiplomesManager } from "@/components/diplomes/diplomes-manager";
@@ -23,10 +24,14 @@ export default async function DiplomesPage() {
         },
       },
     }),
-    db.formation.findMany({ where: { diplomante: true }, select: { id: true, titre: true } }),
+    db.formation.findMany({ where: { diplomante: true }, select: { id: true, titre: true, reference: true } }),
   ]);
 
   const formationTitre = new Map(formations.map((f) => [f.id, f.titre]));
+  // Un diplôme n'a une trame officielle téléchargeable que s'il est SSIAP 1/2/3.
+  const formationEstSsiap = new Map(
+    formations.map((f) => [f.id, ssiapDiplomeNiveau({ reference: f.reference, titre: f.titre }) != null]),
+  );
   const dejaDiplome = new Set(diplomes.map((d) => d.inscriptionId).filter(Boolean) as string[]);
   const fmt = (d: Date) => d.toLocaleDateString("fr-FR");
 
@@ -52,6 +57,7 @@ export default async function DiplomesPage() {
     numeroDiplome: d.numeroDiplome,
     statut: d.statut,
     formationTitre: d.formationId ? formationTitre.get(d.formationId) ?? null : null,
+    ssiap: d.formationId ? formationEstSsiap.get(d.formationId) ?? false : false,
     remiseParNom: d.remiseParNom,
     remisAt: d.remisAt ? fmt(d.remisAt) : null,
   }));

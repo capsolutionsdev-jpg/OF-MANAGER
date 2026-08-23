@@ -104,16 +104,33 @@ export async function setDiplomeNumero(id: string, numeroDiplome: string): Promi
   const d = await db.diplome.findFirst({
     where: { id },
     select: {
-      nom: true, prenom: true, dateNaissance: true,
+      nom: true, prenom: true, dateNaissance: true, numeroDiplome: true,
       inscriptionId: true, sessionId: true, formationId: true,
     },
   });
   if (!d) return { ok: false, error: "Diplôme introuvable." };
 
+  // Garde anti-doublon : deux diplômes ne peuvent porter le même numéro. Sinon la
+  // base de vérification (partagée, indexée par n°) lierait ce numéro au PREMIER
+  // titulaire indexé, rendant le second diplôme invérifiable avec sa propre date
+  // de naissance. Le numéro préfectoral est unique par nature.
+  if (num) {
+    const dupe = await db.diplome.findFirst({
+      where: { numeroDiplome: num, NOT: { id } },
+      select: { nom: true, prenom: true },
+    });
+    if (dupe) {
+      return {
+        ok: false,
+        error: `Ce numéro est déjà attribué au diplôme de ${dupe.prenom} ${dupe.nom}.`,
+      };
+    }
+  }
+
   await db.diplome.update({ where: { id }, data: { numeroDiplome: num } });
 
-  // Indexation vérifiable dès qu'un n° est posé sur un diplôme SSIAP initial.
-  if (num && organismeId && d.formationId) {
+  // Registre vérifiable (anti-fraude) — SSIAP 1/2/3 uniquement.
+  if (organismeId && d.formationId) {
     const f = await db.formation.findFirst({
       where: { id: d.formationId },
       select: { reference: true, titre: true },
@@ -122,20 +139,29 @@ export async function setDiplomeNumero(id: string, numeroDiplome: string): Promi
     const def = niveau ? getTitreDef(`SSIAP${niveau}_DIPLOME`) : null;
     if (def) {
       try {
-        const org = await orgConfigFor(organismeId);
-        await indexerTitre(db, organismeId, {
-          def,
-          numero: num,
-          nom: d.nom,
-          prenom: d.prenom,
-          dateNaissance: d.dateNaissance,
-          organismeSignataire: org.name,
-          dateDelivrance: new Date(),
-          dateFinValidite: null, // diplôme SSIAP : pas d'expiration
-          inscriptionId: d.inscriptionId,
-          sessionId: d.sessionId,
-          formationId: d.formationId,
-        });
+        // Correction d'un n° : purge l'entrée précédente devenue caduque (le n° ayant
+        // changé), pour ne pas laisser un numéro erroné indexé au titulaire.
+        if (d.numeroDiplome && d.numeroDiplome !== num) {
+          await db.titreDelivre.deleteMany({
+            where: { typeCode: def.code, numeroVerification: d.numeroDiplome },
+          });
+        }
+        if (num) {
+          const org = await orgConfigFor(organismeId);
+          await indexerTitre(db, organismeId, {
+            def,
+            numero: num,
+            nom: d.nom,
+            prenom: d.prenom,
+            dateNaissance: d.dateNaissance,
+            organismeSignataire: org.name,
+            dateDelivrance: new Date(),
+            dateFinValidite: null, // diplôme SSIAP : pas d'expiration
+            inscriptionId: d.inscriptionId,
+            sessionId: d.sessionId,
+            formationId: d.formationId,
+          });
+        }
       } catch (e) {
         console.error("[diplome-index]", e);
       }
