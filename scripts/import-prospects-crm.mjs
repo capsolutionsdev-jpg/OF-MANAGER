@@ -51,20 +51,20 @@ function normSiret(v) {
 }
 
 /** Trouve un prospect sortant existant (idempotence). */
-async function findExisting(siret, nomOF, cp) {
+async function findExisting(siret, nomOF, cp, source) {
   if (siret) {
     const bySiret = await prisma.lead.findFirst({ where: { siret }, select: { id: true } });
     if (bySiret) return bySiret;
   }
-  // Repli nom + CP : uniquement si CP présent ET source sortante (jamais un
-  // lead entrant démo/contact au même nom).
-  if (cp) {
-    return prisma.lead.findFirst({
-      where: { organisme: nomOF, codePostal: cp, source: { in: OUTBOUND_SOURCES } },
-      select: { id: true },
-    });
-  }
-  return null;
+  // Repli nom + CP (source sortante) si le CP est connu, sinon nom + source
+  // exacte (dernier recours pour les fiches sans adresse ni SIRET). Restreint
+  // aux sources sortantes : jamais un lead entrant démo/contact homonyme.
+  return prisma.lead.findFirst({
+    where: cp
+      ? { organisme: nomOF, codePostal: cp, source: { in: OUTBOUND_SOURCES } }
+      : { organisme: nomOF, codePostal: null, siret: null, source },
+    select: { id: true },
+  });
 }
 
 async function main() {
@@ -114,7 +114,7 @@ async function main() {
     parVerticale[row.vertical] = (parVerticale[row.vertical] || 0) + 1;
 
     if (COMMIT) {
-      const existing = await findExisting(siret, row.nomOF, cp);
+      const existing = await findExisting(siret, row.nomOF, cp, source);
       if (existing) {
         // Mise à jour = enrichissement des faits ; on préserve l'état commercial
         // (statut / priorité / notes / prochaineAction / verticale / lu).
