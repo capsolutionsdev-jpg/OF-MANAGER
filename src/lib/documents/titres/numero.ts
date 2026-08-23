@@ -1,4 +1,5 @@
 import { nextSequence } from "@/lib/numerotation";
+import { ensureOfCode } from "./of-code";
 import type { TitreTypeDef } from "./catalog";
 
 /**
@@ -51,7 +52,8 @@ export async function genNumeroTitre(
 ): Promise<string> {
   const year = opts.year ?? new Date().getFullYear();
 
-  // Diplôme SSIAP → numéro préfectoral, séquence par niveau + année.
+  // Diplôme SSIAP → numéro préfectoral OFFICIEL, inchangé (déjà unique par
+  // département + agrément + OF ; imposé par la réglementation, pas de préfixe OF).
   if (def.kind === "diplome") {
     const niveau = opts.niveau ?? def.niveau ?? 1;
     const cle = `TITRE-SSIAP-DIPLOME-N${niveau}-${year}`;
@@ -61,11 +63,14 @@ export async function genNumeroTitre(
     return `${dept}-${agr}-${niveau}-${year}-${String(seq).padStart(5, "0")}`;
   }
 
-  // Attestations → PRÉFIXE-ANNÉE-SEQ-CLÉ (Luhn).
+  // Attestations / titres → CODE_OF-PRÉFIXE-ANNÉE-SEQ-CLÉ (Luhn).
+  // Le CODE_OF (neutre, unique par organisme) garantit l'unicité GLOBALE des
+  // numéros dans la base de vérification partagée entre tous les clients.
+  const of = await ensureOfCode(organismeId);
   const prefix = def.numberPrefix!;
   const cle = `TITRE-${prefix}-${year}`;
   const seq = await nextSequence(organismeId, cle);
-  const base = `${prefix}-${year}-${String(seq).padStart(5, "0")}`;
+  const base = `${of}-${prefix}-${year}-${String(seq).padStart(5, "0")}`;
   return def.appliqueLuhn ? `${base}-${luhn(base)}` : base;
 }
 

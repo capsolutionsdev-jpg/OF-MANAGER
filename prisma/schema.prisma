@@ -97,6 +97,10 @@ model Organisme {
   emailExpediteur    String?
   brevoApiKey        String?
   sousDomaine        String? @unique
+  // Code neutre unique de l'OF, préfixe des numéros de vérification des titres
+  // (base de vérification unique, multi-tenant) → garantit l'unicité GLOBALE des
+  // numéros entre clients. Auto-généré (of-code.ts), modifiable en console.
+  codeVerification   String? @unique
 
   // Clés d'intégration PAR organisme (sinon repli sur la config globale)
   anthropicApiKey String? // Assistant IA (Claude) — génération de texte

@@ -76,8 +76,10 @@ async function verifyTurnstile(token: string | undefined, ip: string): Promise<b
 
 /** Rejette un numéro d'attestation mal formé (clé de Luhn) avant toute requête base. */
 function formatPlausible(numero: string): boolean {
-  // Attestations : PRÉFIXE-…-SEQ-CLÉ (Luhn). Diplômes SSIAP : numéro préfectoral, pas de Luhn.
-  if (/^(RECYC|RAN|FC|HAB)-/i.test(numero)) return checkLuhn(numero);
+  // Attestations : CODE_OF-PRÉFIXE-…-SEQ-CLÉ (Luhn). Le préfixe de type suit
+  // désormais le code OF (ex. `K7M2Q4-RECYC-…`) → on ne l'ancre plus en début.
+  // Diplômes SSIAP : numéro préfectoral, pas de Luhn.
+  if (/(?:^|-)(RECYC|RAN|FC|HAB)-/i.test(numero)) return checkLuhn(numero);
   return true;
 }
 
