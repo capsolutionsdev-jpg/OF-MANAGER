@@ -3,6 +3,7 @@ import { requireSuperAdmin } from "@/lib/superadmin-guard";
 import { prisma } from "@/lib/prisma";
 import { requires2faEnrollment, ADMIN_2FA_ENFORCED } from "@/lib/security/mandatory-2fa";
 import { ConsoleRail } from "@/components/console/console-rail";
+import { ConfirmProvider } from "@/components/ui/confirm-dialog";
 
 export const dynamic = "force-dynamic";
 
@@ -36,7 +37,11 @@ export default async function ConsoleLayout({
         email={session!.user!.email ?? ""}
       />
       <main className="min-w-0 flex-1">
-        <div className="mx-auto max-w-[1200px] p-4 md:p-6">{children}</div>
+        <div className="mx-auto max-w-[1200px] p-4 md:p-6">
+          {/* useConfirm() est utilisé par la liste des prospects et les tâches
+              de la fiche — le provider doit envelopper tout l'arbre /console. */}
+          <ConfirmProvider>{children}</ConfirmProvider>
+        </div>
       </main>
     </div>
   );
