@@ -26,3 +26,17 @@ export const statutLabel = (key: string): string => stageLabel(key);
 
 /** Étapes considérées « à traiter » (avant qualification). */
 export const STATUTS_A_TRAITER = ["FICHIER", "CONTACTE", "ENGAGE"];
+
+/** Libellé lisible de l'origine d'un prospect (inbound vitrine ou prospection). */
+export function sourceLabel(source: string | null): string {
+  switch (source) {
+    case "demo": return "Démo";
+    case "contact": return "Contact";
+    case "qualification": return "Qualifié";
+    case "import": return "Import";
+    case "manuel": return "Ajout manuel";
+    case "prospection-securite": return "Prospection sécurité";
+    case "prospection-transport": return "Prospection transport";
+    default: return "Contact";
+  }
+}

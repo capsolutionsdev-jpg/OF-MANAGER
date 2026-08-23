@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TONE_CLASSES } from "@/components/ui/status-badge";
 import { STATUT_OPTIONS } from "@/components/console/lead-statut";
+import { nextStage, prevStage } from "@/lib/growth/pipeline";
 import { temperature, appelUrgent, type QualifInput } from "@/lib/growth/qualification";
 import { cn } from "@/lib/utils";
 import type { LeadRow } from "@/components/console/leads-table";
@@ -49,13 +50,16 @@ const TEMP_META: Record<string, { label: string; cls: string }> = {
   froid: { label: "Froid", cls: TONE_CLASSES.neutral },
 };
 
-function KanbanCard({ lead, colIndex }: { lead: LeadKanbanRow; colIndex: number }) {
+function KanbanCard({ lead }: { lead: LeadKanbanRow }) {
   const [pending, start] = useTransition();
 
-  const move = (delta: number) => {
-    const cible = COLONNES[colIndex + delta];
+  // Progression le long du pipeline (8 étapes) — PERDU est hors flux : on ne
+  // peut donc jamais « avancer » un SIGNE vers Perdu par les flèches.
+  const suivant = nextStage(lead.statut);
+  const precedent = prevStage(lead.statut);
+  const aller = (cible: string | null) => {
     if (!cible) return;
-    start(() => setLeadStatut(lead.id, cible.key));
+    start(() => setLeadStatut(lead.id, cible));
   };
 
   const q = qualifOf(lead);
@@ -80,8 +84,16 @@ function KanbanCard({ lead, colIndex }: { lead: LeadKanbanRow; colIndex: number 
         {!lead.lu && <span className="h-2 w-2 shrink-0 rounded-full bg-primary" aria-label="Non lu" />}
         <span className="truncate">{lead.nom}</span>
       </p>
-      {lead.organisme && <p className="truncate text-xs text-muted-foreground">{lead.organisme}</p>}
-      <p className="truncate text-xs text-muted-foreground">{lead.email}</p>
+      {(lead.representantLegal || lead.organisme) && (
+        <p className="truncate text-xs text-muted-foreground">{lead.representantLegal || lead.organisme}</p>
+      )}
+      {lead.email ? (
+        <p className="truncate text-xs text-muted-foreground">{lead.email}</p>
+      ) : (
+        (lead.ville || lead.departement) && (
+          <p className="truncate text-xs text-muted-foreground">{[lead.ville, lead.departement].filter(Boolean).join(" · ")}</p>
+        )
+      )}
 
       <div className="mt-2 flex flex-wrap items-center gap-1.5">
         <Badge className={cn("text-[11px]", temp.cls)}>{temp.label}</Badge>
@@ -108,8 +120,8 @@ function KanbanCard({ lead, colIndex }: { lead: LeadKanbanRow; colIndex: number 
           <Button
             size="icon-xs"
             variant="ghost"
-            disabled={pending || colIndex === 0}
-            onClick={() => move(-1)}
+            disabled={pending || !precedent}
+            onClick={() => aller(precedent)}
             aria-label={`Reculer ${lead.nom}`}
           >
             <ChevronLeft />
@@ -117,8 +129,8 @@ function KanbanCard({ lead, colIndex }: { lead: LeadKanbanRow; colIndex: number 
           <Button
             size="icon-xs"
             variant="ghost"
-            disabled={pending || colIndex === COLONNES.length - 1}
-            onClick={() => move(1)}
+            disabled={pending || !suivant}
+            onClick={() => aller(suivant)}
             aria-label={`Avancer ${lead.nom}`}
           >
             <ChevronRight />
@@ -133,7 +145,7 @@ function KanbanCard({ lead, colIndex }: { lead: LeadKanbanRow; colIndex: number 
 export function LeadsKanban({ leads }: { leads: LeadKanbanRow[] }) {
   return (
     <div className="flex gap-3 overflow-x-auto pb-3">
-      {COLONNES.map((col, colIndex) => {
+      {COLONNES.map((col) => {
         const items = leads.filter((l) => l.statut === col.key);
         return (
           <div key={col.key} className="flex w-64 shrink-0 flex-col rounded-xl border bg-muted/30">
@@ -147,7 +159,7 @@ export function LeadsKanban({ leads }: { leads: LeadKanbanRow[] }) {
               {items.length === 0 ? (
                 <p className="p-3 text-center text-xs text-muted-foreground">—</p>
               ) : (
-                items.map((lead) => <KanbanCard key={lead.id} lead={lead} colIndex={colIndex} />)
+                items.map((lead) => <KanbanCard key={lead.id} lead={lead} />)
               )}
             </div>
           </div>

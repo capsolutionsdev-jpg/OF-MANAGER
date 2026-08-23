@@ -7,6 +7,12 @@ import { smsPackByKey } from "@/lib/options";
 import { requireSuperAdmin } from "@/lib/superadmin-guard";
 import { sendEmail } from "@/lib/email";
 import { logLeadEvent } from "@/lib/growth/events";
+import {
+  mapExcelStatut,
+  normalizePriorite,
+  regionFromCodePostal,
+  departementFromCodePostal,
+} from "@/lib/growth/crm-prospect";
 import { uniqueSubdomain } from "@/lib/subdomain";
 import { CORE_FEATURE_KEYS } from "@/lib/features";
 
@@ -166,6 +172,93 @@ export async function markLeadRead(id: string): Promise<void> {
   await prisma.lead.update({ where: { id }, data: { lu: true } });
   revalidatePath("/console/prospects");
   revalidatePath("/console");
+}
+
+// ── Ajout manuel d'un prospect (prospection sortante) ───────────────────────
+
+export type CreateLeadState = { ok?: boolean; error?: string };
+
+const str = (fd: FormData, k: string) => String(fd.get(k) ?? "").trim();
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/**
+ * Crée un prospect manuellement depuis la console (bouton « Ajouter un
+ * prospect » de la page Prospects). Reprend la trame des fichiers Excel :
+ * OF, localisation, contact, métier, priorité, statut. Région / département
+ * sont déduits du code postal si non fournis. SUPERADMIN.
+ */
+export async function createLeadManuel(
+  _prev: CreateLeadState | undefined,
+  formData: FormData,
+): Promise<CreateLeadState> {
+  await requireSuperAdmin();
+
+  const nomOF = str(formData, "nomOF");
+  if (!nomOF) return { error: "Le nom de l'organisme est requis." };
+
+  const email = str(formData, "email").toLowerCase();
+  if (email && !EMAIL_RE.test(email)) return { error: "E-mail invalide." };
+
+  const verticaleRaw = str(formData, "verticale");
+  const verticale = ["securite", "transport", "autre"].includes(verticaleRaw) ? verticaleRaw : null;
+
+  const codePostal = str(formData, "codePostal") || null;
+  const region = str(formData, "region") || regionFromCodePostal(codePostal);
+  const departement = str(formData, "departement") || departementFromCodePostal(codePostal);
+
+  const statutRaw = str(formData, "statut");
+  const statut = LEAD_STATUTS.has(statutRaw) ? (statutRaw as LeadStatut) : mapExcelStatut(statutRaw);
+
+  const siret = str(formData, "siret").replace(/\D/g, "") || null;
+  // Dédoublonnage : par SIRET, sinon par nom + CP (restreint aux sources
+  // sortantes pour ne pas heurter un lead entrant démo/contact homonyme).
+  if (siret) {
+    const dup = await prisma.lead.findFirst({ where: { siret }, select: { id: true } });
+    if (dup) return { error: "Un prospect avec ce SIRET existe déjà." };
+  } else if (codePostal) {
+    const dup = await prisma.lead.findFirst({
+      where: {
+        organisme: nomOF,
+        codePostal,
+        source: { in: ["prospection-securite", "prospection-transport", "manuel"] },
+      },
+      select: { id: true },
+    });
+    if (dup) return { error: "Un prospect avec ce nom et ce code postal existe déjà." };
+  }
+
+  const lead = await prisma.lead.create({
+    data: {
+      nom: nomOF,
+      organisme: nomOF,
+      email,
+      telephone: str(formData, "telephone") || null,
+      representantLegal: str(formData, "representantLegal") || null,
+      verticale,
+      region: region || null,
+      departement: departement || null,
+      codePostal,
+      ville: str(formData, "ville") || null,
+      adresse: str(formData, "adresse") || null,
+      siteWeb: str(formData, "siteWeb") || null,
+      siret,
+      typeFormation: str(formData, "typeFormation") || null,
+      agrement: str(formData, "agrement") || null,
+      priorite: normalizePriorite(str(formData, "priorite")),
+      statut: statut as LeadStatut,
+      prochaineAction: str(formData, "prochaineAction") || null,
+      notes: str(formData, "notes") || null,
+      sourceRemarques: str(formData, "sourceRemarques") || null,
+      source: "manuel",
+      lu: true,
+    },
+    select: { id: true },
+  });
+  await logLeadEvent(lead.id, "creation", { meta: { source: "manuel" } });
+
+  revalidatePath("/console/prospects");
+  revalidatePath("/console");
+  return { ok: true };
 }
 
 /** Supprime un lead. */

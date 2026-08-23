@@ -1,22 +1,26 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { Columns3, List } from "lucide-react";
+import { Columns3, List, MapPinned } from "lucide-react";
 import { LeadsTable, type LeadRow } from "@/components/console/leads-table";
 import { LeadsKanban, type LeadKanbanRow } from "@/components/console/leads-kanban";
+import { LeadsCrmList } from "@/components/console/leads-crm-list";
 import { cn } from "@/lib/utils";
 
-type Vue = "pipeline" | "liste";
+type Vue = "pipeline" | "liste" | "secteur";
 
 /** Clé localStorage mémorisant la vue choisie (pipeline par défaut). */
 const STORAGE_KEY = "console-leads-view";
+
+const VUES_VALIDES: Vue[] = ["pipeline", "liste", "secteur"];
 
 // Mini-store externe : localStorage + abonnés locaux (setItem ne déclenche pas
 // l'événement « storage » dans le même onglet). Compatible SSR via le snapshot serveur.
 let abonnes: (() => void)[] = [];
 
 function lireVue(): Vue {
-  return window.localStorage.getItem(STORAGE_KEY) === "liste" ? "liste" : "pipeline";
+  const v = window.localStorage.getItem(STORAGE_KEY) as Vue | null;
+  return v && VUES_VALIDES.includes(v) ? v : "pipeline";
 }
 
 function ecrireVue(v: Vue) {
@@ -36,6 +40,7 @@ function sAbonner(notifie: () => void) {
 const VUES: { key: Vue; label: string; icone: typeof List }[] = [
   { key: "pipeline", label: "Pipeline", icone: Columns3 },
   { key: "liste", label: "Liste", icone: List },
+  { key: "secteur", label: "Secteur", icone: MapPinned },
 ];
 
 /** Bascule Liste / Pipeline pour les prospects, avec persistance du choix. */
@@ -73,7 +78,13 @@ export function LeadsViewSwitch({ leads }: { leads: LeadKanbanRow[] }) {
           })}
         </div>
       </div>
-      {vue === "pipeline" ? <LeadsKanban leads={leads} /> : <LeadsTable leads={lignesListe} />}
+      {vue === "pipeline" ? (
+        <LeadsKanban leads={leads} />
+      ) : vue === "secteur" ? (
+        <LeadsCrmList leads={lignesListe} />
+      ) : (
+        <LeadsTable leads={lignesListe} />
+      )}
     </div>
   );
 }

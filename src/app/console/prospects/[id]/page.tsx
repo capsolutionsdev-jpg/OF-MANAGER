@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Building2, ExternalLink, FlaskConical, Mail, Phone } from "lucide-react";
+import { ArrowLeft, Building2, ExternalLink, FlaskConical, Mail, Phone, MapPin, Globe, Hash, AlertTriangle } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +15,8 @@ import {
 } from "@/components/console/lead-note-form";
 import { ConvertLeadButton } from "@/components/console/convert-lead-button";
 import { LeadQualificationForm } from "@/components/console/lead-qualification-form";
-import { statutLabel, statutTone } from "@/components/console/lead-statut";
+import { statutLabel, statutTone, sourceLabel } from "@/components/console/lead-statut";
+import { PRIORITE_LABELS, type Priorite } from "@/lib/growth/crm-prospect";
 import { temperature, type QualifInput } from "@/lib/growth/qualification";
 import { TONE_CLASSES } from "@/components/ui/status-badge";
 import { cn } from "@/lib/utils";
@@ -27,12 +28,6 @@ const TEMP_META: Record<string, { label: string; cls: string }> = {
   tiede: { label: "Tiède", cls: TONE_CLASSES.warning },
   froid: { label: "Froid", cls: TONE_CLASSES.neutral },
 };
-const SOURCE_LABELS: Record<string, string> = {
-  demo: "Démo",
-  contact: "Contact",
-  import: "Import CSV",
-};
-
 function fmtDate(d: Date) {
   return new Date(d).toLocaleDateString("fr-FR", {
     day: "2-digit",
@@ -69,8 +64,16 @@ export default async function FicheProspectPage({
     await prisma.lead.update({ where: { id }, data: { lu: true } });
   }
 
-  const source = lead.source ? (SOURCE_LABELS[lead.source] ?? lead.source) : "Contact";
+  const source = sourceLabel(lead.source);
   const tachesOuvertes = lead.tasks.filter((t) => !t.done).length;
+  const localisation = [lead.adresse, lead.codePostal, lead.ville].filter(Boolean).join(", ");
+  const hasCrm = !!(localisation || lead.region || lead.departement || lead.siret || lead.representantLegal || lead.siteWeb || lead.typeFormation || lead.agrement || lead.priorite || lead.prochaineAction || lead.sourceRemarques);
+  // Sous-titre : représentant / localité (sinon organisme s'il diffère du titre).
+  const sousTitre = [
+    lead.representantLegal,
+    [lead.ville, lead.departement].filter(Boolean).join(" · "),
+    lead.organisme && lead.organisme !== lead.nom ? lead.organisme : null,
+  ].filter(Boolean)[0];
 
   const qualif: QualifInput = {
     verticale: lead.verticale as QualifInput["verticale"],
@@ -99,7 +102,7 @@ export default async function FicheProspectPage({
 
       <PageHeader
         title={lead.nom}
-        subtitle={`${lead.organisme ? `${lead.organisme} · ` : ""}Créé le ${fmtDate(lead.createdAt)}`}
+        subtitle={`${sousTitre ? `${sousTitre} · ` : ""}Créé le ${fmtDate(lead.createdAt)}`}
       >
         <Badge className={cn("text-[11px]", statutTone(lead.statut))}>
           {statutLabel(lead.statut)}
@@ -128,13 +131,19 @@ export default async function FicheProspectPage({
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-sm">
-                <a
-                  href={`mailto:${lead.email}`}
-                  className="inline-flex items-center gap-1.5 hover:text-primary"
-                >
-                  <Mail className="h-3.5 w-3.5 text-muted-foreground" />
-                  {lead.email}
-                </a>
+                {lead.email ? (
+                  <a
+                    href={`mailto:${lead.email}`}
+                    className="inline-flex items-center gap-1.5 hover:text-primary"
+                  >
+                    <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+                    {lead.email}
+                  </a>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                    <Mail className="h-3.5 w-3.5" /> E-mail à compléter
+                  </span>
+                )}
                 {lead.telephone && (
                   <a
                     href={`tel:${lead.telephone}`}
@@ -180,6 +189,59 @@ export default async function FicheProspectPage({
               )}
             </CardContent>
           </Card>
+
+          {hasCrm && (
+            <Card>
+              <CardHeader className="py-3">
+                <CardTitle className="flex items-center gap-2 text-sm text-muted-foreground">
+                  Prospection
+                  {lead.priorite && (
+                    <Badge variant="outline" className="text-[10px]">
+                      Priorité {PRIORITE_LABELS[lead.priorite as Priorite] ?? lead.priorite}
+                    </Badge>
+                  )}
+                  {lead.agrementEchu && (
+                    <span className="inline-flex items-center gap-0.5 rounded-full bg-red-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-red-600">
+                      <AlertTriangle className="h-3 w-3" /> Agrément échu
+                    </span>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                {localisation && (
+                  <p className="flex items-start gap-1.5"><MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />{localisation}</p>
+                )}
+                {(lead.region || lead.departement) && (
+                  <p className="text-xs text-muted-foreground">
+                    {[lead.region, lead.departement].filter(Boolean).join(" · ")}
+                  </p>
+                )}
+                {lead.representantLegal && (
+                  <p className="text-xs text-muted-foreground">Représentant : <span className="text-foreground">{lead.representantLegal}</span></p>
+                )}
+                {lead.typeFormation && (
+                  <p className="text-xs text-muted-foreground">Type de formation : <span className="text-foreground">{lead.typeFormation}</span></p>
+                )}
+                {lead.agrement && (
+                  <p className="text-xs text-muted-foreground">Agrément : <span className="text-foreground">{lead.agrement}</span></p>
+                )}
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                  {lead.siret && <span className="inline-flex items-center gap-1"><Hash className="h-3 w-3" />{lead.siret}</span>}
+                  {lead.siteWeb && (
+                    <a href={lead.siteWeb.startsWith("http") ? lead.siteWeb : `https://${lead.siteWeb}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 hover:text-primary">
+                      <Globe className="h-3 w-3" /> Site web
+                    </a>
+                  )}
+                </div>
+                {lead.prochaineAction && (
+                  <p className="rounded-md bg-muted/40 p-2 text-xs"><span className="font-medium">Prochaine action :</span> {lead.prochaineAction}</p>
+                )}
+                {lead.sourceRemarques && (
+                  <p className="text-xs text-muted-foreground"><span className="font-medium">Source / remarques :</span> {lead.sourceRemarques}</p>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           <Card>
             <CardHeader className="py-3">

@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useConfirm } from "@/components/ui/confirm-dialog";
-import { STATUT_OPTIONS, statutTone, statutLabel, STATUTS_A_TRAITER } from "@/components/console/lead-statut";
+import { STATUT_OPTIONS, statutTone, statutLabel, STATUTS_A_TRAITER, sourceLabel } from "@/components/console/lead-statut";
 import { cn } from "@/lib/utils";
 
 export type LeadRow = {
@@ -32,6 +32,23 @@ export type LeadRow = {
   volumeStagiairesMois: number | null;
   malARemplir: boolean | null;
   decideur: string | null;
+  // Prospection CRM sortante (fichiers Excel sécurité / transport).
+  region: string | null;
+  departement: string | null;
+  codePostal: string | null;
+  ville: string | null;
+  adresse: string | null;
+  siteWeb: string | null;
+  siret: string | null;
+  representantLegal: string | null;
+  priorite: string | null;
+  typeFormation: string | null;
+  agrement: string | null;
+  agrementEchu: boolean | null;
+  prochaineAction: string | null;
+  dateRelance: Date | null;
+  dateDernierContact: Date | null;
+  sourceRemarques: string | null;
 };
 
 const STATUTS = STATUT_OPTIONS;
@@ -59,12 +76,15 @@ function LeadCard({ lead }: { lead: LeadRow }) {
             <p className="flex items-center gap-2 font-medium">
               {!lead.lu && <span className="h-2 w-2 rounded-full bg-primary" />}
               {lead.nom}
-              {lead.organisme && <span className="text-sm font-normal text-muted-foreground">· {lead.organisme}</span>}
+              {(lead.representantLegal || lead.organisme) && (
+                <span className="text-sm font-normal text-muted-foreground">· {lead.representantLegal || lead.organisme}</span>
+              )}
             </p>
             <p className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-              <a href={`mailto:${lead.email}`} className="inline-flex items-center gap-1 hover:text-primary"><Mail className="h-3.5 w-3.5" />{lead.email}</a>
+              {lead.email && <a href={`mailto:${lead.email}`} className="inline-flex items-center gap-1 hover:text-primary"><Mail className="h-3.5 w-3.5" />{lead.email}</a>}
               {lead.telephone && <a href={`tel:${lead.telephone}`} className="inline-flex items-center gap-1 hover:text-primary"><Phone className="h-3.5 w-3.5" />{lead.telephone}</a>}
-              <span>{lead.source === "demo" ? "Démo" : "Contact"} · {fmt(lead.createdAt)}</span>
+              {(lead.ville || lead.departement) && <span>{[lead.ville, lead.departement].filter(Boolean).join(" · ")}</span>}
+              <span>{sourceLabel(lead.source)} · {fmt(lead.createdAt)}</span>
             </p>
           </div>
           <div className="ml-auto flex items-center gap-2">

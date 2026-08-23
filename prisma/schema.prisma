@@ -2113,6 +2113,23 @@ model Lead {
   volumeStagiairesMois Int?
   malARemplir          Boolean? // « dit avoir du mal à remplir ses sessions »
   decideur             String? // décideur identifié (nom / fonction)
+  // Prospection CRM sortante (fichiers Excel sécurité / transport) — cf. lib/growth/crm-prospect.ts.
+  region             String? // région administrative (déduite du code postal) — découpage sécurité
+  departement        String? // département — découpage transport
+  codePostal         String?
+  ville              String?
+  adresse            String?
+  siteWeb            String?
+  siret              String?
+  representantLegal  String? // dirigeant / gérant identifié
+  priorite           String? // haute | moyenne | basse
+  typeFormation      String? // Taxi | VTC | Taxi + VTC (transport)
+  agrement           String? // N° agrément / validité préfectorale (transport)
+  agrementEchu       Boolean? // agrément retiré / échu (nom en rouge dans le fichier)
+  prochaineAction    String?
+  dateRelance        DateTime?
+  dateDernierContact DateTime?
+  sourceRemarques    String?   @db.Text // colonne « Source / Remarques » (origine + réseaux / ⚠ doublons)
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
@@ -2121,6 +2138,9 @@ model Lead {
 
   @@index([statut])
   @@index([createdAt])
+  @@index([siret])
+  @@index([region])
+  @@index([departement])
 }
 
 // Événement de la timeline d'un lead (console growth éditeur) : demande de démo,
