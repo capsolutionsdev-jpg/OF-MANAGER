@@ -207,7 +207,7 @@ export function renderTitreHtml(
       )}</div></div>
       <div class="seal">${sceau}</div>
       <div class="sig"><div class="role">Le Président du Jury</div><div class="line"></div><div class="who">${president}</div></div>
-    </div><div class="verifrow">${verifBlock}</div></div>`;
+    </div>${assets.qrDataUri ? `<div class="verifrow">${verifBlock}</div>` : ""}</div>`;
   } else {
     foot = `<div class="foot att">
       ${verifBlock}

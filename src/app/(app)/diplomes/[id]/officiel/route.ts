@@ -1,5 +1,6 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import QRCode from "qrcode";
 import { auth } from "@/auth";
 import { getTenantDb } from "@/lib/tenant";
 import { orgConfigFor } from "@/lib/org-identity";
@@ -69,6 +70,24 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     president: null,
   };
 
+  // QR de vérification RÉEL — uniquement si le numéro est effectivement indexé
+  // dans la base de vérification (le bloc « Document authentifiable » ne doit
+  // jamais mentir : l'indexation d'un titre est best-effort, cf. indexerTitre).
+  let qrDataUri: string | undefined;
+  let verifUrl: string | undefined;
+  const indexed = await db.titreDelivre.findFirst({
+    where: { numeroVerification: d.numeroDiplome },
+    select: { id: true },
+  });
+  if (indexed) {
+    const base = process.env.VITRINE_BASE_URL || "https://ofmanager.info";
+    qrDataUri = await QRCode.toDataURL(
+      `${base}/verification?n=${encodeURIComponent(d.numeroDiplome)}`,
+      { margin: 1, width: 260 },
+    );
+    verifUrl = "ofmanager.info/verification";
+  }
+
   const html = renderTitreHtml(
     def,
     data,
@@ -81,7 +100,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       nda: org.nda,
       agrement: readAgrements(org.documentsConfig).ssiap,
     },
-    { logoUri, signatureUri: org.signatureUrl, cachetUri: org.cachetUrl },
+    { logoUri, signatureUri: org.signatureUrl, cachetUri: org.cachetUrl, qrDataUri, verifUrl },
   );
 
   const pdf = await htmlToPdf(html, { landscape: true });
