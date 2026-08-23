@@ -6,11 +6,13 @@ import type { TitreTypeDef } from "./catalog";
  * Numérotation des titres délivrés.
  *
  * - Diplômes SSIAP : numéro officiel préfectoral `DEPT-AGRÉMENT-NIVEAU-ANNÉE-SEQ`
- *   (ex. `093-0042-1-2026-00001`). PAS de clé de contrôle (numéro externe).
+ *   (ex. `093-0042-1-2026-00001`). PAS de code OF ni de clé (numéro réglementaire externe).
  * - Autres titres (recyclage, remise à niveau, VTC/Taxi, habilitations) :
- *   `PRÉFIXE-ANNÉE-SEQ-CLÉ` où CLÉ est un chiffre de contrôle de Luhn calculé
- *   sur les chiffres du numéro — permet à l'API de vérification de rejeter un
- *   numéro mal formé AVANT toute requête en base.
+ *   `CODE_OF-PRÉFIXE-ANNÉE-SEQ-CLÉ` (ex. `K7M2Q4-RECYC-SSIAP1-2026-00001-4`). Le
+ *   CODE_OF (neutre, unique par organisme, cf. of-code.ts) garantit l'unicité
+ *   GLOBALE des numéros dans la base de vérification partagée entre tous les
+ *   clients. CLÉ = chiffre de contrôle de Luhn sur les chiffres du numéro (code OF
+ *   compris) — permet à l'API de rejeter un numéro mal formé AVANT toute requête base.
  *
  * La séquence SEQ est atomique par organisme, remise à zéro chaque année, et
  * cloisonnée par clé (donc par type de titre + niveau).
