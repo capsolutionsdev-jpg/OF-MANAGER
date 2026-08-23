@@ -145,6 +145,7 @@ html,body{background:#fff}
 .qr{width:24mm;height:24mm;flex:0 0 auto;border:0.7px solid var(--navy);background:#fff;display:flex;align-items:center;justify-content:center;}.qr svg{width:88%;height:88%;}
 .verif .txt{font-size:8pt;line-height:1.42;color:#4a4a53;}.verif .txt b{color:var(--navy);}.verif .link{color:var(--gold);font-weight:600;}
 .sigwrap{display:flex;align-items:flex-end;gap:10mm;}
+.verifrow{margin-top:5mm;display:flex;justify-content:center;}
 .footer-legal{position:absolute;left:26mm;right:26mm;bottom:11mm;text-align:center;font-size:7.2pt;letter-spacing:.02em;color:#8a8578;line-height:1.5;border-top:0.5px solid rgba(176,138,62,.4);padding-top:1.6mm;}
 `;
 
@@ -185,6 +186,16 @@ export function renderTitreHtml(
   }`;
   const sceau = seal(def.sealCenter, def.sealSub);
 
+  // Bloc de vérification anti-fraude (QR + phrase) — sur TOUS les titres, y compris
+  // les diplômes, pour qu'ils soient tous contrôlables sur la page publique.
+  const verifUrl = assets.verifUrl || "ofmanager.info/verification";
+  const qrHtml = assets.qrDataUri
+    ? `<img src="${assets.qrDataUri}" alt="QR de vérification" style="width:100%;height:100%;object-fit:contain" />`
+    : qrPreview(seedFrom(data.numero));
+  const verifBlock = `<div class="verif"><div class="qr">${qrHtml}</div><div class="txt"><b>Document authentifiable.</b> Scannez le QR ou rendez-vous sur <span class="link">${esc(
+    verifUrl,
+  )}</span>, puis saisissez le n° ci-dessus <b>et la date de naissance</b> du titulaire.<br><span style="color:#8a8578">Aucune liste de titulaires n'est consultable.</span></div></div>`;
+
   let foot: string;
   if (def.kind === "diplome") {
     const president = data.president?.nom
@@ -196,16 +207,10 @@ export function renderTitreHtml(
       )}</div></div>
       <div class="seal">${sceau}</div>
       <div class="sig"><div class="role">Le Président du Jury</div><div class="line"></div><div class="who">${president}</div></div>
-    </div></div>`;
+    </div><div class="verifrow">${verifBlock}</div></div>`;
   } else {
-    const verifUrl = assets.verifUrl || "ofmanager.info/verification";
-    const qrHtml = assets.qrDataUri
-      ? `<img src="${assets.qrDataUri}" alt="QR de vérification" style="width:100%;height:100%;object-fit:contain" />`
-      : qrPreview(seedFrom(data.numero));
     foot = `<div class="foot att">
-      <div class="verif"><div class="qr">${qrHtml}</div><div class="txt"><b>Document authentifiable.</b> Scannez le QR ou rendez-vous sur <span class="link">${esc(
-        verifUrl,
-      )}</span>, puis saisissez le n° ci-dessus <b>et la date de naissance</b> du titulaire.<br><span style="color:#8a8578">Aucune liste de titulaires n'est consultable.</span></div></div>
+      ${verifBlock}
       <div class="sigwrap"><div class="seal">${sceau}</div><div><div class="place">${place}</div><div class="sig"><div class="role">${esc(
         def.sigRole,
       )}</div><div class="line">${sigImg}${cachetImg}</div><div class="who">${esc(org.representant)}</div></div></div></div>

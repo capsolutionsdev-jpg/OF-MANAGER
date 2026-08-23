@@ -72,13 +72,11 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     dateFin: insc?.session.dateFin ?? null,
   };
 
-  // QR de vérification (attestations) : encode l'URL publique + le numéro.
-  let qrDataUri: string | null = null;
-  if (def.kind === "attestation") {
-    const base = process.env.VITRINE_BASE_URL || "https://ofmanager.info";
-    const url = `${base}/verification?n=${encodeURIComponent(titre.numeroVerification)}`;
-    qrDataUri = await QRCode.toDataURL(url, { margin: 1, width: 260 });
-  }
+  // QR de vérification RÉEL sur TOUS les titres (attestations ET diplômes) : chacun
+  // est vérifiable via son numéro. Encode l'URL publique + le numéro (préremplissage).
+  const base = process.env.VITRINE_BASE_URL || "https://ofmanager.info";
+  const verifTargetUrl = `${base}/verification?n=${encodeURIComponent(titre.numeroVerification)}`;
+  const qrDataUri = await QRCode.toDataURL(verifTargetUrl, { margin: 1, width: 260 });
 
   const html = renderTitreHtml(
     def,

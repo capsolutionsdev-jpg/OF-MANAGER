@@ -169,6 +169,11 @@ function ResultCard({ result }: { result: Result }) {
       <div className="mt-6 rounded-2xl border bg-muted/40 p-6 text-center">
         <ShieldAlert className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
         <p className="text-sm font-medium">{result.message}</p>
+        <p className="mx-auto mt-3 max-w-md text-xs leading-relaxed text-muted-foreground">
+          Vérifiez le numéro et la date de naissance saisis. S&apos;ils sont exacts et que le document vous
+          paraît authentique, contactez directement <b>l&apos;organisme de formation qui l&apos;a délivré</b> —
+          ses coordonnées figurent sur le document.
+        </p>
       </div>
     );
   }
