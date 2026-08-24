@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { ShieldCheck, ShieldAlert, Search, Loader2 } from "lucide-react";
+import { ShieldCheck, ShieldAlert, Search, Loader2, QrCode, CalendarClock } from "lucide-react";
 
 type MatchResult = {
   match: true;
@@ -109,53 +109,73 @@ export function VerificationForm() {
   }
 
   return (
-    <div className="mx-auto max-w-xl">
-      <form onSubmit={onSubmit} className="rounded-2xl border bg-card p-6 shadow-sm sm:p-8">
-        <div className="space-y-4">
+    <div>
+      <form onSubmit={onSubmit} className="rounded-2xl border bg-card p-6 shadow-xl ring-1 ring-black/[0.03] sm:p-8">
+        <div className="mb-5 flex items-center gap-2 border-b pb-4">
+          <ShieldCheck className="h-5 w-5 text-primary" />
+          <h2 className="text-sm font-semibold">Vérifier un titre</h2>
+        </div>
+
+        <div className="space-y-5">
           <div>
-            <label htmlFor="numero" className="mb-1 block text-sm font-medium">
+            <label htmlFor="numero" className="mb-1.5 block text-sm font-medium">
               Numéro du titre
             </label>
-            <input
-              id="numero"
-              value={numero}
-              onChange={(e) => setNumero(e.target.value)}
-              placeholder="Ex. RECYC-SSIAP1-2026-00001-3"
-              autoComplete="off"
-              className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/30"
-            />
+            <div className="relative">
+              <QrCode className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                id="numero"
+                value={numero}
+                onChange={(e) => setNumero(e.target.value)}
+                placeholder="Ex. RECYC-SSIAP1-2026-00001-3"
+                autoComplete="off"
+                className="w-full rounded-xl border bg-background py-3 pl-9 pr-3 font-mono text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/25"
+              />
+            </div>
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              Figure sur le document — ou scannez son QR code, il se remplit tout seul.
+            </p>
           </div>
+
           <div>
-            <label htmlFor="dob" className="mb-1 block text-sm font-medium">
+            <label htmlFor="dob" className="mb-1.5 block text-sm font-medium">
               Date de naissance du titulaire
             </label>
-            <input
-              id="dob"
-              type="date"
-              value={dob}
-              onChange={(e) => setDob(e.target.value)}
-              className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/30"
-            />
+            <div className="relative">
+              <CalendarClock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                id="dob"
+                type="date"
+                value={dob}
+                onChange={(e) => setDob(e.target.value)}
+                className="w-full rounded-xl border bg-background py-3 pl-9 pr-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/25"
+              />
+            </div>
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              Clé de contrôle : un document seul ne suffit pas à obtenir une réponse.
+            </p>
           </div>
 
           {SITE_KEY && <div ref={widgetRef} className="min-h-[65px]" />}
 
-          {error && <p className="text-sm text-destructive">{error}</p>}
+          {error && (
+            <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive">{error}</p>
+          )}
 
           <button
             type="submit"
             disabled={loading}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:opacity-60"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:opacity-60"
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-            Vérifier
+            Vérifier le titre
           </button>
         </div>
       </form>
 
       {result && <ResultCard result={result} />}
 
-      <p className="mx-auto mt-6 max-w-xl text-center text-xs leading-relaxed text-muted-foreground">
+      <p className="mx-auto mt-5 max-w-md text-center text-xs leading-relaxed text-muted-foreground">
         Ce service permet uniquement de vérifier un titre dont vous connaissez déjà le numéro et la
         date de naissance du titulaire. Aucune liste de titulaires n&apos;est consultable.
       </p>
@@ -166,21 +186,33 @@ export function VerificationForm() {
 function ResultCard({ result }: { result: Result }) {
   if (!result.match) {
     return (
-      <div className="mt-6 rounded-2xl border bg-muted/40 p-6 text-center">
-        <ShieldAlert className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
-        <p className="text-sm font-medium">{result.message}</p>
-        <p className="mx-auto mt-3 max-w-md text-xs leading-relaxed text-muted-foreground">
-          Vérifiez le numéro et la date de naissance saisis. S&apos;ils sont exacts et que le document vous
-          paraît authentique, contactez directement <b>l&apos;organisme de formation qui l&apos;a délivré</b> —
-          ses coordonnées figurent sur le document.
+      <div className="mt-5 rounded-2xl border bg-card p-6 text-center shadow-sm">
+        <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-muted text-muted-foreground">
+          <ShieldAlert className="h-6 w-6" />
+        </div>
+        <p className="text-base font-semibold">Titre non reconnu</p>
+        <p className="mx-auto mt-2 max-w-md text-xs leading-relaxed text-muted-foreground">
+          {result.message} Vérifiez le numéro et la date de naissance saisis. S&apos;ils sont exacts et que le
+          document vous paraît authentique, contactez directement{" "}
+          <b className="text-foreground">l&apos;organisme de formation qui l&apos;a délivré</b> — ses coordonnées
+          figurent sur le document.
         </p>
       </div>
     );
   }
+
   const expired = result.statut === "expiré";
   const tone = expired
-    ? { border: "border-amber-300", bg: "bg-amber-50 dark:bg-amber-950/30", icon: "text-amber-600", badge: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200" }
-    : { border: "border-emerald-300", bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: "text-emerald-600", badge: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200" };
+    ? {
+        ring: "ring-amber-500/30", bg: "bg-amber-50 dark:bg-amber-950/25",
+        chip: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
+        seal: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
+      }
+    : {
+        ring: "ring-emerald-500/30", bg: "bg-emerald-50 dark:bg-emerald-950/25",
+        chip: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+        seal: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
+      };
   const rows: [string, string | null][] = [
     ["Titulaire", result.titulaire],
     ["Titre", result.titre],
@@ -189,19 +221,24 @@ function ResultCard({ result }: { result: Result }) {
     ["Organisme", result.organisme],
   ];
   return (
-    <div className={`mt-6 rounded-2xl border ${tone.border} ${tone.bg} p-6`}>
-      <div className="mb-4 flex items-center gap-2">
-        <ShieldCheck className={`h-6 w-6 ${tone.icon}`} />
-        <span className="text-base font-semibold">Titre authentifié</span>
-        <span className={`ml-auto rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase ${tone.badge}`}>
+    <div className={`mt-5 rounded-2xl border bg-card p-6 shadow-lg ring-1 ${tone.ring}`}>
+      <div className={`-m-6 mb-5 flex items-center gap-3 rounded-t-2xl border-b p-6 ${tone.bg}`}>
+        <span className={`grid h-12 w-12 shrink-0 place-items-center rounded-full ${tone.seal}`}>
+          <ShieldCheck className="h-7 w-7" />
+        </span>
+        <div className="min-w-0">
+          <p className="text-lg font-bold leading-tight">Titre authentifié</p>
+          <p className="text-xs text-muted-foreground">Enregistré au registre de l&apos;organisme émetteur.</p>
+        </div>
+        <span className={`ml-auto shrink-0 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${tone.chip}`}>
           {result.statut}
         </span>
       </div>
-      <dl className="divide-y divide-black/5 text-sm">
+      <dl className="divide-y text-sm">
         {rows.map(([k, v]) => (
-          <div key={k} className="flex gap-4 py-1.5">
-            <dt className="w-36 shrink-0 text-muted-foreground">{k}</dt>
-            <dd className="font-medium">{v}</dd>
+          <div key={k} className="flex gap-4 py-2">
+            <dt className="w-32 shrink-0 text-muted-foreground">{k}</dt>
+            <dd className="min-w-0 break-words font-medium">{v}</dd>
           </div>
         ))}
       </dl>
