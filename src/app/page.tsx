@@ -513,12 +513,11 @@ export default async function HomePage() {
       {/* ===== STAT BAND ===== */}
       <section className="band">
         <div className="wrap band-grid">
-          <div><div className="n">95 %</div><div className="l">des documents générés automatiquement</div></div>
-          <div><div className="n">100 %</div><div className="l">conforme Qualiopi — 32 indicateurs</div></div>
-          <div><div className="n">−70 %</div><div className="l">de temps administratif*</div></div>
+          <div><div className="n">95 %</div><div className="l">des documents générés &amp; pré-remplis</div></div>
+          <div><div className="n">32</div><div className="l">indicateurs Qualiopi couverts</div></div>
+          <div><div className="n">0</div><div className="l">double saisie — vos données reliées</div></div>
           <div><div className="n">2</div><div className="l">métiers préconfigurés : sécurité &amp; T3P</div></div>
         </div>
-        <div className="wrap"><small>* Chiffres indicatifs — à remplacer par vos résultats réels.</small></div>
       </section>
 
       {/* ===== PROBLÈME / SOLUTION ===== */}
@@ -832,13 +831,12 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ===== TÉMOIGNAGE ===== */}
+      {/* ===== PROMESSE (remplace un faux témoignage — à substituer par de vrais avis clients dès disponibles) ===== */}
       <section className="blk">
         <div className="wrap">
           <div className="quote">
-            <div className="stars">★★★★★</div>
-            <blockquote>« On a remplacé Excel, les e-mails et les signatures papier par OFManager. L'audit Qualiopi s'est préparé en quelques clics. »</blockquote>
-            <cite>Sophie M. — Directrice, organisme de sécurité privée</cite>
+            <blockquote>« Un seul outil, pensé pour les métiers réglementés : de la première inscription à l&apos;audit Qualiopi, sans double saisie ni signature papier. »</blockquote>
+            <cite>La promesse OFManager</cite>
           </div>
         </div>
       </section>
@@ -912,10 +910,10 @@ export default async function HomePage() {
             </div>
             <div>
               <h4>Légal</h4>
-              <a href="#">Mentions légales</a>
-              <a href="#">CGV</a>
-              <a href="#">Confidentialité</a>
-              <a href="#">RGPD</a>
+              <Link href="/mentions-legales">Mentions légales</Link>
+              <Link href="/cgv">CGV</Link>
+              <Link href="/confidentialite">Confidentialité</Link>
+              <Link href="/confidentialite">RGPD</Link>
             </div>
           </div>
           <div className="foot-bottom">© 2026 OFManager — une solution CAP SOLUTIONS. Tous droits réservés.</div>

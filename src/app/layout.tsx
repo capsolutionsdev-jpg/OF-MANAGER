@@ -66,7 +66,15 @@ export const metadata: Metadata = {
     // le fichier-convention prime sur toute entrée `images` déclarée ici.
   },
   twitter: { card: "summary_large_image" },
+  // Vérification Google Search Console (renseigner NEXT_PUBLIC_GSC_VERIFICATION en prod).
+  ...(process.env.NEXT_PUBLIC_GSC_VERIFICATION
+    ? { verification: { google: process.env.NEXT_PUBLIC_GSC_VERIFICATION } }
+    : {}),
 };
+
+// Mesure d'audience Plausible (sans cookie, RGPD-friendly) — activée uniquement si
+// NEXT_PUBLIC_PLAUSIBLE_DOMAIN est défini. Aucun bandeau cookies requis.
+const PLAUSIBLE_DOMAIN = process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN;
 
 // Viewport (Next 16 : export séparé). Couleur de barre système (thème mobile)
 // + zoom autorisé pour l'accessibilité + rendu bord-à-bord (encoches).
@@ -95,6 +103,10 @@ export default function RootLayout({
             __html: `try{if(localStorage.getItem("theme")==="dark")document.documentElement.classList.add("dark")}catch(e){}`,
           }}
         />
+        {/* Mesure d'audience sans cookie (Plausible) — inerte tant que l'env n'est pas définie. */}
+        {PLAUSIBLE_DOMAIN && (
+          <script defer data-domain={PLAUSIBLE_DOMAIN} src="https://plausible.io/js/script.js" />
+        )}
       </head>
       <body className="min-h-full">
         <SkipLinks />
