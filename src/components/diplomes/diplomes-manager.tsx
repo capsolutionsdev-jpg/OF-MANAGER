@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   Award, Plus, UserPlus, PencilLine, Trash2, FileText, Loader2, CheckCircle2,
-  Circle, Download, Search, GraduationCap, Check,
+  Circle, Download, Search, GraduationCap, Check, ChevronDown, ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +21,8 @@ type Row = {
   id: string; nom: string; prenom: string; dateNaissance: string | null;
   lieuNaissance: string | null; numeroDiplome: string | null; statut: Statut;
   ssiap: boolean;
-  groupKey: string; groupLabel: string; groupDate: string | null;
+  formationKey: string; formationLabel: string;
+  sessionKey: string; sessionLabel: string; sessionDate: string | null;
   remiseParNom: string | null; remisAt: string | null;
 };
 type SessionOpt = {
@@ -29,6 +30,7 @@ type SessionOpt = {
   inscrits: { inscriptionId: string; nom: string; prenom: string; deja: boolean }[];
 };
 type FormationOpt = { id: string; titre: string };
+type Run = (k: string, p: Promise<{ ok: boolean; error?: string }>, okMsg: string, after?: () => void) => void;
 
 const STATUTS: { key: Statut; label: string }[] = [
   { key: "ENVOYE_CERTIFICATEUR", label: "Envoyé au certificateur" },
@@ -38,12 +40,33 @@ const STATUTS: { key: Statut; label: string }[] = [
 
 const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
+/** Regroupe des lignes par session (session la plus récente en tête). */
+function sessionGroupsOf(rows: Row[]) {
+  const m = new Map<string, { key: string; label: string; date: string | null; rows: Row[] }>();
+  for (const d of rows) {
+    const g = m.get(d.sessionKey) ?? { key: d.sessionKey, label: d.sessionLabel, date: d.sessionDate, rows: [] };
+    g.rows.push(d);
+    m.set(d.sessionKey, g);
+  }
+  const arr = [...m.values()];
+  for (const g of arr) g.rows.sort((a, b) => a.nom.localeCompare(b.nom) || a.prenom.localeCompare(b.prenom));
+  arr.sort((a, b) => {
+    if (a.date && b.date) return b.date.localeCompare(a.date);
+    if (a.date) return -1;
+    if (b.date) return 1;
+    return a.label.localeCompare(b.label);
+  });
+  return arr;
+}
+
 export function DiplomesManager({ diplomes, sessions, formations }: { diplomes: Row[]; sessions: SessionOpt[]; formations: FormationOpt[] }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [busy, setBusy] = useState<string | null>(null);
   const [mode, setMode] = useState<"inscrit" | "manuel" | null>(null);
   const [q, setQ] = useState("");
+  const [activeFormation, setActiveFormation] = useState("");
+  const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
 
   // Formulaire "depuis un inscrit"
   const [sessionId, setSessionId] = useState("");
@@ -54,7 +77,7 @@ export function DiplomesManager({ diplomes, sessions, formations }: { diplomes: 
 
   const currentSession = sessions.find((s) => s.id === sessionId);
 
-  function run(key: string, p: Promise<{ ok: boolean; error?: string }>, okMsg: string, after?: () => void) {
+  const run: Run = (key, p, okMsg, after) => {
     setBusy(key);
     startTransition(async () => {
       const r = await p;
@@ -62,7 +85,7 @@ export function DiplomesManager({ diplomes, sessions, formations }: { diplomes: 
       if (r.ok) { toast.success(okMsg); after?.(); router.refresh(); }
       else toast.error(r.error ?? "Action impossible.");
     });
-  }
+  };
 
   function addFromInscrit() {
     if (!inscriptionId) { toast.error("Choisissez un inscrit."); return; }
@@ -79,33 +102,42 @@ export function DiplomesManager({ diplomes, sessions, formations }: { diplomes: 
     });
   }
 
-  // Recherche par nom/prénom, puis regroupement PAR SESSION (session la plus récente
-  // en tête ; les diplômes sans session en fin de liste).
+  const searching = q.trim() !== "";
   const filtered = useMemo(() => {
     const needle = norm(q.trim());
     if (!needle) return diplomes;
     return diplomes.filter((d) => norm(`${d.prenom} ${d.nom}`).includes(needle));
   }, [q, diplomes]);
 
-  const groups = useMemo(() => {
-    const m = new Map<string, { key: string; label: string; date: string | null; rows: Row[] }>();
+  // Onglets par FORMATION (ordre alphabétique, « sans formation » en dernier).
+  const formationGroups = useMemo(() => {
+    const m = new Map<string, { key: string; label: string; rows: Row[] }>();
     for (const d of filtered) {
-      const g = m.get(d.groupKey) ?? { key: d.groupKey, label: d.groupLabel, date: d.groupDate, rows: [] };
+      const g = m.get(d.formationKey) ?? { key: d.formationKey, label: d.formationLabel, rows: [] };
       g.rows.push(d);
-      m.set(d.groupKey, g);
+      m.set(d.formationKey, g);
     }
-    const arr = [...m.values()];
-    for (const g of arr) g.rows.sort((a, b) => a.nom.localeCompare(b.nom) || a.prenom.localeCompare(b.prenom));
-    arr.sort((a, b) => {
-      if (a.date && b.date) return b.date.localeCompare(a.date);
-      if (a.date) return -1;
-      if (b.date) return 1;
+    return [...m.values()].sort((a, b) => {
+      if (a.key === "none") return 1;
+      if (b.key === "none") return -1;
       return a.label.localeCompare(b.label);
     });
-    return arr;
   }, [filtered]);
 
+  const activeKey = formationGroups.some((f) => f.key === activeFormation)
+    ? activeFormation
+    : formationGroups[0]?.key ?? "";
+  const activeGroup = formationGroups.find((f) => f.key === activeKey);
+
   const aNumeroterShown = useMemo(() => filtered.filter((d) => !d.numeroDiplome).length, [filtered]);
+
+  function toggle(key: string) {
+    setExpanded((prev) => {
+      const n = new Set(prev);
+      if (n.has(key)) n.delete(key); else n.add(key);
+      return n;
+    });
+  }
 
   return (
     <div className="space-y-6">
@@ -146,7 +178,7 @@ export function DiplomesManager({ diplomes, sessions, formations }: { diplomes: 
             </Button>
             <p className="text-xs text-muted-foreground sm:col-span-2 lg:col-span-4">
               Les coordonnées (nom, prénom, date &amp; lieu de naissance) sont récupérées automatiquement depuis l&apos;inscrit.
-              Pour un diplôme SSIAP, laissez le numéro vide : il se saisit ensuite ci-dessous (séquence du PV).
+              Pour un diplôme SSIAP, laissez le numéro vide : il se saisit ensuite (séquence du PV).
             </p>
           </div>
         )}
@@ -155,7 +187,6 @@ export function DiplomesManager({ diplomes, sessions, formations }: { diplomes: 
           <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             <Input placeholder="Prénom" value={man.prenom} onChange={(e) => setMan({ ...man, prenom: e.target.value })} />
             <Input placeholder="Nom" value={man.nom} onChange={(e) => setMan({ ...man, nom: e.target.value })} />
-            {/* Formation OBLIGATOIRE en saisie manuelle */}
             <select
               className={`h-9 rounded-md border bg-transparent px-3 text-sm ${man.formationId ? "" : "border-warning"}`}
               value={man.formationId}
@@ -195,38 +226,118 @@ export function DiplomesManager({ diplomes, sessions, formations }: { diplomes: 
             </div>
             <p className="shrink-0 text-xs text-muted-foreground">
               {filtered.length} diplôme{filtered.length > 1 ? "s" : ""}
-              {q.trim() ? ` sur ${diplomes.length}` : ""}
+              {searching ? ` sur ${diplomes.length}` : ""}
               {aNumeroterShown > 0 ? ` · ${aNumeroterShown} à numéroter` : ""}
             </p>
           </div>
 
-          {groups.length === 0 ? (
+          {formationGroups.length === 0 ? (
             <div className="rounded-lg border bg-card p-8 text-center text-sm text-muted-foreground">
               Aucun diplôme ne correspond à «&nbsp;{q}&nbsp;».
             </div>
-          ) : (
-            groups.map((g) => {
-              const aNum = g.rows.filter((r) => !r.numeroDiplome).length;
-              return (
-                <div key={g.key} className="overflow-hidden rounded-lg border bg-card">
-                  <div className="flex flex-wrap items-center gap-2 border-b bg-muted/30 px-4 py-2.5">
-                    <GraduationCap className="h-4 w-4 shrink-0 text-primary" />
-                    <h3 className="text-sm font-semibold">{g.label}</h3>
-                    <span className="text-xs text-muted-foreground">
-                      · {g.rows.length} diplôme{g.rows.length > 1 ? "s" : ""}
-                    </span>
-                    {aNum > 0 && <Badge variant="warning" className="ml-auto">{aNum} à numéroter</Badge>}
+          ) : searching ? (
+            /* Recherche : résultats à plat, toutes formations/sessions dépliées. */
+            <div className="space-y-6">
+              {formationGroups.map((fg) => (
+                <div key={fg.key} className="space-y-3">
+                  <div className="flex items-center gap-2 text-sm font-semibold">
+                    <GraduationCap className="h-4 w-4 shrink-0 text-primary" /> {fg.label}
                   </div>
-                  <ul className="divide-y">
-                    {g.rows.map((d) => (
-                      <DiplomeRow key={d.id} d={d} busy={busy} isPending={isPending} run={run} />
-                    ))}
-                  </ul>
+                  {sessionGroupsOf(fg.rows).map((sg) => (
+                    <SessionCard key={sg.key} sg={sg} open busy={busy} isPending={isPending} run={run} />
+                  ))}
                 </div>
-              );
-            })
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* Onglets par formation */}
+              <div className="flex gap-1 overflow-x-auto border-b">
+                {formationGroups.map((fg) => {
+                  const aNum = fg.rows.filter((r) => !r.numeroDiplome).length;
+                  const isActive = fg.key === activeKey;
+                  return (
+                    <button
+                      key={fg.key}
+                      type="button"
+                      onClick={() => setActiveFormation(fg.key)}
+                      className={cn(
+                        "relative -mb-px flex items-center gap-1.5 whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium transition-colors",
+                        isActive ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      {fg.label}
+                      <span className="rounded-full bg-muted px-1.5 py-0.5 text-[11px] tabular-nums text-muted-foreground">
+                        {fg.rows.length}
+                      </span>
+                      {aNum > 0 && (
+                        <span title={`${aNum} à numéroter`} className="h-1.5 w-1.5 rounded-full bg-warning" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Sessions de la formation active (repliables) */}
+              <div className="space-y-3">
+                {activeGroup &&
+                  sessionGroupsOf(activeGroup.rows).map((sg, _i, all) => (
+                    <SessionCard
+                      key={sg.key}
+                      sg={sg}
+                      open={expanded.has(sg.key) || all.length === 1}
+                      onToggle={() => toggle(sg.key)}
+                      busy={busy}
+                      isPending={isPending}
+                      run={run}
+                    />
+                  ))}
+              </div>
+            </div>
           )}
         </>
+      )}
+    </div>
+  );
+}
+
+function SessionCard({
+  sg, open, onToggle, busy, isPending, run,
+}: {
+  sg: { key: string; label: string; date: string | null; rows: Row[] };
+  open: boolean;
+  onToggle?: () => void;
+  busy: string | null;
+  isPending: boolean;
+  run: Run;
+}) {
+  const aNum = sg.rows.filter((r) => !r.numeroDiplome).length;
+  return (
+    <div className="overflow-hidden rounded-lg border bg-card">
+      <button
+        type="button"
+        onClick={onToggle}
+        disabled={!onToggle}
+        className="flex w-full flex-wrap items-center gap-2 border-b bg-muted/30 px-4 py-2.5 text-left transition-colors hover:bg-muted/50 disabled:cursor-default disabled:hover:bg-muted/30"
+      >
+        {onToggle &&
+          (open ? (
+            <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+          ) : (
+            <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+          ))}
+        <span className="text-sm font-semibold">{sg.label}</span>
+        <span className="text-xs text-muted-foreground">
+          · {sg.rows.length} diplôme{sg.rows.length > 1 ? "s" : ""}
+        </span>
+        {aNum > 0 && <Badge variant="warning" className="ml-auto">{aNum} à numéroter</Badge>}
+      </button>
+      {open && (
+        <ul className="divide-y">
+          {sg.rows.map((d) => (
+            <DiplomeRow key={d.id} d={d} busy={busy} isPending={isPending} run={run} />
+          ))}
+        </ul>
       )}
     </div>
   );
@@ -235,8 +346,7 @@ export function DiplomesManager({ diplomes, sessions, formations }: { diplomes: 
 function DiplomeRow({
   d, busy, isPending, run,
 }: {
-  d: Row; busy: string | null; isPending: boolean;
-  run: (k: string, p: Promise<{ ok: boolean; error?: string }>, okMsg: string, after?: () => void) => void;
+  d: Row; busy: string | null; isPending: boolean; run: Run;
 }) {
   const [editing, setEditing] = useState(false);
   const [seq, setSeq] = useState("");
@@ -268,7 +378,6 @@ function DiplomeRow({
           {d.lieuNaissance ? ` à ${d.lieuNaissance}` : ""}
         </div>
 
-        {/* Numéro / éditeur de séquence */}
         {editing ? (
           <div className="flex flex-wrap items-center gap-2 pt-0.5">
             <Input
@@ -315,7 +424,6 @@ function DiplomeRow({
       </div>
 
       <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-        {/* Stepper de statut */}
         <div className="flex items-center gap-1">
           {STATUTS.map((s, i) => {
             const done = i <= idx;
@@ -334,7 +442,6 @@ function DiplomeRow({
           })}
         </div>
 
-        {/* Diplôme officiel (PDF) : trame SSIAP 1/2/3 uniquement, dès qu'un n° est saisi. */}
         {d.numeroDiplome && d.ssiap && (
           <a href={`/diplomes/${d.id}/officiel`} target="_blank" rel="noreferrer"
             className="inline-flex items-center gap-1 rounded-md border border-primary/40 bg-primary/5 px-2 py-1 text-xs font-medium text-primary hover:bg-primary/10">

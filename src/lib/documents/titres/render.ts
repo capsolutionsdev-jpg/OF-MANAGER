@@ -149,8 +149,8 @@ html,body{background:#fff}
    Largeur 40mm (bord droit à 53mm) → 5mm de marge avec les signatures centrées
    (bord gauche à 58mm) ; bas à 24mm → au-dessus du pied légal (bas 11mm) même si
    l'adresse d'un OF le fait passer sur 2-3 lignes. Ne peut pas déborder la page. */
-.verifdip{position:absolute;left:13mm;bottom:24mm;width:40mm;display:flex;gap:2.5mm;align-items:center;text-align:left;}
-.verifdip .qr{width:13mm;height:13mm;flex:0 0 auto;border:0.6px solid var(--navy);background:#fff;padding:0.5mm;}
+.verifdip{position:absolute;left:13mm;bottom:24mm;width:42mm;display:flex;gap:2.5mm;align-items:center;text-align:left;}
+.verifdip .qr{width:18mm;height:18mm;flex:0 0 auto;border:0.6px solid var(--navy);background:#fff;padding:0.6mm;}
 .verifdip .qr svg,.verifdip .qr img{width:100%;height:100%;object-fit:contain;}
 .verifdip .txt{font-size:6.2pt;line-height:1.28;color:#5a5f6b;}.verifdip .txt b{color:var(--navy);}.verifdip .txt .link{color:var(--gold);font-weight:600;}
 .footer-legal{position:absolute;left:26mm;right:26mm;bottom:11mm;text-align:center;font-size:7.2pt;letter-spacing:.02em;color:#8a8578;line-height:1.5;border-top:0.5px solid rgba(176,138,62,.4);padding-top:1.6mm;}

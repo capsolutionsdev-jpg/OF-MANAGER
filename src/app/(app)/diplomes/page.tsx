@@ -63,16 +63,10 @@ export default async function DiplomesPage() {
   }));
 
   const rows = diplomes.map((d) => {
-    const ftitre = d.formationId ? formationTitre.get(d.formationId) ?? null : null;
+    const ftitre = d.formationId ? formationTitre.get(d.formationId) ?? "Formation" : null;
     const sDate = d.sessionId ? sessionDate.get(d.sessionId) ?? null : null;
-    // Regroupement PAR SESSION (repli formation / « sans formation »).
     const hasSession = Boolean(d.sessionId && sDate);
-    const groupKey = hasSession ? `s:${d.sessionId}` : d.formationId ? `f:${d.formationId}` : "none";
-    const groupLabel = hasSession
-      ? `${ftitre ?? "Formation"} — session du ${fmt(sDate!)}`
-      : ftitre
-        ? `${ftitre} — sans session`
-        : "Sans formation";
+    // Hiérarchie : Formation → Session → Diplôme (onglets côté client).
     return {
       id: d.id,
       nom: d.nom,
@@ -82,9 +76,11 @@ export default async function DiplomesPage() {
       numeroDiplome: d.numeroDiplome,
       statut: d.statut,
       ssiap: d.formationId ? formationEstSsiap.get(d.formationId) ?? false : false,
-      groupKey,
-      groupLabel,
-      groupDate: hasSession ? sDate!.toISOString() : null,
+      formationKey: d.formationId ?? "none",
+      formationLabel: ftitre ?? "Sans formation",
+      sessionKey: hasSession ? `s:${d.sessionId}` : `nosession:${d.formationId ?? "none"}`,
+      sessionLabel: hasSession ? `Session du ${fmt(sDate!)}` : "Sans session",
+      sessionDate: hasSession ? sDate!.toISOString() : null,
       remiseParNom: d.remiseParNom,
       remisAt: d.remisAt ? fmt(d.remisAt) : null,
     };
