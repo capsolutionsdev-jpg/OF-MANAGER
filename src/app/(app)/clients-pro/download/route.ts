@@ -40,5 +40,15 @@ export async function GET(req: Request) {
     return fileDownloadResponse(fac.fileUrl, `Facture-${fac.reference}.pdf`);
   }
 
+  if (kind === "document") {
+    // Document généré (ex. satisfaction entreprise déposée par le client).
+    const doc = await db.documentGenere.findFirst({
+      where: { id },
+      select: { type: true, fileUrl: true },
+    });
+    if (!doc) return new Response("Introuvable.", { status: 404 });
+    return fileDownloadResponse(doc.fileUrl, `${doc.type}.pdf`);
+  }
+
   return new Response("Requête invalide.", { status: 400 });
 }

@@ -17,9 +17,16 @@ const ETAPES: { key: EtapeDocuments; label: string; hint: string }[] = [
   },
 ];
 
-export function ConventionDocumentsPanel({ conventionId }: { conventionId: string }) {
+export function ConventionDocumentsPanel({
+  conventionId,
+  counts,
+}: {
+  conventionId: string;
+  counts?: { convention: number; entree: number; fin: number };
+}) {
   const router = useRouter();
   const [pending, start] = useTransition();
+  const countFor = (k: EtapeDocuments) => counts?.[k] ?? 0;
 
   function publier(etape: EtapeDocuments) {
     start(async () => {
@@ -41,7 +48,14 @@ export function ConventionDocumentsPanel({ conventionId }: { conventionId: strin
       <div className="grid gap-2 sm:grid-cols-3">
         {ETAPES.map((e) => (
           <div key={e.key} className="flex flex-col rounded-md border bg-card p-2">
-            <p className="text-xs font-semibold">{e.label}</p>
+            <p className="flex items-center gap-1.5 text-xs font-semibold">
+              {e.label}
+              {countFor(e.key) > 0 && (
+                <span className="rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400">
+                  {countFor(e.key)} publié{countFor(e.key) > 1 ? "s" : ""}
+                </span>
+              )}
+            </p>
             <p className="mt-0.5 flex-1 text-[11px] leading-snug text-muted-foreground">{e.hint}</p>
             <Button
               size="sm"
@@ -51,7 +65,7 @@ export function ConventionDocumentsPanel({ conventionId }: { conventionId: strin
               disabled={pending}
             >
               {pending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Send className="mr-1.5 h-3.5 w-3.5" />}
-              Publier
+              {countFor(e.key) > 0 ? "Republier" : "Publier"}
             </Button>
           </div>
         ))}
