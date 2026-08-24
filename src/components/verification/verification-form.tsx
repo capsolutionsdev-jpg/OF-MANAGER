@@ -186,7 +186,6 @@ function ResultCard({ result }: { result: Result }) {
     ["Titre", result.titre],
     ["Numéro", result.numero],
     ["Délivré le", fdate(result.date_delivrance)],
-    ["Fin de validité", result.date_fin_validite ? fdate(result.date_fin_validite) : "Sans expiration"],
     ["Organisme", result.organisme],
   ];
   return (
