@@ -89,6 +89,39 @@ export function describeOffset(step: Pick<StepLike, "ancre" | "offsetJours">): s
   return n < 0 ? `${abs} ${jour} avant ${ancre}` : `${abs} ${jour} après ${ancre}`;
 }
 
+// ── Exécution (helpers PURS réutilisés par l'exécuteur) ──────────────────────
+
+export type BaliseCtx = {
+  prenom: string;
+  nom: string;
+  formation: string;
+  dateDebut: Date;
+  dateFin: Date;
+  entreprise: string;
+};
+
+/** Remplace les balises {prenom} {nom} {formation} {dateDebut} {dateFin} {entreprise} — PUR. */
+export function fillBalises(tpl: string, ctx: BaliseCtx): string {
+  const d = (x: Date) => new Date(x).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
+  return tpl
+    .replace(/\{prenom\}/gi, ctx.prenom)
+    .replace(/\{nom\}/gi, ctx.nom)
+    .replace(/\{formation\}/gi, ctx.formation)
+    .replace(/\{dateDebut\}/gi, d(ctx.dateDebut))
+    .replace(/\{dateFin\}/gi, d(ctx.dateFin))
+    .replace(/\{entreprise\}/gi, ctx.entreprise);
+}
+
+/** Destinataire selon l'audience (FORMATEUR non géré au Lot 3 → null) — PUR. */
+export function recipientFor(
+  audience: CircuitAudience,
+  ctx: { apprenantEmail: string | null; entrepriseEmail: string | null },
+): string | null {
+  if (audience === "APPRENANT") return ctx.apprenantEmail;
+  if (audience === "ENTREPRISE") return ctx.entrepriseEmail;
+  return null;
+}
+
 /** Colonnes de timeline distinctes présentes dans un circuit, triées chronologiquement. */
 export function timelineColumns(steps: StepLike[]): { key: string; label: string; rank: number }[] {
   const map = new Map<string, { key: string; label: string; rank: number }>();

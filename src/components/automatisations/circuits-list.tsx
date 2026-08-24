@@ -3,8 +3,8 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Plus, Loader2, Trash2, GitBranch, ChevronRight } from "lucide-react";
-import { createCircuit, toggleCircuitActif, deleteCircuit } from "@/lib/actions/circuit-actions";
+import { Plus, Loader2, Trash2, GitBranch, ChevronRight, Play } from "lucide-react";
+import { createCircuit, toggleCircuitActif, deleteCircuit, runCircuitsNow } from "@/lib/actions/circuit-actions";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,12 +26,25 @@ export function CircuitsList({ circuits }: { circuits: CircuitRow[] }) {
   const [nom, setNom] = useState("");
   const [creating, startCreate] = useTransition();
   const [busy, startBusy] = useTransition();
+  const [running, startRun] = useTransition();
+  const [runMsg, setRunMsg] = useState<string | null>(null);
 
   const create = () => {
     startCreate(async () => {
       const { id } = await createCircuit(nom || "Nouveau circuit");
       setNom("");
       router.push(`/automatisations/circuits/${id}`);
+    });
+  };
+
+  const runNow = () => {
+    startRun(async () => {
+      const r = await runCircuitsNow();
+      setRunMsg(
+        r.demo
+          ? `Mode démo (e-mail non configuré) — ${r.etapes} étape(s) simulée(s).`
+          : `${r.etapes} étape(s) déclenchée(s).`,
+      );
     });
   };
 
@@ -51,6 +64,13 @@ export function CircuitsList({ circuits }: { circuits: CircuitRow[] }) {
             {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
             Nouveau circuit
           </Button>
+          <div className="ml-auto flex items-center gap-2">
+            {runMsg && <span className="text-xs text-muted-foreground">{runMsg}</span>}
+            <Button onClick={runNow} disabled={running} size="sm" variant="outline" className="gap-1.5" title="Déclenche maintenant les étapes dues des circuits actifs (test / rattrapage)">
+              {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+              Exécuter maintenant
+            </Button>
+          </div>
         </CardContent>
       </Card>
 

@@ -5,6 +5,8 @@ import {
   dueSteps,
   describeOffset,
   timelineColumns,
+  fillBalises,
+  recipientFor,
   type StepLike,
 } from "@/lib/automation/circuits";
 
@@ -65,6 +67,30 @@ describe("describeOffset()", () => {
     expect(describeOffset(step({ ancre: "DEBUT", offsetJours: 0 }))).toBe("Jour Début");
     expect(describeOffset(step({ ancre: "FIN", offsetJours: 0 }))).toBe("Jour Fin");
     expect(describeOffset(step({ ancre: "FIN", offsetJours: 45 }))).toBe("45 jours après fin");
+  });
+});
+
+describe("fillBalises()", () => {
+  const ctx = { prenom: "Awa", nom: "Diallo", formation: "SSIAP 1", dateDebut: new Date("2026-09-10T09:00:00Z"), dateFin: new Date("2026-09-20T17:00:00Z"), entreprise: "ACME" };
+  it("remplace toutes les balises (casse insensible)", () => {
+    expect(fillBalises("Bonjour {prenom} {NOM}", ctx)).toBe("Bonjour Awa Diallo");
+    expect(fillBalises("{formation} chez {entreprise}", ctx)).toBe("SSIAP 1 chez ACME");
+    expect(fillBalises("Début {dateDebut}", ctx)).toContain("septembre 2026");
+  });
+  it("laisse le texte sans balise intact", () => {
+    expect(fillBalises("Aucune balise ici.", ctx)).toBe("Aucune balise ici.");
+  });
+});
+
+describe("recipientFor()", () => {
+  const ctx = { apprenantEmail: "a@of.fr", entrepriseEmail: "e@of.fr" };
+  it("route selon l'audience", () => {
+    expect(recipientFor("APPRENANT", ctx)).toBe("a@of.fr");
+    expect(recipientFor("ENTREPRISE", ctx)).toBe("e@of.fr");
+    expect(recipientFor("FORMATEUR", ctx)).toBeNull(); // Lot 4
+  });
+  it("null si l'e-mail de l'audience manque", () => {
+    expect(recipientFor("APPRENANT", { apprenantEmail: null, entrepriseEmail: "e@of.fr" })).toBeNull();
   });
 });
 

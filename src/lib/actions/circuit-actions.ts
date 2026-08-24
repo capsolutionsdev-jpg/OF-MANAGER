@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { CircuitAncre, CircuitAudience, CircuitActionType } from "@prisma/client";
 import { requireStaffTenant } from "@/lib/tenant";
+import { runCircuits } from "@/lib/automation/circuits-engine";
 
 // Actions CRUD des circuits d'automatisation (studio visuel). Réservées au
 // personnel de l'organisme (requireStaffTenant) et cloisonnées par tenant
@@ -104,4 +105,12 @@ export async function deleteStep(stepId: string): Promise<void> {
   if (!step) return;
   await db.circuitStep.deleteMany({ where: { id: stepId } });
   revalidate(step.circuitId);
+}
+
+/** Exécute maintenant les circuits ACTIFS de l'organisme (test / rattrapage). */
+export async function runCircuitsNow(): Promise<{ ok: boolean; etapes: number; demo: boolean }> {
+  const { organismeId } = await requireStaffTenant();
+  const res = await runCircuits(organismeId);
+  revalidate();
+  return { ok: true, etapes: res.etapesDeclenchees, demo: res.demo };
 }
