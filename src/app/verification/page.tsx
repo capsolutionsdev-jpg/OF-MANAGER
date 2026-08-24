@@ -28,31 +28,6 @@ const STEPS = [
   },
 ];
 
-/** Sceau de vérification — bouclier dégradé lumineux dans un anneau cranté. */
-function VerificationSeal({ className = "" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 120 120" className={className} fill="none" aria-hidden="true">
-      <defs>
-        <linearGradient id="ofmSeal" x1="24" y1="24" x2="96" y2="100" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#7dd3fc" />
-          <stop offset="1" stopColor="#3b82f6" />
-        </linearGradient>
-      </defs>
-      <circle cx="60" cy="60" r="57" stroke="#fff" strokeOpacity="0.25" strokeWidth="1" />
-      <circle
-        cx="60" cy="60" r="49" stroke="#fff" strokeOpacity="0.45" strokeWidth="6"
-        strokeDasharray="0.5 6.1" strokeLinecap="round"
-      />
-      <circle cx="60" cy="60" r="40" fill="#fff" fillOpacity="0.07" />
-      <path d="M60 29 L83 38.5 V60 C83 74.5 73 85 60 91 C47 85 37 74.5 37 60 V38.5 Z" fill="url(#ofmSeal)" />
-      <path
-        d="M50.5 60.5 l6.5 6.5 L71 53" stroke="#0a1533" strokeWidth="5"
-        strokeLinecap="round" strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
 export default function VerificationPage() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#0a1533] text-white">
@@ -88,9 +63,9 @@ export default function VerificationPage() {
       {/* Barre de marque */}
       <div className="relative z-10 border-b border-white/10 bg-white/5 backdrop-blur-md">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3.5 sm:px-6">
-          <span className="inline-flex items-center rounded-lg bg-white px-2 py-1 shadow-sm">
+          <span className="inline-flex items-center rounded-xl bg-white px-2.5 py-1.5 shadow-sm">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/ofmanager-logo.png" alt="OF MANAGER" className="h-7 w-auto sm:h-8" />
+            <img src="/ofmanager-logo.png" alt="OF MANAGER" className="h-10 w-auto sm:h-11" />
           </span>
           <span className="inline-flex items-center gap-1.5 text-xs font-medium text-white/70">
             <Lock className="h-3.5 w-3.5" />
@@ -101,9 +76,12 @@ export default function VerificationPage() {
 
       {/* Hero */}
       <header className="relative z-10 mx-auto max-w-3xl px-4 pt-16 text-center sm:pt-20">
-        <div className="relative mx-auto mb-7 w-fit">
-          <div className="ofm-glow absolute inset-0 -z-10 rounded-full bg-cyan-400/40 blur-2xl" />
-          <VerificationSeal className="ofm-float h-24 w-24 drop-shadow-[0_8px_30px_rgba(56,189,248,0.35)] sm:h-28 sm:w-28" />
+        <div className="relative mx-auto mb-8 w-fit">
+          <div className="ofm-glow absolute -inset-5 -z-10 rounded-[2.5rem] bg-cyan-400/40 blur-2xl" />
+          <div className="ofm-float rounded-3xl bg-white p-5 shadow-2xl shadow-blue-950/50 ring-1 ring-white/40 sm:p-6">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/ofmanager-logo.png" alt="OF MANAGER" className="h-24 w-auto sm:h-28" />
+          </div>
         </div>
         <h1
           className="ofm-rise text-balance text-4xl font-bold tracking-tight sm:text-6xl"
@@ -168,9 +146,9 @@ export default function VerificationPage() {
       {/* Pied de page */}
       <footer className="relative z-10 border-t border-white/10 bg-white/[0.03]">
         <div className="mx-auto flex max-w-3xl flex-col items-center gap-3 px-4 py-8 text-center">
-          <span className="inline-flex items-center rounded-lg bg-white px-2 py-1">
+          <span className="inline-flex items-center rounded-lg bg-white px-2.5 py-1.5">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/ofmanager-logo.png" alt="OF MANAGER" className="h-6 w-auto" />
+            <img src="/ofmanager-logo.png" alt="OF MANAGER" className="h-9 w-auto" />
           </span>
           <p className="max-w-2xl text-xs leading-relaxed text-white/50">
             Système de vérification propulsé par <span className="font-semibold text-white/80">OF MANAGER</span>, la
