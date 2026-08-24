@@ -111,7 +111,7 @@ export default async function ConfidentialitePage() {
           <h2 className="text-lg font-semibold text-foreground">8. Contact</h2>
           <p className="mt-2">
             Pour toute question relative à la protection de vos données :{" "}
-            <span className="font-medium">[adresse e-mail de contact à compléter]</span>.
+            <a href="mailto:contact@ofmanager.info" className="font-medium text-primary hover:underline">contact@ofmanager.info</a>.
           </p>
         </section>
       </div>

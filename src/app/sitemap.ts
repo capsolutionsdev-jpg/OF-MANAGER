@@ -18,6 +18,10 @@ const PAGES: [string, number, "weekly" | "monthly"][] = [
   ["/partenaires", 0.6, "monthly"],
   ["/contact", 0.6, "monthly"],
   ["/demo", 0.7, "monthly"],
+  ["/verification", 0.6, "monthly"], // outil anti-fraude public (différenciateur)
+  ["/mentions-legales", 0.3, "monthly"],
+  ["/cgv", 0.3, "monthly"],
+  ["/confidentialite", 0.3, "monthly"],
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {
