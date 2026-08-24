@@ -52,5 +52,15 @@ export async function GET(req: Request) {
     return fileDownloadResponse(doc.fileUrl, `${doc.type}.pdf`);
   }
 
+  if (kind === "dossier") {
+    // Pièce du dossier administratif d'un salarié (scopée entreprise via le candidat).
+    const piece = await db.pieceJointe.findFirst({
+      where: { id, candidat: { entrepriseId: entreprise.id } },
+      select: { label: true, url: true },
+    });
+    if (!piece) return new Response("Introuvable.", { status: 404 });
+    return fileDownloadResponse(piece.url, `${piece.label.replace(/[^\w-]+/g, "-")}`);
+  }
+
   return new Response("Requête invalide.", { status: 400 });
 }

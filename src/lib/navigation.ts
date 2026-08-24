@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   Users,
   BookOpen,
+  FolderOpen,
   CalendarDays,
   ShieldCheck,
   Target,
@@ -107,6 +108,12 @@ export const navItems: NavItem[] = [
     label: "Mes documents",
     href: "/mes-documents",
     icon: FileText,
+    roles: ["APPRENANT"],
+  },
+  {
+    label: "Mon dossier",
+    href: "/mon-dossier",
+    icon: FolderOpen,
     roles: ["APPRENANT"],
   },
   {

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, ClipboardList, GraduationCap, FileText, Receipt, LayoutGrid, FileSignature } from "lucide-react";
+import { CalendarDays, ClipboardList, GraduationCap, FileText, Receipt, LayoutGrid, FileSignature, FolderOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const TABS = [
@@ -10,6 +10,7 @@ const TABS = [
   { href: "/espace-entreprise/formation", label: "Formations", icon: CalendarDays },
   { href: "/espace-entreprise/inscriptions", label: "Inscriptions", icon: ClipboardList },
   { href: "/espace-entreprise/convention", label: "Convention", icon: FileSignature },
+  { href: "/espace-entreprise/dossiers", label: "Dossiers", icon: FolderOpen },
   { href: "/espace-entreprise/suivi", label: "Suivi", icon: GraduationCap },
   { href: "/espace-entreprise/documents", label: "Documents", icon: FileText },
   { href: "/espace-entreprise/factures", label: "Factures", icon: Receipt },
