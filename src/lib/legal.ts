@@ -7,15 +7,17 @@
 const env = (k: string, fallback = "[à compléter]") =>
   (process.env[k]?.trim() || fallback);
 
+// Valeurs issues des statuts CAP SOLUTIONS (SASU, PV du 20/08/2026). SIRET/RCS/TVA
+// seront disponibles à l'immatriculation → mettre à jour ici (ou via env).
 export const EDITEUR = {
   raisonSociale: env("NEXT_PUBLIC_LEGAL_RAISON_SOCIALE", "CAP SOLUTIONS"),
-  forme: env("NEXT_PUBLIC_LEGAL_FORME", "[forme juridique à compléter — ex. SASU]"),
-  capital: env("NEXT_PUBLIC_LEGAL_CAPITAL", "[capital social à compléter]"),
-  siret: env("NEXT_PUBLIC_LEGAL_SIRET"),
-  rcs: env("NEXT_PUBLIC_LEGAL_RCS"),
-  tva: env("NEXT_PUBLIC_LEGAL_TVA", "[n° TVA intracom. à compléter]"),
-  adresse: env("NEXT_PUBLIC_LEGAL_ADRESSE"),
-  directeurPublication: env("NEXT_PUBLIC_LEGAL_DIRECTEUR"),
+  forme: env("NEXT_PUBLIC_LEGAL_FORME", "Société par Actions Simplifiée Unipersonnelle (SASU)"),
+  capital: env("NEXT_PUBLIC_LEGAL_CAPITAL", "100 €"),
+  siret: env("NEXT_PUBLIC_LEGAL_SIRET", "En cours d'immatriculation"),
+  rcs: env("NEXT_PUBLIC_LEGAL_RCS", "En cours d'immatriculation (RCS Nanterre)"),
+  tva: env("NEXT_PUBLIC_LEGAL_TVA", "En cours d'immatriculation"),
+  adresse: env("NEXT_PUBLIC_LEGAL_ADRESSE", "32 rue de Paris, 92100 Boulogne-Billancourt"),
+  directeurPublication: env("NEXT_PUBLIC_LEGAL_DIRECTEUR", "Moussa HAMOUMI, Président"),
   telephone: env("NEXT_PUBLIC_LEGAL_TEL", ""),
   email: env("NEXT_PUBLIC_LEGAL_EMAIL", "contact@ofmanager.info"),
   produit: "OFManager",
