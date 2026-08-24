@@ -129,7 +129,9 @@ export function DiplomesManager({ diplomes, sessions, formations }: { diplomes: 
     : formationGroups[0]?.key ?? "";
   const activeGroup = formationGroups.find((f) => f.key === activeKey);
 
-  const aNumeroterShown = useMemo(() => filtered.filter((d) => !d.numeroDiplome).length, [filtered]);
+  // « À numéroter » ne concerne QUE les diplômes vérifiables (SSIAP) ; les autres
+  // diplômes (TFP APS…) sont en suivi simple, sans numérotation vérifiable.
+  const aNumeroterShown = useMemo(() => filtered.filter((d) => d.ssiap && !d.numeroDiplome).length, [filtered]);
 
   function toggle(key: string) {
     setExpanded((prev) => {
@@ -254,7 +256,7 @@ export function DiplomesManager({ diplomes, sessions, formations }: { diplomes: 
               {/* Onglets par formation */}
               <div className="flex gap-1 overflow-x-auto border-b">
                 {formationGroups.map((fg) => {
-                  const aNum = fg.rows.filter((r) => !r.numeroDiplome).length;
+                  const aNum = fg.rows.filter((r) => r.ssiap && !r.numeroDiplome).length;
                   const isActive = fg.key === activeKey;
                   return (
                     <button
@@ -311,7 +313,7 @@ function SessionCard({
   isPending: boolean;
   run: Run;
 }) {
-  const aNum = sg.rows.filter((r) => !r.numeroDiplome).length;
+  const aNum = sg.rows.filter((r) => r.ssiap && !r.numeroDiplome).length;
   return (
     <div className="overflow-hidden rounded-lg border bg-card">
       <button
@@ -371,7 +373,7 @@ function DiplomeRow({
       <div className="min-w-0 space-y-1.5">
         <div className="flex flex-wrap items-center gap-2">
           <span className="font-medium">{d.prenom} {d.nom}</span>
-          {!d.numeroDiplome && <Badge variant="warning">À numéroter</Badge>}
+          {d.ssiap && !d.numeroDiplome && <Badge variant="warning">À numéroter</Badge>}
         </div>
         <div className="text-xs text-muted-foreground">
           {d.dateNaissance ? `Né(e) le ${new Date(d.dateNaissance).toLocaleDateString("fr-FR")}` : "Date de naissance —"}
@@ -415,12 +417,12 @@ function DiplomeRow({
             <span className="font-mono text-sm text-foreground">{d.numeroDiplome}</span>
             <PencilLine className="h-3.5 w-3.5 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
           </button>
-        ) : (
+        ) : d.ssiap ? (
           <Button size="sm" variant="outline" className="h-7" onClick={openEdit}>
             <PencilLine className="mr-1.5 h-3.5 w-3.5" />
-            {d.ssiap ? "Saisir la séquence (PV)" : "Saisir le numéro"}
+            Saisir la séquence (PV)
           </Button>
-        )}
+        ) : null}
       </div>
 
       <div className="flex flex-wrap items-center gap-2 sm:justify-end">
