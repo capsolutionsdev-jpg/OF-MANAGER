@@ -2931,3 +2931,82 @@ model MrrSnapshot {
   byOrg     Json // { organismeId: mrr€ }
   createdAt DateTime @default(now())
 }
+
+// =============================================================
+//  MODULE — CIRCUITS D'AUTOMATISATION (studio visuel no-code)
+//  Complète le moteur codé (lib/automation-engine.ts) : chaque OF peut
+//  composer ses propres circuits (timeline relative aux dates de session,
+//  multi-audience). Évalués EN PLUS des jalons Qualiopi, jamais à leur place.
+//  Rien ne part tant qu'un circuit n'est pas `actif`. cf. lib/automation/circuits.ts
+// =============================================================
+
+enum CircuitAncre {
+  DEBUT // offset relatif à la date de début de session
+  FIN // offset relatif à la date de fin de session
+}
+
+enum CircuitAudience {
+  APPRENANT
+  ENTREPRISE
+  FORMATEUR
+}
+
+enum CircuitActionType {
+  EMAIL // e-mail (sujet + corps, balises)
+  DOCUMENT // génération + envoi d'un document PDF
+  ESIGN // document à signer électroniquement
+  EVALUATION // lien d'évaluation / quiz
+  SATISFACTION // enquête de satisfaction
+  AUTO_EVALUATION // auto-évaluation / positionnement
+}
+
+// Un circuit = une suite d'étapes composée par l'OF (multi-tenant : organismeId).
+model Circuit {
+  id          String        @id @default(cuid())
+  organismeId String
+  nom         String
+  description String?
+  actif       Boolean       @default(false) // OFF par défaut : aucun envoi tant que non activé
+  steps       CircuitStep[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([organismeId])
+  @@index([actif])
+}
+
+// Une étape (un « nœud » de la timeline) : quand / à qui / quoi.
+model CircuitStep {
+  id          String            @id @default(cuid())
+  circuitId   String
+  circuit     Circuit           @relation(fields: [circuitId], references: [id], onDelete: Cascade)
+  ordre       Int               @default(0)
+  ancre       CircuitAncre      @default(DEBUT)
+  offsetJours Int               @default(0) // négatif = avant l'ancre, positif = après
+  audience    CircuitAudience   @default(APPRENANT)
+  typeAction  CircuitActionType
+  titre       String? // libellé affiché sur le nœud
+  emailSujet  String?
+  emailCorps  String?           @db.Text
+  documentType String? // type de document (DOCUMENT / ESIGN)
+  config      Json? // extension future (canal, pièces jointes…)
+  runs        CircuitStepRun[]
+
+  @@index([circuitId])
+}
+
+// Journal d'exécution : une ligne = une étape exécutée pour une inscription.
+// Garantit l'idempotence (l'étape ne repart pas au run suivant du cron).
+model CircuitStepRun {
+  id            String      @id @default(cuid())
+  stepId        String
+  step          CircuitStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
+  circuitId     String
+  inscriptionId String
+  firedAt       DateTime    @default(now())
+  statut        String      @default("ENVOYE") // ENVOYE | ECHEC
+
+  @@unique([stepId, inscriptionId])
+  @@index([inscriptionId])
+  @@index([circuitId])
+}
