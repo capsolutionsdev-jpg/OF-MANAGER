@@ -30,29 +30,41 @@ export async function indexerTitre(
   },
 ): Promise<{ ok: boolean }> {
   if (!p.dateNaissance) return { ok: false }; // pas de date → non vérifiable
-  // Idempotence : ne pas ré-indexer un même numéro déjà présent pour ce tenant.
+  const sel = genSel();
+  const data = {
+    typeCode: p.def.code,
+    hashDateNaissance: hashDob(p.dateNaissance, sel),
+    selUnique: sel,
+    nomTitulaire: p.nom,
+    prenomTitulaire: p.prenom,
+    dateDelivrance: p.dateDelivrance,
+    dateFinValidite: p.dateFinValidite ?? null,
+    organismeSignataire: p.organismeSignataire,
+    inscriptionId: p.inscriptionId ?? null,
+    sessionId: p.sessionId ?? null,
+    formationId: p.formationId ?? null,
+  };
+
   const existing = await db.titreDelivre.findFirst({
     where: { organismeId, numeroVerification: p.numero },
-    select: { id: true },
-  });
-  if (existing) return { ok: true };
-  const sel = genSel();
-  await db.titreDelivre.create({
-    data: {
-      organismeId,
-      typeCode: p.def.code,
-      numeroVerification: p.numero,
-      hashDateNaissance: hashDob(p.dateNaissance, sel),
-      selUnique: sel,
-      nomTitulaire: p.nom,
-      prenomTitulaire: p.prenom,
-      dateDelivrance: p.dateDelivrance,
-      dateFinValidite: p.dateFinValidite ?? null,
-      organismeSignataire: p.organismeSignataire,
-      inscriptionId: p.inscriptionId ?? null,
-      sessionId: p.sessionId ?? null,
-      formationId: p.formationId ?? null,
+    select: {
+      id: true, selUnique: true, hashDateNaissance: true,
+      nomTitulaire: true, prenomTitulaire: true,
     },
   });
+  if (existing) {
+    // Même titulaire (même nom + même date de naissance re-hashée avec le sel
+    // existant) → idempotent, rien à faire.
+    const sameDob = hashDob(p.dateNaissance, existing.selUnique) === existing.hashDateNaissance;
+    const sameName =
+      (existing.nomTitulaire ?? "").trim().toLowerCase() === p.nom.trim().toLowerCase() &&
+      (existing.prenomTitulaire ?? "").trim().toLowerCase() === p.prenom.trim().toLowerCase();
+    if (sameDob && sameName) return { ok: true };
+    // Numéro RÉ-ATTRIBUÉ à un autre titulaire (ex. diplôme précédent supprimé) :
+    // on écrase l'entrée orpheline pour ne jamais vérifier la mauvaise personne.
+    await db.titreDelivre.update({ where: { id: existing.id }, data });
+    return { ok: true };
+  }
+  await db.titreDelivre.create({ data: { organismeId, numeroVerification: p.numero, ...data } });
   return { ok: true };
 }

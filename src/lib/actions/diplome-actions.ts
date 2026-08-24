@@ -25,6 +25,25 @@ async function guard() {
 }
 
 /**
+ * Numéro brut fourni à la CRÉATION : ignoré (→ null) pour une formation SSIAP, car
+ * un n° SSIAP doit être composé + indexé via la page Diplômes (séquence du PV).
+ * Pour les autres diplômes, le numéro saisi est conservé tel quel.
+ */
+async function ssiapAwareNumero(
+  db: Awaited<ReturnType<typeof getTenantDb>>,
+  formationId: string | null | undefined,
+  raw: string | undefined,
+): Promise<string | null> {
+  const numero = raw?.trim() || null;
+  if (!numero || !formationId) return numero;
+  const f = await db.formation.findFirst({
+    where: { id: formationId },
+    select: { reference: true, titre: true },
+  });
+  return f && ssiapDiplomeNiveau({ reference: f.reference, titre: f.titre }) ? null : numero;
+}
+
+/**
  * Enregistre un diplôme en RÉCUPÉRANT les coordonnées d'un inscrit (nom, prénom,
  * date & lieu de naissance) + session/formation. Le n° de diplôme est saisi.
  */
@@ -40,6 +59,10 @@ export async function createDiplomeFromInscription(
   });
   if (!insc) return { ok: false, error: "Inscription introuvable." };
   const c = insc.candidat;
+  // Un n° SSIAP doit être COMPOSÉ + indexé via la page Diplômes (séquence du PV) : on
+  // n'enregistre jamais un numéro brut à la création pour ces formations (sinon il
+  // resterait non composé et non vérifiable).
+  const numero = await ssiapAwareNumero(db, insc.session.formationId, numeroDiplome);
   const d = await db.diplome.create({
     data: {
       inscriptionId: insc.id,
@@ -49,7 +72,7 @@ export async function createDiplomeFromInscription(
       prenom: c.prenom,
       dateNaissance: c.dateNaissance,
       lieuNaissance: c.lieuNaissance ?? null,
-      numeroDiplome: numeroDiplome?.trim() || null,
+      numeroDiplome: numero,
       statut: "ENVOYE_CERTIFICATEUR",
       envoyeCertificateurAt: new Date(),
     },
@@ -74,13 +97,14 @@ export async function createDiplomeManuel(input: {
   if (!input.formationId?.trim())
     return { ok: false, error: "Précisez la formation du diplôme." };
   const db = await getTenantDb();
+  const numero = await ssiapAwareNumero(db, input.formationId.trim(), input.numeroDiplome);
   const d = await db.diplome.create({
     data: {
       nom: input.nom.trim(),
       prenom: input.prenom.trim(),
       dateNaissance: input.dateNaissance ? new Date(input.dateNaissance) : null,
       lieuNaissance: input.lieuNaissance?.trim() || null,
-      numeroDiplome: input.numeroDiplome?.trim() || null,
+      numeroDiplome: numero,
       sessionId: input.sessionId || null,
       formationId: input.formationId.trim(),
       statut: "ENVOYE_CERTIFICATEUR",
@@ -109,6 +133,14 @@ async function composeNumeroSsiap(
   seqRaw: string,
   d: { sessionId: string | null; createdAt: Date; formationNumeroAgrement: string | null },
 ): Promise<{ ok: true; numero: string } | { ok: false; error: string }> {
+  // La séquence = le SEUL n° du PV (jamais le numéro complet). Refuser tiret/espace
+  // évite une double-composition (ex. re-coller « 093-0042-1-2026-00042 »).
+  if (!/^[A-Za-z0-9]{1,12}$/.test(seqRaw)) {
+    return {
+      ok: false,
+      error: "La séquence doit être le seul numéro du PV (chiffres/lettres, sans tiret ni espace).",
+    };
+  }
   const ag = readAgrements(org.documentsConfig);
   const dept = ag.ssiapDepartement?.trim();
   const agrement = d.formationNumeroAgrement?.trim() || ag.ssiap?.trim();
@@ -190,18 +222,11 @@ export async function setDiplomeNumero(id: string, saisie: string): Promise<Resu
     };
   }
 
-  await db.diplome.update({ where: { id }, data: { numeroDiplome: num } });
-
-  // Registre vérifiable (anti-fraude) — SSIAP 1/2/3 uniquement.
+  // Registre vérifiable (anti-fraude) — SSIAP 1/2/3 uniquement. On indexe le NOUVEAU
+  // numéro AVANT de committer : un échec d'indexation ne doit pas laisser un diplôme
+  // numéroté mais invérifiable (toast « enregistré » mensonger).
   if (def && org && organismeId) {
     try {
-      // Correction d'un n° : purge l'entrée précédente devenue caduque, pour ne pas
-      // laisser un numéro erroné indexé au titulaire.
-      if (d.numeroDiplome && d.numeroDiplome !== num) {
-        await db.titreDelivre.deleteMany({
-          where: { typeCode: def.code, numeroVerification: d.numeroDiplome },
-        });
-      }
       await indexerTitre(db, organismeId, {
         def,
         numero: num,
@@ -217,9 +242,20 @@ export async function setDiplomeNumero(id: string, saisie: string): Promise<Resu
       });
     } catch (e) {
       console.error("[diplome-index]", e);
+      return {
+        ok: false,
+        error: "Numéro non enregistré : l'indexation de vérification a échoué. Réessayez.",
+      };
+    }
+    // Nouvelle entrée en place → purge de l'ancienne (cas d'une correction de numéro).
+    if (d.numeroDiplome && d.numeroDiplome !== num) {
+      await db.titreDelivre.deleteMany({
+        where: { typeCode: def.code, numeroVerification: d.numeroDiplome },
+      });
     }
   }
 
+  await db.diplome.update({ where: { id }, data: { numeroDiplome: num } });
   revalidatePath("/diplomes");
   return { ok: true };
 }
@@ -244,12 +280,33 @@ export async function setDiplomeStatut(id: string, statut: DiplomeStatut): Promi
   return { ok: true };
 }
 
-/** Supprime un diplôme. */
+/** Supprime un diplôme (et son entrée de vérification SSIAP, s'il en a une). */
 export async function deleteDiplome(id: string): Promise<Result> {
   await guard();
   const db = await getTenantDb();
+  const d = await db.diplome.findFirst({
+    where: { id },
+    select: { numeroDiplome: true, formationId: true },
+  });
   const r = await db.diplome.deleteMany({ where: { id } });
   if (r.count === 0) return { ok: false, error: "Diplôme introuvable." };
+
+  // Un diplôme supprimé ne doit plus être vérifiable en ligne → purge de son entrée
+  // TitreDelivre (SSIAP uniquement ; @@unique(org, numéro) ⇒ au plus une entrée).
+  if (d?.numeroDiplome && d.formationId) {
+    const f = await db.formation.findFirst({
+      where: { id: d.formationId },
+      select: { reference: true, titre: true },
+    });
+    const niveau = f ? ssiapDiplomeNiveau({ reference: f.reference, titre: f.titre }) : null;
+    const def = niveau ? getTitreDef(`SSIAP${niveau}_DIPLOME`) : null;
+    if (def) {
+      await db.titreDelivre.deleteMany({
+        where: { typeCode: def.code, numeroVerification: d.numeroDiplome },
+      });
+    }
+  }
+
   revalidatePath("/diplomes");
   return { ok: true };
 }

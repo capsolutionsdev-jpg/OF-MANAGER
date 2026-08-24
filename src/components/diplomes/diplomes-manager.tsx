@@ -105,7 +105,7 @@ export function DiplomesManager({ diplomes, sessions, formations }: { diplomes: 
     return arr;
   }, [filtered]);
 
-  const aNumeroterTotal = useMemo(() => diplomes.filter((d) => !d.numeroDiplome).length, [diplomes]);
+  const aNumeroterShown = useMemo(() => filtered.filter((d) => !d.numeroDiplome).length, [filtered]);
 
   return (
     <div className="space-y-6">
@@ -194,8 +194,9 @@ export function DiplomesManager({ diplomes, sessions, formations }: { diplomes: 
               <Input className="pl-9" placeholder="Rechercher un diplôme par nom ou prénom…" value={q} onChange={(e) => setQ(e.target.value)} />
             </div>
             <p className="shrink-0 text-xs text-muted-foreground">
-              {diplomes.length} diplôme{diplomes.length > 1 ? "s" : ""}
-              {aNumeroterTotal > 0 ? ` · ${aNumeroterTotal} à numéroter` : ""}
+              {filtered.length} diplôme{filtered.length > 1 ? "s" : ""}
+              {q.trim() ? ` sur ${diplomes.length}` : ""}
+              {aNumeroterShown > 0 ? ` · ${aNumeroterShown} à numéroter` : ""}
             </p>
           </div>
 
