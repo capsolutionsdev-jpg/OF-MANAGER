@@ -9,6 +9,7 @@ const BASE = SITE_URL;
 // [chemin, priorité, fréquence]
 const PAGES: [string, number, "weekly" | "monthly"][] = [
   ["", 1.0, "weekly"],
+  ["/fonctionnalites", 0.9, "monthly"],
   ["/tarifs", 0.9, "monthly"],
   ["/solutions/tfp-aps", 0.8, "monthly"],
   ["/solutions/ssiap", 0.8, "monthly"],
