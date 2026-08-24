@@ -1,12 +1,20 @@
-import { FileText, FileDown, CheckCircle2 } from "lucide-react";
+import { FileText, FileDown, CheckCircle2, GraduationCap } from "lucide-react";
 import { requireEntreprise } from "@/lib/entreprise-portal";
-import { getEntrepriseDocuments } from "@/lib/entreprise-data";
+import { getEntrepriseDocuments, getEntrepriseDiplomes } from "@/lib/entreprise-data";
 import { RubriqueHeader, EmptyState, Badge, fmtDate, documentTypeLabel } from "@/components/entreprise/portal-ui";
 import { SatisfactionUpload } from "@/components/entreprise/satisfaction-upload";
 
 export const dynamic = "force-dynamic";
 
 type Doc = Awaited<ReturnType<typeof getEntrepriseDocuments>>[number];
+type Diplome = Awaited<ReturnType<typeof getEntrepriseDiplomes>>[number];
+
+// Statut réel du module Diplôme (physique) : envoyé au certificateur → reçu → remis.
+const DIPLOME_STATUT: Record<string, { label: string; tone: "info" | "success" | "warning" }> = {
+  ENVOYE_CERTIFICATEUR: { label: "En cours d'édition (certificateur)", tone: "warning" },
+  RECU: { label: "Reçu par l'organisme", tone: "info" },
+  REMIS: { label: "Remis", tone: "success" },
+};
 
 /** L'enquête de satisfaction a-t-elle déjà été remplie + déposée par le client ? */
 function estRetournee(v: Doc["variablesJson"]): boolean {
@@ -20,7 +28,10 @@ function estRetournee(v: Doc["variablesJson"]): boolean {
 
 export default async function DocumentsPage() {
   const entreprise = await requireEntreprise();
-  const docs = await getEntrepriseDocuments(entreprise.id);
+  const [docs, diplomes] = await Promise.all([
+    getEntrepriseDocuments(entreprise.id),
+    getEntrepriseDiplomes(entreprise.id),
+  ]);
 
   // Regroupement par salarié.
   const groups = new Map<string, Doc[]>();
@@ -39,7 +50,7 @@ export default async function DocumentsPage() {
         title="Documents"
         subtitle="Convocations, attestations, certificats… Le règlement intérieur, les CGV et la convocation sont à remettre à vos salariés."
       />
-      {docs.length === 0 ? (
+      {docs.length === 0 && diplomes.length === 0 ? (
         <EmptyState
           icon={<FileText className="h-8 w-8" />}
           title="Aucun document"
@@ -95,9 +106,40 @@ export default async function DocumentsPage() {
               </div>
             </section>
           ))}
+          {diplomes.length > 0 && (
+            <section className="space-y-2">
+              <h3 className="flex items-center gap-1.5 text-sm font-semibold">
+                <GraduationCap className="h-4 w-4 text-muted-foreground" /> Diplômes
+              </h3>
+              <div className="overflow-hidden rounded-xl border">
+                <ul className="divide-y">
+                  {diplomes.map((d: Diplome) => {
+                    const st = DIPLOME_STATUT[d.statut] ?? { label: d.statut, tone: "info" as const };
+                    return (
+                      <li key={d.id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium">{d.prenom} {d.nom}</p>
+                          <p className="mt-0.5 text-xs text-muted-foreground">
+                            {d.formationTitre ?? "—"}
+                            {d.numeroDiplome ? ` · N° ${d.numeroDiplome}` : ""}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {d.statut === "REMIS" && d.remisAt && (
+                            <span className="text-xs text-muted-foreground">le {fmtDate(d.remisAt)}</span>
+                          )}
+                          <Badge tone={st.tone}>{st.label}</Badge>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            </section>
+          )}
           <p className="text-xs text-muted-foreground">
-            Les diplômes officiels et cartes professionnelles (le cas échéant) sont transmis directement
-            par l&apos;organisme de formation.
+            Le diplôme officiel (et la carte professionnelle, le cas échéant) est remis à votre salarié
+            par l&apos;organisme de formation. Le statut ci-dessus en suit l&apos;avancement.
           </p>
         </>
       )}
