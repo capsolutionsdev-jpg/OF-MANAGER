@@ -1,4 +1,5 @@
-import { Bell, Clock, ChevronDown } from "lucide-react";
+import Link from "next/link";
+import { Bell, Clock, ChevronDown, GitBranch, ArrowRight } from "lucide-react";
 import { requireTenant } from "@/lib/tenant";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -66,6 +67,21 @@ export default async function AutomatisationsPage() {
       >
         <RunAutomationsButton />
       </PageHeader>
+
+      {/* Studio visuel de circuits (au-delà des jalons Qualiopi par défaut) */}
+      <Link
+        href="/automatisations/circuits"
+        className="flex items-center gap-3 rounded-xl border bg-gradient-to-r from-primary/5 to-transparent p-4 transition-colors hover:border-primary/40"
+      >
+        <div className="rounded-lg bg-primary/10 p-2 text-primary">
+          <GitBranch className="h-5 w-5" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="font-medium">Circuits d&apos;automatisation <span className="ml-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">Nouveau</span></p>
+          <p className="text-sm text-muted-foreground">Composez vos propres parcours sur une timeline visuelle : e-mails, documents, évaluations et satisfaction, pour apprenants, entreprises et formateurs.</p>
+        </div>
+        <ArrowRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+      </Link>
 
       <Tabs defaultValue="reglages" className="space-y-6">
         <TabsList>
