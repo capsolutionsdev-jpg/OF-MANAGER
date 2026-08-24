@@ -24,7 +24,7 @@ const STEPS = [
   {
     icon: BadgeCheck,
     t: "Le résultat",
-    d: "Immédiat : authentique, expiré ou non reconnu — avec l'organisme qui l'a délivré.",
+    d: "Immédiat : authentique, expiré ou non reconnu. Si le titre n'est pas reconnu, contactez l'organisme de formation qui l'a délivré.",
   },
 ];
 
@@ -63,10 +63,14 @@ export default function VerificationPage() {
       {/* Barre de marque */}
       <div className="relative z-10 border-b border-white/10 bg-white/5 backdrop-blur-md">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3.5 sm:px-6">
-          <span className="inline-flex items-center rounded-xl bg-white px-2.5 py-1.5 shadow-sm">
+          <a
+            href="/"
+            aria-label="Accueil OF MANAGER"
+            className="inline-flex items-center rounded-xl bg-white px-2.5 py-1.5 shadow-sm transition hover:opacity-90"
+          >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/ofmanager-logo.png" alt="OF MANAGER" className="h-10 w-auto sm:h-11" />
-          </span>
+          </a>
           <span className="inline-flex items-center gap-1.5 text-xs font-medium text-white/70">
             <Lock className="h-3.5 w-3.5" />
             Vérification des titres délivrés

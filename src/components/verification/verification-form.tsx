@@ -35,7 +35,7 @@ const fdate = (d: string | null) => {
 };
 
 const inputCx =
-  "w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-9 pr-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/25";
+  "w-full min-w-0 rounded-xl border border-slate-200 bg-slate-50 py-3 pl-9 pr-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/25";
 
 export function VerificationForm() {
   const params = useSearchParams();
@@ -156,7 +156,7 @@ export function VerificationForm() {
                 type="date"
                 value={dob}
                 onChange={(e) => setDob(e.target.value)}
-                className={inputCx}
+                className={`${inputCx} appearance-none [color-scheme:light]`}
               />
             </div>
             <p className="mt-1.5 text-xs text-slate-500">
