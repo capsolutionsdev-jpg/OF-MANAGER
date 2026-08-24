@@ -226,8 +226,9 @@ export async function setDiplomeNumero(id: string, saisie: string): Promise<Resu
   // numéro AVANT de committer : un échec d'indexation ne doit pas laisser un diplôme
   // numéroté mais invérifiable (toast « enregistré » mensonger).
   if (def && org && organismeId) {
+    let indexed: { ok: boolean };
     try {
-      await indexerTitre(db, organismeId, {
+      indexed = await indexerTitre(db, organismeId, {
         def,
         numero: num,
         nom: d.nom,
@@ -245,6 +246,14 @@ export async function setDiplomeNumero(id: string, saisie: string): Promise<Resu
       return {
         ok: false,
         error: "Numéro non enregistré : l'indexation de vérification a échoué. Réessayez.",
+      };
+    }
+    // indexerTitre renvoie {ok:false} (sans lever) si la date de naissance manque →
+    // le diplôme serait invérifiable. On refuse de committer le numéro dans ce cas.
+    if (!indexed.ok) {
+      return {
+        ok: false,
+        error: "Numéro non enregistré : renseignez d'abord la date de naissance du titulaire (obligatoire pour la vérification en ligne).",
       };
     }
     // Nouvelle entrée en place → purge de l'ancienne (cas d'une correction de numéro).
