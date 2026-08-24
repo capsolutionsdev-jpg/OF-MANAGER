@@ -15,7 +15,7 @@ async function main() {
   await prisma.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS "Circuit" (
       "id" TEXT PRIMARY KEY,
-      "organismeId" TEXT NOT NULL,
+      "organismeId" TEXT,
       "nom" TEXT NOT NULL,
       "description" TEXT,
       "actif" BOOLEAN NOT NULL DEFAULT false,
@@ -28,6 +28,7 @@ async function main() {
   await prisma.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS "CircuitStep" (
       "id" TEXT PRIMARY KEY,
+      "organismeId" TEXT,
       "circuitId" TEXT NOT NULL,
       "ordre" INTEGER NOT NULL DEFAULT 0,
       "ancre" "CircuitAncre" NOT NULL DEFAULT 'DEBUT',
@@ -41,11 +42,13 @@ async function main() {
       "config" JSONB,
       CONSTRAINT "CircuitStep_circuitId_fkey" FOREIGN KEY ("circuitId") REFERENCES "Circuit"("id") ON DELETE CASCADE ON UPDATE CASCADE
     )`);
+  await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "CircuitStep_organismeId_idx" ON "CircuitStep" ("organismeId")`);
   await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "CircuitStep_circuitId_idx" ON "CircuitStep" ("circuitId")`);
 
   await prisma.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS "CircuitStepRun" (
       "id" TEXT PRIMARY KEY,
+      "organismeId" TEXT,
       "stepId" TEXT NOT NULL,
       "circuitId" TEXT NOT NULL,
       "inscriptionId" TEXT NOT NULL,
@@ -54,6 +57,7 @@ async function main() {
       CONSTRAINT "CircuitStepRun_stepId_fkey" FOREIGN KEY ("stepId") REFERENCES "CircuitStep"("id") ON DELETE CASCADE ON UPDATE CASCADE
     )`);
   await prisma.$executeRawUnsafe(`CREATE UNIQUE INDEX IF NOT EXISTS "CircuitStepRun_stepId_inscriptionId_key" ON "CircuitStepRun" ("stepId","inscriptionId")`);
+  await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "CircuitStepRun_organismeId_idx" ON "CircuitStepRun" ("organismeId")`);
   await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "CircuitStepRun_inscriptionId_idx" ON "CircuitStepRun" ("inscriptionId")`);
   await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "CircuitStepRun_circuitId_idx" ON "CircuitStepRun" ("circuitId")`);
 

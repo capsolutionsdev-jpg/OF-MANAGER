@@ -2963,7 +2963,7 @@ enum CircuitActionType {
 // Un circuit = une suite d'étapes composée par l'OF (multi-tenant : organismeId).
 model Circuit {
   id          String        @id @default(cuid())
-  organismeId String
+  organismeId String? // tenant (multi-OF) — injecté par scopedPrisma
   nom         String
   description String?
   actif       Boolean       @default(false) // OFF par défaut : aucun envoi tant que non activé
@@ -2978,6 +2978,7 @@ model Circuit {
 // Une étape (un « nœud » de la timeline) : quand / à qui / quoi.
 model CircuitStep {
   id          String            @id @default(cuid())
+  organismeId String? // tenant (multi-OF) — injecté par scopedPrisma
   circuitId   String
   circuit     Circuit           @relation(fields: [circuitId], references: [id], onDelete: Cascade)
   ordre       Int               @default(0)
@@ -2992,6 +2993,7 @@ model CircuitStep {
   config      Json? // extension future (canal, pièces jointes…)
   runs        CircuitStepRun[]
 
+  @@index([organismeId])
   @@index([circuitId])
 }
 
@@ -2999,6 +3001,7 @@ model CircuitStep {
 // Garantit l'idempotence (l'étape ne repart pas au run suivant du cron).
 model CircuitStepRun {
   id            String      @id @default(cuid())
+  organismeId   String? // tenant (multi-OF) — injecté par scopedPrisma
   stepId        String
   step          CircuitStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
   circuitId     String
@@ -3007,6 +3010,7 @@ model CircuitStepRun {
   statut        String      @default("ENVOYE") // ENVOYE | ECHEC
 
   @@unique([stepId, inscriptionId])
+  @@index([organismeId])
   @@index([inscriptionId])
   @@index([circuitId])
 }
