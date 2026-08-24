@@ -1,6 +1,7 @@
 import { Inbox, Building2, CalendarDays, CalendarClock } from "lucide-react";
 import { getTenantDb } from "@/lib/tenant";
 import { DemandeActions } from "@/components/demandes/demande-actions";
+import { AnnulerContrePropositionButton } from "@/components/demandes/annuler-contre-proposition-button";
 
 export const dynamic = "force-dynamic";
 // La confirmation d'une demande génère le PDF de la convention (Chromium) → laisser
@@ -97,10 +98,13 @@ export default async function DemandesInscriptionPage() {
                       opcoActuel={d.entreprise.opco}
                     />
                   ) : (
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
-                      <CalendarClock className="h-3.5 w-3.5" />
-                      En attente de réponse du client
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+                        <CalendarClock className="h-3.5 w-3.5" />
+                        En attente de réponse du client
+                      </span>
+                      <AnnulerContrePropositionButton demandeId={d.id} />
+                    </div>
                   )}
                 </div>
                 {d.statut === "CONTRE_PROPOSEE" && d.sessionProposee && (

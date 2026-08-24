@@ -225,6 +225,25 @@ export async function refuserDemandeInscription(
 }
 
 /**
+ * STAFF : annule une contre-proposition restée sans réponse du client. La demande
+ * passe en ANNULEE (l'OF retire son offre alternative). Verrou atomique sur
+ * CONTRE_PROPOSEE pour ne pas écraser une acceptation/refus concurrents.
+ */
+export async function annulerContreProposition(
+  demandeId: string,
+  motif?: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const { db } = await requireStaffTenant();
+  const claim = await db.demandeInscription.updateMany({
+    where: { id: demandeId, statut: "CONTRE_PROPOSEE" },
+    data: { statut: "ANNULEE", sessionProposeeId: null, motif: motif?.trim() || null },
+  });
+  if (claim.count !== 1) return { ok: false, error: "Cette contre-proposition n'est plus en attente de réponse." };
+  revalidatePath("/demandes-inscription");
+  return { ok: true };
+}
+
+/**
  * STAFF : propose une AUTRE session au client (contre-proposition). La demande
  * passe en CONTRE_PROPOSEE — la balle est dans le camp du client (accepter/refuser).
  */

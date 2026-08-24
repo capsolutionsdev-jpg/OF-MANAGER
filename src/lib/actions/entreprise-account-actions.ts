@@ -14,6 +14,23 @@ import { emailShell, emailParagraph, emailButton, emailHeading } from "@/lib/ema
 const STAFF = ["SUPERADMIN", "ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"];
 type Res = { ok: boolean; error?: string };
 
+/** Envoie (ou renvoie) l'e-mail d'invitation « définir mon mot de passe ». */
+async function sendInviteEmail(to: string, raisonSociale: string, inviteToken: string) {
+  const link = `${appBaseUrl()}/definir-mot-de-passe/${inviteToken}`;
+  const html = emailShell({
+    organisme: raisonSociale,
+    representant: "L'équipe OFManager",
+    accent: "primary",
+    body:
+      emailHeading("Votre espace client est prêt") +
+      emailParagraph("Vous pouvez désormais suivre vos formations, inscrire vos salariés et récupérer vos documents en ligne.") +
+      emailButton("Définir mon mot de passe", link, "primary") +
+      emailParagraph(`Ce lien est valable ${INVITE_TTL_DAYS} jours.`),
+  });
+  const res = await sendEmail({ to, subject: "Votre accès à l'espace client", html });
+  return { sent: res.sent, reason: res.reason, link };
+}
+
 /**
  * Crée l'accès d'une entreprise cliente : User (rôle ENTREPRISE) lié à
  * l'entreprise, avec un jeton d'invitation envoyé par e-mail (le client définit
@@ -73,24 +90,51 @@ export async function createEntrepriseAccount(entrepriseId: string): Promise<Res
     console.error("[createEntrepriseAccount] audit log failed", e);
   }
 
-  const link = `${appBaseUrl()}/definir-mot-de-passe/${inviteToken}`;
-  const html = emailShell({
-    organisme: ent.raisonSociale,
-    representant: "L'équipe OFManager",
-    accent: "primary",
-    body:
-      emailHeading("Votre espace client est prêt") +
-      emailParagraph("Vous pouvez désormais suivre vos formations, inscrire vos salariés et récupérer vos documents en ligne.") +
-      emailButton("Définir mon mot de passe", link, "primary") +
-      emailParagraph(`Ce lien est valable ${INVITE_TTL_DAYS} jours.`),
-  });
-  const res = await sendEmail({ to: email, subject: "Votre accès à l'espace client", html });
+  const { sent, reason, link } = await sendInviteEmail(email, ent.raisonSociale, inviteToken);
 
   return {
     ok: true,
-    error: res.sent
+    error: sent
       ? undefined
-      : `Compte créé, mais l'e-mail d'invitation n'a pas pu être envoyé${res.reason ? ` (${res.reason})` : ""}. Vérifiez la configuration e-mail, puis transmettez ce lien au client : ${link}`,
+      : `Compte créé, mais l'e-mail d'invitation n'a pas pu être envoyé${reason ? ` (${reason})` : ""}. Vérifiez la configuration e-mail, puis transmettez ce lien au client : ${link}`,
+  };
+}
+
+/**
+ * Renvoie l'invitation d'accès à une entreprise qui a DÉJÀ un compte mais n'a pas
+ * (ou plus) activé son mot de passe, ou dont l'e-mail a expiré/échoué. Régénère un
+ * jeton d'invitation frais + renvoie l'e-mail. Réservé au staff.
+ */
+export async function renvoyerInvitationEntreprise(entrepriseId: string): Promise<Res> {
+  const session = await auth();
+  if (!session?.user || !STAFF.includes(session.user.role as string))
+    return { ok: false, error: "Non autorisé." };
+
+  const db = await getTenantDb();
+  const ent = await db.entreprise.findUnique({
+    where: { id: entrepriseId },
+    select: { id: true, raisonSociale: true, contactEmail: true, userId: true },
+  });
+  if (!ent) return { ok: false, error: "Entreprise introuvable." };
+  if (!ent.userId) return { ok: false, error: "Aucun accès à renvoyer — créez d'abord l'accès client." };
+
+  const email = (ent.contactEmail ?? "").trim().toLowerCase();
+  if (!email) return { ok: false, error: "Renseignez d'abord l'e-mail de contact de l'entreprise." };
+
+  const inviteToken = generateToken(24);
+  const inviteTokenExpiry = new Date(Date.now() + INVITE_TTL_DAYS * 24 * 60 * 60 * 1000);
+  // User = entité GLOBALE → client BRUT prisma.
+  await prisma.user.update({
+    where: { id: ent.userId },
+    data: { inviteToken, inviteTokenExpiry, email, isActive: true },
+  });
+
+  const { sent, reason, link } = await sendInviteEmail(email, ent.raisonSociale, inviteToken);
+  return {
+    ok: true,
+    error: sent
+      ? undefined
+      : `Invitation régénérée, mais l'e-mail n'a pas pu être envoyé${reason ? ` (${reason})` : ""}. Transmettez ce lien au client : ${link}`,
   };
 }
 

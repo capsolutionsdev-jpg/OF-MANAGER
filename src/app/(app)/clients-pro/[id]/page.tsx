@@ -23,6 +23,7 @@ import { CreateAccessButton } from "@/components/clients-pro/create-access-butto
 import { DepositFactureForm } from "@/components/clients-pro/deposit-facture-form";
 import { ConventionRowActions } from "@/components/clients-pro/convention-row-actions";
 import { ConventionDocumentsPanel } from "@/components/clients-pro/convention-documents-panel";
+import { getConventionsDocsSummary } from "@/lib/documents/convention-docs-summary";
 
 export const dynamic = "force-dynamic";
 // La régénération de la convention depuis la fiche génère un PDF (Chromium).
@@ -52,6 +53,9 @@ export default async function ClientProPage({
     },
   });
   if (!client) notFound();
+
+  // Récap des documents publiés par convention (compteurs par étape + satisfactions).
+  const docsSummary = await getConventionsDocsSummary(db, client.conventions.map((c) => c.id));
 
   const candidatsLibres = await db.candidat.findMany({
     where: { entrepriseId: null },
@@ -235,7 +239,30 @@ export default async function ClientProPage({
                       hasFileUrl={!!cv.fileUrl}
                     />
                   </div>
-                  <ConventionDocumentsPanel conventionId={cv.id} />
+                  <ConventionDocumentsPanel conventionId={cv.id} counts={docsSummary.get(cv.id)?.counts} />
+                  {(() => {
+                    const sats = docsSummary.get(cv.id)?.satisfactions ?? [];
+                    if (sats.length === 0) return null;
+                    return (
+                      <div className="rounded-lg border bg-muted/20 p-2 text-xs">
+                        <p className="mb-1 font-medium text-muted-foreground">Satisfaction entreprise</p>
+                        <ul className="space-y-1">
+                          {sats.map((s) => (
+                            <li key={s.id} className="flex items-center justify-between gap-2">
+                              <span>{s.nom || "Questionnaire"}</span>
+                              {s.retournee ? (
+                                <a href={`/clients-pro/download?kind=document&id=${s.id}`} className="font-medium text-primary hover:underline">
+                                  Déposée — télécharger
+                                </a>
+                              ) : (
+                                <span className="text-muted-foreground">En attente du client</span>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    );
+                  })()}
                 </li>
               ))}
             </ul>

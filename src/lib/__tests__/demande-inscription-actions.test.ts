@@ -37,6 +37,7 @@ import {
   proposerAutreDate,
   accepterContreProposition,
   refuserContreProposition,
+  annulerContreProposition,
 } from "@/lib/actions/demande-inscription-actions";
 
 beforeEach(() => vi.clearAllMocks());
@@ -340,6 +341,27 @@ describe("refuserDemandeInscription — staff, verrou atomique EN_ATTENTE", () =
     requireStaffTenant.mockResolvedValue({ db: fakeDb, session: { user: { id: "staff-1" } } });
     fakeDb.demandeInscription.updateMany.mockResolvedValue({ count: 0 });
     const r = await refuserDemandeInscription("d1");
+    expect(r.ok).toBe(false);
+  });
+});
+
+describe("annulerContreProposition — verrou atomique CONTRE_PROPOSEE", () => {
+  it("annule via updateMany conditionné à CONTRE_PROPOSEE", async () => {
+    requireStaffTenant.mockResolvedValue({ db: fakeDb, session: { user: { id: "staff-1" } } });
+    fakeDb.demandeInscription.updateMany.mockResolvedValue({ count: 1 });
+    const r = await annulerContreProposition("d1");
+    expect(r.ok).toBe(true);
+    const upd = fakeDb.demandeInscription.updateMany.mock.calls[0][0];
+    expect(upd.where.statut).toBe("CONTRE_PROPOSEE");
+    expect(upd.data.statut).toBe("ANNULEE");
+    expect(upd.data.sessionProposeeId).toBeNull();
+    expect(fakeDb.demandeInscription.update).not.toHaveBeenCalled();
+  });
+
+  it("no-op si la contre-proposition a déjà été traitée (count 0)", async () => {
+    requireStaffTenant.mockResolvedValue({ db: fakeDb, session: { user: { id: "staff-1" } } });
+    fakeDb.demandeInscription.updateMany.mockResolvedValue({ count: 0 });
+    const r = await annulerContreProposition("d1");
     expect(r.ok).toBe(false);
   });
 });
