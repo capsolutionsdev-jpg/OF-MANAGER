@@ -8,6 +8,7 @@ import { hasStrictFeature } from "@/lib/feature-guard";
 import { orgConfigFor } from "@/lib/org-identity";
 import { getTitreDef, ssiapDiplomeNiveau } from "@/lib/documents/titres";
 import { indexerTitre } from "@/lib/documents/titres/index-titre";
+import { readAgrements } from "@/lib/agrements";
 
 const STAFF = ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"];
 type Result = { ok: true; id?: string } | { ok: false; error: string };
@@ -91,80 +92,131 @@ export async function createDiplomeManuel(input: {
 }
 
 /**
- * Met à jour le n° de diplôme. Pour un diplôme SSIAP 1/2/3 INITIAL, la saisie du
- * numéro (préfectoral) l'INDEXE dans le registre vérifiable anti-fraude → il
- * devient vérifiable en ligne et le QR du PDF officiel fonctionne. Best-effort
- * (nécessite la date de naissance).
+ * Compose le numéro d'un diplôme SSIAP 1/2/3 à partir de la SÉQUENCE saisie à la
+ * main (n° lu sur le PV d'examen) et des parties dérivées :
+ *   `DÉPARTEMENT-AGRÉMENT-NIVEAU-ANNÉE-SÉQUENCE`  (ex. `093-0042-1-2026-00042`)
+ * - DÉPARTEMENT : config OF (Diplômes → Agréments).
+ * - AGRÉMENT    : n° d'agrément de la formation (repli sur l'agrément SSIAP de l'OF).
+ * - NIVEAU      : 1/2/3 déduit de la formation.
+ * - ANNÉE       : année de la session (repli : année de création du diplôme).
+ * - SÉQUENCE    : saisie manuelle, complétée à 5 chiffres si numérique.
+ * Ce numéro composé EST le numéro de vérification (unique). PAS de clé ajoutée.
  */
-export async function setDiplomeNumero(id: string, numeroDiplome: string): Promise<Result> {
+async function composeNumeroSsiap(
+  db: Awaited<ReturnType<typeof getTenantDb>>,
+  org: Awaited<ReturnType<typeof orgConfigFor>>,
+  niveau: 1 | 2 | 3,
+  seqRaw: string,
+  d: { sessionId: string | null; createdAt: Date; formationNumeroAgrement: string | null },
+): Promise<{ ok: true; numero: string } | { ok: false; error: string }> {
+  const ag = readAgrements(org.documentsConfig);
+  const dept = ag.ssiapDepartement?.trim();
+  const agrement = d.formationNumeroAgrement?.trim() || ag.ssiap?.trim();
+  if (!dept || !agrement) {
+    return {
+      ok: false,
+      error:
+        "Renseignez le département et le n° d'agrément SSIAP (Diplômes → Agréments, ou le champ « Numéro d'agrément » de la formation) avant de numéroter.",
+    };
+  }
+  // Année = année de la session (repli : année de création du diplôme).
+  let year = new Date(d.createdAt).getFullYear();
+  if (d.sessionId) {
+    const s = await db.session.findFirst({ where: { id: d.sessionId }, select: { dateDebut: true } });
+    if (s?.dateDebut) year = new Date(s.dateDebut).getFullYear();
+  }
+  const seq = /^\d+$/.test(seqRaw) ? seqRaw.padStart(5, "0") : seqRaw;
+  return { ok: true, numero: `${dept}-${agrement}-${niveau}-${year}-${seq}` };
+}
+
+/**
+ * Met à jour le numéro d'un diplôme.
+ * - Diplôme SSIAP 1/2/3 : `saisie` = la SÉQUENCE (n° du PV). Le système COMPOSE le
+ *   numéro complet (cf. composeNumeroSsiap), l'enregistre et l'INDEXE dans le
+ *   registre vérifiable anti-fraude → vérifiable en ligne + QR du PDF officiel.
+ * - Autre diplôme : `saisie` = le numéro tel quel (aucune composition ni indexation).
+ */
+export async function setDiplomeNumero(id: string, saisie: string): Promise<Result> {
   const { organismeId } = await guard();
   const db = await getTenantDb();
-  const num = numeroDiplome.trim() || null;
+  const seqRaw = saisie.trim();
 
   const d = await db.diplome.findFirst({
     where: { id },
     select: {
-      nom: true, prenom: true, dateNaissance: true, numeroDiplome: true,
+      nom: true, prenom: true, dateNaissance: true, numeroDiplome: true, createdAt: true,
       inscriptionId: true, sessionId: true, formationId: true,
     },
   });
   if (!d) return { ok: false, error: "Diplôme introuvable." };
+  if (!seqRaw) return { ok: true }; // saisie vide → aucune modification (anti-effacement accidentel)
+
+  // SSIAP 1/2/3 ? → numéro COMPOSÉ + indexation. Sinon → numéro saisi tel quel.
+  const f = d.formationId
+    ? await db.formation.findFirst({
+        where: { id: d.formationId },
+        select: { reference: true, titre: true, numeroAgrement: true },
+      })
+    : null;
+  const niveau = f ? ssiapDiplomeNiveau({ reference: f.reference, titre: f.titre }) : null;
+  const def = niveau ? getTitreDef(`SSIAP${niveau}_DIPLOME`) : null;
+  const org = def && organismeId ? await orgConfigFor(organismeId) : null;
+
+  let num: string;
+  if (def && niveau && org) {
+    const composed = await composeNumeroSsiap(db, org, niveau, seqRaw, {
+      sessionId: d.sessionId,
+      createdAt: d.createdAt,
+      formationNumeroAgrement: f?.numeroAgrement ?? null,
+    });
+    if (!composed.ok) return composed;
+    num = composed.numero;
+  } else {
+    num = seqRaw; // diplôme non-SSIAP : numéro saisi tel quel
+  }
 
   // Garde anti-doublon : deux diplômes ne peuvent porter le même numéro. Sinon la
   // base de vérification (partagée, indexée par n°) lierait ce numéro au PREMIER
   // titulaire indexé, rendant le second diplôme invérifiable avec sa propre date
-  // de naissance. Le numéro préfectoral est unique par nature.
-  if (num) {
-    const dupe = await db.diplome.findFirst({
-      where: { numeroDiplome: num, NOT: { id } },
-      select: { nom: true, prenom: true },
-    });
-    if (dupe) {
-      return {
-        ok: false,
-        error: `Ce numéro est déjà attribué au diplôme de ${dupe.prenom} ${dupe.nom}.`,
-      };
-    }
+  // de naissance.
+  const dupe = await db.diplome.findFirst({
+    where: { numeroDiplome: num, NOT: { id } },
+    select: { nom: true, prenom: true },
+  });
+  if (dupe) {
+    return {
+      ok: false,
+      error: `Ce numéro (${num}) est déjà attribué au diplôme de ${dupe.prenom} ${dupe.nom}.`,
+    };
   }
 
   await db.diplome.update({ where: { id }, data: { numeroDiplome: num } });
 
   // Registre vérifiable (anti-fraude) — SSIAP 1/2/3 uniquement.
-  if (organismeId && d.formationId) {
-    const f = await db.formation.findFirst({
-      where: { id: d.formationId },
-      select: { reference: true, titre: true },
-    });
-    const niveau = f ? ssiapDiplomeNiveau({ reference: f.reference, titre: f.titre }) : null;
-    const def = niveau ? getTitreDef(`SSIAP${niveau}_DIPLOME`) : null;
-    if (def) {
-      try {
-        // Correction d'un n° : purge l'entrée précédente devenue caduque (le n° ayant
-        // changé), pour ne pas laisser un numéro erroné indexé au titulaire.
-        if (d.numeroDiplome && d.numeroDiplome !== num) {
-          await db.titreDelivre.deleteMany({
-            where: { typeCode: def.code, numeroVerification: d.numeroDiplome },
-          });
-        }
-        if (num) {
-          const org = await orgConfigFor(organismeId);
-          await indexerTitre(db, organismeId, {
-            def,
-            numero: num,
-            nom: d.nom,
-            prenom: d.prenom,
-            dateNaissance: d.dateNaissance,
-            organismeSignataire: org.name,
-            dateDelivrance: new Date(),
-            dateFinValidite: null, // diplôme SSIAP : pas d'expiration
-            inscriptionId: d.inscriptionId,
-            sessionId: d.sessionId,
-            formationId: d.formationId,
-          });
-        }
-      } catch (e) {
-        console.error("[diplome-index]", e);
+  if (def && org && organismeId) {
+    try {
+      // Correction d'un n° : purge l'entrée précédente devenue caduque, pour ne pas
+      // laisser un numéro erroné indexé au titulaire.
+      if (d.numeroDiplome && d.numeroDiplome !== num) {
+        await db.titreDelivre.deleteMany({
+          where: { typeCode: def.code, numeroVerification: d.numeroDiplome },
+        });
       }
+      await indexerTitre(db, organismeId, {
+        def,
+        numero: num,
+        nom: d.nom,
+        prenom: d.prenom,
+        dateNaissance: d.dateNaissance,
+        organismeSignataire: org.name,
+        dateDelivrance: new Date(),
+        dateFinValidite: null, // diplôme SSIAP : pas d'expiration
+        inscriptionId: d.inscriptionId,
+        sessionId: d.sessionId,
+        formationId: d.formationId,
+      });
+    } catch (e) {
+      console.error("[diplome-index]", e);
     }
   }
 

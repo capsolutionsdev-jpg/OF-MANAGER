@@ -1,13 +1,16 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
-  Award, Plus, UserPlus, PencilLine, Trash2, FileText, Loader2, CheckCircle2, Circle, Download,
+  Award, Plus, UserPlus, PencilLine, Trash2, FileText, Loader2, CheckCircle2,
+  Circle, Download, Search, GraduationCap, Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import {
   createDiplomeFromInscription, createDiplomeManuel, setDiplomeStatut,
   setDiplomeNumero, deleteDiplome,
@@ -17,7 +20,9 @@ type Statut = "ENVOYE_CERTIFICATEUR" | "RECU" | "REMIS";
 type Row = {
   id: string; nom: string; prenom: string; dateNaissance: string | null;
   lieuNaissance: string | null; numeroDiplome: string | null; statut: Statut;
-  formationTitre: string | null; ssiap: boolean; remiseParNom: string | null; remisAt: string | null;
+  ssiap: boolean;
+  groupKey: string; groupLabel: string; groupDate: string | null;
+  remiseParNom: string | null; remisAt: string | null;
 };
 type SessionOpt = {
   id: string; label: string; formationId: string; formationTitre: string;
@@ -31,11 +36,14 @@ const STATUTS: { key: Statut; label: string }[] = [
   { key: "REMIS", label: "Remis" },
 ];
 
+const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+
 export function DiplomesManager({ diplomes, sessions, formations }: { diplomes: Row[]; sessions: SessionOpt[]; formations: FormationOpt[] }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [busy, setBusy] = useState<string | null>(null);
   const [mode, setMode] = useState<"inscrit" | "manuel" | null>(null);
+  const [q, setQ] = useState("");
 
   // Formulaire "depuis un inscrit"
   const [sessionId, setSessionId] = useState("");
@@ -71,12 +79,33 @@ export function DiplomesManager({ diplomes, sessions, formations }: { diplomes: 
     });
   }
 
-  // Regroupement par formation
-  const groups = new Map<string, Row[]>();
-  for (const d of diplomes) {
-    const k = d.formationTitre ?? "Sans formation";
-    (groups.get(k) ?? groups.set(k, []).get(k)!).push(d);
-  }
+  // Recherche par nom/prénom, puis regroupement PAR SESSION (session la plus récente
+  // en tête ; les diplômes sans session en fin de liste).
+  const filtered = useMemo(() => {
+    const needle = norm(q.trim());
+    if (!needle) return diplomes;
+    return diplomes.filter((d) => norm(`${d.prenom} ${d.nom}`).includes(needle));
+  }, [q, diplomes]);
+
+  const groups = useMemo(() => {
+    const m = new Map<string, { key: string; label: string; date: string | null; rows: Row[] }>();
+    for (const d of filtered) {
+      const g = m.get(d.groupKey) ?? { key: d.groupKey, label: d.groupLabel, date: d.groupDate, rows: [] };
+      g.rows.push(d);
+      m.set(d.groupKey, g);
+    }
+    const arr = [...m.values()];
+    for (const g of arr) g.rows.sort((a, b) => a.nom.localeCompare(b.nom) || a.prenom.localeCompare(b.prenom));
+    arr.sort((a, b) => {
+      if (a.date && b.date) return b.date.localeCompare(a.date);
+      if (a.date) return -1;
+      if (b.date) return 1;
+      return a.label.localeCompare(b.label);
+    });
+    return arr;
+  }, [filtered]);
+
+  const aNumeroterTotal = useMemo(() => diplomes.filter((d) => !d.numeroDiplome).length, [diplomes]);
 
   return (
     <div className="space-y-6">
@@ -110,13 +139,14 @@ export function DiplomesManager({ diplomes, sessions, formations }: { diplomes: 
                 </option>
               ))}
             </select>
-            <Input placeholder="N° du diplôme" value={numero} onChange={(e) => setNumero(e.target.value)} />
+            <Input placeholder="N° du diplôme (facultatif)" value={numero} onChange={(e) => setNumero(e.target.value)} />
             <Button onClick={addFromInscrit} disabled={isPending}>
               {busy === "add" ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Plus className="mr-1.5 h-4 w-4" />}
               Enregistrer
             </Button>
             <p className="text-xs text-muted-foreground sm:col-span-2 lg:col-span-4">
-              Les coordonnées (nom, prénom, date & lieu de naissance) sont récupérées automatiquement depuis l&apos;inscrit.
+              Les coordonnées (nom, prénom, date &amp; lieu de naissance) sont récupérées automatiquement depuis l&apos;inscrit.
+              Pour un diplôme SSIAP, laissez le numéro vide : il se saisit ensuite ci-dessous (séquence du PV).
             </p>
           </div>
         )}
@@ -141,7 +171,7 @@ export function DiplomesManager({ diplomes, sessions, formations }: { diplomes: 
             </select>
             <Input type="date" value={man.dateNaissance} onChange={(e) => setMan({ ...man, dateNaissance: e.target.value })} />
             <Input placeholder="Lieu de naissance" value={man.lieuNaissance} onChange={(e) => setMan({ ...man, lieuNaissance: e.target.value })} />
-            <Input placeholder="N° du diplôme" value={man.numeroDiplome} onChange={(e) => setMan({ ...man, numeroDiplome: e.target.value })} />
+            <Input placeholder="N° du diplôme (facultatif)" value={man.numeroDiplome} onChange={(e) => setMan({ ...man, numeroDiplome: e.target.value })} />
             <Button onClick={addManuel} disabled={isPending} className="sm:col-span-2 lg:col-span-1">
               {busy === "add" ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Plus className="mr-1.5 h-4 w-4" />}
               Enregistrer
@@ -152,20 +182,50 @@ export function DiplomesManager({ diplomes, sessions, formations }: { diplomes: 
 
       {/* Liste */}
       {diplomes.length === 0 ? (
-        <div className="rounded-lg border bg-card p-8 text-center text-sm text-muted-foreground">
+        <div className="rounded-lg border bg-card p-10 text-center text-sm text-muted-foreground">
           <Award className="mx-auto mb-2 h-8 w-8" /> Aucun diplôme enregistré pour l&apos;instant.
         </div>
       ) : (
-        [...groups.entries()].map(([titre, list]) => (
-          <div key={titre} className="rounded-lg border">
-            <div className="border-b bg-muted/30 px-4 py-2 text-sm font-semibold">{titre} ({list.length})</div>
-            <ul className="divide-y">
-              {list.map((d) => (
-                <DiplomeRow key={d.id} d={d} busy={busy} isPending={isPending} run={run} />
-              ))}
-            </ul>
+        <>
+          {/* Recherche + compteur */}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="relative flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input className="pl-9" placeholder="Rechercher un diplôme par nom ou prénom…" value={q} onChange={(e) => setQ(e.target.value)} />
+            </div>
+            <p className="shrink-0 text-xs text-muted-foreground">
+              {diplomes.length} diplôme{diplomes.length > 1 ? "s" : ""}
+              {aNumeroterTotal > 0 ? ` · ${aNumeroterTotal} à numéroter` : ""}
+            </p>
           </div>
-        ))
+
+          {groups.length === 0 ? (
+            <div className="rounded-lg border bg-card p-8 text-center text-sm text-muted-foreground">
+              Aucun diplôme ne correspond à «&nbsp;{q}&nbsp;».
+            </div>
+          ) : (
+            groups.map((g) => {
+              const aNum = g.rows.filter((r) => !r.numeroDiplome).length;
+              return (
+                <div key={g.key} className="overflow-hidden rounded-lg border bg-card">
+                  <div className="flex flex-wrap items-center gap-2 border-b bg-muted/30 px-4 py-2.5">
+                    <GraduationCap className="h-4 w-4 shrink-0 text-primary" />
+                    <h3 className="text-sm font-semibold">{g.label}</h3>
+                    <span className="text-xs text-muted-foreground">
+                      · {g.rows.length} diplôme{g.rows.length > 1 ? "s" : ""}
+                    </span>
+                    {aNum > 0 && <Badge variant="warning" className="ml-auto">{aNum} à numéroter</Badge>}
+                  </div>
+                  <ul className="divide-y">
+                    {g.rows.map((d) => (
+                      <DiplomeRow key={d.id} d={d} busy={busy} isPending={isPending} run={run} />
+                    ))}
+                  </ul>
+                </div>
+              );
+            })
+          )}
+        </>
       )}
     </div>
   );
@@ -177,32 +237,83 @@ function DiplomeRow({
   d: Row; busy: string | null; isPending: boolean;
   run: (k: string, p: Promise<{ ok: boolean; error?: string }>, okMsg: string, after?: () => void) => void;
 }) {
-  const [editNum, setEditNum] = useState(false);
-  const [num, setNum] = useState(d.numeroDiplome ?? "");
+  const [editing, setEditing] = useState(false);
+  const [seq, setSeq] = useState("");
   const idx = STATUTS.findIndex((s) => s.key === d.statut);
 
+  function openEdit() {
+    // SSIAP : le champ = la séquence du PV (le reste est composé) → on part vide.
+    // Autre diplôme : on pré-remplit le numéro existant pour le corriger.
+    setSeq(d.ssiap ? "" : d.numeroDiplome ?? "");
+    setEditing(true);
+  }
+  function save() {
+    if (!seq.trim()) return;
+    run("num" + d.id, setDiplomeNumero(d.id, seq), "Numéro enregistré.", () => {
+      setEditing(false);
+      setSeq("");
+    });
+  }
+
   return (
-    <li className="flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:justify-between">
-      <div className="min-w-0">
-        <div className="font-medium">{d.prenom} {d.nom}</div>
-        <div className="text-xs text-muted-foreground">
-          {d.dateNaissance ? `Né(e) le ${new Date(d.dateNaissance).toLocaleDateString("fr-FR")}` : "Naissance —"}
-          {d.lieuNaissance ? ` à ${d.lieuNaissance}` : ""}
-          {" · N° "}
-          {editNum ? (
-            <span className="inline-flex items-center gap-1">
-              <Input className="inline-block h-6 w-32" value={num} onChange={(e) => setNum(e.target.value)} />
-              <button className="text-primary" onClick={() => run("num" + d.id, setDiplomeNumero(d.id, num), "N° mis à jour.", () => setEditNum(false))}>OK</button>
-            </span>
-          ) : (
-            <button className="underline decoration-dotted" onClick={() => setEditNum(true)}>
-              {d.numeroDiplome || "à saisir"}
-            </button>
-          )}
+    <li className="flex flex-col gap-3 px-4 py-3.5 transition-colors hover:bg-muted/30 sm:flex-row sm:items-center sm:justify-between">
+      <div className="min-w-0 space-y-1.5">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="font-medium">{d.prenom} {d.nom}</span>
+          {!d.numeroDiplome && <Badge variant="warning">À numéroter</Badge>}
         </div>
+        <div className="text-xs text-muted-foreground">
+          {d.dateNaissance ? `Né(e) le ${new Date(d.dateNaissance).toLocaleDateString("fr-FR")}` : "Date de naissance —"}
+          {d.lieuNaissance ? ` à ${d.lieuNaissance}` : ""}
+        </div>
+
+        {/* Numéro / éditeur de séquence */}
+        {editing ? (
+          <div className="flex flex-wrap items-center gap-2 pt-0.5">
+            <Input
+              autoFocus
+              className="h-8 w-44"
+              placeholder={d.ssiap ? "Séquence (n° du PV)" : "N° du diplôme"}
+              value={seq}
+              onChange={(e) => setSeq(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") save();
+                if (e.key === "Escape") setEditing(false);
+              }}
+            />
+            <Button size="sm" className="h-8" onClick={save} disabled={isPending || !seq.trim()}>
+              {busy === "num" + d.id ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Check className="mr-1 h-3.5 w-3.5" />}
+              Valider
+            </Button>
+            <button type="button" className="text-xs text-muted-foreground hover:text-foreground" onClick={() => setEditing(false)}>
+              Annuler
+            </button>
+            {d.ssiap && (
+              <p className="w-full text-[11px] leading-snug text-muted-foreground">
+                Numéro complet composé automatiquement :{" "}
+                <span className="font-mono">département-agrément-niveau-année-séquence</span>.
+              </p>
+            )}
+          </div>
+        ) : d.numeroDiplome ? (
+          <button
+            type="button"
+            onClick={openEdit}
+            title="Modifier le numéro"
+            className="group -ml-1.5 inline-flex items-center gap-1.5 rounded-md border border-transparent px-1.5 py-0.5 hover:border-border hover:bg-muted/50"
+          >
+            <span className="font-mono text-sm text-foreground">{d.numeroDiplome}</span>
+            <PencilLine className="h-3.5 w-3.5 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+          </button>
+        ) : (
+          <Button size="sm" variant="outline" className="h-7" onClick={openEdit}>
+            <PencilLine className="mr-1.5 h-3.5 w-3.5" />
+            {d.ssiap ? "Saisir la séquence (PV)" : "Saisir le numéro"}
+          </Button>
+        )}
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2 sm:justify-end">
         {/* Stepper de statut */}
         <div className="flex items-center gap-1">
           {STATUTS.map((s, i) => {
@@ -211,9 +322,10 @@ function DiplomeRow({
               <button key={s.key} type="button" disabled={isPending}
                 onClick={() => run("st" + d.id, setDiplomeStatut(d.id, s.key), `Statut : ${s.label}.`)}
                 title={s.label}
-                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                  done ? "bg-success/10 text-success" : "bg-muted text-muted-foreground hover:bg-muted/70"
-                }`}>
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors",
+                  done ? "bg-success/10 text-success" : "bg-muted text-muted-foreground hover:bg-muted/70",
+                )}>
                 {done ? <CheckCircle2 className="h-3 w-3" /> : <Circle className="h-3 w-3" />}
                 {s.label}
               </button>
@@ -225,18 +337,18 @@ function DiplomeRow({
         {d.numeroDiplome && d.ssiap && (
           <a href={`/diplomes/${d.id}/officiel`} target="_blank" rel="noreferrer"
             className="inline-flex items-center gap-1 rounded-md border border-primary/40 bg-primary/5 px-2 py-1 text-xs font-medium text-primary hover:bg-primary/10">
-            <Download className="h-3.5 w-3.5" /> Télécharger le diplôme
+            <Download className="h-3.5 w-3.5" /> Diplôme
           </a>
         )}
         {d.statut === "REMIS" && (
           <a href={`/diplomes/${d.id}/attestation`} target="_blank" rel="noreferrer"
-            className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium text-primary hover:bg-muted">
-            <FileText className="h-3.5 w-3.5" /> Attestation de remise
+            className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium hover:bg-muted">
+            <FileText className="h-3.5 w-3.5" /> Remise
           </a>
         )}
-        <button type="button" disabled={isPending} title="Supprimer"
+        <button type="button" disabled={isPending} title="Supprimer le diplôme"
           onClick={() => run("del" + d.id, deleteDiplome(d.id), "Diplôme supprimé.")}
-          className="text-muted-foreground hover:text-destructive">
+          className="rounded-md p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
           {busy === "del" + d.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
         </button>
       </div>

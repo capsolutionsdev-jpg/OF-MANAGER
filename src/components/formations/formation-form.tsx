@@ -135,11 +135,13 @@ export function FormationForm({
             <Label htmlFor="numeroAgrement">Numéro d&apos;agrément</Label>
             <Input
               id="numeroAgrement"
-              placeholder="ex. Agrément préfectoral n°…"
+              placeholder="ex. 0042 (agrément préfectoral)"
               {...register("numeroAgrement")}
             />
             <p className="text-xs text-muted-foreground">
               Affiché sur la fiche de cette formation et, agrégé, en bas de page du site.
+              Pour une formation <strong>SSIAP</strong>, c&apos;est ce numéro qui entre dans le
+              numéro de diplôme (<span className="font-mono">dépt-agrément-niveau-année-séquence</span>).
             </p>
           </div>
           <div className="grid gap-2">

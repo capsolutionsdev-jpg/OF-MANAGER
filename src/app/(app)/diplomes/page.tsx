@@ -27,6 +27,20 @@ export default async function DiplomesPage() {
     db.formation.findMany({ where: { diplomante: true }, select: { id: true, titre: true, reference: true } }),
   ]);
 
+  // Dates des sessions rattachées aux diplômes (le modèle Diplome n'a qu'un sessionId
+  // scalaire, sans relation) → requête ciblée pour le regroupement PAR SESSION.
+  const diplomeSessionIds = [...new Set(diplomes.map((d) => d.sessionId).filter(Boolean) as string[])];
+  const sessionDate = new Map(
+    diplomeSessionIds.length
+      ? (
+          await db.session.findMany({
+            where: { id: { in: diplomeSessionIds } },
+            select: { id: true, dateDebut: true },
+          })
+        ).map((s) => [s.id, s.dateDebut] as const)
+      : [],
+  );
+
   const formationTitre = new Map(formations.map((f) => [f.id, f.titre]));
   // Un diplôme n'a une trame officielle téléchargeable que s'il est SSIAP 1/2/3.
   const formationEstSsiap = new Map(
@@ -48,25 +62,39 @@ export default async function DiplomesPage() {
     })),
   }));
 
-  const rows = diplomes.map((d) => ({
-    id: d.id,
-    nom: d.nom,
-    prenom: d.prenom,
-    dateNaissance: d.dateNaissance ? d.dateNaissance.toISOString().slice(0, 10) : null,
-    lieuNaissance: d.lieuNaissance,
-    numeroDiplome: d.numeroDiplome,
-    statut: d.statut,
-    formationTitre: d.formationId ? formationTitre.get(d.formationId) ?? null : null,
-    ssiap: d.formationId ? formationEstSsiap.get(d.formationId) ?? false : false,
-    remiseParNom: d.remiseParNom,
-    remisAt: d.remisAt ? fmt(d.remisAt) : null,
-  }));
+  const rows = diplomes.map((d) => {
+    const ftitre = d.formationId ? formationTitre.get(d.formationId) ?? null : null;
+    const sDate = d.sessionId ? sessionDate.get(d.sessionId) ?? null : null;
+    // Regroupement PAR SESSION (repli formation / « sans formation »).
+    const hasSession = Boolean(d.sessionId && sDate);
+    const groupKey = hasSession ? `s:${d.sessionId}` : d.formationId ? `f:${d.formationId}` : "none";
+    const groupLabel = hasSession
+      ? `${ftitre ?? "Formation"} — session du ${fmt(sDate!)}`
+      : ftitre
+        ? `${ftitre} — sans session`
+        : "Sans formation";
+    return {
+      id: d.id,
+      nom: d.nom,
+      prenom: d.prenom,
+      dateNaissance: d.dateNaissance ? d.dateNaissance.toISOString().slice(0, 10) : null,
+      lieuNaissance: d.lieuNaissance,
+      numeroDiplome: d.numeroDiplome,
+      statut: d.statut,
+      ssiap: d.formationId ? formationEstSsiap.get(d.formationId) ?? false : false,
+      groupKey,
+      groupLabel,
+      groupDate: hasSession ? sDate!.toISOString() : null,
+      remiseParNom: d.remiseParNom,
+      remisAt: d.remisAt ? fmt(d.remisAt) : null,
+    };
+  });
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Diplômes"
-        subtitle="Suivi des diplômes (envoyé au certificateur → reçu → remis) et attestation de remise, par formation et par session."
+        subtitle="Suivi des diplômes par session (envoyé au certificateur → reçu → remis). Pour un diplôme SSIAP, saisissez la séquence du PV : le numéro complet est composé et rendu vérifiable en ligne."
       >
         <Button variant="outline" render={<Link href="/diplomes/agrements" />}>
           <ShieldCheck className="mr-2 h-4 w-4" /> Agréments
