@@ -44,36 +44,27 @@ const FONC_CSS = `
 .ofm-v2 .fonc-toggle button:hover{color:var(--primary)}
 .ofm-v2 .fonc-toggle button.active{background:var(--navy);color:#fff;box-shadow:0 8px 20px -10px rgba(13,27,62,.6)}
 
-/* Parcours (timeline numérotée) */
-.ofm-v2 .fonc-steps{list-style:none;padding:0;margin:0 auto;max-width:880px}
-.ofm-v2 .fonc-step{display:grid;grid-template-columns:auto 1fr;gap:22px;padding:26px 0;border-top:1px solid var(--line)}
-.ofm-v2 .fonc-step:first-child{border-top:0}
-.ofm-v2 .fonc-step-n{font-family:var(--font-sora);font-weight:700;font-size:1.15rem;width:46px;height:46px;border-radius:13px;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-sm)}
-.ofm-v2 .fonc-step-body h3{font-size:1.32rem}
-.ofm-v2 .fonc-punch{color:var(--navy);font-weight:600;margin:.3rem 0 .9rem}
-.ofm-v2 .fonc-list{list-style:none;padding:0;margin:0;display:grid;gap:.55rem}
-.ofm-v2 .fonc-list li{font-size:.96rem;color:#33415c}
-.ofm-v2 .fonc-list .chk{color:var(--green);font-weight:800;margin-right:.45rem}
-.ofm-v2 .fonc-metier{margin-top:1.05rem;padding:.9rem 1.05rem;border-radius:12px;border-left:3px solid var(--primary);font-size:.95rem;transition:.2s ease}
+/* Parcours — grille compacte de cartes (le sélecteur métier reste l'interactif) */
+.ofm-v2 .fonc-steps{list-style:none;padding:0;margin:0 auto;max-width:980px;display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.ofm-v2 .fonc-step{border:1px solid var(--line);border-radius:14px;padding:18px 20px;background:var(--white)}
+.ofm-v2 .fonc-step-head{display:flex;align-items:center;gap:12px;margin-bottom:.4rem}
+.ofm-v2 .fonc-step-n{font-family:var(--font-sora);font-weight:700;font-size:.92rem;width:32px;height:32px;border-radius:9px;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ofm-v2 .fonc-step-head h3{font-size:1.12rem}
+.ofm-v2 .fonc-punch{color:var(--muted);font-weight:600;font-size:.92rem;margin:0 0 .7rem}
+.ofm-v2 .fonc-metier{padding:.7rem .85rem;border-radius:10px;border-left:3px solid var(--primary);font-size:.9rem;transition:.2s ease}
 .ofm-v2 .fonc-metier[data-metier=securite]{background:rgba(18,184,134,.09);border-color:var(--green)}
 .ofm-v2 .fonc-metier[data-metier=transport]{background:rgba(59,110,245,.09);border-color:var(--primary)}
-.ofm-v2 .fonc-metier-tag{display:inline-block;font-family:var(--font-sora);font-weight:700;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;margin-right:.55rem}
+.ofm-v2 .fonc-metier-tag{margin-right:.4rem}
 
-/* Deep-dives */
-.ofm-v2 .dd{display:grid;grid-template-columns:1.05fr .95fr;gap:44px;align-items:center;padding:46px 0;border-top:1px solid var(--line)}
-.ofm-v2 .dd:first-of-type{border-top:0}
-.ofm-v2 .dd h3{font-size:1.6rem;margin-bottom:.6rem}
-.ofm-v2 .dd p{color:var(--muted)}
-.ofm-v2 .dd ul{list-style:none;padding:0;margin:1rem 0 0;display:grid;gap:.5rem}
-.ofm-v2 .dd ul li{font-size:.95rem}
-.ofm-v2 .dd ul .chk{color:var(--green);font-weight:800;margin-right:.45rem}
-.ofm-v2 .dd-visual{background:linear-gradient(135deg,var(--navy),var(--navy-2));border-radius:20px;color:#fff;padding:34px;min-height:210px;display:flex;flex-direction:column;justify-content:center;box-shadow:var(--shadow)}
-.ofm-v2 .dd-visual .big{font-family:var(--font-sora);font-size:2.4rem;font-weight:800;letter-spacing:-.03em}
-.ofm-v2 .dd-visual .sub{color:rgba(255,255,255,.7);margin-top:.4rem}
-.ofm-v2 .dd-visual .qr{display:inline-grid;grid-template-columns:repeat(4,1fr);gap:3px;width:74px;margin-bottom:14px}
-.ofm-v2 .dd-visual .qr i{aspect-ratio:1;background:#fff;border-radius:2px;opacity:.9}
-.ofm-v2 .dd-visual .qr i:nth-child(3n){opacity:.35}
-.ofm-v2 .dd:nth-of-type(even) .dd-visual{order:-1}
+/* Deep-dives — grille 2×2 compacte */
+.ofm-v2 .dd-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;max-width:980px;margin-inline:auto}
+.ofm-v2 .dd-card{border:1px solid var(--line);border-radius:16px;padding:22px 24px;background:var(--white)}
+.ofm-v2 .dd-card .dd-badge{display:inline-flex;font-family:var(--font-sora);font-weight:700;font-size:.72rem;letter-spacing:.04em;color:var(--primary);background:rgba(59,110,245,.1);padding:.25rem .65rem;border-radius:999px;margin-bottom:.65rem}
+.ofm-v2 .dd-card h3{font-size:1.22rem;margin-bottom:.35rem}
+.ofm-v2 .dd-card p{color:var(--muted);font-size:.93rem}
+.ofm-v2 .dd-card ul{list-style:none;padding:0;margin:.75rem 0 0;display:grid;gap:.4rem}
+.ofm-v2 .dd-card ul li{font-size:.88rem}
+.ofm-v2 .dd-card ul .chk{color:var(--green);font-weight:800;margin-right:.4rem}
 
 /* Comparatif */
 .ofm-v2 .cmp{background:var(--navy);color:#fff;border-radius:22px;padding:44px;text-align:center;box-shadow:var(--shadow)}
@@ -86,17 +77,18 @@ const FONC_CSS = `
 .ofm-v2 .cmp .arrow{font-size:1.6rem;color:var(--amber)}
 
 /* Grille exhaustive des fonctionnalités */
-.ofm-v2 .feat-cat{margin-top:38px}
-.ofm-v2 .feat-cat:first-of-type{margin-top:18px}
-.ofm-v2 .feat-cat-h{display:flex;align-items:center;gap:.6rem;font-family:var(--font-sora);font-weight:700;font-size:1.12rem;color:var(--navy);margin-bottom:14px}
-.ofm-v2 .feat-cat-h .em{font-size:1.2rem}
-.ofm-v2 .feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-.ofm-v2 .feat-card{background:var(--white);border:1px solid var(--line);border-radius:14px;padding:16px 16px 15px;transition:.16s ease}
-.ofm-v2 .feat-card:hover{border-color:var(--primary);box-shadow:var(--shadow-sm);transform:translateY(-2px)}
-.ofm-v2 .feat-card .fn{font-family:var(--font-sora);font-weight:600;font-size:.98rem;color:var(--ink);display:block;margin-bottom:.25rem}
-.ofm-v2 .feat-card .fd{font-size:.86rem;color:var(--muted);line-height:1.5}
-@media(max-width:900px){.ofm-v2 .feat-grid{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:560px){.ofm-v2 .feat-grid{grid-template-columns:1fr}}
+.ofm-v2 .feat-cat{margin-top:28px}
+.ofm-v2 .feat-cat:first-of-type{margin-top:14px}
+.ofm-v2 .feat-cat-h{display:flex;align-items:center;gap:.55rem;font-family:var(--font-sora);font-weight:700;font-size:1.05rem;color:var(--navy);margin-bottom:11px}
+.ofm-v2 .feat-cat-h .em{font-size:1.15rem}
+.ofm-v2 .feat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:11px}
+.ofm-v2 .feat-card{background:var(--white);border:1px solid var(--line);border-radius:12px;padding:13px 14px;transition:.16s ease}
+.ofm-v2 .feat-card:hover{border-color:var(--primary);box-shadow:var(--shadow-sm)}
+.ofm-v2 .feat-card .fn{font-family:var(--font-sora);font-weight:600;font-size:.92rem;color:var(--ink);display:block;margin-bottom:.2rem}
+.ofm-v2 .feat-card .fd{font-size:.82rem;color:var(--muted);line-height:1.45}
+@media(max-width:1000px){.ofm-v2 .feat-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:760px){.ofm-v2 .feat-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:520px){.ofm-v2 .feat-grid{grid-template-columns:1fr}}
 
 /* CTA final */
 .ofm-v2 .cta-final{background:linear-gradient(135deg,var(--navy),var(--navy-2));color:#fff;padding:64px 0;text-align:center}
@@ -104,35 +96,34 @@ const FONC_CSS = `
 .ofm-v2 .cta-final p{color:rgba(255,255,255,.72);max-width:52ch;margin:.8rem auto 1.5rem}
 
 @media(max-width:820px){
-  .ofm-v2 .dd,.ofm-v2 .cmp .cmp-grid{grid-template-columns:1fr}
-  .ofm-v2 .dd:nth-of-type(even) .dd-visual{order:0}
+  .ofm-v2 .dd-grid,.ofm-v2 .fonc-steps,.ofm-v2 .cmp .cmp-grid{grid-template-columns:1fr}
   .ofm-v2 .cmp .arrow{transform:rotate(90deg)}
-  .ofm-v2 .fonc-step{grid-template-columns:auto 1fr;gap:16px}
 }
 `;
 
 const DEEP = [
   {
+    badge: "0 paramétrage",
     h: "Préconfiguré pour votre métier",
-    p: "Vous n'installez rien, vous ne paramétrez rien. Vos formations réglementées, leurs prérequis et leurs modèles Qualiopi sont déjà là.",
+    p: "Vous n'installez rien, vous ne paramétrez rien : vos formations réglementées, leurs prérequis et leurs modèles Qualiopi sont déjà là.",
     li: [
       "32 formations sécurité & transport prêtes à l'emploi",
       "Prérequis réglementaires vérifiés par formation",
       "Modèles de documents Qualiopi par formation",
     ],
-    visual: <><div className="big">0 paramétrage</div><div className="sub">Vos métiers, prêts dès le premier jour.</div></>,
   },
   {
-    h: "Vérification anti-fraude publique",
-    p: "Chaque titre délivré porte un numéro unique et un QR code. N'importe qui peut vérifier son authenticité en ligne — un différenciateur que vos concurrents n'ont pas.",
+    badge: "Anti-fraude",
+    h: "Vérification publique des titres",
+    p: "Chaque titre porte un numéro unique et un QR code, vérifiables en ligne par n'importe qui — un différenciateur que vos concurrents n'ont pas.",
     li: [
-      "Numéro de vérification composé + QR sur chaque diplôme",
-      "Page publique de vérification (candidat, employeur, préfecture)",
+      "Numéro de vérification + QR sur chaque diplôme",
+      "Page publique (candidat, employeur, préfecture)",
       "Traçabilité complète, titres infalsifiables",
     ],
-    visual: <><div className="qr" aria-hidden>{Array.from({ length: 16 }).map((_, i) => <i key={i} />)}</div><div className="big">Vérifié ✓</div><div className="sub">Titres authentifiables en un scan.</div></>,
   },
   {
+    badge: "32/32 indicateurs",
     h: "Qualiopi, prêt à tout moment",
     p: "Chaque session, émargement et document alimente votre dossier qualité en continu. Le jour de l'audit, tout est déjà rangé.",
     li: [
@@ -140,17 +131,16 @@ const DEEP = [
       "Dossier d'audit exportable en 1 clic",
       "BPF pré-rempli à partir de vos données réelles",
     ],
-    visual: <><div className="big">32/32</div><div className="sub">Indicateurs couverts, preuves en place.</div></>,
   },
   {
+    badge: "−70 % de temps admin",
     h: "L'automatisation qui travaille pour vous",
-    p: "Composez vos propres circuits sur une timeline visuelle, et laissez le répétitif partir en tâche de fond — pour vos apprenants, vos entreprises et vos formateurs.",
+    p: "Composez vos circuits sur une timeline visuelle et laissez le répétitif partir en tâche de fond — apprenants, entreprises et formateurs.",
     li: [
       "Studio de circuits d'automatisation (multi-audience)",
       "27 e-mails candidats prêts + assistant IA",
       "Espace client B2B : vos entreprises en autonomie",
     ],
-    visual: <><div className="big">−70 % de temps</div><div className="sub">…sur les tâches administratives répétitives.</div></>,
   },
 ];
 
@@ -386,16 +376,16 @@ export default function FonctionnalitesPage() {
       <section className="blk" style={{ background: "var(--paper)" }}>
         <div className="wrap">
           <div className="center"><span className="eyebrow">Ce que les autres n&apos;ont pas</span><h2>4 raisons de choisir OFManager</h2></div>
-          {DEEP.map((d) => (
-            <div className="dd" key={d.h}>
-              <div>
+          <div className="dd-grid">
+            {DEEP.map((d) => (
+              <div className="dd-card" key={d.h}>
+                <span className="dd-badge">{d.badge}</span>
                 <h3>{d.h}</h3>
                 <p>{d.p}</p>
                 <ul>{d.li.map((x) => <li key={x}><span className="chk">✓</span> {x}</li>)}</ul>
               </div>
-              <div className="dd-visual">{d.visual}</div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
 

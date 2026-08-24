@@ -122,20 +122,15 @@ export function FeaturesMetier() {
       <ol className="fonc-steps">
         {PARCOURS.map((e) => (
           <li key={e.n} className="fonc-step">
-            <div className="fonc-step-n" aria-hidden>{e.n}</div>
-            <div className="fonc-step-body">
+            <div className="fonc-step-head">
+              <span className="fonc-step-n" aria-hidden>{e.n}</span>
               <h3>{e.titre}</h3>
-              <p className="fonc-punch">{e.punch}</p>
-              <ul className="fonc-list">
-                {e.commun.map((f) => (
-                  <li key={f}><span className="chk">✓</span> {f}</li>
-                ))}
-              </ul>
-              <p className="fonc-metier" data-metier={metier}>
-                <span className="fonc-metier-tag">{metier === "securite" ? "🛡️ Sécurité" : "🚖 Transport"}</span>
-                {metier === "securite" ? e.securite : e.transport}
-              </p>
             </div>
+            <p className="fonc-punch">{e.punch}</p>
+            <p className="fonc-metier" data-metier={metier}>
+              <span className="fonc-metier-tag">{metier === "securite" ? "🛡️" : "🚖"}</span>
+              {metier === "securite" ? e.securite : e.transport}
+            </p>
           </li>
         ))}
       </ol>
