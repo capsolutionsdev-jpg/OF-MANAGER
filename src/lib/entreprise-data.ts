@@ -106,6 +106,48 @@ export async function getEntrepriseDocuments(entrepriseId: string) {
   });
 }
 
+/**
+ * Suivi des DIPLÔMES des salariés de l'entreprise (module Diplome réel : envoyé
+ * au certificateur → reçu par l'OF → remis au candidat). Diplome n'a pas de
+ * relation Inscription (scalaire inscriptionId) → jointure en 2 temps, scopée à
+ * l'entreprise via les inscriptions.
+ */
+export async function getEntrepriseDiplomes(entrepriseId: string) {
+  const db = await getTenantDb();
+  const inscriptions = await db.inscription.findMany({
+    where: { entrepriseId },
+    select: { id: true, session: { select: { formation: { select: { titre: true } } } } },
+  });
+  const ids = inscriptions.map((i) => i.id);
+  if (ids.length === 0) return [];
+  const titreParInsc = new Map(inscriptions.map((i) => [i.id, i.session?.formation?.titre ?? null]));
+
+  const diplomes = await db.diplome.findMany({
+    where: { inscriptionId: { in: ids } },
+    select: {
+      id: true,
+      inscriptionId: true,
+      nom: true,
+      prenom: true,
+      numeroDiplome: true,
+      statut: true,
+      recuAt: true,
+      remisAt: true,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+  return diplomes.map((d) => ({
+    id: d.id,
+    nom: d.nom,
+    prenom: d.prenom,
+    numeroDiplome: d.numeroDiplome,
+    statut: d.statut,
+    recuAt: d.recuAt,
+    remisAt: d.remisAt,
+    formationTitre: d.inscriptionId ? titreParInsc.get(d.inscriptionId) ?? null : null,
+  }));
+}
+
 /** Salariés (candidats) rattachés à l'entreprise — pour le choix dans la demande. */
 export async function getEntrepriseCandidats(entrepriseId: string) {
   const db = await getTenantDb();
