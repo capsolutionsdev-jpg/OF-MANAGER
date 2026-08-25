@@ -7,6 +7,30 @@ const prisma = new PrismaClient();
 //   - les indicateurs Qualiopi
 //   - les comptes utilisateurs (dont l'admin)
 async function main() {
+  // ⛔ Garde anti-catastrophe (PC-LIV-02) : ce script SUPPRIME toutes les données
+  // opérationnelles (paiements, factures, inscriptions, candidats…) de TOUS les
+  // organismes. Il n'est PAS scopé par tenant et, la base de dev pointant aujourd'hui
+  // la prod, une exécution accidentelle serait catastrophique. On exige donc une
+  // confirmation EXPLICITE, et on affiche la base ciblée.
+  const dbHost = (() => {
+    try {
+      return new URL(process.env.DATABASE_URL ?? "").host || "(inconnue)";
+    } catch {
+      return "(inconnue)";
+    }
+  })();
+  if (process.env.CONFIRM_DESTRUCTIVE !== "RESET_DATA") {
+    console.error(
+      "\n⛔ reset-data ANNULÉ.\n" +
+        "   Ce script supprime TOUTES les données opérationnelles de TOUS les organismes.\n" +
+        `   Base ciblée : ${dbHost}\n` +
+        "   Pour confirmer volontairement :\n" +
+        "     CONFIRM_DESTRUCTIVE=RESET_DATA npx tsx scripts/reset-data.ts\n",
+    );
+    process.exit(1);
+  }
+  console.warn(`⚠️  reset-data CONFIRMÉ sur ${dbHost} — suppression en cours…\n`);
+
   await prisma.presence.deleteMany({});
   await prisma.evaluationResultat.deleteMany({});
   await prisma.evaluation.deleteMany({});
