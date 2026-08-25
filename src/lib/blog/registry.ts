@@ -72,6 +72,48 @@ export const BLOG_ARTICLES: BlogMeta[] = [
     readingMinutes: 8,
     emoji: "🏫",
   },
+  {
+    slug: "financer-formation-cpf-opco-france-travail",
+    title: "Financer une formation : CPF, OPCO, France Travail",
+    h1: "Financer une formation professionnelle : tous les dispositifs",
+    description:
+      "CPF, OPCO, France Travail, PTP, FAF : comment financer une formation professionnelle en 2026 selon votre statut. Le guide complet des dispositifs.",
+    excerpt:
+      "CPF, OPCO, France Travail, PTP, FAF : le bon dispositif selon votre statut (salarié, demandeur d'emploi, indépendant) — et le rôle de Qualiopi.",
+    category: "financement",
+    datePublished: "2026-08-25",
+    dateModified: "2026-08-25",
+    readingMinutes: 8,
+    emoji: "💶",
+  },
+  {
+    slug: "devenir-agent-de-securite-privee",
+    title: "Devenir agent de sécurité privée : le guide (2026)",
+    h1: "Devenir agent de sécurité privée : carte professionnelle, formation, CNAPS",
+    description:
+      "Comment devenir agent de sécurité privée : autorisation préalable CNAPS, formation TFP APS, carte professionnelle et recyclage MAC APS. Le guide 2026.",
+    excerpt:
+      "Autorisation préalable CNAPS, formation TFP APS, carte professionnelle, recyclage MAC : le parcours complet pour entrer dans la sécurité privée.",
+    category: "reglementation",
+    datePublished: "2026-08-25",
+    dateModified: "2026-08-25",
+    readingMinutes: 8,
+    emoji: "🛡️",
+  },
+  {
+    slug: "devenir-chauffeur-vtc-taxi",
+    title: "Devenir chauffeur VTC ou taxi : le guide (2026)",
+    h1: "Devenir chauffeur VTC ou taxi : carte pro, examen, formation continue",
+    description:
+      "Devenir chauffeur VTC ou taxi en 2026 : conditions, examen T3P via la CMA, carte professionnelle et formation continue obligatoire. Le guide complet.",
+    excerpt:
+      "Permis, aptitude, examen T3P via la CMA, carte pro, formation continue de 14 h : toutes les étapes pour conduire en VTC ou en taxi.",
+    category: "reglementation",
+    datePublished: "2026-08-25",
+    dateModified: "2026-08-25",
+    readingMinutes: 8,
+    emoji: "🚖",
+  },
 ];
 
 export function getArticle(slug: string): BlogMeta | undefined {

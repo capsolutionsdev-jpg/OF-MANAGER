@@ -18,6 +18,9 @@
 ## Guides pour organismes de formation
 - [Certification Qualiopi : le guide complet](https://ofmanager.info/guides/certification-qualiopi-guide) : à quoi sert Qualiopi, les 7 critères et 32 indicateurs, comment l'obtenir, prix et délais.
 - [Ouvrir un organisme de formation : les étapes](https://ofmanager.info/guides/ouvrir-organisme-de-formation) : déclaration d'activité (NDA), Qualiopi, obligations et BPF.
+- [Financer une formation : CPF, OPCO, France Travail](https://ofmanager.info/guides/financer-formation-cpf-opco-france-travail) : les dispositifs de financement selon le statut, et le rôle de Qualiopi.
+- [Devenir agent de sécurité privée](https://ofmanager.info/guides/devenir-agent-de-securite-privee) : autorisation CNAPS, formation TFP APS, carte professionnelle, recyclage MAC APS.
+- [Devenir chauffeur VTC ou taxi](https://ofmanager.info/guides/devenir-chauffeur-vtc-taxi) : conditions, examen T3P via la CMA, carte professionnelle, formation continue.
 
 ## À propos
 - [Mentions légales](https://ofmanager.info/mentions-legales)
