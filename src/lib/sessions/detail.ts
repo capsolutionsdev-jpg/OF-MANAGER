@@ -29,7 +29,7 @@ export const getSessionDetail = cache(async (id: string) => {
       formation: true,
       formateurs: true,
       inscriptions: {
-        include: { candidat: true },
+        include: { candidat: true, paiements: { orderBy: { date: "desc" } } },
         orderBy: { createdAt: "desc" },
       },
     },
