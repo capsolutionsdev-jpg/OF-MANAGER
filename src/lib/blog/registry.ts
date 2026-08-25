@@ -114,6 +114,34 @@ export const BLOG_ARTICLES: BlogMeta[] = [
     readingMinutes: 8,
     emoji: "🚖",
   },
+  {
+    slug: "ssiap-1-2-3-niveaux",
+    title: "SSIAP 1, 2 et 3 : les niveaux expliqués (2026)",
+    h1: "SSIAP 1, 2 et 3 : les trois niveaux de la sécurité incendie",
+    description:
+      "SSIAP 1, 2, 3 : rôle, missions, prérequis et recyclage de chaque niveau de sécurité incendie (ERP, IGH). Le guide clair pour s'y retrouver en 2026.",
+    excerpt:
+      "Agent, chef d'équipe, chef de service : à quoi correspondent les niveaux SSIAP 1, 2 et 3, leurs prérequis et leurs recyclages.",
+    category: "reglementation",
+    datePublished: "2026-08-25",
+    dateModified: "2026-08-25",
+    readingMinutes: 7,
+    emoji: "🔥",
+  },
+  {
+    slug: "examen-t3p-epreuves-programme",
+    title: "Examen T3P (VTC/Taxi) : épreuves et programme",
+    h1: "Examen T3P : les épreuves et le programme (VTC et taxi)",
+    description:
+      "Examen T3P VTC et taxi : tronc commun, épreuves d'admission, matières, organisation par la CMA et conditions de réussite. Le guide complet 2026.",
+    excerpt:
+      "Tronc commun, épreuve d'admission, matières, organisation par la CMA : tout ce que couvre l'examen T3P pour VTC et taxi.",
+    category: "reglementation",
+    datePublished: "2026-08-25",
+    dateModified: "2026-08-25",
+    readingMinutes: 7,
+    emoji: "📝",
+  },
 ];
 
 export function getArticle(slug: string): BlogMeta | undefined {
