@@ -615,25 +615,99 @@ export async function relancerDossier(
   return { ok: true, sent, manquantes: manquantes.length };
 }
 
-export async function deleteInscriptionAction(formData: FormData) {
+export async function deleteInscriptionAction(
+  formData: FormData
+): Promise<{ ok: boolean; error?: string }> {
   const { db } = await requireStaffTenant();
   const session = await auth();
-  if (!session?.user) return;
+  if (!session?.user) return { ok: false, error: "Non authentifié." };
 
   const id = String(formData.get("id"));
   const sessionId = String(formData.get("sessionId"));
   const candidatId = String(formData.get("candidatId"));
 
-  await db.inscription.delete({ where: { id } });
-  await db.auditLog.create({
-    data: {
-      userId: session.user.id,
-      action: "DELETE",
-      entityType: "Inscription",
-      entityId: id,
+  // Garde d'intégrité comptable (DATA-01) : supprimer une inscription ne doit JAMAIS
+  // détruire ni orpheliner de données comptables. Selon le schéma : règlements en
+  // `onDelete: Cascade` (supprimés silencieusement), factures / conventions / dossiers de
+  // financement en SetNull (orphelinés) et contrat en Restrict (plantage brut). On refuse
+  // proprement tant que l'un de ces éléments existe — l'utilisateur doit d'abord les retirer,
+  // ou annuler l'inscription plutôt que la supprimer. `findFirst` est scopé au tenant : on ne
+  // peut agir que sur ses propres inscriptions.
+  // Résidu connu, fermé par le lot B4 (schéma) : course TOCTOU entre cette lecture et le
+  // delete — un règlement créé dans l'intervalle serait encore cascadé. Fermeture définitive =
+  // passer ces relations en `onDelete: Restrict` côté schéma.
+  const insc = await db.inscription.findFirst({
+    where: { id },
+    select: {
+      id: true,
+      _count: {
+        select: { paiements: true, factures: true, dossiersFinancement: true },
+      },
+      contrat: { select: { id: true } },
+      convention: { select: { id: true } },
     },
   });
+  if (!insc) return { ok: false, error: "Inscription introuvable." };
+
+  const bloquants: string[] = [];
+  if (insc._count.paiements > 0)
+    bloquants.push(
+      insc._count.paiements > 1
+        ? `${insc._count.paiements} règlements`
+        : "1 règlement"
+    );
+  if (insc._count.factures > 0)
+    bloquants.push(
+      insc._count.factures > 1
+        ? `${insc._count.factures} factures`
+        : "1 facture"
+    );
+  if (insc._count.dossiersFinancement > 0)
+    bloquants.push(
+      insc._count.dossiersFinancement > 1
+        ? `${insc._count.dossiersFinancement} dossiers de financement`
+        : "1 dossier de financement"
+    );
+  if (insc.convention) bloquants.push("une convention");
+  if (insc.contrat) bloquants.push("un contrat");
+
+  if (bloquants.length > 0) {
+    return {
+      ok: false,
+      error: `Suppression impossible : cette inscription est liée à ${bloquants.join(
+        ", "
+      )}. Retirez d'abord ces éléments comptables, ou annulez l'inscription au lieu de la supprimer.`,
+    };
+  }
+
+  try {
+    await db.inscription.delete({ where: { id } });
+  } catch {
+    // Filet de sécurité : si une contrainte référentielle non anticipée bloque la suppression,
+    // on renvoie une erreur claire plutôt qu'une 500 brute (et rien n'est détruit).
+    return {
+      ok: false,
+      error:
+        "Suppression impossible : des données liées empêchent la suppression de cette inscription.",
+    };
+  }
+
+  // Journalisation best-effort : la suppression a déjà réussi ; un échec d'audit ne doit pas
+  // relancer une exception (écran rouge côté client) ni transformer un succès en erreur.
+  try {
+    await db.auditLog.create({
+      data: {
+        userId: session.user.id,
+        action: "DELETE",
+        entityType: "Inscription",
+        entityId: id,
+      },
+    });
+  } catch {
+    /* audit best-effort — la suppression reste effective */
+  }
 
   if (sessionId) revalidatePath(`/sessions/${sessionId}`);
   if (candidatId) revalidatePath(`/candidats/${candidatId}`);
+  return { ok: true };
 }
