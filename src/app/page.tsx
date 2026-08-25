@@ -229,6 +229,7 @@ export default async function HomePage() {
           <nav className="nav-links">
             <a href="#metiers">Métiers</a>
             <Link href="/fonctionnalites">Fonctionnalités</Link>
+            <Link href="/anti-fraude">Anti-fraude</Link>
             <Link href="/guides">Blog</Link>
             <a href="#qualiopi">Qualiopi</a>
             <a href="#rgpd">Sécurité &amp; RGPD</a>
@@ -482,6 +483,22 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* ===== ANTI-FRAUDE (différenciateur mis en avant) ===== */}
+      <section className="blk" style={{ background: "linear-gradient(135deg, #0D1B3E, #0b3b30)" }}>
+        <div className="wrap" style={{ textAlign: "center", color: "#fff" }}>
+          <span className="eyebrow" style={{ color: "#5EEAD4" }}>Différenciateur exclusif</span>
+          <h2 style={{ color: "#fff" }}>Des titres qu&apos;on ne peut pas falsifier</h2>
+          <p style={{ maxWidth: "640px", margin: "0.8rem auto 0", color: "#cddaf0" }}>
+            Chaque diplôme et attestation que vous délivrez porte un numéro unique et un QR code, vérifiables en ligne par
+            n&apos;importe qui — employeur, préfecture, client. La fraude documentaire s&apos;arrête à votre porte.
+          </p>
+          <div style={{ marginTop: "1.6rem", display: "flex", gap: "0.75rem", justifyContent: "center", flexWrap: "wrap" }}>
+            <Link href="/anti-fraude" style={{ background: "#12B886", color: "#fff", padding: "0.8rem 1.5rem", borderRadius: "12px", fontWeight: 700, textDecoration: "none" }}>Découvrir l&apos;anti-fraude →</Link>
+            <Link href="/verification" style={{ border: "1px solid rgba(255,255,255,.4)", color: "#fff", padding: "0.8rem 1.5rem", borderRadius: "12px", fontWeight: 700, textDecoration: "none" }}>Vérifier un titre</Link>
+          </div>
+        </div>
+      </section>
+
       {/* ===== QUALIOPI (signature) ===== */}
       <section className="blk" id="qualiopi">
         <div className="wrap">
@@ -666,6 +683,8 @@ export default async function HomePage() {
               <h4>Produit</h4>
               <a href="#metiers">Métiers</a>
               <Link href="/fonctionnalites">Fonctionnalités</Link>
+              <Link href="/anti-fraude">Anti-fraude</Link>
+              <Link href="/comparatif">Comparatif</Link>
               <Link href="/guides">Blog</Link>
               <Link href="/glossaire">Glossaire</Link>
               <a href="#tarifs">Tarifs</a>

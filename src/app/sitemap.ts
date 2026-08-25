@@ -12,7 +12,9 @@ const BASE = SITE_URL;
 const PAGES: [string, number, "weekly" | "monthly"][] = [
   ["", 1.0, "weekly"],
   ["/fonctionnalites", 0.9, "monthly"],
+  ["/anti-fraude", 0.9, "monthly"],
   ["/tarifs", 0.9, "monthly"],
+  ["/comparatif", 0.7, "monthly"],
   ["/guides", 0.8, "weekly"],
   ["/glossaire", 0.6, "monthly"],
   ["/solutions/tfp-aps", 0.8, "monthly"],

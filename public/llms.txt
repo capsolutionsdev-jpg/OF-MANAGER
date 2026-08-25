@@ -6,7 +6,9 @@
 - [Fonctionnalités](https://ofmanager.info/fonctionnalites) : catalogue complet des fonctionnalités, adaptable par métier (sécurité privée / transport).
 - [Tarifs](https://ofmanager.info/tarifs) : grille tarifaire à jour, plusieurs paliers d'abonnement mensuel.
 - [Demander une démo](https://ofmanager.info/demo) : démonstration personnalisée sur votre organisme.
-- [Vérification anti-fraude des titres](https://ofmanager.info/verification) : page publique de vérification d'authenticité d'un titre délivré (numéro + QR code).
+- [Anti-fraude : titres infalsifiables](https://ofmanager.info/anti-fraude) : chaque titre délivré porte un numéro unique + QR code, vérifiable en ligne par un tiers (employeur, préfecture) — différenciateur clé.
+- [Vérification d'un titre](https://ofmanager.info/verification) : page publique pour vérifier l'authenticité d'un titre délivré (numéro + QR + date de naissance du titulaire).
+- [Comparatif : spécialiste vs généraliste](https://ofmanager.info/comparatif) : pourquoi un logiciel spécialisé pour OF réglementés plutôt qu'une plateforme généraliste.
 
 ## Solutions par métier
 - [Logiciel Qualiopi](https://ofmanager.info/solutions/qualiopi) : preuves rattachées aux 7 critères / 32 indicateurs, dossier d'audit en 1 clic, BPF pré-rempli.
