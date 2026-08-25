@@ -11,10 +11,17 @@ import { getOrgUsage } from "@/lib/usage";
 import { getEmetteur, partieFromOrg, factureDataFrom } from "@/lib/factures/editeur-data";
 import { renderFacturx } from "@/lib/factures/editeur-render";
 import { getPdpAdapter } from "@/lib/factures/pdp";
+import { nextRef, maxSuffix } from "@/lib/numerotation";
 
 export type FactureEditeurState = { ok?: boolean; error?: string; id?: string };
 
 const FACTURE_STATUTS = new Set(Object.values(FactureEditeurStatut) as string[]);
+
+// La numérotation des factures ÉDITEUR (`F-AAAA-NNNN`) est GLOBALE (un seul
+// émetteur = l'éditeur du SaaS), pas par tenant. On loge donc son compteur sous un
+// scope constant dans `NumeroSequence` (dont `organismeId` est une simple String,
+// sans FK) pour réutiliser l'incrément atomique de `nextRef`.
+const EDITEUR_SEQ_SCOPE = "__editeur__";
 
 /**
  * Génère une facture mensuelle (BROUILLON) pour un client : ligne d'abonnement
@@ -96,23 +103,42 @@ export async function emettreFactureEditeur(id: string): Promise<FactureEditeurS
 
   const now = new Date();
   const annee = now.getFullYear();
-  // Séquence sans trou : nombre de factures déjà émises cette année + 1.
-  const dejaEmises = await prisma.factureEditeur.count({ where: { numero: { startsWith: `F-${annee}-` } } });
-  const numero = `F-${annee}-${String(dejaEmises + 1).padStart(4, "0")}`;
   const echeance = new Date(now.getTime() + 30 * 86_400_000);
 
-  await prisma.factureEditeur.update({
-    where: { id },
-    data: {
-      numero,
-      statut: FactureEditeurStatut.EMISE,
-      dateEmission: now,
-      dateEcheance: echeance,
-    },
-  });
-
-  revalidatePath(`/console/${f.organismeId}`);
-  return { ok: true, id };
+  // Numérotation ATOMIQUE (BACK-01) : compteur éditeur global `F-AAAA` via `nextRef`
+  // (remplace `count()+1`, qui produisait des doublons en émission concurrente). La
+  // garde `numero: null` de l'updateMany empêche toute double-émission d'une même
+  // facture ; en cas de collision résiduelle sur la contrainte unique `numero`
+  // (P2002), on régénère un numéro et on réessaie.
+  for (let tentative = 0; tentative < 5; tentative++) {
+    const numero = await nextRef(EDITEUR_SEQ_SCOPE, "F", async () => {
+      const rows = await prisma.factureEditeur.findMany({
+        where: { numero: { startsWith: `F-${annee}-` } },
+        select: { numero: true },
+      });
+      return maxSuffix(rows.map((r) => r.numero).filter((n): n is string => !!n));
+    });
+    try {
+      const res = await prisma.factureEditeur.updateMany({
+        where: { id, numero: null },
+        data: {
+          numero,
+          statut: FactureEditeurStatut.EMISE,
+          dateEmission: now,
+          dateEcheance: echeance,
+        },
+      });
+      if (res.count === 0) return { error: "Facture déjà émise." };
+      revalidatePath(`/console/${f.organismeId}`);
+      return { ok: true, id };
+    } catch (e) {
+      // P2002 = numéro déjà pris (course résiduelle) → régénérer et réessayer.
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002")
+        continue;
+      throw e;
+    }
+  }
+  return { error: "Numérotation impossible, réessayez." };
 }
 
 /**

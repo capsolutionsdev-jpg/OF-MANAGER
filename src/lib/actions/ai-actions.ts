@@ -73,11 +73,11 @@ export async function runAssistant(formData: FormData): Promise<AiResult> {
   // Rate-limit : par utilisateur (20 / 10 min) et par organisme (200 / jour).
   const userId = session?.user?.id ?? "anon";
   const orgId = session?.user?.organismeId ?? "none";
-  const perUser = await checkLimit(`ai:user:${userId}`, { limit: 20, windowMs: 10 * 60_000 });
+  const perUser = await checkLimit(`ai:user:${userId}`, { limit: 20, windowMs: 10 * 60_000, failClosed: true });
   if (!perUser.ok) {
     return { ok: false, error: `Limite d'utilisation de l'assistant atteinte. Réessayez dans ${perUser.retryAfter}s.` };
   }
-  const perOrg = await checkLimit(`ai:org:${orgId}`, { limit: 200, windowMs: 24 * 60 * 60_000 });
+  const perOrg = await checkLimit(`ai:org:${orgId}`, { limit: 200, windowMs: 24 * 60 * 60_000, failClosed: true });
   if (!perOrg.ok) {
     return { ok: false, error: "Quota IA quotidien de l'organisme atteint. Réessayez demain." };
   }
