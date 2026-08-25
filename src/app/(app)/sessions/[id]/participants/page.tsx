@@ -125,6 +125,7 @@ export default async function SessionParticipantsPage({
                     <TableCell>
                       <div className="flex flex-col items-start gap-1.5">
                         <PaiementEditor
+                          key={`${i.paiementStatut}-${i.modePaiement ?? ""}`}
                           inscriptionId={i.id}
                           modePaiement={i.modePaiement}
                           paiementStatut={i.paiementStatut}

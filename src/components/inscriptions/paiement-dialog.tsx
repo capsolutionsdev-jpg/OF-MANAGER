@@ -16,7 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { MODE_PAIEMENT_OPTIONS } from "@/lib/validators/paiement";
+import { MODE_PAIEMENT_OPTIONS } from "@/lib/validators/inscription";
 import { enregistrerPaiement, supprimerPaiement } from "@/lib/actions/paiement-actions";
 
 type Reglement = { id: string; montant: number; date: string; mode: string | null; reference: string | null };
@@ -77,9 +77,11 @@ export function PaiementDialog({
     startTransition(async () => {
       const fd = new FormData();
       fd.set("montant", String(val));
-      if (mode) fd.set("mode", mode);
+      // Toujours présents (le schéma accepte "" ; le serveur normalise en null) —
+      // sinon FormData.get() renvoie null et z.string().optional() le REJETTE.
+      fd.set("mode", mode);
+      fd.set("reference", ref.trim());
       if (date) fd.set("date", date);
-      if (ref.trim()) fd.set("reference", ref.trim());
       const res = await enregistrerPaiement(inscriptionId, undefined, fd);
       setBusy(null);
       if (res.error) {

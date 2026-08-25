@@ -109,7 +109,14 @@ export function EnrollForm({
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form
+      onSubmit={handleSubmit(onSubmit, (errors) =>
+        toast.error(
+          errors.candidatId ? "Choisissez un candidat dans la liste." : "Formulaire incomplet.",
+        ),
+      )}
+      className="space-y-4"
+    >
       <input type="hidden" {...register("sessionId")} />
 
       {/* Candidat : recherche + nouveau candidat */}
@@ -139,6 +146,17 @@ export function EnrollForm({
             }}
             onFocus={() => setOpenList(true)}
             onBlur={() => setTimeout(() => setOpenList(false), 150)}
+            onKeyDown={(e) => {
+              // Entrée sélectionne le 1er résultat (évite de valider avec un texte
+              // saisi mais aucun candidat réellement choisi).
+              if (e.key === "Enter" && !selectedId && filtered.length > 0) {
+                e.preventDefault();
+                const c = filtered[0];
+                setValue("candidatId", c.id, { shouldValidate: true });
+                setQ(`${c.prenom} ${c.nom}`);
+                setOpenList(false);
+              }
+            }}
           />
           {openList && filtered.length > 0 && (
             <ul className="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-lg border bg-popover shadow-lg">
