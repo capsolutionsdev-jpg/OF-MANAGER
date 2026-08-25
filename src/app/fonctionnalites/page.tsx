@@ -203,7 +203,7 @@ const FEATURES: { cat: string; em: string; items: { nom: string; desc: string }[
     cat: "Documents & signature", em: "✍️",
     items: [
       { nom: "Génération automatique", desc: "Conventions, convocations, attestations en PDF en 1 clic." },
-      { nom: "Signature électronique eIDAS", desc: "Signature horodatée conforme (YouSign)." },
+      { nom: "Signature électronique eIDAS", desc: "Signature électronique simple, horodatée et traçable (IP)." },
       { nom: "GED & archivage", desc: "Tous les documents rattachés, classés et retrouvables." },
       { nom: "Exports CSV / Excel / PDF", desc: "Par module, pour vos analyses et vos obligations." },
     ],

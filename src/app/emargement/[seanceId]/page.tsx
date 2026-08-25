@@ -86,13 +86,13 @@ export default async function FeuilleEmargementPage({
               <form action={requestEmargementSignature}>
                 <input type="hidden" name="seanceId" value={seanceId} />
                 <Button type="submit" size="sm" variant="outline">
-                  <PenLine className="mr-1.5 h-4 w-4" /> Demander la signature (Yousign)
+                  <PenLine className="mr-1.5 h-4 w-4" /> Demander la signature électronique
                 </Button>
               </form>
             )}
             {demoSign && (
               <span className="text-xs text-muted-foreground">
-                Mode démo — renseignez YOUSIGN_API_KEY pour l&apos;envoi réel.
+                Signature électronique interne (manuscrite, horodatée, IP).
               </span>
             )}
           </div>
