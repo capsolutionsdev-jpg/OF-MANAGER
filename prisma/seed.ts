@@ -1,5 +1,6 @@
 import { PrismaClient, Role, CandidatStatut, FinancementType } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { randomBytes } from "crypto";
 
 const prisma = new PrismaClient();
 
@@ -9,19 +10,47 @@ async function main() {
   // -------- Compte unique : Administrateur --------
   // Modifiable via les variables d'environnement ADMIN_EMAIL / ADMIN_PASSWORD.
   const adminEmail = process.env.ADMIN_EMAIL ?? "admin@cap.fr";
-  const adminPassword = process.env.ADMIN_PASSWORD ?? "password123";
-  const passwordHash = await bcrypt.hash(adminPassword, 10);
-
-  await prisma.user.upsert({
+  // Garde anti-catastrophe (PC-LIV-02) : plus jamais de mot de passe par défaut faible.
+  const explicitPassword = process.env.ADMIN_PASSWORD;
+  const existingAdmin = await prisma.user.findUnique({
     where: { email: adminEmail },
-    update: { role: Role.ADMIN, isActive: true },
-    create: {
-      email: adminEmail,
-      name: "Administrateur",
-      role: Role.ADMIN,
-      passwordHash,
-    },
+    select: { id: true },
   });
+
+  if (!existingAdmin) {
+    // Nouvel admin : mot de passe = ADMIN_PASSWORD si fourni, sinon un secret aléatoire
+    // fort, affiché une seule fois (jamais « password123 »).
+    let pwd = explicitPassword;
+    if (!pwd) {
+      pwd = randomBytes(12).toString("base64url");
+      console.warn(
+        `\n⚠️  ADMIN_PASSWORD non défini → mot de passe ALÉATOIRE généré pour ${adminEmail} :\n` +
+          `      ${pwd}\n` +
+          "   Notez-le maintenant : il ne sera pas réaffiché.\n",
+      );
+    }
+    await prisma.user.create({
+      data: {
+        email: adminEmail,
+        name: "Administrateur",
+        role: Role.ADMIN,
+        passwordHash: await bcrypt.hash(pwd, 10),
+      },
+    });
+  } else {
+    // Admin déjà présent : on garantit role/actif, et on ne (ré)écrit le mot de passe
+    // QUE si un ADMIN_PASSWORD explicite est fourni (pas de mot de passe « fantôme »).
+    await prisma.user.update({
+      where: { email: adminEmail },
+      data: {
+        role: Role.ADMIN,
+        isActive: true,
+        ...(explicitPassword
+          ? { passwordHash: await bcrypt.hash(explicitPassword, 10) }
+          : {}),
+      },
+    });
+  }
 
   // -------- Nettoyage : on retire les anciens comptes de démo --------
   const demoEmails = [
@@ -39,9 +68,11 @@ async function main() {
   //   npx tsx prisma/import-academies.ts
   // (Aucune formation de démo créée ici pour éviter les doublons.)
 
-  // -------- Candidats de démo (seulement si aucun) --------
+  // -------- Candidats de démo (opt-in explicite uniquement) --------
+  // Garde anti-catastrophe (PC-LIV-02) : ne JAMAIS injecter de candidats fictifs dans
+  // une base réelle. On exige SEED_DEMO=1 (à poser uniquement en dev).
   const candidatCount = await prisma.candidat.count();
-  if (candidatCount === 0) {
+  if (process.env.SEED_DEMO === "1" && candidatCount === 0) {
     await prisma.candidat.createMany({
       data: [
         {
