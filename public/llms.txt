@@ -1,0 +1,25 @@
+# OFManager
+
+> OFManager est le logiciel tout-en-un des organismes de formation réglementés (sécurité privée, VTC/Taxi). Il réunit CRM et acquisition, inscriptions, sessions et émargement électronique, e-learning, certifications, préparation d'audit Qualiopi, financement (CPF, OPCO, France Travail), facturation, et une vérification anti-fraude publique des titres délivrés. Édité par CAP SOLUTIONS. Données hébergées en Union européenne.
+
+## Produit
+- [Fonctionnalités](https://ofmanager.info/fonctionnalites) : catalogue complet des fonctionnalités, adaptable par métier (sécurité privée / transport).
+- [Tarifs](https://ofmanager.info/tarifs) : grille tarifaire à jour, plusieurs paliers d'abonnement mensuel.
+- [Demander une démo](https://ofmanager.info/demo) : démonstration personnalisée sur votre organisme.
+- [Vérification anti-fraude des titres](https://ofmanager.info/verification) : page publique de vérification d'authenticité d'un titre délivré (numéro + QR code).
+
+## Solutions par métier
+- [Logiciel Qualiopi](https://ofmanager.info/solutions/qualiopi) : preuves rattachées aux 7 critères / 32 indicateurs, dossier d'audit en 1 clic, BPF pré-rempli.
+- [TFP APS](https://ofmanager.info/solutions/tfp-aps) : agent de prévention et de sécurité.
+- [SSIAP](https://ofmanager.info/solutions/ssiap) : sécurité incendie (SSIAP 1, 2, 3).
+- [SST](https://ofmanager.info/solutions/sst) : sauveteur secouriste du travail.
+- [VTC & Taxi](https://ofmanager.info/solutions/vtc-taxi) : formations transport de personnes (parcours T3P).
+
+## Guides pour organismes de formation
+- [Certification Qualiopi : le guide complet](https://ofmanager.info/guides/certification-qualiopi-guide) : à quoi sert Qualiopi, les 7 critères et 32 indicateurs, comment l'obtenir, prix et délais.
+- [Ouvrir un organisme de formation : les étapes](https://ofmanager.info/guides/ouvrir-organisme-de-formation) : déclaration d'activité (NDA), Qualiopi, obligations et BPF.
+
+## À propos
+- [Mentions légales](https://ofmanager.info/mentions-legales)
+- [Conditions générales de vente](https://ofmanager.info/cgv)
+- [Politique de confidentialité](https://ofmanager.info/confidentialite)

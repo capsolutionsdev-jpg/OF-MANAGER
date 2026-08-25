@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/site-url";
+import { BLOG_ARTICLES, BLOG_BASE } from "@/lib/blog/registry";
 
 // Sitemap XML des pages publiques (marketing). Domaine via NEXT_PUBLIC_SITE_URL
 // (défaut ofmanager.info). Les espaces privés (app) sont exclus — ils redirigent
@@ -11,6 +12,7 @@ const PAGES: [string, number, "weekly" | "monthly"][] = [
   ["", 1.0, "weekly"],
   ["/fonctionnalites", 0.9, "monthly"],
   ["/tarifs", 0.9, "monthly"],
+  ["/guides", 0.8, "weekly"],
   ["/solutions/tfp-aps", 0.8, "monthly"],
   ["/solutions/ssiap", 0.8, "monthly"],
   ["/solutions/sst", 0.8, "monthly"],
@@ -26,9 +28,19 @@ const PAGES: [string, number, "weekly" | "monthly"][] = [
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  return PAGES.map(([path, priority, changeFrequency]) => ({
+  const staticPages: MetadataRoute.Sitemap = PAGES.map(([path, priority, changeFrequency]) => ({
     url: `${BASE}${path}`,
     changeFrequency,
     priority,
   }));
+
+  // Articles de blog : lastModified vient du registre (signal de fraîcheur AEO/SEO).
+  const blogPages: MetadataRoute.Sitemap = BLOG_ARTICLES.map((a) => ({
+    url: `${BASE}${BLOG_BASE}/${a.slug}`,
+    lastModified: new Date(a.dateModified),
+    changeFrequency: "monthly",
+    priority: 0.7,
+  }));
+
+  return [...staticPages, ...blogPages];
 }

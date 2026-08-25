@@ -229,6 +229,7 @@ export default async function HomePage() {
           <nav className="nav-links">
             <a href="#metiers">Métiers</a>
             <Link href="/fonctionnalites">Fonctionnalités</Link>
+            <Link href="/guides">Blog</Link>
             <a href="#qualiopi">Qualiopi</a>
             <a href="#rgpd">Sécurité &amp; RGPD</a>
             <a href="#tarifs">Tarifs</a>
@@ -665,6 +666,7 @@ export default async function HomePage() {
               <h4>Produit</h4>
               <a href="#metiers">Métiers</a>
               <Link href="/fonctionnalites">Fonctionnalités</Link>
+              <Link href="/guides">Blog</Link>
               <a href="#tarifs">Tarifs</a>
               <Link href="/login">Connexion</Link>
             </div>

@@ -55,6 +55,6 @@ export const config = {
   // Protège tout sauf : routes d'API auth, assets Next, fichiers statiques,
   // la page de login et le formulaire d'inscription public.
   matcher: [
-    "/((?!api/auth|api/cron|api/pdf-test|api/lead|api/demo|api/stripe|api/webhooks|api/public|api/verification|api/civique|_next/static|_next/image|favicon.ico|opengraph-image|twitter-image|login|verification|confidentialite|mentions-legales|cgv|qualification|fonctionnalites|inscription|tarifs|demo|contact|solutions|partenaires|prospect|parcours|signer|satisfaction-entreprise|satisfaction|positionnement|francais|reclamer|compte-rendu|contrat-formateur|emarger|devis-accept|portail/|deconnexion|securite-2fa|definir-mot-de-passe|.*\\..*).*)",
+    "/((?!api/auth|api/cron|api/pdf-test|api/lead|api/demo|api/stripe|api/webhooks|api/public|api/verification|api/civique|_next/static|_next/image|favicon.ico|opengraph-image|twitter-image|login|verification|confidentialite|mentions-legales|cgv|qualification|fonctionnalites|guides|inscription|tarifs|demo|contact|solutions|partenaires|prospect|parcours|signer|satisfaction-entreprise|satisfaction|positionnement|francais|reclamer|compte-rendu|contrat-formateur|emarger|devis-accept|portail/|deconnexion|securite-2fa|definir-mot-de-passe|.*\\..*).*)",
   ],
 };
