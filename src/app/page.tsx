@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { SITE_URL } from "@/lib/site-url";
-import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { Role } from "@prisma/client";
@@ -9,6 +8,8 @@ import { getResolvedPlans } from "@/lib/pricing";
 import { PLAN_ORDER } from "@/lib/plans";
 import { ScrollReveal } from "@/components/site/scroll-reveal";
 import { OFM_CSS } from "@/components/site/ofm-css";
+import { SiteHeader } from "@/components/site/site-header";
+import { SiteFooter } from "@/components/site/site-footer";
 
 export const metadata: Metadata = {
   title:
@@ -208,7 +209,9 @@ export default async function HomePage() {
   };
 
   return (
-    <main className="ofm-v2">
+    <>
+      <SiteHeader />
+      <main className="ofm-v2">
       {/* Données structurées (SEO) — Organization, WebSite, SoftwareApplication
           + AggregateOffer, FAQPage. Domaine via NEXT_PUBLIC_SITE_URL. */}
       <script
@@ -220,28 +223,7 @@ export default async function HomePage() {
       {/* Reveal au scroll : cible main > section (saute le hero + la bande). */}
       <ScrollReveal skip={2} />
 
-      {/* ===== HEADER ===== */}
-      <header>
-        <div className="wrap nav">
-          <Link href="/" className="logo">
-            <Image src="/ofmanager-logo.png" alt="OFManager" width={150} height={48} priority className="h-9 w-auto" />
-          </Link>
-          <nav className="nav-links">
-            <a href="#metiers">Métiers</a>
-            <Link href="/fonctionnalites">Fonctionnalités</Link>
-            <Link href="/anti-fraude">Anti-fraude</Link>
-            <Link href="/guides">Blog</Link>
-            <a href="#qualiopi">Qualiopi</a>
-            <a href="#rgpd">Sécurité &amp; RGPD</a>
-            <a href="#tarifs">Tarifs</a>
-            <a href="#faq">FAQ</a>
-          </nav>
-          <div className="nav-cta">
-            <Link className="login" href="/login">Connexion</Link>
-            <Link className="btn btn-primary" href="/demo">Demander une démo</Link>
-          </div>
-        </div>
-      </header>
+      {/* En-tête : <SiteHeader/> partagé, rendu hors du scope .ofm-v2 (voir plus haut) */}
 
       {/* ===== HERO ===== */}
       <section className="hero">
@@ -670,45 +652,8 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ===== FOOTER ===== */}
-      <footer>
-        <div className="wrap">
-          <div className="foot-grid">
-            <div>
-              <Image src="/ofmanager-logo.png" alt="OFManager" width={150} height={48} className="h-9 w-auto" style={{ marginBottom: "10px" }} />
-              <p style={{ maxWidth: "280px" }}>Le logiciel des organismes de formation réglementés : sécurité privée &amp; VTC/Taxi.</p>
-              <p>Édité par <b style={{ color: "#fff" }}>CAP SOLUTIONS</b></p>
-            </div>
-            <div>
-              <h4>Produit</h4>
-              <a href="#metiers">Métiers</a>
-              <Link href="/fonctionnalites">Fonctionnalités</Link>
-              <Link href="/anti-fraude">Anti-fraude</Link>
-              <Link href="/comparatif">Comparatif</Link>
-              <Link href="/guides">Blog</Link>
-              <Link href="/glossaire">Glossaire</Link>
-              <a href="#tarifs">Tarifs</a>
-              <Link href="/login">Connexion</Link>
-            </div>
-            <div>
-              <h4>Solutions</h4>
-              <Link href="/solutions/tfp-aps">TFP APS</Link>
-              <Link href="/solutions/ssiap">SSIAP</Link>
-              <Link href="/solutions/sst">SST</Link>
-              <Link href="/solutions/vtc-taxi">VTC / Taxi</Link>
-              <Link href="/solutions/qualiopi">Qualiopi</Link>
-            </div>
-            <div>
-              <h4>Légal</h4>
-              <Link href="/mentions-legales">Mentions légales</Link>
-              <Link href="/cgv">CGV</Link>
-              <Link href="/confidentialite">Confidentialité</Link>
-              <Link href="/confidentialite">RGPD</Link>
-            </div>
-          </div>
-          <div className="foot-bottom">© 2026 OFManager — une solution CAP SOLUTIONS. Tous droits réservés.</div>
-        </div>
-      </footer>
     </main>
+      <SiteFooter />
+    </>
   );
 }

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Logo } from "@/components/site/logo";
 import { QualificationForm } from "./qualification-form";
 
 export const metadata: Metadata = {
@@ -12,10 +13,8 @@ export default function QualificationPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="mx-auto flex max-w-3xl items-center justify-between px-6 py-5">
-        <Link href="/" className="text-lg font-bold text-slate-900">
-          OF<span className="text-[#2C53C0]">Manager</span>
-        </Link>
-        <Link href="/demo" className="text-sm font-medium text-[#2C53C0] hover:underline">
+        <Link href="/"><Logo /></Link>
+        <Link href="/demo" className="text-sm font-medium text-[#3B6EF5] hover:underline">
           Tester la démo →
         </Link>
       </header>

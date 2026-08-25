@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { SITE_URL } from "@/lib/site-url";
 import { OFM_CSS } from "@/components/site/ofm-css";
 import { ScrollReveal } from "@/components/site/scroll-reveal";
+import { SiteHeader } from "@/components/site/site-header";
+import { SiteFooter } from "@/components/site/site-footer";
 import { FeaturesMetier } from "@/components/site/features-metier";
 
 export const metadata: Metadata = {
@@ -299,29 +300,14 @@ export default function FonctionnalitesPage() {
   };
 
   return (
-    <main className="ofm-v2">
+    <>
+      <SiteHeader />
+      <main className="ofm-v2">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <style dangerouslySetInnerHTML={{ __html: OFM_CSS + FONC_CSS }} />
       <ScrollReveal skip={2} />
 
-      {/* HEADER */}
-      <header>
-        <div className="wrap nav">
-          <Link href="/" className="logo">
-            <Image src="/ofmanager-logo.png" alt="OFManager" width={150} height={48} priority className="h-9 w-auto" />
-          </Link>
-          <nav className="nav-links">
-            <Link href="/">Accueil</Link>
-            <Link href="/fonctionnalites">Fonctionnalités</Link>
-            <Link href="/tarifs">Tarifs</Link>
-            <a href="#faq">FAQ</a>
-          </nav>
-          <div className="nav-cta">
-            <Link className="login" href="/login">Connexion</Link>
-            <Link className="btn btn-primary" href="/demo">Demander une démo</Link>
-          </div>
-        </div>
-      </header>
+      {/* En-tête : <SiteHeader/> partagé (hors .ofm-v2) */}
 
       {/* HERO — thèse */}
       <section className="fonc-hero">
@@ -455,39 +441,8 @@ export default function FonctionnalitesPage() {
         </div>
       </section>
 
-      {/* FOOTER */}
-      <footer>
-        <div className="wrap">
-          <div className="foot-grid">
-            <div>
-              <Image src="/ofmanager-logo.png" alt="OFManager" width={150} height={48} className="h-9 w-auto" style={{ marginBottom: "10px" }} />
-              <p style={{ maxWidth: "280px" }}>Le logiciel des organismes de formation réglementés : sécurité privée &amp; VTC/Taxi.</p>
-              <p>Édité par <b style={{ color: "#fff" }}>CAP SOLUTIONS</b></p>
-            </div>
-            <div>
-              <h4>Produit</h4>
-              <Link href="/fonctionnalites">Fonctionnalités</Link>
-              <Link href="/tarifs">Tarifs</Link>
-              <Link href="/login">Connexion</Link>
-            </div>
-            <div>
-              <h4>Solutions</h4>
-              <Link href="/solutions/tfp-aps">TFP APS</Link>
-              <Link href="/solutions/ssiap">SSIAP</Link>
-              <Link href="/solutions/vtc-taxi">VTC / Taxi</Link>
-              <Link href="/solutions/qualiopi">Qualiopi</Link>
-            </div>
-            <div>
-              <h4>Légal</h4>
-              <Link href="/mentions-legales">Mentions légales</Link>
-              <Link href="/cgv">CGV</Link>
-              <Link href="/confidentialite">Confidentialité</Link>
-              <Link href="/confidentialite">RGPD</Link>
-            </div>
-          </div>
-          <div className="foot-bottom">© 2026 OFManager — une solution CAP SOLUTIONS. Tous droits réservés.</div>
-        </div>
-      </footer>
     </main>
+      <SiteFooter />
+    </>
   );
 }

@@ -4,7 +4,7 @@ import { useActionState } from "react";
 import { CheckCircle2, Loader2, PhoneCall } from "lucide-react";
 import { submitQualification } from "@/lib/actions/demo-actions";
 
-const field = "w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-[#2C53C0] focus:ring-2 focus:ring-[#2C53C0]/20";
+const field = "w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-[#3B6EF5] focus:ring-2 focus:ring-[#3B6EF5]/20";
 const labelCls = "mb-1 block text-sm font-medium text-slate-700";
 
 export function QualificationForm() {
@@ -17,7 +17,7 @@ export function QualificationForm() {
         <h2 className="mt-3 text-lg font-bold text-slate-900">C'est noté, merci !</h2>
         <p className="mt-1 text-sm text-slate-600">
           Un conseiller OFManager vous rappelle au créneau indiqué. En attendant, vous pouvez déjà{" "}
-          <a href="/demo" className="font-semibold text-[#2C53C0] underline">tester une démo</a>.
+          <a href="/demo" className="font-semibold text-[#3B6EF5] underline">tester une démo</a>.
         </p>
       </div>
     );
@@ -96,7 +96,7 @@ export function QualificationForm() {
       <button
         type="submit"
         disabled={pending}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#2C53C0] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#24469f] disabled:opacity-60 sm:w-auto"
+        className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#3B6EF5] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#24469f] disabled:opacity-60 sm:w-auto"
       >
         {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <PhoneCall className="h-4 w-4" />}
         Être recontacté

@@ -1,11 +1,12 @@
 // src/app/glossaire/page.tsx
 // Index du glossaire. Server Component. Schema DefinedTermSet + BreadcrumbList.
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { SITE_URL } from "@/lib/site-url";
 import { ScrollReveal } from "@/components/site/scroll-reveal";
+import { SiteHeader } from "@/components/site/site-header";
+import { SiteFooter } from "@/components/site/site-footer";
 import { GLOSSAIRE, GLOSSAIRE_BASE, termsByCategory } from "@/lib/glossaire/terms";
 
 const NAVY = "#0D1B3E";
@@ -60,13 +61,7 @@ export default function Page() {
       <ScrollReveal skip={1} />
 
       {/* ===== HEADER ===== */}
-      <header className="sticky top-0 z-40 border-b border-slate-100 bg-white/90 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-5xl items-center gap-4 px-4 sm:px-6">
-          <Link href="/"><Image src="/ofmanager-logo.png" alt="OFManager" width={150} height={48} priority className="h-9 w-auto" /></Link>
-          <Link href="/" className="ml-2 text-sm text-slate-500 hover:text-[#3B6EF5]">← Accueil</Link>
-          <Link href="/demo" className="ml-auto rounded-lg bg-[#3B6EF5] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2954D4]">Demander une démo</Link>
-        </div>
-      </header>
+      <SiteHeader />
 
       {/* ===== HERO ===== */}
       <section className="text-white" style={{ background: `radial-gradient(900px 500px at 80% -10%, rgba(59,110,245,.25), transparent 60%), linear-gradient(180deg, ${NAVY}, #12245A)` }}>
@@ -117,9 +112,7 @@ export default function Page() {
       </section>
 
       {/* ===== FOOTER ===== */}
-      <footer className="bg-[#0D1B3E] py-8 text-center text-xs text-[#9fb0d0]">
-        © 2026 OFManager — une solution <strong className="text-white">CAP SOLUTIONS</strong>. · <Link href="/guides" className="text-[#9fb0d0] hover:text-white">Blog</Link> · <Link href="/mentions-legales" className="text-[#9fb0d0] hover:text-white">Mentions légales</Link>
-      </footer>
+      <SiteFooter />
     </main>
   );
 }
