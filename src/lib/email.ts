@@ -81,6 +81,10 @@ async function sendViaResend(
   const payload: Record<string, unknown> = {
     from,
     to: [params.to],
+    // Reply-To = adresse de l'OF (PC-MAIL-05) : le `from` est l'expéditeur mutualisé
+    // (seul domaine vérifié), mais les réponses des candidats doivent revenir à
+    // l'organisme, pas à un no-reply partagé.
+    reply_to: sender.email,
     subject: params.subject,
     // HTML prioritaire (e-mails candidats habillés) ; texte pour les envois legacy.
     ...(params.html ? { html: params.html } : { text: params.body ?? "" }),
@@ -156,6 +160,8 @@ export async function sendEmail(params: {
   try {
     const payload: Record<string, unknown> = {
       sender: { name: sender.name, email: sender.email },
+      // Reply-To = adresse de l'OF (PC-MAIL-05), cohérent avec l'envoi Resend.
+      replyTo: { email: sender.email, name: sender.name },
       to: [{ email: params.to }],
       subject: params.subject,
       ...(params.html ? { htmlContent: params.html } : { textContent: params.body ?? "" }),
