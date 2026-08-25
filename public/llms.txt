@@ -22,6 +22,9 @@
 - [Devenir agent de sécurité privée](https://ofmanager.info/guides/devenir-agent-de-securite-privee) : autorisation CNAPS, formation TFP APS, carte professionnelle, recyclage MAC APS.
 - [Devenir chauffeur VTC ou taxi](https://ofmanager.info/guides/devenir-chauffeur-vtc-taxi) : conditions, examen T3P via la CMA, carte professionnelle, formation continue.
 
+## Glossaire
+- [Glossaire de la formation professionnelle](https://ofmanager.info/glossaire) : définitions des sigles et notions clés (Qualiopi, CPF, OPCO, NDA, BPF, CNAPS, TFP APS, SSIAP, T3P, ADS…).
+
 ## À propos
 - [Mentions légales](https://ofmanager.info/mentions-legales)
 - [Conditions générales de vente](https://ofmanager.info/cgv)

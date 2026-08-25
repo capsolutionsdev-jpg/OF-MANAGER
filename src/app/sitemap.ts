@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/site-url";
 import { BLOG_ARTICLES, BLOG_BASE } from "@/lib/blog/registry";
+import { GLOSSAIRE, GLOSSAIRE_BASE } from "@/lib/glossaire/terms";
 
 // Sitemap XML des pages publiques (marketing). Domaine via NEXT_PUBLIC_SITE_URL
 // (défaut ofmanager.info). Les espaces privés (app) sont exclus — ils redirigent
@@ -13,6 +14,7 @@ const PAGES: [string, number, "weekly" | "monthly"][] = [
   ["/fonctionnalites", 0.9, "monthly"],
   ["/tarifs", 0.9, "monthly"],
   ["/guides", 0.8, "weekly"],
+  ["/glossaire", 0.6, "monthly"],
   ["/solutions/tfp-aps", 0.8, "monthly"],
   ["/solutions/ssiap", 0.8, "monthly"],
   ["/solutions/sst", 0.8, "monthly"],
@@ -42,5 +44,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.7,
   }));
 
-  return [...staticPages, ...blogPages];
+  // Termes du glossaire.
+  const glossairePages: MetadataRoute.Sitemap = GLOSSAIRE.map((t) => ({
+    url: `${BASE}${GLOSSAIRE_BASE}/${t.slug}`,
+    changeFrequency: "yearly",
+    priority: 0.4,
+  }));
+
+  return [...staticPages, ...blogPages, ...glossairePages];
 }

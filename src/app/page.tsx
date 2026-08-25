@@ -667,6 +667,7 @@ export default async function HomePage() {
               <a href="#metiers">Métiers</a>
               <Link href="/fonctionnalites">Fonctionnalités</Link>
               <Link href="/guides">Blog</Link>
+              <Link href="/glossaire">Glossaire</Link>
               <a href="#tarifs">Tarifs</a>
               <Link href="/login">Connexion</Link>
             </div>
