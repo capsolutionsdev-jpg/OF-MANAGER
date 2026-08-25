@@ -7,6 +7,7 @@ import { FORMULE_KEYS } from "@/lib/plans";
 import { fulfillCivicCheckout } from "@/lib/civique-api";
 import { organismeStatutForSubscription } from "@/lib/billing/subscription-status";
 import { sendEmail } from "@/lib/email";
+import { reportError } from "@/lib/observability/report-error";
 
 export const runtime = "nodejs";
 // Webhook Stripe : corps brut requis pour vérifier la signature.
@@ -145,6 +146,7 @@ export async function POST(req: Request) {
           }
         } catch (e) {
           console.error("[stripe webhook] relance dunning e-mail échouée (ignorée)", e);
+          await reportError(e, { tag: "stripe:dunning-email" });
         }
         break;
       }
@@ -158,6 +160,7 @@ export async function POST(req: Request) {
     }
   } catch (e) {
     console.error("[stripe webhook] traitement échoué:", e);
+    await reportError(e, { tag: "stripe:webhook", extra: { type: event.type } });
     // 500 → Stripe RÉ-ESSAIE automatiquement (relances avec backoff sur ~72 h).
     // Auparavant on renvoyait 200, ce qui « acquittait » un événement échoué :
     // une erreur transitoire (base indisponible…) faisait perdre DÉFINITIVEMENT
