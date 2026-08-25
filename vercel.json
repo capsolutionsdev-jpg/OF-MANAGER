@@ -37,6 +37,10 @@
     {
       "path": "/api/cron/mrr-snapshot",
       "schedule": "0 5 1 * *"
+    },
+    {
+      "path": "/api/cron/suspend-trials",
+      "schedule": "0 6 * * *"
     }
   ]
 }

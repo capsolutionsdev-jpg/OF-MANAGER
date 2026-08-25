@@ -102,7 +102,7 @@ export async function genererContenuSession(
   if (!(await hasStrictFeature("communication"))) {
     return { ok: false, error: "Le module Communication n'est pas activé pour votre organisme." };
   }
-  const rl = await checkLimit(`social-gen:${organismeId}`, { limit: 30, windowMs: 60 * 60 * 1000 });
+  const rl = await checkLimit(`social-gen:${organismeId}`, { limit: 30, windowMs: 60 * 60 * 1000, failClosed: true });
   if (!rl.ok) return { ok: false, error: "Trop de générations récentes. Réessayez dans quelques minutes." };
 
   const data = await buildPromoData(db, organismeId, sessionId);
@@ -221,7 +221,7 @@ export async function genererVisuelIA(
   if (!(await imageIaConfigured(organismeId))) {
     return { ok: false, needsKey: true, error: "L'image IA n'est pas encore activée (clé à configurer)." };
   }
-  const rl = await checkLimit(`social-img:${organismeId}`, { limit: 15, windowMs: 60 * 60 * 1000 });
+  const rl = await checkLimit(`social-img:${organismeId}`, { limit: 15, windowMs: 60 * 60 * 1000, failClosed: true });
   if (!rl.ok) return { ok: false, error: "Trop de générations d'images récentes. Réessayez plus tard." };
 
   const data = await buildPromoData(db, organismeId, sessionId);
