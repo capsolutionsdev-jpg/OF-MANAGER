@@ -67,6 +67,7 @@ const PDF_ENTRYPOINTS = [
   "/documents",
   "/titres",
   "/diplomes",
+  "/paiements", // reçu de paiement (PDF)
   "/jurys/affectation",
   "/examen-civique/facture",
   "/examen-civique/export",

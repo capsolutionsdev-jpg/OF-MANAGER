@@ -4,7 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { PaiementStatut } from "@prisma/client";
-import { Wallet, Plus, Trash2, Loader2 } from "lucide-react";
+import { Wallet, Plus, Trash2, Loader2, FileText } from "lucide-react";
 import {
   Dialog,
   DialogTrigger,
@@ -117,7 +117,7 @@ export function PaiementDialog({
         <Wallet className="h-3.5 w-3.5" />
         Règlements{paiements.length > 0 ? ` (${paiements.length})` : ""}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Règlements — {candidatNom}</DialogTitle>
           <DialogDescription>
@@ -159,15 +159,26 @@ export function PaiementDialog({
                 {p.reference && (
                   <span className="truncate text-xs text-muted-foreground">réf. {p.reference}</span>
                 )}
-                <button
-                  type="button"
-                  onClick={() => del(p.id)}
-                  disabled={isPending}
-                  title="Supprimer ce règlement"
-                  className="ml-auto rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                >
-                  {busy === p.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                </button>
+                <div className="ml-auto flex items-center gap-1.5">
+                  <a
+                    href={`/paiements/${p.id}/recu`}
+                    target="_blank"
+                    rel="noreferrer"
+                    title="Reçu de paiement à remettre au client (PDF)"
+                    className="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs font-medium hover:bg-muted"
+                  >
+                    <FileText className="h-3.5 w-3.5" /> Reçu
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => del(p.id)}
+                    disabled={isPending}
+                    title="Supprimer ce règlement"
+                    className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                  >
+                    {busy === p.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
