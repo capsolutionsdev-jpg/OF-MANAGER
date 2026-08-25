@@ -7,7 +7,21 @@
     "src/app/documents/contrat-formateur/[sessionId]/route.ts": { "memory": 1769, "maxDuration": 60 },
     "src/app/parcours/[token]/documents/route.ts": { "memory": 1769, "maxDuration": 60 },
     "src/app/api/candidats/[id]/expression-besoin/route.ts": { "memory": 1769, "maxDuration": 60 },
-    "src/app/api/cron/documents-b2b/route.ts": { "memory": 1769, "maxDuration": 60 }
+    "src/app/api/cron/documents-b2b/route.ts": { "memory": 1769, "maxDuration": 60 },
+    "src/app/(app)/diplomes/[id]/attestation/route.ts": { "memory": 1769, "maxDuration": 60 },
+    "src/app/(app)/diplomes/[id]/officiel/route.ts": { "memory": 1769, "maxDuration": 60 },
+    "src/app/(app)/titres/[id]/route.ts": { "memory": 1769, "maxDuration": 60 },
+    "src/app/(app)/paiements/[id]/recu/route.ts": { "memory": 1769, "maxDuration": 60 },
+    "src/app/(app)/mes-cours/[coursId]/attestation/route.ts": { "memory": 1769, "maxDuration": 60 },
+    "src/app/(app)/examen-civique/facture/[id]/route.ts": { "memory": 1769, "maxDuration": 60 },
+    "src/app/api/convention/route.ts": { "memory": 1769, "maxDuration": 60 },
+    "src/app/api/inscriptions/[id]/attestation-reussite/route.ts": { "memory": 1769, "maxDuration": 60 },
+    "src/app/api/parcours-t3p/[id]/route.ts": { "memory": 1769, "maxDuration": 60 },
+    "src/app/api/financements/[id]/bordereau/route.ts": { "memory": 1769, "maxDuration": 60 },
+    "src/app/api/console/contrat-prestation/[id]/pdf/route.ts": { "memory": 1769, "maxDuration": 60 },
+    "src/app/api/console/facture-editeur/[id]/pdf/route.ts": { "memory": 1769, "maxDuration": 60 },
+    "src/app/suivi/[token]/document/route.ts": { "memory": 1769, "maxDuration": 60 },
+    "src/app/api/pdf-test/route.ts": { "memory": 1769, "maxDuration": 60 }
   },
   "crons": [
     {
