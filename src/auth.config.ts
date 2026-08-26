@@ -132,8 +132,21 @@ export const authConfig = {
         const payload = session as ImpUpdatePayload;
         // Le JWT est muté EN PLACE (même référence) via ce cast typé.
         const tok = token as unknown as ImpTokenLike;
-        if (payload.imp === null) applyImpersonationStop(tok);
-        else applyImpersonationStart(tok, payload.imp);
+        if (payload.imp === null) {
+          // Sortie du mode support : no-op si aucune impersonation en cours
+          // (un token normal n'a pas de claim `imp`).
+          applyImpersonationStop(tok);
+        } else if (tok.role === "SUPERADMIN") {
+          // SÉCURITÉ (audit SEC-79) : SEUL un SUPERADMIN peut DÉMARRER une
+          // impersonation. Le trigger `update` de NextAuth est joignable via
+          // POST /api/auth/session (hors matcher middleware) par TOUT compte
+          // connecté ; sans cette garde, un rôle quelconque pourrait poser
+          // `imp:{orgId}` et devenir ADMIN d'un organisme arbitraire (escalade
+          // inter-tenant). La garde de la server action `startImpersonation`
+          // ne suffit pas : ce chemin direct ne l'emprunte pas.
+          applyImpersonationStart(tok, payload.imp);
+        }
+        // else : rôle non-SUPERADMIN → charge `imp` ignorée, token inchangé.
       }
       return token;
     },

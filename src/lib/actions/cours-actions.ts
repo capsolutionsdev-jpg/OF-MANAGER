@@ -1,9 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getTenantDb } from "@/lib/tenant";
+import { getTenantDb, requireStaffTenant, type TenantDb } from "@/lib/tenant";
 import { prismaBase, txWithOrg } from "@/lib/prisma";
-import { auth } from "@/auth";
 import {
   coursFormSchema,
   slugify,
@@ -15,6 +14,21 @@ import {
 
 type Res = { ok: boolean; error?: string };
 type CreateRes = { ok: true; id: string } | { ok: false; error: string };
+
+// Garde commune (audit SEC-26 / BFLA P2-1) : la gestion du catalogue e-learning
+// est réservée au PERSONNEL de l'organisme. `requireStaffTenant` rejette
+// APPRENANT/FORMATEUR/ENTREPRISE — sinon un compte à faible privilège pourrait
+// écrire du HTML de leçon (rendu en `dangerouslySetInnerHTML`) servi au staff.
+async function staffDb(): Promise<
+  { ok: true; db: TenantDb } | { ok: false; error: string }
+> {
+  try {
+    const { db } = await requireStaffTenant();
+    return { ok: true, db };
+  } catch {
+    return { ok: false, error: "Non autorisé : action réservée au personnel." };
+  }
+}
 
 async function uniqueSlug(base: string, ignoreId?: string): Promise<string> {
   const db = await getTenantDb();
@@ -31,9 +45,9 @@ async function uniqueSlug(base: string, ignoreId?: string): Promise<string> {
 }
 
 export async function createCours(values: CoursFormValues): Promise<CreateRes> {
-  const db = await getTenantDb();
-  const session = await auth();
-  if (!session?.user) return { ok: false, error: "Non autorisé." };
+  const guard = await staffDb();
+  if (!guard.ok) return guard;
+  const { db } = guard;
   const parsed = coursFormSchema.safeParse(values);
   if (!parsed.success) return { ok: false, error: "Données invalides." };
   const v = parsed.data;
@@ -58,9 +72,9 @@ export async function updateCours(
   id: string,
   values: CoursFormValues,
 ): Promise<Res> {
-  const db = await getTenantDb();
-  const session = await auth();
-  if (!session?.user) return { ok: false, error: "Non autorisé." };
+  const guard = await staffDb();
+  if (!guard.ok) return guard;
+  const { db } = guard;
   const parsed = coursFormSchema.safeParse(values);
   if (!parsed.success) return { ok: false, error: "Données invalides." };
   const v = parsed.data;
@@ -87,9 +101,9 @@ export async function togglePublishCours(
   id: string,
   isPublished: boolean,
 ): Promise<Res> {
-  const db = await getTenantDb();
-  const session = await auth();
-  if (!session?.user) return { ok: false, error: "Non autorisé." };
+  const guard = await staffDb();
+  if (!guard.ok) return guard;
+  const { db } = guard;
   await db.cours.update({ where: { id }, data: { isPublished } });
   revalidatePath("/elearning");
   revalidatePath(`/elearning/${id}`);
@@ -97,9 +111,9 @@ export async function togglePublishCours(
 }
 
 export async function deleteCours(id: string): Promise<Res> {
-  const db = await getTenantDb();
-  const session = await auth();
-  if (!session?.user) return { ok: false, error: "Non autorisé." };
+  const guard = await staffDb();
+  if (!guard.ok) return guard;
+  const { db } = guard;
   await db.cours.delete({ where: { id } });
   revalidatePath("/elearning");
   return { ok: true };
@@ -107,9 +121,9 @@ export async function deleteCours(id: string): Promise<Res> {
 
 // ── Modules ──
 export async function addModule(coursId: string, titre: string): Promise<Res> {
-  const db = await getTenantDb();
-  const session = await auth();
-  if (!session?.user) return { ok: false, error: "Non autorisé." };
+  const guard = await staffDb();
+  if (!guard.ok) return guard;
+  const { db } = guard;
   if (!titre.trim()) return { ok: false, error: "Titre requis." };
   const count = await db.coursModule.count({ where: { coursId } });
   await db.coursModule.create({
@@ -123,9 +137,9 @@ export async function updateModule(
   moduleId: string,
   titre: string,
 ): Promise<Res> {
-  const db = await getTenantDb();
-  const session = await auth();
-  if (!session?.user) return { ok: false, error: "Non autorisé." };
+  const guard = await staffDb();
+  if (!guard.ok) return guard;
+  const { db } = guard;
   const m = await db.coursModule.update({
     where: { id: moduleId },
     data: { titre: titre.trim() },
@@ -136,9 +150,9 @@ export async function updateModule(
 }
 
 export async function deleteModule(moduleId: string): Promise<Res> {
-  const db = await getTenantDb();
-  const session = await auth();
-  if (!session?.user) return { ok: false, error: "Non autorisé." };
+  const guard = await staffDb();
+  if (!guard.ok) return guard;
+  const { db } = guard;
   const m = await db.coursModule.delete({
     where: { id: moduleId },
     select: { coursId: true },
@@ -149,9 +163,9 @@ export async function deleteModule(moduleId: string): Promise<Res> {
 
 // ── Leçons ──
 export async function addLecon(moduleId: string, titre: string): Promise<Res> {
-  const db = await getTenantDb();
-  const session = await auth();
-  if (!session?.user) return { ok: false, error: "Non autorisé." };
+  const guard = await staffDb();
+  if (!guard.ok) return guard;
+  const { db } = guard;
   if (!titre.trim()) return { ok: false, error: "Titre requis." };
   const count = await db.lecon.count({ where: { moduleId } });
   const m = await db.coursModule.findUnique({
@@ -178,9 +192,9 @@ export async function updateLecon(
     isPublished?: boolean;
   },
 ): Promise<Res> {
-  const db = await getTenantDb();
-  const session = await auth();
-  if (!session?.user) return { ok: false, error: "Non autorisé." };
+  const guard = await staffDb();
+  if (!guard.ok) return guard;
+  const { db } = guard;
 
   const lecon = await db.lecon.update({
     where: { id: leconId },
@@ -213,9 +227,9 @@ export async function updateLecon(
 }
 
 export async function deleteLecon(leconId: string): Promise<Res> {
-  const db = await getTenantDb();
-  const session = await auth();
-  if (!session?.user) return { ok: false, error: "Non autorisé." };
+  const guard = await staffDb();
+  if (!guard.ok) return guard;
+  const { db } = guard;
   const lecon = await db.lecon.delete({
     where: { id: leconId },
     select: { module: { select: { coursId: true } } },
@@ -229,9 +243,9 @@ export async function moveModule(
   moduleId: string,
   dir: "up" | "down",
 ): Promise<Res> {
-  const db = await getTenantDb();
-  const session = await auth();
-  if (!session?.user) return { ok: false, error: "Non autorisé." };
+  const guard = await staffDb();
+  if (!guard.ok) return guard;
+  const { db } = guard;
   const m = await db.coursModule.findUnique({ where: { id: moduleId } });
   if (!m) return { ok: false, error: "Introuvable." };
   const voisin = await db.coursModule.findFirst({
@@ -257,9 +271,9 @@ export async function moveLecon(
   leconId: string,
   dir: "up" | "down",
 ): Promise<Res> {
-  const db = await getTenantDb();
-  const session = await auth();
-  if (!session?.user) return { ok: false, error: "Non autorisé." };
+  const guard = await staffDb();
+  if (!guard.ok) return guard;
+  const { db } = guard;
   const l = await db.lecon.findUnique({
     where: { id: leconId },
     include: { module: { select: { coursId: true } } },
