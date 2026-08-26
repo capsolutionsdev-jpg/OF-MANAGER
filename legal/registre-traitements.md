@@ -1,13 +1,13 @@
-> ⚠️ **BROUILLON — à compléter et valider (DPO/juriste).** Registre de l'**Éditeur** (CAP Compétences) au titre de son activité de **sous-traitant** (art. 30.2 RGPD), pour le service OFManager. Le Client tient son propre registre en tant que responsable de traitement.
+> ⚠️ **BROUILLON — à compléter et valider (DPO/juriste).** Registre de l'**Éditeur** (CAP SOLUTIONS) au titre de son activité de **sous-traitant** (art. 30.2 RGPD), pour le service OFManager. Le Client tient son propre registre en tant que responsable de traitement.
 
-# Registre des activités de traitement — CAP Compétences (sous-traitant, OFManager)
+# Registre des activités de traitement — CAP SOLUTIONS (sous-traitant, OFManager)
 
 **Responsable du registre :** [nom / DPO éventuel] — [contact].
 **Dernière mise à jour :** [date].
 
 ## 1. Coordonnées
 
-- **Sous-traitant** : CAP Compétences, SIREN [n°], [adresse], [contact DPO/référent RGPD].
+- **Sous-traitant** : CAP SOLUTIONS, SIREN [n°], [adresse], [contact DPO/référent RGPD].
 - **Responsables de traitement (clients)** : organismes de formation abonnés (liste tenue à jour côté commercial/facturation).
 
 ## 2. Catégories de traitements réalisés pour le compte des clients
