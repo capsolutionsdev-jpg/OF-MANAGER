@@ -129,6 +129,16 @@ export async function POST(req: Request) {
 
   const tpl = DOCUMENTS["CONVENTION_ENTREPRISE"].html;
 
+  // Anti-abus (audit SEC-051 / F-14) : chaque candidat = 1 rendu Chromium. On
+  // plafonne le lot pour éviter l'épuisement CPU/mémoire de la fonction serverless.
+  const MAX_CONVENTIONS = 50;
+  if (candidates.length > MAX_CONVENTIONS) {
+    return new Response(
+      `Trop de conventions demandées en une fois (max ${MAX_CONVENTIONS}).`,
+      { status: 413 },
+    );
+  }
+
   const merged = await PDFDocument.create();
   for (const c of candidates) {
     const tarifNum = Number((c.tarif ?? "").replace(",", "."));

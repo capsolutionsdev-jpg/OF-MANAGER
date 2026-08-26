@@ -6,6 +6,7 @@ import { auth } from "@/auth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { embedUrl, pct } from "@/lib/elearning";
+import { sanitizeLessonHtml } from "@/lib/sanitize-html";
 import { LeconActions } from "@/components/elearning/lecon-actions";
 import { QuizRunner } from "@/components/elearning/quiz-runner";
 import type { LeconQuizItem } from "@/lib/validators/cours";
@@ -212,7 +213,7 @@ export default async function CoursPlayerPage({
             {current.contenu && (
               <div
                 className="prose prose-sm max-w-none text-[15px] leading-relaxed text-foreground [&_a]:text-primary [&_h2]:mt-4 [&_h2]:font-bold [&_li]:ml-4 [&_li]:list-disc [&_p]:my-2"
-                dangerouslySetInnerHTML={{ __html: current.contenu }}
+                dangerouslySetInnerHTML={{ __html: sanitizeLessonHtml(current.contenu) }}
               />
             )}
 
