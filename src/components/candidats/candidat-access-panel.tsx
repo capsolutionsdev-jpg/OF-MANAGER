@@ -7,6 +7,7 @@ import { KeyRound, Check, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createApprenantAccount } from "@/lib/actions/apprenant-actions";
+import { genProvisionalPassword } from "@/lib/gen-password";
 
 /**
  * Création / réinitialisation de l'accès « espace apprenant » depuis la fiche
@@ -18,7 +19,7 @@ export function CandidatAccessPanel({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
-  const [pwd, setPwd] = useState(() => `CAP-${Math.random().toString(36).slice(2, 8).toUpperCase()}`);
+  const [pwd, setPwd] = useState(() => genProvisionalPassword("CAP"));
   const [done, setDone] = useState(false);
 
   function submit() {
