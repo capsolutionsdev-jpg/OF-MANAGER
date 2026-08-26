@@ -101,6 +101,21 @@ export async function emettreFactureEditeur(id: string): Promise<FactureEditeurS
   if (!f) return { error: "Facture introuvable." };
   if (f.numero) return { error: "Facture déjà émise." };
 
+  // Garde de conformité (PC-JUR-02) : une facture officielle exige un émetteur
+  // immatriculé. On vérifie la source RÉELLE de la facture — getEmetteur() (Organisme
+  // éditeur en base, VITRINE_ORGANISME_ID) — et non les mentions légales de la vitrine.
+  const emetteur = await getEmetteur();
+  const emetteurManques: string[] = [];
+  if (!sirenFromSiret(emetteur.siret ?? "")) emetteurManques.push("SIRET");
+  if (!emetteur.tva?.trim()) emetteurManques.push("n° de TVA");
+  if (emetteurManques.length > 0) {
+    return {
+      error: `Émission bloquée : l'identité de l'émetteur est incomplète (${emetteurManques.join(
+        ", ",
+      )}). Complétez le SIRET / n° de TVA de l'organisme éditeur avant d'émettre une facture.`,
+    };
+  }
+
   const now = new Date();
   const annee = now.getFullYear();
   const echeance = new Date(now.getTime() + 30 * 86_400_000);
