@@ -64,7 +64,7 @@ Le Client autorise l'Éditeur à recourir aux sous-traitants ultérieurs suivant
 | **Vercel** | Hébergement applicatif / CDN | UE `[à confirmer : région déployée]` |
 | **Neon** | Base de données PostgreSQL | UE — `eu-central-1` (Francfort) |
 | **Upstash** | Limitation de débit / cache Redis | UE `[région à confirmer]` |
-| **Resend** | Envoi d'e-mails transactionnels | **États-Unis** — transfert encadré par clauses contractuelles types (CCT) |
+| **Resend** | Envoi d'e-mails transactionnels | **UE — Irlande** (`eu-west-1`) ; société éditrice établie aux États-Unis, garanties CCT |
 | **Stripe** | Paiement en ligne de l'abonnement | UE/`[à confirmer]` |
 
 Tout changement de sous-traitant ultérieur est notifié au Client, qui peut s'y opposer pour un motif légitime.
