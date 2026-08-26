@@ -67,3 +67,57 @@ jobs:
       # Garantit qu'un build de production cassé ne passe pas la CI (cf. QA-02).
       - name: Build
         run: npm run build
+
+  # Filet E2E de fumée : l'app démarre et les pages PUBLIQUES répondent (lecture seule),
+  # contre une base éphémère. NON BLOQUANT pour l'instant (continue-on-error) : les specs
+  # auth/export/a11y-authentifié nécessitent un seed E2E déterministe (étape suivante) ;
+  # à promouvoir en bloquant une fois le smoke confirmé stable sur quelques runs (PC-E2E-03).
+  e2e-smoke:
+    name: E2E smoke (pages publiques, non bloquant)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: testdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/testdb"
+      DIRECT_URL: "postgresql://postgres:postgres@localhost:5432/testdb"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Prepare test database (schema)
+        run: npx prisma db push --skip-generate --accept-data-loss
+
+      - name: Install Playwright (chromium)
+        run: npx playwright install --with-deps chromium
+
+      # DATABASE_URL pointe la base éphémère (testdb) → la garde anti-prod de
+      # playwright.config.ts autorise l'exécution.
+      - name: E2E smoke
+        run: npx playwright test smoke.spec.ts --project=chromium
