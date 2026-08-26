@@ -3,6 +3,7 @@ import { CivicMention } from "@prisma/client";
 import { getStripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 import { civicCors } from "@/lib/civique-api";
+import { checkLimit, clientIp } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -31,6 +32,16 @@ const PRIX_DEFAUT: Record<CivicMention, number> = {
 // civique en ligne. Appelé par le site vitrine. Public (CORS), aucune donnée
 // sensible ; le compte candidat est créé à la confirmation du paiement (webhook).
 export async function POST(req: Request) {
+  // Anti-abus (audit SEC-050 / F-12) : endpoint public créant une session Stripe
+  // (appel API tiers) → plafond par IP contre le spam de checkout.
+  const rl = await checkLimit(`civique-checkout:${clientIp(req)}`, { limit: 8, windowMs: 60_000 });
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: "Trop de requêtes. Réessayez dans un instant." },
+      { status: 429, headers: civicCors },
+    );
+  }
+
   const stripe = getStripe();
   if (!stripe) {
     return NextResponse.json({ error: "Paiement non configuré." }, { status: 503, headers: civicCors });

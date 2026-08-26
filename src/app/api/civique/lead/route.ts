@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { civicCors } from "@/lib/civique-api";
+import { checkLimit, clientIp } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -9,6 +10,16 @@ export const dynamic = "force-dynamic";
 // (formulaire du test de positionnement). Crée/maj un Candidat (prospect)
 // dans le CRM de l'organisme. Public (CORS) ; aucune donnée sensible.
 export async function POST(req: Request) {
+  // Anti-flood (audit SEC-050 / F-12) : endpoint public créant un Candidat →
+  // plafond par IP pour éviter la pollution CRM. (Partagé via Upstash si config.)
+  const rl = await checkLimit(`civique-lead:${clientIp(req)}`, { limit: 10, windowMs: 60_000 });
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: "Trop de requêtes. Réessayez dans un instant." },
+      { status: 429, headers: civicCors },
+    );
+  }
+
   let body: {
     nom?: string;
     prenom?: string;

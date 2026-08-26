@@ -1,3 +1,4 @@
+import type { Session } from "next-auth";
 import { auth } from "@/auth";
 import { prismaBase, withOrgVar } from "@/lib/prisma";
 
@@ -131,9 +132,32 @@ export function bypassPrisma() {
   });
 }
 
+/**
+ * Vérifie que la session correspond toujours à une session ACTIVE en base
+ * (audit SEC-014 — révocation) : compte existant et `isActive`, et `sid` du token
+ * égal à `activeSessionId` (dernière connexion). Coupe les Server Actions / routes
+ * API pour un token révoqué (reset admin, désactivation, reprise sur un autre
+ * appareil), là où le seul contrôle des layouts RSC ne s'appliquait pas.
+ */
+async function assertLiveSession(session: Session | null): Promise<void> {
+  const uid = session?.user?.id;
+  if (!uid) throw new Error("Session invalide.");
+  const u = await prismaBase.user.findUnique({
+    where: { id: uid },
+    select: { isActive: true, activeSessionId: true },
+  });
+  if (!u || !u.isActive) throw new Error("Compte désactivé ou introuvable.");
+  const sid = (session!.user as { sid?: string | null }).sid ?? null;
+  // sid null = token hérité (avant la « session unique ») → pas de blocage dessus.
+  if (sid && u.activeSessionId && u.activeSessionId !== sid) {
+    throw new Error("Session expirée : connexion depuis un autre appareil.");
+  }
+}
+
 /** Client Prisma cloisonné sur l'organisme de l'utilisateur connecté. */
 export async function getTenantDb(): Promise<TenantDb> {
   const session = await auth();
+  await assertLiveSession(session);
   const organismeId = session?.user?.organismeId ?? null;
   if (!organismeId) {
     throw new Error(
@@ -146,6 +170,7 @@ export async function getTenantDb(): Promise<TenantDb> {
 /** Renvoie la session, l'organismeId et le client cloisonné. */
 export async function requireTenant() {
   const session = await auth();
+  await assertLiveSession(session);
   const organismeId = session?.user?.organismeId ?? null;
   if (!organismeId) {
     throw new Error("Aucun organisme rattaché à la session.");
@@ -175,5 +200,6 @@ export async function requireStaffTenant() {
   if (!session?.user || !organismeId || !role || NON_STAFF_ROLES.has(role)) {
     throw new Error("Non autorisé : action réservée au personnel de l'organisme.");
   }
+  await assertLiveSession(session);
   return { session, organismeId, role, db: scopedPrisma(organismeId) };
 }

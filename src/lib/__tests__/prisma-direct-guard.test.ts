@@ -23,6 +23,10 @@ const ALLOWLIST = new Set([
   // Wedof : lit UNIQUEMENT l'Organisme de la session (where { id: orgId de session })
   // pour l'état de connexion ; les dossiers de financement passent par getTenantDb.
   "financements/page.tsx",
+  // Site vitrine : les données tenant passent par getTenantDb() ; le client brut
+  // ne sert qu'à prisma.user.findUnique (entité d'auth GLOBALE cross-tenant) —
+  // cf. audit SEC-054/F-33, revue manuelle : pas de fuite inter-tenant.
+  "site-vitrine/page.tsx",
 ]);
 
 /**
@@ -130,6 +134,10 @@ const ACTIONS_ALLOWLIST = new Set([
   // Compte courant / facturation / paramètres
   "totp-actions.ts",
   "billing-actions.ts",
+  // Déconnexion : purge activeSessionId (User = entité GLOBALE cross-tenant) de la
+  // SESSION COURANTE uniquement — updateMany where { id, activeSessionId: sid }.
+  // Révocation de session côté serveur (audit SEC-014).
+  "auth-actions.ts",
   // Cycle de vie démo : mute la ligne Organisme du tenant courant (id de session),
   // après vérification isDemo — pas de données filles, getTenantDb inapplicable.
   "demo-lifecycle-actions.ts",
