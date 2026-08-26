@@ -28,6 +28,7 @@ export default async function SupportPage() {
   const db = await getTenantDb();
   const tickets = await db.supportTicket.findMany({
     orderBy: { updatedAt: "desc" },
+    take: 200,
     include: { messages: { orderBy: { createdAt: "asc" } } },
   });
 
