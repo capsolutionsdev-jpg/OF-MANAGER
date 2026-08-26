@@ -5,6 +5,7 @@
 
 export const OVERRIDABLE_DOCS = [
   { key: "REGLEMENT_INTERIEUR", label: "Règlement intérieur" },
+  { key: "LIVRET_ACCUEIL", label: "Livret d'accueil" },
   { key: "CONDITIONS_GENERALES", label: "Conditions générales (CGV)" },
 ] as const;
 

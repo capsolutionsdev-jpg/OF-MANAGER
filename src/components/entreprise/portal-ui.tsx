@@ -125,6 +125,7 @@ export function documentTypeLabel(type: string): string {
     DEVIS: "Devis",
     FACTURE: "Facture",
     REGLEMENT_INTERIEUR: "Règlement intérieur",
+    LIVRET_ACCUEIL: "Livret d'accueil",
     CONDITIONS_GENERALES: "Conditions générales (CGV)",
     SATISFACTION_ENTREPRISE: "Enquête de satisfaction",
   };
