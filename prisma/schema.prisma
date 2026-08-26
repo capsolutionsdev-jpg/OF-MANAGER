@@ -135,6 +135,11 @@ model Organisme {
   stripeCustomerId     String? // client Stripe (1 par organisme ; pas de contrainte unique pour éviter une migration destructive)
   stripeSubscriptionId String?
   abonnementJusquau    DateTime? // fin de la période payée en cours (current_period_end)
+  // Traçage de l'acceptation contractuelle au moment de la souscription (case cochée
+  // par le gérant, documents publiés + liés). Horodatage de la DERNIÈRE acceptation ;
+  // null tant que jamais souscrit. Le « qui » est journalisé dans AuditLog (action ACCEPT_CGV).
+  cgvAcceptedAt             DateTime? // acceptation des CGV (/cgv)
+  confidentialiteAcceptedAt DateTime? // acceptation de la politique de confidentialité (/confidentialite)
 
   // Conformité RGPD + accessibilité (Qualiopi ind. 26)
   dureeConservationMois  Int     @default(36) // durée de conservation des données candidats (mois) → purge auto

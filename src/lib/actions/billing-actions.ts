@@ -33,10 +33,16 @@ async function requireAdminOrg() {
 export async function createCheckout(
   formule: FormuleKey,
   periode: "mensuel" | "annuel" = "mensuel",
+  acceptedTerms = false,
 ): Promise<BillingState> {
   const ctx = await requireAdminOrg();
   if (!ctx) return { error: "Seul le gérant du compte peut souscrire." };
   if (!FORMULE_KEYS.has(formule)) return { error: "Formule inconnue." };
+  // Cadre contractuel opposable : pas de souscription sans acceptation explicite
+  // des CGV + politique de confidentialité (case cochée côté client, revérifiée ici).
+  if (!acceptedTerms) {
+    return { error: "Vous devez accepter les CGV et la politique de confidentialité pour souscrire." };
+  }
 
   const stripe = getStripe();
   if (!stripe) return { error: NOT_CONFIGURED };
@@ -45,6 +51,9 @@ export async function createCheckout(
   if (!org) return { error: "Organisme introuvable." };
   if (org.isDemo) return { error: DEMO_BLOCKED };
 
+  // Résolution + validation de la formule/période AVANT toute écriture : on ne trace
+  // une acceptation que si la souscription demandée est réellement ouvrable (sinon
+  // « RESEAU » en annuel, priceYear null, laisserait une acceptation fantôme en base).
   const { plans } = await getResolvedPlans();
   const plan = plans[formule];
   const annuel = periode === "annuel";
@@ -53,6 +62,31 @@ export async function createCheckout(
   }
   const unitAmount = (annuel ? (plan.priceYear as number) : plan.price) * 100;
   const interval: "month" | "year" = annuel ? "year" : "month";
+
+  // Trace l'acceptation contractuelle au moment du clic — les deux documents publiés
+  // et liés dans la case (CGV + politique de confidentialité) sont acceptés d'un même
+  // geste. Horodatage sur l'organisme + journal d'audit nominatif (qui a engagé l'OF).
+  const acceptedAt = new Date();
+  await prisma.organisme.update({
+    where: { id: org.id },
+    data: { cgvAcceptedAt: acceptedAt, confidentialiteAcceptedAt: acceptedAt },
+  });
+  // Journal best-effort : ne jamais bloquer une souscription légitime sur un incident
+  // de journalisation (la preuve d'acceptation reste l'horodatage écrit ci-dessus).
+  try {
+    await prisma.auditLog.create({
+      data: {
+        organismeId: org.id,
+        userId: ctx.userId,
+        action: "ACCEPT_CGV",
+        entityType: "Organisme",
+        entityId: org.id,
+        changesJson: { formule, periode, cgv: true, confidentialite: true },
+      },
+    });
+  } catch {
+    // silencieux : l'acceptation est déjà tracée sur l'organisme.
+  }
 
   // Client Stripe : réutilise s'il existe, sinon le crée et le mémorise.
   let customerId = org.stripeCustomerId;
