@@ -15,7 +15,10 @@ export const dynamic = "force-dynamic";
 
 export default async function VeillePage() {
   const db = await getTenantDb();
-  const entrees = await db.veilleEntree.findMany({ orderBy: { date: "desc" } });
+  const [entrees, total] = await Promise.all([
+    db.veilleEntree.findMany({ orderBy: { date: "desc" }, take: 300 }),
+    db.veilleEntree.count(),
+  ]);
 
   const rows: VeilleRow[] = entrees.map((e) => ({
     id: e.id,
@@ -47,7 +50,7 @@ export default async function VeillePage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Registre ({rows.length})</CardTitle>
+          <CardTitle className="text-base">Registre ({total})</CardTitle>
         </CardHeader>
         <CardContent>
           <VeilleTable rows={rows} />
