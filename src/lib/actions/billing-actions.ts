@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
 import { getResolvedPlans } from "@/lib/pricing";
 import { FORMULE_KEYS, type FormuleKey } from "@/lib/plans";
+import { frTvaTaxRateId } from "@/lib/stripe-tax";
 import { appBaseUrl } from "@/lib/token";
 
 export type BillingState = { error?: string; url?: string };
@@ -66,12 +67,16 @@ export async function createCheckout(
   }
 
   const base = appBaseUrl();
+  // TVA 20 % (assujetti) : TaxRate exclusif ajouté au prix HT → la facture Stripe
+  // ventile HT + TVA (PC-FACT-06). Les prix des formules restent définis HT.
+  const tvaRateId = await frTvaTaxRateId(stripe);
   const checkout = await stripe.checkout.sessions.create({
     mode: "subscription",
     customer: customerId,
     line_items: [
       {
         quantity: 1,
+        tax_rates: [tvaRateId],
         price_data: {
           currency: "eur",
           unit_amount: unitAmount,
