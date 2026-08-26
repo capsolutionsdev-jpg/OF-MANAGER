@@ -78,12 +78,27 @@ export default async function ConfidentialitePage() {
         </section>
 
         <section>
-          <h2 className="text-lg font-semibold text-foreground">5. Destinataires et hébergement</h2>
+          <h2 className="text-lg font-semibold text-foreground">5. Destinataires, sous-traitants et hébergement</h2>
           <p className="mt-2">
-            Les données sont accessibles au personnel habilité de votre organisme de formation.
-            Des sous-traitants techniques interviennent pour l&apos;hébergement, la signature
-            électronique et, le cas échéant, le paiement — encadrés contractuellement et situés
-            dans l&apos;Union européenne. Les données sont hébergées au sein de l&apos;UE.
+            Les données sont accessibles au personnel habilité de votre organisme de formation et, dans
+            la stricte mesure nécessaire à la fourniture du service, à celui de l&apos;Éditeur.
+            L&apos;Éditeur recourt à des sous-traitants techniques, encadrés contractuellement (clauses
+            conformes à l&apos;article 28 du RGPD) :
+          </p>
+          <ul className="mt-2 list-disc space-y-1 pl-5">
+            <li><strong>Hébergement applicatif</strong> — Vercel (fonctions en région Union européenne).</li>
+            <li><strong>Base de données</strong> — Neon, PostgreSQL (Union européenne, Francfort).</li>
+            <li><strong>Limitation de débit / cache technique</strong> — Upstash (Redis).</li>
+            <li><strong>E-mails transactionnels</strong> — Resend (États-Unis) : acheminement des messages (convocations, notifications).</li>
+            <li><strong>Paiement de l&apos;abonnement</strong> — Stripe.</li>
+          </ul>
+          <p className="mt-2">
+            La base de données et les fichiers sont hébergés dans l&apos;Union européenne. L&apos;envoi
+            des e-mails transactionnels implique un transfert vers les États-Unis (Resend), limité aux
+            données nécessaires à l&apos;acheminement du message et encadré par des garanties appropriées
+            (clauses contractuelles types / accord de traitement). La liste des sous-traitants peut
+            évoluer ; toute modification substantielle est portée à la connaissance du Client, qui peut
+            s&apos;y opposer pour un motif légitime.
           </p>
         </section>
 

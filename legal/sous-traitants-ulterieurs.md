@@ -9,7 +9,7 @@ Chaque fournisseur doit : (a) présenter des **garanties suffisantes** (art. 28)
 | **Neon** | Base de données PostgreSQL | Région **UE** — `eu-central-1` (Francfort) *(confirmé sur l'endpoint)* | DPA disponible (section Legal du fournisseur) | ☐ Signer/archiver le DPA · ☐ Confirmer la région UE du projet |
 | **Vercel** | Hébergement application, fonctions serverless, CDN | Fonctions à **épingler en région UE** (ex. Francfort `fra1`) ; CDN mondial (contenu non personnel) | Data Processing Addendum disponible | ☐ Épingler la région UE des fonctions · ☐ Signer/archiver le DPA |
 | **Upstash** | Redis (rate-limit anti-brute-force) | Région **UE** à sélectionner | DPA disponible | ☐ Créer la base en région UE · ☐ Signer/archiver le DPA |
-| **Fournisseur e-mail** (Brevo) | Envoi des e-mails transactionnels | Éditeur **UE** (France), serveurs UE | DPA disponible (RGPD natif) | ☐ Signer/archiver le DPA · ☐ Limiter les données dans les e-mails |
+| **Resend** | Envoi des e-mails transactionnels | **États-Unis** (transfert hors UE) | DPA + **clauses contractuelles types (CCT)** à signer/archiver | ☐ Signer/archiver le DPA + CCT · ☐ Vérifier SPF/DKIM/DMARC de `ofmanager.info` · ☐ Limiter les données dans les e-mails (pas de données sensibles) |
 | **Anthropic** (module IA, si activé) | Assistant IA (rédaction/résumé) | Traitement via API | Conditions entreprise / DPA | ☐ N'activer que si nécessaire · ☐ Ne pas envoyer de données sensibles · ☐ DPA |
 | **Stripe** (si abonnement en ligne) | Paiement de l'abonnement SaaS | UE/международный, PCI-DSS | DPA disponible | ☐ Signer/archiver le DPA |
 
