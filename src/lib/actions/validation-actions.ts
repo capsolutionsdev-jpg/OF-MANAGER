@@ -40,6 +40,16 @@ export async function createValidation(input: CreateValidationInput): Promise<Re
   const titre = (input.titre ?? "").trim();
   if (!Object.values(ValidationType).includes(input.type)) return { ok: false, error: "Type invalide." };
   if (!titre) return { ok: false, error: "Intitulé requis." };
+  // Cloisonnement (audit A05-018) : accès raw prisma → on vérifie explicitement
+  // que le candidat éventuellement lié appartient bien à l'organisme courant.
+  const candidatId = (input.candidatId ?? "").trim() || null;
+  if (candidatId) {
+    const candOk = await prisma.candidat.findFirst({
+      where: { id: candidatId, organismeId: c.organismeId },
+      select: { id: true },
+    });
+    if (!candOk) return { ok: false, error: "Candidat introuvable." };
+  }
   await prisma.validationDemande.create({
     data: {
       organismeId: c.organismeId,
@@ -47,7 +57,7 @@ export async function createValidation(input: CreateValidationInput): Promise<Re
       titre,
       description: (input.description ?? "").trim() || null,
       lienHref: (input.lienHref ?? "").trim() || null,
-      candidatId: (input.candidatId ?? "").trim() || null,
+      candidatId,
       createdById: c.id,
       createdByNom: c.name,
     },

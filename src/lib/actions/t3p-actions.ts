@@ -45,6 +45,11 @@ export async function creerParcoursT3P(
   if (!session?.user) return { ok: false, error: "Non autorisé." };
   const db = await getTenantDb();
 
+  // Cloisonnement (audit A05-018) : candidatId est un argument ; on confirme qu'il
+  // appartient bien au tenant avant de créer un parcours qui le référencerait.
+  const candOk = await db.candidat.findFirst({ where: { id: candidatId }, select: { id: true } });
+  if (!candOk) return { ok: false, error: "Candidat introuvable." };
+
   try {
     const existant = await db.parcoursT3P.findFirst({
       where: { candidatId, metier },

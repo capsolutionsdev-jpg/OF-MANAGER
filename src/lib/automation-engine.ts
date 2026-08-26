@@ -86,10 +86,18 @@ type Counts = {
 };
 
 /**
- * Exécute tous les automatismes du parcours (idempotent grâce aux jalons
- * datés sur l'inscription). Appelé par le cron quotidien ou manuellement.
+ * Exécute les automatismes du parcours (idempotent grâce aux jalons datés sur
+ * l'inscription).
+ * - `orgId` ABSENT → balayage GLOBAL de tous les tenants : réservé au cron
+ *   quotidien (`api/cron/parcours`), seul point d'entrée cross-tenant légitime.
+ * - `orgId` FOURNI → balayage CLOISONNÉ à cet organisme : utilisé par le
+ *   déclencheur manuel (`runAutomationsNow`), qui ne doit jamais toucher les
+ *   données d'un autre tenant (audit multi-tenant A05-001).
  */
-export async function runAutomations(): Promise<Counts> {
+export async function runAutomations(orgId?: string): Promise<Counts> {
+  // Filtre tenant appliqué à CHAQUE balayage quand un organisme est fourni
+  // (déclenchement manuel). Vide pour le cron (global).
+  const orgWhere = orgId ? { organismeId: orgId } : {};
   const now = new Date();
   const base = appBaseUrl();
   const counts: Counts = {
@@ -164,7 +172,7 @@ export async function runAutomations(): Promise<Counts> {
   };
 
   const inscriptions = await prisma.inscription.findMany({
-    where: { statut: { not: "ANNULEE" } },
+    where: { statut: { not: "ANNULEE" }, ...orgWhere },
     include: { candidat: { include: { entreprise: true } }, session: { include: { formation: true } } },
   });
 
@@ -684,6 +692,7 @@ ${org.representant} — ${org.name}`,
       statut: { not: "ANNULEE" },
       dateFin: { lt: now },
       crFormateurSentAt: null,
+      ...orgWhere,
     },
     include: { formation: true, formateurs: true },
   });
@@ -736,7 +745,7 @@ ${org.representant} — ${org.name}`;
   const demiLabel = demiNow === DemiJournee.MATIN ? "matin" : "après-midi";
 
   const emargs = await prisma.emargementSignature.findMany({
-    where: { date: { gte: startToday, lt: endToday }, demi: demiNow, sentAt: null },
+    where: { date: { gte: startToday, lt: endToday }, demi: demiNow, sentAt: null, ...orgWhere },
     include: { session: { include: { formation: true } } },
   });
 

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { CivicMention } from "@prisma/client";
 import { getStripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
-import { civicCors } from "@/lib/civique-api";
+import { civicCors, resolveCivicOrganismeId } from "@/lib/civique-api";
 import { checkLimit, clientIp } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
@@ -66,9 +66,10 @@ export async function POST(req: Request) {
   if (!mention) return NextResponse.json({ error: "Mention inconnue." }, { status: 400, headers: civicCors });
   if (!email.includes("@")) return NextResponse.json({ error: "E-mail invalide." }, { status: 400, headers: civicCors });
 
-  // Correctif audit P3 : organisme cible = env CIVIC_ORGANISME_ID (ou corps pour
-  // le multi-vitrine) — plus d'auto-détection de « l'organisme le plus ancien ».
-  const organismeId = process.env.CIVIC_ORGANISME_ID ?? body.organismeId ?? null;
+  // Correctif audit A05-002/A05-009 : l'organisme cible ne peut PLUS être imposé
+  // librement par le corps public. Il vient de l'env CIVIC_ORGANISME_ID (ou de la
+  // liste blanche CIVIC_ORGANISME_IDS pour le multi-vitrine).
+  const organismeId = resolveCivicOrganismeId(body.organismeId);
   if (!organismeId) {
     return NextResponse.json({ error: "Organisme non configuré." }, { status: 503, headers: civicCors });
   }

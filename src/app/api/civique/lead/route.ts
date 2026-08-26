@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { civicCors } from "@/lib/civique-api";
+import { civicCors, resolveCivicOrganismeId } from "@/lib/civique-api";
 import { checkLimit, clientIp } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
@@ -42,10 +42,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Nom, prénom et e-mail requis." }, { status: 400, headers: civicCors });
   }
 
-  // Correctif audit P3 : organisme cible = env CIVIC_ORGANISME_ID (ou corps pour
-  // le multi-vitrine) — plus d'auto-détection de « l'organisme le plus ancien »
-  // qui rattachait leads/paiements civiques à un tenant arbitraire.
-  const organismeId = process.env.CIVIC_ORGANISME_ID ?? body.organismeId ?? null;
+  // Correctif audit A05-002 : l'organisme cible ne peut PLUS être imposé
+  // librement par le corps public (sinon écriture PII cross-tenant dans le CRM
+  // d'un tenant arbitraire). Il provient de l'env CIVIC_ORGANISME_ID. Pour le
+  // multi-vitrine, CIVIC_ORGANISME_IDS (liste blanche, séparée par des virgules)
+  // autorise un body.organismeId UNIQUEMENT s'il y figure explicitement.
+  const organismeId = resolveCivicOrganismeId(body.organismeId);
   if (!organismeId) {
     return NextResponse.json({ error: "Organisme non configuré." }, { status: 503, headers: civicCors });
   }
