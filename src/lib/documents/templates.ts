@@ -351,6 +351,44 @@ export const DOCUMENTS: Record<string, { label: string; html: string }> = {
     ),
   },
 
+  LIVRET_ACCUEIL: {
+    label: "Livret d'accueil",
+    html: wrap(
+      "Livret d'accueil du stagiaire",
+      `<p>Bienvenue chez <strong>{{organisme}}</strong>. Ce livret présente l'essentiel pour bien démarrer votre formation — conservez-le, il répond à la plupart de vos questions pratiques.</p>
+
+      <h2>Votre organisme de formation</h2>
+      <table class="doc-table">
+        <tr><td>Raison sociale</td><td>{{organisme}}</td></tr>
+        <tr><td>Déclaration d'activité (NDA)</td><td>{{organisme_nda}}</td></tr>
+        <tr><td>SIRET</td><td>{{organisme_siret}}</td></tr>
+        <tr><td>Adresse</td><td>{{organisme_adresse}}</td></tr>
+        <tr><td>Contact</td><td>{{organisme_email}} · {{organisme_telephone}}</td></tr>
+        <tr><td>Représentant</td><td>{{organisme_representant}}</td></tr>
+        <tr><td>Certification qualité</td><td>{{qualiopi}}</td></tr>
+      </table>
+      <p>La certification qualité a été délivrée au titre de la catégorie d'action « actions de formation ».</p>
+
+      <h2>Le déroulement de votre formation</h2>
+      <p><strong>Formation suivie :</strong> {{formation}}.</p>
+      <p><strong>Horaires &amp; assiduité.</strong> Vos horaires figurent sur votre convocation. Votre présence est justifiée par un émargement à chaque demi-journée (feuille de présence ou signature électronique). Toute absence doit être signalée sans délai à l'organisme.</p>
+      <p><strong>Modalités.</strong> La formation se déroule en présentiel et/ou à distance selon le programme qui vous a été remis. Les moyens pédagogiques (supports, matériel, plateforme) et l'encadrement par des formateurs qualifiés sont mis à votre disposition.</p>
+      <p><strong>Évaluation &amp; sanction.</strong> Vos acquis sont évalués en cours et en fin de formation. À l'issue, une attestation de fin de formation vous est remise (et, le cas échéant, le résultat de la certification visée).</p>
+
+      <h2>Accessibilité &amp; situation de handicap</h2>
+      <p>Nos formations sont ouvertes aux personnes en situation de handicap. Pour étudier ensemble les adaptations nécessaires (pédagogiques, matérielles, organisationnelles), contactez notre <strong>référent handicap</strong> : {{referent_handicap}}.</p>
+
+      <h2>Règlement intérieur</h2>
+      <p>Un règlement intérieur encadre le déroulement de la formation (assiduité, hygiène, sécurité, discipline). Il vous est remis séparément — merci d'en prendre connaissance.</p>
+
+      <h2>Vos droits — réclamations &amp; données personnelles</h2>
+      <p><strong>Réclamations.</strong> Toute observation ou réclamation peut être adressée à l'organisme ({{organisme_email}}) ; elle sera traitée dans les meilleurs délais.</p>
+      <p><strong>Protection des données (RGPD).</strong> Les données recueillies servent uniquement à la gestion de votre formation et de votre dossier de financement. Vous disposez d'un droit d'accès, de rectification et d'effacement en écrivant à {{organisme_email}}.</p>
+
+      <p class="mt">Livret remis à <strong>{{nom_complet}}</strong> le {{date_jour}}. Nous vous souhaitons une excellente formation.</p>`,
+    ),
+  },
+
   ATTESTATION_ENTREE: {
     label: "Attestation d'entrée en formation",
     html: wrap(
@@ -900,6 +938,7 @@ export const DOCUMENT_MENU = [
   "CONTRAT_FORMATION",
   "CONDITIONS_GENERALES",
   "REGLEMENT_INTERIEUR",
+  "LIVRET_ACCUEIL",
   "ATTESTATION_ENTREE",
   "EVALUATION_ACQUIS",
   "ATTESTATION_FIN",
