@@ -2,7 +2,7 @@
 
 # Conditions Générales de Vente et d'Abonnement — Service OFManager (SaaS)
 
-**Éditeur :** CAP Compétences, [forme juridique], SIREN [n°], siège [adresse], représentée par [nom] (« l'Éditeur »).
+**Éditeur :** CAP SOLUTIONS, [forme juridique], SIREN [n°], siège [adresse], représentée par [nom] (« l'Éditeur »).
 **Client :** tout organisme de formation professionnel souscrivant au service (« le Client »).
 **Service :** OFManager, logiciel en ligne (SaaS) de gestion d'organisme de formation.
 

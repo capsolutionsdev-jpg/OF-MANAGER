@@ -5,7 +5,7 @@
 
 **Entre :**
 
-- **Le Sous-traitant** : **CAP Compétences**, éditeur du logiciel **OFManager**, [forme juridique], au capital de [montant], SIREN [n°], siège social [adresse], représentée par [nom, qualité] (ci-après « l'Éditeur » ou « le Sous-traitant ») ;
+- **Le Sous-traitant** : **CAP SOLUTIONS**, éditeur du logiciel **OFManager**, [forme juridique], au capital de [montant], SIREN [n°], siège social [adresse], représentée par [nom, qualité] (ci-après « l'Éditeur » ou « le Sous-traitant ») ;
 
 - **Le Responsable de traitement** : l'organisme de formation client souscripteur du service (ci-après « le Client » ou « le Responsable de traitement »), tel qu'identifié dans les Conditions Particulières / le bon de commande.
 

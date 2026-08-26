@@ -51,4 +51,4 @@ Procédure de notification **sans délai au client**, assistance à la notificat
 Référent protection des données (DPO / point de contact RGPD) : **[À COMPLÉTER — nom + e-mail]**.
 
 ---
-*OFManager est édité par CAP Compétences. Ce dossier décrit les mesures techniques et organisationnelles ; il ne se substitue pas au DPA contractuel signé avec chaque client.*
+*OFManager est édité par CAP SOLUTIONS. Ce dossier décrit les mesures techniques et organisationnelles ; il ne se substitue pas au DPA contractuel signé avec chaque client.*
