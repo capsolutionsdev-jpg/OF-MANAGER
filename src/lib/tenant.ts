@@ -144,9 +144,16 @@ async function assertLiveSession(session: Session | null): Promise<void> {
   if (!uid) throw new Error("Session invalide.");
   const u = await prismaBase.user.findUnique({
     where: { id: uid },
-    select: { isActive: true, activeSessionId: true },
+    select: { isActive: true, activeSessionId: true, organisme: { select: { statut: true } } },
   });
   if (!u || !u.isActive) throw new Error("Compte désactivé ou introuvable.");
+  // Suspension du tenant (impayé / essai échu passé en SUSPENDU par le cron) :
+  // bloque toute Server Action et route de gestion — pas seulement le login
+  // (audit A05-006/A05-013). Les données restent intactes ; seul l'accès du
+  // personnel est coupé tant que l'organisme est SUSPENDU.
+  if (u.organisme?.statut === "SUSPENDU") {
+    throw new Error("Organisme suspendu : accès temporairement bloqué.");
+  }
   const sid = (session!.user as { sid?: string | null }).sid ?? null;
   // sid null = token hérité (avant la « session unique ») → pas de blocage dessus.
   if (sid && u.activeSessionId && u.activeSessionId !== sid) {

@@ -23,6 +23,10 @@
       "schedule": "0 8 * * *"
     },
     {
+      "path": "/api/cron/suspend-trials",
+      "schedule": "0 2 * * *"
+    },
+    {
       "path": "/api/cron/rgpd-purge",
       "schedule": "0 3 * * *"
     },

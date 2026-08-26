@@ -189,3 +189,120 @@ describe("Garde-fou : pas d'accès prisma direct dans les server actions", () =>
     ).toEqual([]);
   });
 });
+
+/**
+ * Extension du garde-fou (audit A05-007) aux ZONES qui échappaient aux deux blocs
+ * ci-dessus : tous les route handlers (`src/app/**​/route.ts`) et les pages
+ * PUBLIQUES hors espace connecté (`src/app/**​/page.tsx` hors `(app)`). Ces zones
+ * accèdent légitimement au client brut (flux publics par token, console SUPERADMIN,
+ * crons, webhooks, génération PDF), mais n'étaient pas surveillées → une NOUVELLE
+ * route/page pouvait y réintroduire une fuite cross-tenant sans échec du CI
+ * (exactement le cas d'A05-002/A05-003, désormais corrigées).
+ *
+ * La liste ci-dessous GÈLE l'état recensé lors de l'audit 05. Elle n'atteste pas
+ * que chaque fichier est parfait ; elle empêche l'AJOUT SILENCIEUX de nouveaux
+ * accès bruts. Tout nouveau fichier doit soit passer par getTenantDb(), soit être
+ * ajouté ici avec une justification (token / console SUPERADMIN / cron / webhook).
+ */
+const APP_RAW_GRANDFATHER = new Set([
+  // ── route handlers (relatifs à src/app) ──
+  "(app)/examen-civique/facture/[id]/route.ts",
+  "api/candidats/[id]/expression-besoin/route.ts",
+  "api/civique/candidates/[id]/provision/route.ts",
+  "api/civique/checkout/route.ts",
+  "api/civique/lead/route.ts",
+  "api/console/contrat-prestation/[id]/pdf/route.ts",
+  "api/console/facture-editeur/[id]/facturx/route.ts",
+  "api/console/facture-editeur/[id]/pdf/route.ts",
+  "api/console/facture-editeur/[id]/xml/route.ts",
+  "api/cron/purge-pdf-cache/route.ts",
+  "api/cron/suspend-trials/route.ts",
+  "api/demo/route.ts",
+  "api/lead/route.ts",
+  "api/public/blog/route.ts",
+  "api/public/formations/[slug]/route.ts",
+  "api/public/formations/route.ts",
+  "api/public/organisme/[id]/logo/route.ts",
+  "api/public/photos/[id]/route.ts",
+  "api/public/photos/route.ts",
+  "api/public/piece/[id]/route.ts",
+  "api/public/sessions/route.ts",
+  "api/public/track/route.ts",
+  "api/push/register/route.ts",
+  "api/stripe/webhook/route.ts",
+  "api/verification/route.ts",
+  "api/webhooks/brevo/route.ts",
+  "api/webhooks/resend/route.ts",
+  "api/webhooks/wedof/[orgId]/route.ts",
+  "compte-rendu/[token]/document/route.ts",
+  "console/[id]/export/route.ts",
+  "contrat-formateur/[token]/document/route.ts",
+  "deconnexion/route.ts",
+  "documents/[inscriptionId]/pdf/route.ts",
+  "documents/[inscriptionId]/satisfaction/route.ts",
+  "documents/[inscriptionId]/zip/route.ts",
+  "documents/contrat-formateur/[sessionId]/route.ts",
+  "documents/session/[sessionId]/route.ts",
+  "parcours/[token]/documents/route.ts",
+  "satisfaction/[token]/document/route.ts",
+  "suivi/[token]/document/route.ts",
+  // ── pages publiques hors (app) : flux par token + console SUPERADMIN ──
+  "bienvenue/page.tsx",
+  "compte-rendu/[token]/page.tsx",
+  "console/[id]/page.tsx",
+  "console/analytics/page.tsx",
+  "console/compte/page.tsx",
+  "console/devis/nouveau/page.tsx",
+  "console/devis/page.tsx",
+  "console/facturation/page.tsx",
+  "console/prospects/[id]/page.tsx",
+  "console/prospects/page.tsx",
+  "console/support/page.tsx",
+  "contrat-formateur/[token]/page.tsx",
+  "contrat-prestation/[token]/page.tsx",
+  "definir-mot-de-passe/[token]/page.tsx",
+  "devis-accept/[token]/page.tsx",
+  "emarger/[token]/page.tsx",
+  "emarger/salle/[sessionId]/[token]/page.tsx",
+  "francais/[token]/page.tsx",
+  "inscription/page.tsx",
+  "parcours/[token]/page.tsx",
+  "portail/[token]/page.tsx",
+  "positionnement/[token]/page.tsx",
+  "prospect/[token]/page.tsx",
+  "reclamer/[token]/page.tsx",
+  "satisfaction-entreprise/[token]/page.tsx",
+  "satisfaction/[token]/page.tsx",
+  "securite-2fa/page.tsx",
+  "signer/[token]/page.tsx",
+  "suivi/[token]/page.tsx",
+]);
+
+const APP_DIR_ROOT = path.resolve(__dirname, "../../app");
+
+function walkApp(dir: string): string[] {
+  const out: string[] = [];
+  for (const entry of readdirSync(dir)) {
+    const full = path.join(dir, entry);
+    if (statSync(full).isDirectory()) out.push(...walkApp(full));
+    else if (entry === "route.ts" || entry === "page.tsx") out.push(full);
+  }
+  return out;
+}
+
+describe("Garde-fou (A05-007) : routes API + pages publiques hors (app)", () => {
+  it("aucun NOUVEAU route.ts / page.tsx hors (app) n'importe @/lib/prisma sans justification", () => {
+    const offenders: string[] = [];
+    for (const file of walkApp(APP_DIR_ROOT)) {
+      const rel = path.relative(APP_DIR_ROOT, file).replace(/\\/g, "/");
+      // Les pages de l'espace connecté (app) sont couvertes par le 1er bloc.
+      if (rel.endsWith("page.tsx") && rel.startsWith("(app)/")) continue;
+      const src = readFileSync(file, "utf8");
+      if (usesRawPrisma(src) && !APP_RAW_GRANDFATHER.has(rel)) offenders.push(rel);
+    }
+    expect(
+      offenders,
+      `Nouveaux accès prisma bruts à cloisonner (getTenantDb) ou à justifier dans l'allowlist :\n${offenders.join("\n")}`,
+    ).toEqual([]);
+  });
+});

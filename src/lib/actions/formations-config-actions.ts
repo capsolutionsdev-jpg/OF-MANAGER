@@ -28,10 +28,16 @@ export async function updateOrganismeFormations(
   if (!session?.user?.id) return { ok: false, error: "Non connecté." };
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { role: true, isActive: true },
+    select: { role: true, isActive: true, activeSessionId: true },
   });
   if (!user?.isActive || user.role !== "SUPERADMIN") {
     return { ok: false, error: "Réservé au compte développeur." };
+  }
+  // Révocation de session (audit SEC-014 / A05-017) : refuse un token SUPERADMIN
+  // supplanté par une connexion plus récente (le contrôle in-line l'omettait).
+  const sid = (session.user as { sid?: string | null }).sid ?? null;
+  if (sid && user.activeSessionId && user.activeSessionId !== sid) {
+    return { ok: false, error: "Session expirée." };
   }
 
   const org = await prisma.organisme.findUnique({

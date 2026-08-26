@@ -33,7 +33,12 @@ export async function POST(req: Request) {
     return Response.json({ error: "Format non supporté (image PNG/JPEG/WEBP/GIF attendue)." }, { status: 415 });
   }
 
-  const folder = String(form.get("folder") ?? "uploads").replace(/[^a-z0-9/_-]/gi, "") || "uploads";
+  const rawFolder = String(form.get("folder") ?? "uploads").replace(/[^a-z0-9/_-]/gi, "") || "uploads";
+  // Cloisonnement (audit A05-012) : préfixer le chemin par l'organisme évite toute
+  // collision/écrasement logique entre tenants dans le store blob (le SUPERADMIN
+  // éditeur, sans organisme, range sous "_editor").
+  const orgId = (session.user as { organismeId?: string | null }).organismeId ?? null;
+  const folder = `${orgId ?? "_editor"}/${rawFolder}`;
   const url = await storeUpload({ data: buf, folder, ext: extFromMime(detected!), contentType: detected! });
   return Response.json({ url, stored: process.env.BLOB_READ_WRITE_TOKEN ? "blob" : "data-url" });
 }
