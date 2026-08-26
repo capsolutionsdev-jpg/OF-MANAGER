@@ -89,16 +89,16 @@ export default async function ConfidentialitePage() {
             <li><strong>Hébergement applicatif</strong> — Vercel (fonctions en région Union européenne).</li>
             <li><strong>Base de données</strong> — Neon, PostgreSQL (Union européenne, Francfort).</li>
             <li><strong>Limitation de débit / cache technique</strong> — Upstash (Redis).</li>
-            <li><strong>E-mails transactionnels</strong> — Resend (États-Unis) : acheminement des messages (convocations, notifications).</li>
+            <li><strong>E-mails transactionnels</strong> — Resend (traités dans l&apos;Union européenne, Irlande) : acheminement des messages (convocations, notifications).</li>
             <li><strong>Paiement de l&apos;abonnement</strong> — Stripe.</li>
           </ul>
           <p className="mt-2">
-            La base de données et les fichiers sont hébergés dans l&apos;Union européenne. L&apos;envoi
-            des e-mails transactionnels implique un transfert vers les États-Unis (Resend), limité aux
-            données nécessaires à l&apos;acheminement du message et encadré par des garanties appropriées
-            (clauses contractuelles types / accord de traitement). La liste des sous-traitants peut
-            évoluer ; toute modification substantielle est portée à la connaissance du Client, qui peut
-            s&apos;y opposer pour un motif légitime.
+            La base de données, les fichiers et l&apos;envoi des e-mails transactionnels sont traités
+            dans l&apos;Union européenne. Certains prestataires relèvent de groupes établis hors UE ;
+            les accès éventuels sont encadrés par des garanties appropriées (clauses contractuelles
+            types / accord de traitement). La liste des sous-traitants peut évoluer ; toute modification
+            substantielle est portée à la connaissance du Client, qui peut s&apos;y opposer pour un
+            motif légitime.
           </p>
         </section>
 
