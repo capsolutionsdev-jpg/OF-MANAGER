@@ -113,8 +113,11 @@ export async function POST(req: Request) {
     return json({ match: false, message: "Vérification anti-robot requise." }, 400);
   }
 
+  // Minimisation (audit A02-014) : ne PAS journaliser l'IP (donnée personnelle,
+  // sans durée de rétention définie). L'anti-abus par IP est déjà assuré par le
+  // rate-limiter en amont ; le log d'événement se limite au résultat agrégé.
   const log = (result: "match" | "no-match") =>
-    console.log(JSON.stringify({ t: new Date().toISOString(), ip, ev: "verification", result }));
+    console.log(JSON.stringify({ t: new Date().toISOString(), ev: "verification", result }));
 
   // Format invalide → générique (sans requête base).
   if (!numero || !dob || !formatPlausible(numero)) {

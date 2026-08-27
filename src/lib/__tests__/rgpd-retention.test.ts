@@ -10,6 +10,9 @@ vi.mock("@/lib/prisma", () => ({
     apprenant: { findFirst: vi.fn() },
     presence: { updateMany: vi.fn() },
     candidatMessage: { deleteMany: vi.fn() },
+    candidatInteraction: { deleteMany: vi.fn() },
+    smsLog: { updateMany: vi.fn() },
+    consentement: { updateMany: vi.fn() },
     auditLog: { create: vi.fn() },
   },
 }));
@@ -33,6 +36,9 @@ beforeEach(() => {
   db.apprenant.findFirst.mockReset().mockResolvedValue(null);
   db.presence.updateMany.mockReset().mockResolvedValue({ count: 0 });
   db.candidatMessage.deleteMany.mockReset().mockResolvedValue({ count: 0 });
+  db.candidatInteraction.deleteMany.mockReset().mockResolvedValue({ count: 0 });
+  db.smsLog.updateMany.mockReset().mockResolvedValue({ count: 0 });
+  db.consentement.updateMany.mockReset().mockResolvedValue({ count: 0 });
   db.auditLog.create.mockReset().mockResolvedValue({});
 });
 
@@ -76,6 +82,10 @@ describe("purgeExpiredCandidats() — purge RGPD par durée de conservation", ()
     expect(db.inscription.updateMany).toHaveBeenCalledTimes(2);
     expect(db.emargementSignature.updateMany).toHaveBeenCalledTimes(2);
     expect(db.candidatMessage.deleteMany).toHaveBeenCalledTimes(2);
+    // Correctif A02-007 : interactions CRM, journaux SMS et IP de consentement effacés.
+    expect(db.candidatInteraction.deleteMany).toHaveBeenCalledTimes(2);
+    expect(db.smsLog.updateMany).toHaveBeenCalledTimes(2);
+    expect(db.consentement.updateMany).toHaveBeenCalledTimes(2);
 
     const where = db.candidat.findMany.mock.calls[0][0].where;
     expect(where.organismeId).toBe("o1");

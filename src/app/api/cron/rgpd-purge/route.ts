@@ -1,4 +1,4 @@
-import { purgeExpiredCandidats } from "@/lib/rgpd-retention";
+import { purgeExpiredCandidats, purgeOldEmailLogs } from "@/lib/rgpd-retention";
 import { assertCronAuthorized } from "@/lib/cron-auth";
 
 export const runtime = "nodejs";
@@ -11,5 +11,7 @@ export async function GET(req: Request) {
   if (denied) return denied;
 
   const res = await purgeExpiredCandidats();
-  return Response.json({ ok: true, ranAt: new Date().toISOString(), ...res });
+  // Purge des journaux d'e-mails au-delà de la durée de conservation (audit A02-008).
+  const logs = await purgeOldEmailLogs();
+  return Response.json({ ok: true, ranAt: new Date().toISOString(), ...res, ...logs });
 }

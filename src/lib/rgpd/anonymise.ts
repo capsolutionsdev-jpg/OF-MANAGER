@@ -35,6 +35,12 @@ type AnonDb = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   candidatMessage: { deleteMany(args: any): Promise<any> };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  candidatInteraction: { deleteMany(args: any): Promise<any> };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  smsLog: { updateMany(args: any): Promise<any> };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  consentement: { updateMany(args: any): Promise<any> };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   auditLog: { create(args: any): Promise<any> };
 };
 
@@ -71,6 +77,9 @@ export function anonymisedCandidatData(candidatId: string) {
     dernierDiplome: null,
     objectifsFormation: null,
     besoinsAdaptation: null,
+    // Donnée de santé (art. 9) : remettre le drapeau handicap à false lors de
+    // l'effacement (audit A02-015) — il subsistait sinon sur l'enregistrement conservé.
+    situationHandicap: false,
     // Numéros identifiants réglementaires
     cnapsNumero: null,
     carteProNumero: null,
@@ -174,6 +183,19 @@ export async function anonymiseCandidatComplet(
 
   // 6) Messages du portail candidat (contenu personnel).
   await db.candidatMessage.deleteMany({ where: scope });
+
+  // 6bis) Interactions CRM (notes/échanges nominatifs) — supprimées (audit A02-007).
+  await db.candidatInteraction.deleteMany({ where: scope });
+
+  // 6ter) Journaux SMS : neutraliser le numéro (donnée personnelle) conservé
+  //        dans les logs liés à ce candidat.
+  await db.smsLog.updateMany({
+    where: { candidatId, organismeId },
+    data: { destinataire: "anonymisé (RGPD)" },
+  });
+
+  // 6quater) Consentements : conserver la preuve d'accord mais effacer l'IP.
+  await db.consentement.updateMany({ where: scope, data: { ip: null } });
 
   // 7) Traçabilité.
   await db.auditLog.create({
