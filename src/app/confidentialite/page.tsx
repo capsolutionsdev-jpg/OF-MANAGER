@@ -78,12 +78,21 @@ export default async function ConfidentialitePage() {
         </section>
 
         <section>
-          <h2 className="text-lg font-semibold text-foreground">5. Destinataires et hébergement</h2>
+          <h2 className="text-lg font-semibold text-foreground">5. Destinataires, hébergement et transferts</h2>
           <p className="mt-2">
             Les données sont accessibles au personnel habilité de votre organisme de formation.
-            Des sous-traitants techniques interviennent pour l&apos;hébergement, la signature
-            électronique et, le cas échéant, le paiement — encadrés contractuellement et situés
-            dans l&apos;Union européenne. Les données sont hébergées au sein de l&apos;UE.
+            L&apos;application et la base de données sont hébergées dans l&apos;Union européenne.
+            Des sous-traitants techniques interviennent pour des services spécifiques : envoi
+            d&apos;e-mails, signature électronique, stockage de fichiers, paiement, supervision
+            technique et, le cas échéant, assistance par intelligence artificielle.
+          </p>
+          <p className="mt-2">
+            Certains de ces prestataires (notamment l&apos;envoi d&apos;e-mails et l&apos;assistance
+            par intelligence artificielle) peuvent être situés en dehors de l&apos;Union européenne.
+            Dans ce cas, le transfert est encadré par des garanties appropriées au sens du RGPD
+            (clauses contractuelles types ou cadre de protection des données UE–États-Unis). La liste
+            des sous-traitants et de leur localisation est tenue à jour et peut vous être communiquée
+            sur demande.
           </p>
         </section>
 
