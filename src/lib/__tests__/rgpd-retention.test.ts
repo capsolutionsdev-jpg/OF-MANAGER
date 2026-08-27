@@ -21,7 +21,6 @@ import { prisma } from "@/lib/prisma";
 import { purgeExpiredCandidats } from "@/lib/rgpd-retention";
 import { anonymisedCandidatData, CANDIDAT_PII_NULLED, anonymisedEmail } from "@/lib/rgpd/anonymise";
 
-type Fn = ReturnType<typeof vi.fn>;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = prisma as any;
 
