@@ -17,7 +17,7 @@
 |---|---|
 | `DATABASE_URL` / `DIRECT_URL` | Postgres Neon (pooled / direct). Région **UE** (`eu-central-1`). |
 | `AUTH_SECRET` (NextAuth) | Signature des sessions JWT. |
-| `APP_URL` / `AUTH_URL` | Domaine public `https://app.capacademy.fr` (jamais `*.vercel.app`). |
+| `APP_URL` / `AUTH_URL` | Domaine public `https://ofmanager.info` (jamais `*.vercel.app`). |
 | Fournisseur e-mail (`RESEND_*` ou équivalent) | Envoi des e-mails transactionnels. |
 
 ## Procédure de re-saisie des clés API (après pose de `SECRETS_ENCRYPTION_KEY`)
