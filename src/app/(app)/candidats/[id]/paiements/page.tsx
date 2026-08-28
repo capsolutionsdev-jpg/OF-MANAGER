@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { CreditCard } from "lucide-react";
 import { getCandidatDetail } from "@/lib/candidats/detail";
+import { montantDu } from "@/lib/comptabilite/montant-du";
 import { CandidatDetailHeader } from "@/components/candidats/candidat-detail-header";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -47,7 +48,8 @@ export default async function CandidatPaiementsPage({
           ) : (
             <ul className="space-y-4">
               {candidat.inscriptions.map((i) => {
-                const du = i.montant != null ? Number(i.montant) : 0;
+                const facturesTtc = i.factures.reduce((s, f) => s + Number(f.montantTTC), 0);
+                const du = montantDu(i.montant != null ? Number(i.montant) : null, facturesTtc);
                 const paye = i.paiements.reduce((s, p) => s + Number(p.montant), 0);
                 const restant = Math.max(0, du - paye);
                 const modeDefaut =
