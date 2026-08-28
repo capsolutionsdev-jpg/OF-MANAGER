@@ -51,13 +51,34 @@ export async function enregistrerPaiement(
   });
   if (!inscription) return { error: "Inscription introuvable." };
 
+  const modeNorm = mode && mode.trim() !== "" ? mode : null;
+  const refNorm = reference && reference.trim() !== "" ? reference : null;
+
+  // Anti double-soumission (double-clic / renvoi réseau) : un règlement identique
+  // (même inscription, montant, mode, référence) enregistré il y a moins de 10 s
+  // est un doublon → on l'ignore, l'opération reste idempotente. (A06-009)
+  const doublon = await db.paiement.findFirst({
+    where: {
+      inscriptionId,
+      montant,
+      mode: modeNorm,
+      reference: refNorm,
+      createdAt: { gte: new Date(Date.now() - 10_000) },
+    },
+    select: { id: true },
+  });
+  if (doublon) {
+    revalidatePath("/comptabilite");
+    return { ok: true };
+  }
+
   await db.paiement.create({
     data: {
       inscriptionId,
       montant,
       date,
-      mode: mode && mode.trim() !== "" ? mode : null,
-      reference: reference && reference.trim() !== "" ? reference : null,
+      mode: modeNorm,
+      reference: refNorm,
       enregistreParId: userId,
     },
   });

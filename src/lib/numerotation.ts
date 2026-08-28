@@ -2,6 +2,13 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 /**
+ * Client Prisma OU client de transaction (`prisma.$transaction`) — seul le
+ * délégué `numeroSequence` est requis. Permet d'allouer un numéro DANS une
+ * transaction pour que l'allocation et la création du document soient atomiques.
+ */
+export type SeqClient = Pick<typeof prisma, "numeroSequence">;
+
+/**
  * Numérotation séquentielle ATOMIQUE par organisme (factures, devis, avoirs).
  *
  * Remplace le comptage `count()+1` (course concurrente → doublons/trous, non
@@ -11,17 +18,23 @@ import { prisma } from "@/lib/prisma";
  * collision avec l'historique lors du premier appel.
  */
 
-/** Incrémente atomiquement le compteur (organismeId, cle) et renvoie sa valeur. */
+/**
+ * Incrémente atomiquement le compteur (organismeId, cle) et renvoie sa valeur.
+ * `client` permet d'exécuter l'incrément DANS une transaction (Prisma.$transaction)
+ * pour que l'allocation du numéro et la création du document soient atomiques —
+ * un échec de création annule alors l'incrément (pas de trou). Défaut : prisma.
+ */
 export async function nextSequence(
   organismeId: string,
   cle: string,
   seed?: () => Promise<number>,
+  client: SeqClient = prisma,
 ): Promise<number> {
   if (!organismeId) throw new Error("organismeId requis pour la numérotation.");
 
   // Chemin nominal : la ligne existe → incrément atomique en une requête.
   try {
-    const row = await prisma.numeroSequence.update({
+    const row = await client.numeroSequence.update({
       where: { organismeId_cle: { organismeId, cle } },
       data: { valeur: { increment: 1 } },
       select: { valeur: true },
@@ -35,7 +48,7 @@ export async function nextSequence(
   // Auto-amorçage depuis l'historique (évite toute collision avec l'existant).
   const start = seed ? await seed() : 0;
   try {
-    await prisma.numeroSequence.create({
+    await client.numeroSequence.create({
       data: { organismeId, cle, valeur: start + 1 },
     });
     return start + 1;
@@ -43,7 +56,7 @@ export async function nextSequence(
     // P2002 = une autre requête concurrente a créé la ligne entre-temps →
     // on retombe sur l'incrément atomique.
     if (!(e instanceof Prisma.PrismaClientKnownRequestError) || e.code !== "P2002") throw e;
-    const row = await prisma.numeroSequence.update({
+    const row = await client.numeroSequence.update({
       where: { organismeId_cle: { organismeId, cle } },
       data: { valeur: { increment: 1 } },
       select: { valeur: true },
@@ -61,10 +74,11 @@ export async function nextRef(
   organismeId: string,
   prefix: string,
   seedExisting?: () => Promise<number>,
+  client: SeqClient = prisma,
 ): Promise<string> {
   const year = new Date().getFullYear();
   const cle = `${prefix}-${year}`;
-  const n = await nextSequence(organismeId, cle, seedExisting);
+  const n = await nextSequence(organismeId, cle, seedExisting, client);
   return `${cle}-${String(n).padStart(4, "0")}`;
 }
 

@@ -10,7 +10,7 @@
 import { randomBytes } from "crypto";
 import { prisma, prismaBase, txWithOrg } from "@/lib/prisma";
 import { CivicMention, CivicModuleStatut, CivicPath, Prisma } from "@prisma/client";
-import { nextRef, maxSuffix } from "@/lib/numerotation";
+import { nextRef, maxSuffix, type SeqClient } from "@/lib/numerotation";
 import { sendEmail } from "@/lib/email";
 import {
   emailShell,
@@ -137,16 +137,22 @@ export async function entitledMentions(candidatId: string): Promise<string[]> {
 export async function nextFactureNumero(
   organismeId: string,
   kind: "FACTURE" | "AVOIR" = "FACTURE",
+  client?: SeqClient,
 ): Promise<string> {
   const base = kind === "AVOIR" ? "AVOIR" : "CIV";
   const year = new Date().getFullYear();
-  return nextRef(organismeId, base, async () => {
-    const rows = await prisma.civicFacture.findMany({
-      where: { organismeId, numero: { startsWith: `${base}-${year}-` } },
-      select: { numero: true },
-    });
-    return maxSuffix(rows.map((r) => r.numero));
-  });
+  return nextRef(
+    organismeId,
+    base,
+    async () => {
+      const rows = await prisma.civicFacture.findMany({
+        where: { organismeId, numero: { startsWith: `${base}-${year}-` } },
+        select: { numero: true },
+      });
+      return maxSuffix(rows.map((r) => r.numero));
+    },
+    client,
+  );
 }
 
 /** Émet un avoir (montants négatifs) pour le remboursement d'un paiement,
@@ -175,10 +181,13 @@ export async function createCivicAvoir(paiementId: string): Promise<void> {
     methode: origine.methode,
     exonereTva: origine.exonereTva,
   };
+  // Allocation du numéro + création dans UNE transaction : un échec annule
+  // l'incrément du compteur → aucun trou dans la séquence d'avoirs. (A06-007)
   for (let i = 0; i < 3; i++) {
     try {
-      await prisma.civicFacture.create({
-        data: { ...data, numero: await nextFactureNumero(origine.organismeId ?? "", "AVOIR") },
+      await prisma.$transaction(async (tx) => {
+        const numero = await nextFactureNumero(origine.organismeId ?? "", "AVOIR", tx);
+        await tx.civicFacture.create({ data: { ...data, numero } });
       });
       return;
     } catch {
@@ -228,11 +237,13 @@ export async function ensureCivicFactureFor(paiementId: string): Promise<void> {
     methode: p.methode,
     exonereTva: true,
   };
-  // Retry léger sur collision de numéro (concurrence faible).
+  // Allocation du numéro + création dans UNE transaction : un échec annule
+  // l'incrément du compteur → aucun trou dans la séquence de factures. (A06-007)
   for (let i = 0; i < 3; i++) {
     try {
-      await prisma.civicFacture.create({
-        data: { ...data, numero: await nextFactureNumero(p.organismeId ?? "") },
+      await prisma.$transaction(async (tx) => {
+        const numero = await nextFactureNumero(p.organismeId ?? "", "FACTURE", tx);
+        await tx.civicFacture.create({ data: { ...data, numero } });
       });
       return;
     } catch {
