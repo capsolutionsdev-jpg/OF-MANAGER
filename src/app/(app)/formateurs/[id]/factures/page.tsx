@@ -28,7 +28,7 @@ export default async function FormateurFacturationPage({
     reference: x.reference,
     montant: Number(x.montant).toLocaleString("fr-FR", { style: "currency", currency: "EUR" }),
     statut: x.statut,
-    fichierUrl: x.fichierUrl,
+    fichierUrl: x.fichierUrl ? `/ma-facturation/download?id=${x.id}` : null,
     createdAt: x.createdAt.toLocaleDateString("fr-FR"),
     sessionTitre: x.session?.formation.titre ?? null,
   }));

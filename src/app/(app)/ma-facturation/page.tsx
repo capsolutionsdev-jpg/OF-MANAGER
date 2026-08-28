@@ -98,7 +98,7 @@ export default async function MaFacturationPage() {
                     </p>
                   </div>
                   {f.fichierUrl && (
-                    <a href={f.fichierUrl} target="_blank" rel="noopener noreferrer"
+                    <a href={`/ma-facturation/download?id=${f.id}`}
                       className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
                       <FileDown className="h-3.5 w-3.5" /> Justificatif
                     </a>
