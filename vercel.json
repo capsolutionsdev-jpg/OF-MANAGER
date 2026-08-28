@@ -21,7 +21,9 @@
     "src/app/api/console/contrat-prestation/[id]/pdf/route.ts": { "memory": 1769, "maxDuration": 60 },
     "src/app/api/console/facture-editeur/[id]/pdf/route.ts": { "memory": 1769, "maxDuration": 60 },
     "src/app/suivi/[token]/document/route.ts": { "memory": 1769, "maxDuration": 60 },
-    "src/app/api/pdf-test/route.ts": { "memory": 1769, "maxDuration": 60 }
+    "src/app/api/pdf-test/route.ts": { "memory": 1769, "maxDuration": 60 },
+    "src/app/api/cron/parcours/route.ts": { "memory": 1769, "maxDuration": 60 },
+    "src/app/api/cron/rgpd-purge/route.ts": { "memory": 1769, "maxDuration": 60 }
   },
   "crons": [
     {

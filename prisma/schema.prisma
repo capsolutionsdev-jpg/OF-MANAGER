@@ -1164,6 +1164,10 @@ model Inscription {
   @@index([statut])
   @@index([organismeId])
   @@index([suivi6moisToken])
+  // Audit 07 (A07-007) : FK chaude (contrôle de places + participants par session)
+  @@index([sessionId, statut])
+  @@index([entrepriseId])
+  @@index([apprenantId])
 }
 
 // =============================================================
@@ -1216,6 +1220,8 @@ model DocumentGenere {
   @@index([type])
   @@index([inscriptionId])
   @@index([organismeId])
+  // Audit 07 (A07-007) : tri createdAt desc scopé tenant (historique documentaire)
+  @@index([organismeId, createdAt])
 }
 
 // =============================================================
@@ -1761,6 +1767,8 @@ model EmailLog {
 
   @@index([statut])
   @@index([organismeId])
+  // Audit 07 (A07-007) : tri createdAt desc scopé tenant (journal e-mails)
+  @@index([organismeId, createdAt])
 }
 
 // =============================================================
@@ -1839,6 +1847,9 @@ model AuditLog {
   @@index([entityType, entityId])
   @@index([userId])
   @@index([organismeId])
+  // Audit 07 (A07-007) : tri createdAt desc (console cross-tenant + par tenant)
+  @@index([organismeId, createdAt])
+  @@index([createdAt])
 }
 
 // =============================================================

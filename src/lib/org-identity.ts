@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import { orgConfig } from "@/lib/org-config";
 
@@ -51,9 +52,9 @@ export const DEFAULT_ORG_IDENTITY: OrgIdentity = {
  * inscription.organismeId, session.organismeId…). Repli sur les valeurs par
  * défaut si introuvable. Utilisable côté authentifié comme public/cron.
  */
-export async function orgConfigFor(
+export const orgConfigFor = cache(async (
   organismeId?: string | null,
-): Promise<OrgIdentity> {
+): Promise<OrgIdentity> => {
   if (!organismeId) return DEFAULT_ORG_IDENTITY;
   const o = await prisma.organisme.findUnique({ where: { id: organismeId } });
   if (!o) return DEFAULT_ORG_IDENTITY;
@@ -80,4 +81,4 @@ export async function orgConfigFor(
     referentHandicapContact: o.referentHandicapContact,
     documentsConfig: o.documentsConfig,
   };
-}
+});
