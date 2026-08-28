@@ -23,6 +23,11 @@ const ALLOWLIST = new Set([
   // Wedof : lit UNIQUEMENT l'Organisme de la session (where { id: orgId de session })
   // pour l'état de connexion ; les dossiers de financement passent par getTenantDb.
   "financements/page.tsx",
+  // Site vitrine : TOUTES les données tenant (formations, sessions) passent par
+  // getTenantDb() ; le client brut ne lit QUE le User de la session
+  // (where { id: session.user.id }, entité d'auth GLOBALE) pour la permission
+  // « blog ». Self-scopé, hors-tenant — même motif que mon-compte/administration.
+  "site-vitrine/page.tsx",
 ]);
 
 /**

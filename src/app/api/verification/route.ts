@@ -3,6 +3,7 @@ import { checkLimit, clientIp } from "@/lib/rate-limit";
 import { verifyDob, genSel, hashDob } from "@/lib/anti-fraude/hash";
 import { getTitreDef, checkLuhn } from "@/lib/documents/titres";
 import { organismeScope } from "@/lib/public-scope";
+import { anonymizeIp } from "@/lib/observability/anonymize-ip";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -113,8 +114,12 @@ export async function POST(req: Request) {
     return json({ match: false, message: "Vérification anti-robot requise." }, 400);
   }
 
+  // IP anonymisée (RGPD) : suffisant pour l'analyse anti-fraude réseau, sans
+  // journaliser l'adresse complète (donnée personnelle) — audit A08-017.
   const log = (result: "match" | "no-match") =>
-    console.log(JSON.stringify({ t: new Date().toISOString(), ip, ev: "verification", result }));
+    console.log(
+      JSON.stringify({ t: new Date().toISOString(), ip: anonymizeIp(ip), ev: "verification", result }),
+    );
 
   // Format invalide → générique (sans requête base).
   if (!numero || !dob || !formatPlausible(numero)) {

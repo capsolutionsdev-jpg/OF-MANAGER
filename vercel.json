@@ -23,7 +23,11 @@
     "src/app/suivi/[token]/document/route.ts": { "memory": 1769, "maxDuration": 60 },
     "src/app/api/pdf-test/route.ts": { "memory": 1769, "maxDuration": 60 },
     "src/app/api/cron/parcours/route.ts": { "memory": 1769, "maxDuration": 60 },
-    "src/app/api/cron/rgpd-purge/route.ts": { "memory": 1769, "maxDuration": 60 }
+    "src/app/api/cron/rgpd-purge/route.ts": { "memory": 1769, "maxDuration": 60 },
+    "src/app/api/cron/purge-demos/route.ts": { "memory": 1024, "maxDuration": 60 },
+    "src/app/api/cron/purge-pdf-cache/route.ts": { "memory": 1024, "maxDuration": 60 },
+    "src/app/api/cron/mrr-snapshot/route.ts": { "memory": 1024, "maxDuration": 60 },
+    "src/app/api/cron/suspend-trials/route.ts": { "memory": 1024, "maxDuration": 60 }
   },
   "crons": [
     {
