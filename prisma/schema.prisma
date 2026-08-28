@@ -2531,7 +2531,7 @@ model Diplome {
   prenom        String
   dateNaissance DateTime?
   lieuNaissance String?
-  numeroDiplome String?
+  numeroDiplome String? // unique par organisme (cf. @@unique) — registre anti-fraude
   statut        DiplomeStatut @default(ENVOYE_CERTIFICATEUR)
   envoyeCertificateurAt DateTime?
   recuAt        DateTime?
@@ -2541,6 +2541,10 @@ model Diplome {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
+  // Unicité du n° de diplôme par organisme : un n° préfectoral dupliqué rendrait
+  // le 2e titre invérifiable dans le registre anti-fraude. NULL autorisé en
+  // multiple (brouillons sans n°). Requiert `prisma db push` (dédoublonner avant). (A06-013)
+  @@unique([organismeId, numeroDiplome])
   @@index([organismeId])
   @@index([sessionId])
   @@index([formationId])

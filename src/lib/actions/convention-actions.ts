@@ -5,7 +5,7 @@ import { FinancementType } from "@prisma/client";
 import { getTenantDb } from "@/lib/tenant";
 import { auth } from "@/auth";
 import { getCurrentOrganisme } from "@/lib/org";
-import { nextRef } from "@/lib/numerotation";
+import { nextRef, maxSuffix } from "@/lib/numerotation";
 
 const STAFF = ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"];
 const clean = (s?: string | null) => (s && s.trim() !== "" ? s.trim() : null);
@@ -111,8 +111,16 @@ export async function createConventionEntreprise(
   if (candidatIds.size === 0)
     return { ok: false, error: "Aucun salarié à inscrire." };
 
-  // 2) Convention de groupe.
-  const reference = await nextRef(org.id, "CONV");
+  // 2) Convention de groupe. Numéro amorcé depuis l'historique de l'année (évite
+  // un redémarrage à 0001 → collision si des conventions préexistent). (A06-018)
+  const yearConv = new Date().getFullYear();
+  const reference = await nextRef(org.id, "CONV", async () => {
+    const rows = await db.convention.findMany({
+      where: { reference: { startsWith: `CONV-${yearConv}-` } },
+      select: { reference: true },
+    });
+    return maxSuffix(rows.map((r) => r.reference));
+  });
   const montant =
     input.montant && input.montant.trim() !== ""
       ? Number(input.montant.replace(",", "."))

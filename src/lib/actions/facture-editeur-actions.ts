@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { Prisma, FactureEditeurStatut } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/superadmin-guard";
+import { canSetFactureEditeurStatut } from "@/lib/statut-transitions";
 import { calcMontants, overageLignes, sirenFromSiret, type LigneFacture } from "@/lib/factures/editeur";
 import { montantNet } from "@/lib/contrats/prestation";
 import { PLANS, planForOrg, OVERAGE_EMAIL_EUR, OVERAGE_INSCRIPTION_EUR, type FormuleKey } from "@/lib/plans";
@@ -209,8 +210,15 @@ export async function transmettreFactureEditeur(id: string): Promise<FactureEdit
 export async function setFactureEditeurStatut(id: string, statut: string): Promise<FactureEditeurState> {
   await requireSuperAdmin();
   if (!FACTURE_STATUTS.has(statut)) return { error: "Statut invalide." };
-  const f = await prisma.factureEditeur.findUnique({ where: { id }, select: { organismeId: true } });
+  const f = await prisma.factureEditeur.findUnique({
+    where: { id },
+    select: { organismeId: true, statut: true },
+  });
   if (!f) return { error: "Facture introuvable." };
+  // Transition interdite : une facture émise/encaissée ne revient pas en brouillon (A06-011).
+  if (!canSetFactureEditeurStatut(f.statut, statut as FactureEditeurStatut)) {
+    return { error: "Transition interdite : une facture émise ne peut pas revenir en brouillon." };
+  }
 
   await prisma.factureEditeur.update({
     where: { id },

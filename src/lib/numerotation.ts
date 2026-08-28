@@ -85,7 +85,11 @@ export async function nextRef(
 /** Extrait le plus grand suffixe numérique d'une liste de références/numéros. */
 export function maxSuffix(refs: string[]): number {
   return refs.reduce((m, r) => {
-    const n = Number(r.split("-").pop());
+    // Format PREFIX-AAAA-NNNN[-variante] : la séquence est le 3e segment. On ne
+    // prend NI le dernier segment (« -BIS » → NaN → sous-amorçage) NI le dernier
+    // segment numérique (qui attraperait l'année). (A06-021)
+    const seg = r.split("-")[2];
+    const n = seg !== undefined && /^\d+$/.test(seg) ? Number(seg) : NaN;
     return Number.isFinite(n) && n > m ? n : m;
   }, 0);
 }
