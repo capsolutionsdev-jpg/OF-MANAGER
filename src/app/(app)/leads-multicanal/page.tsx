@@ -17,7 +17,7 @@ export default async function LeadsPage() {
   const since30 = new Date(now - 30 * 24 * 3600 * 1000);
   const since90 = new Date(now - 90 * 24 * 3600 * 1000);
 
-  const [recents, all, count30, count90] = await Promise.all([
+  const [recents, channelGroups, count30, count90] = await Promise.all([
     db.candidat.findMany({
       where: { createdAt: { gte: since90 } },
       orderBy: { createdAt: "desc" },
@@ -31,16 +31,21 @@ export default async function LeadsPage() {
         createdAt: true,
       },
     }),
-    db.candidat.findMany({ select: { sourceConnaissance: true } }),
+    db.candidat.groupBy({ by: ["sourceConnaissance"], _count: { _all: true } }),
     db.candidat.count({ where: { createdAt: { gte: since30 } } }),
     db.candidat.count({ where: { createdAt: { gte: since90 } } }),
   ]);
 
   // Répartition par canal d'acquisition
+  // Audit 07 (A07-012) : répartition calculée en base (groupBy) au lieu de charger
+  // toute la table candidats ; on re-fusionne les libellés sur le petit jeu agrégé.
   const channels = new Map<string, number>();
-  for (const c of all) {
-    const k = c.sourceConnaissance?.trim() || "Non renseigné";
-    channels.set(k, (channels.get(k) ?? 0) + 1);
+  let totalProspects = 0;
+  for (const g of channelGroups) {
+    const n = g._count._all;
+    totalProspects += n;
+    const k = g.sourceConnaissance?.trim() || "Non renseigné";
+    channels.set(k, (channels.get(k) ?? 0) + n);
   }
   const channelList = [...channels.entries()].sort((a, b) => b[1] - a[1]);
   const maxChannel = Math.max(1, ...channelList.map(([, n]) => n));
@@ -68,7 +73,7 @@ export default async function LeadsPage() {
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Kpi label="Leads (30 j)" value={count30} />
         <Kpi label="Leads (90 j)" value={count90} />
-        <Kpi label="Total prospects" value={all.length} />
+        <Kpi label="Total prospects" value={totalProspects} />
         <Kpi
           label="Canal principal"
           value={topCanal ? topCanal[0] : "—"}
