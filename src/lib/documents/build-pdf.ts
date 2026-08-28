@@ -12,6 +12,7 @@ import {
 import { MODALITE_LABELS } from "@/lib/validators/formation";
 import { SATISFACTION_CRITERES, SATISFACTION_NOTES } from "@/lib/satisfaction";
 import { buildVariables } from "@/lib/documents/resolve";
+import { assiduiteFromSession } from "@/lib/assiduite";
 import { escapeHtml } from "@/lib/documents/escape";
 import { orgConfigFor } from "@/lib/org-identity";
 import {
@@ -95,12 +96,28 @@ export async function buildInscriptionPdf(
 ): Promise<PdfResult> {
   const inscription = await prisma.inscription.findUnique({
     where: { id: inscriptionId },
-    include: { candidat: { include: { entreprise: true } }, session: { include: { formation: true, salle: true } } },
+    include: {
+      candidat: { include: { entreprise: true } },
+      session: {
+        include: {
+          formation: true,
+          salle: true,
+          seances: { select: { type: true, presences: { select: { statut: true, apprenantId: true } } } },
+        },
+      },
+    },
   });
   if (!inscription) return null;
 
   const org = await orgConfigFor(inscription.organismeId);
-  const vars = buildVariables(inscription, org);
+  // Heures réellement suivies / taux d'assiduité pour le certificat de
+  // réalisation (A06-001) — null (→ durée prévue) si l'émargement n'est pas fait.
+  const assiduite = assiduiteFromSession(
+    inscription.session.seances,
+    inscription.apprenantId,
+    inscription.session.formation.dureeHeures,
+  );
+  const vars = buildVariables(inscription, org, assiduite);
 
   const signed = inscription.signedAt
     ? {

@@ -20,6 +20,7 @@ export const getCandidatDetail = cache(async (id: string) => {
       inscriptions: {
         include: {
           session: { include: { formation: true } },
+          factures: { select: { montantTTC: true } },
           paiements: {
             select: {
               id: true,

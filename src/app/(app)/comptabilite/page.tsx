@@ -6,6 +6,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { requireSection } from "@/lib/section-guard";
+import { montantDu } from "@/lib/comptabilite/montant-du";
 import { ExportMenu } from "@/components/export-menu";
 import { getTenantDb } from "@/lib/tenant";
 import { Badge } from "@/components/ui/badge";
@@ -104,7 +105,7 @@ export default async function ComptabilitePage({
   const now = new Date();
   const lignes: Ligne[] = inscriptions.map((i) => {
     const facturesTtc = i.factures.reduce((s, f) => s + Number(f.montantTTC), 0);
-    const du = i.montant != null ? Number(i.montant) : facturesTtc;
+    const du = montantDu(i.montant != null ? Number(i.montant) : null, facturesTtc);
 
     // Encaissements réels (relevé Paiement)
     const events: { date: Date; montant: number }[] = [];

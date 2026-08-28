@@ -1,4 +1,4 @@
-import { euros } from "@/lib/plans";
+import { eurosDoc } from "@/lib/plans";
 
 // =============================================================
 //  FACTURE ÉDITEUR → OF client — conforme réforme e-invoicing FR 2026-2027
@@ -158,8 +158,8 @@ export function factureEditeurHtml(opts: {
       (l) => `<tr>
         <td style="padding:6px 8px;border:1px solid #e2e8f0">${esc(l.libelle)}</td>
         <td style="padding:6px 8px;border:1px solid #e2e8f0;text-align:right">${l.quantite}</td>
-        <td style="padding:6px 8px;border:1px solid #e2e8f0;text-align:right">${esc(euros(l.prixUnitaire))}</td>
-        <td style="padding:6px 8px;border:1px solid #e2e8f0;text-align:right">${esc(euros(l.montantHT))}</td>
+        <td style="padding:6px 8px;border:1px solid #e2e8f0;text-align:right">${esc(eurosDoc(l.prixUnitaire))}</td>
+        <td style="padding:6px 8px;border:1px solid #e2e8f0;text-align:right">${esc(eurosDoc(l.montantHT))}</td>
       </tr>`,
     )
     .join("");
@@ -208,9 +208,9 @@ export function factureEditeurHtml(opts: {
     </table>
 
     <table style="width:280px;margin-left:auto" class="tot">
-      <tr><td>Total HT</td><td style="text-align:right">${esc(euros(facture.montantHT))}</td></tr>
-      <tr><td>TVA (${facture.tauxTva} %)</td><td style="text-align:right">${esc(euros(facture.montantTva))}</td></tr>
-      <tr style="font-weight:700;border-top:2px solid #2C53C0"><td>Total TTC</td><td style="text-align:right">${esc(euros(facture.montantTTC))}</td></tr>
+      <tr><td>Total HT</td><td style="text-align:right">${esc(eurosDoc(facture.montantHT))}</td></tr>
+      <tr><td>TVA (${facture.tauxTva} %)</td><td style="text-align:right">${esc(eurosDoc(facture.montantTva))}</td></tr>
+      <tr style="font-weight:700;border-top:2px solid #2C53C0"><td>Total TTC</td><td style="text-align:right">${esc(eurosDoc(facture.montantTTC))}</td></tr>
     </table>
 
     <div class="mentions">
@@ -238,6 +238,11 @@ export function factureCiiXml(opts: {
   const clientSiren = facture.clientSiren ?? sirenFromSiret(client.siret);
   const typeCode = facture.statut === "AVOIR" ? "381" : "380"; // 380 facture, 381 avoir
   const m2 = (n: number) => n.toFixed(2);
+  // Exonération de TVA (taux 0) : catégorie EN 16931 « E » + motif obligatoire
+  // (BR-E-10). Une facture au taux 0 en catégorie « S » est rejetée (BR-S-*).
+  const exonere = !facture.tauxTva; // taux 0/absent → exonéré (art. 261-4-4° CGI)
+  const categorieTva = exonere ? "E" : "S";
+  const motifExoneration = "TVA non applicable, art. 261-4-4° du Code général des impôts";
 
   const partie = (role: "Seller" | "Buyer", p: PartieFacture, siren: string | null) => `
       <ram:${role}TradeParty>
@@ -261,7 +266,7 @@ export function factureCiiXml(opts: {
       <ram:SpecifiedLineTradeAgreement><ram:NetPriceProductTradePrice><ram:ChargeAmount>${m2(l.prixUnitaire)}</ram:ChargeAmount></ram:NetPriceProductTradePrice></ram:SpecifiedLineTradeAgreement>
       <ram:SpecifiedLineTradeDelivery><ram:BilledQuantity unitCode="C62">${l.quantite}</ram:BilledQuantity></ram:SpecifiedLineTradeDelivery>
       <ram:SpecifiedLineTradeSettlement>
-        <ram:ApplicableTradeTax><ram:TypeCode>VAT</ram:TypeCode><ram:CategoryCode>S</ram:CategoryCode><ram:RateApplicablePercent>${m2(facture.tauxTva)}</ram:RateApplicablePercent></ram:ApplicableTradeTax>
+        <ram:ApplicableTradeTax><ram:TypeCode>VAT</ram:TypeCode><ram:CategoryCode>${categorieTva}</ram:CategoryCode><ram:RateApplicablePercent>${m2(facture.tauxTva)}</ram:RateApplicablePercent></ram:ApplicableTradeTax>
         <ram:SpecifiedTradeSettlementLineMonetarySummation><ram:LineTotalAmount>${m2(l.montantHT)}</ram:LineTotalAmount></ram:SpecifiedTradeSettlementLineMonetarySummation>
       </ram:SpecifiedLineTradeSettlement>
     </ram:IncludedSupplyChainTradeLineItem>`,
@@ -286,9 +291,10 @@ export function factureCiiXml(opts: {
       <ram:InvoiceCurrencyCode>EUR</ram:InvoiceCurrencyCode>
       <ram:ApplicableTradeTax>
         <ram:CalculatedAmount>${m2(facture.montantTva)}</ram:CalculatedAmount>
-        <ram:TypeCode>VAT</ram:TypeCode>
+        <ram:TypeCode>VAT</ram:TypeCode>${exonere ? `
+        <ram:ExemptionReason>${esc(motifExoneration)}</ram:ExemptionReason>` : ""}
         <ram:BasisAmount>${m2(facture.montantHT)}</ram:BasisAmount>
-        <ram:CategoryCode>S</ram:CategoryCode>
+        <ram:CategoryCode>${categorieTva}</ram:CategoryCode>
         <ram:RateApplicablePercent>${m2(facture.tauxTva)}</ram:RateApplicablePercent>
       </ram:ApplicableTradeTax>
       <ram:SpecifiedTradeSettlementHeaderMonetarySummation>

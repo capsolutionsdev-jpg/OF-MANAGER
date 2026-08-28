@@ -71,6 +71,36 @@ describe("Facture éditeur — conformité e-invoicing 2026", () => {
     expect(html).toContain("EN 16931");
     expect(html).toContain("L441-10"); // pénalités de retard légales
   });
+
+  it("PDF (HTML) : montants au centime, jamais arrondis à l'euro (A06-002)", () => {
+    const f: FactureData = {
+      ...facture,
+      montantHT: 160.65, tauxTva: 20, montantTva: 32.13, montantTTC: 192.78,
+      lignes: [{ libelle: "Prestation", quantite: 1, prixUnitaire: 160.65, montantHT: 160.65 }],
+    };
+    const html = factureEditeurHtml({ emetteur, client, facture: f });
+    expect(html).toContain("160,65"); // Total HT au centime
+    expect(html).toContain("32,13"); // TVA au centime
+    expect(html).toContain("192,78"); // Total TTC au centime
+  });
+
+  it("XML CII : facture exonérée (taux 0) → catégorie E + motif d'exonération (A06-015)", () => {
+    const f: FactureData = {
+      ...facture, tauxTva: 0, montantTva: 0, montantTTC: 149,
+    };
+    const xml = factureCiiXml({ emetteur, client, facture: f });
+    expect(xml).toContain("<ram:CategoryCode>E</ram:CategoryCode>");
+    expect(xml).toContain("<ram:ExemptionReason>");
+    expect(xml).toContain("261-4-4");
+    expect(xml).not.toContain("<ram:CategoryCode>S</ram:CategoryCode>");
+  });
+
+  it("XML CII : facture taxable (taux 20) → catégorie S, sans motif d'exonération", () => {
+    const xml = factureCiiXml({ emetteur, client, facture });
+    expect(xml).toContain("<ram:CategoryCode>S</ram:CategoryCode>");
+    expect(xml).not.toContain("<ram:CategoryCode>E</ram:CategoryCode>");
+    expect(xml).not.toContain("<ram:ExemptionReason>");
+  });
 });
 
 describe("Facturation à l'usage — overageLignes", () => {

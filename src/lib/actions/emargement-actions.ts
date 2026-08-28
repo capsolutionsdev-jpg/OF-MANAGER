@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { SeanceType, PresenceStatut } from "@prisma/client";
 import { getTenantDb } from "@/lib/tenant";
 import { auth } from "@/auth";
+import { joursSession } from "@/lib/emargement";
 
 // Génère une séance par jour sur la période de la session et garantit
 // qu'un dossier apprenant existe pour chaque inscrit (nécessaire à l'émargement).
@@ -38,24 +39,19 @@ export async function genererSeances(sessionId: string) {
   }
 
   if (s.seances.length === 0) {
-    const d = new Date(s.dateDebut);
-    d.setHours(0, 0, 0, 0);
-    const end = new Date(s.dateFin);
-    end.setHours(0, 0, 0, 0);
-    let guard = 0;
-    while (d <= end && guard < 60) {
+    // Jours ouvrés (hors week-ends ET jours fériés), sans plafond à 60 jours :
+    // logique unifiée avec joursSession (A06-004 troncature + A06-019 cohérence).
+    for (const jour of joursSession([], s.dateDebut, s.dateFin)) {
       await db.seance.create({
         data: {
           sessionId,
-          date: new Date(d),
+          date: jour,
           type: SeanceType.JOURNEE,
           heureDebut: "09:00",
           heureFin: "17:00",
           formateurId: formateurParDefaut,
         },
       });
-      d.setDate(d.getDate() + 1);
-      guard++;
     }
   }
 

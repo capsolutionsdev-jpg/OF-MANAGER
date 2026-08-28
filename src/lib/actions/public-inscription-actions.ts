@@ -61,7 +61,12 @@ export async function submitPublicInscription(
         prenom: v.prenom.trim(),
         email: v.email.trim(),
         telephone: clean(v.telephone),
-        dateNaissance: v.dateNaissance ? new Date(v.dateNaissance) : null,
+        // Date non fiable (formulaire public) : un format invalide ne doit pas
+        // provoquer un « Invalid Date » → erreur 500. On retombe sur null. (A06-016)
+        dateNaissance:
+          v.dateNaissance && !Number.isNaN(new Date(v.dateNaissance).getTime())
+            ? new Date(v.dateNaissance)
+            : null,
         ville: clean(v.ville),
         codePostal: clean(v.codePostal),
         situationPro: clean(v.situationPro),

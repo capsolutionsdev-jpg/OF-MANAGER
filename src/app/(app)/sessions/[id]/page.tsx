@@ -82,9 +82,14 @@ export default async function SessionDetailPage({
               (ses documents).
             </p>
           </div>
-          <Button variant="outline" size="sm" render={<a href={`/documents/session/${s.id}`} />}>
-            <Download className="mr-1.5 h-4 w-4" /> Télécharger le dossier (ZIP)
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" size="sm" render={<a href={`/documents/session/${s.id}`} />}>
+              <Download className="mr-1.5 h-4 w-4" /> Télécharger le dossier (ZIP)
+            </Button>
+            <Button variant="outline" size="sm" render={<a href={`/sessions/${s.id}/pre-facture`} />}>
+              <Download className="mr-1.5 h-4 w-4" /> Exporter les pré-factures (CSV)
+            </Button>
+          </div>
         </CardContent>
       </Card>
 

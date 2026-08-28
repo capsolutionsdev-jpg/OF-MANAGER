@@ -11,6 +11,7 @@ import {
 import { hasStrictFeature } from "@/lib/feature-guard";
 import { joursSession, joursEnConflit } from "@/lib/formateurs/animation";
 import type { TenantDb } from "@/lib/tenant";
+import { canEditSession } from "@/lib/statut-transitions";
 
 export type ActionResult =
   | { ok: true; id: string; warning?: string }
@@ -247,6 +248,13 @@ export async function updateSession(
 
   const parsed = sessionFormSchema.safeParse(values);
   if (!parsed.success) return { ok: false, error: "Données invalides." };
+
+  // Une session terminée ou annulée n'est plus modifiable (A06-011).
+  const courante = await db.session.findUnique({ where: { id }, select: { statut: true } });
+  if (!courante) return { ok: false, error: "Session introuvable." };
+  if (!canEditSession(courante.statut)) {
+    return { ok: false, error: "Cette session est terminée ou annulée : elle n'est plus modifiable." };
+  }
 
   try {
     const data = toData(parsed.data);

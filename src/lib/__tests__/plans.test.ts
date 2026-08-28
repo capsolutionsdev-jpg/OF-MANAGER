@@ -3,6 +3,7 @@ import {
   planKeyForOrg,
   featuresForFormule,
   euros,
+  eurosDoc,
   PLANS,
   EXTRA_SEAT_PRICE_EUR,
 } from "@/lib/plans";
@@ -103,5 +104,20 @@ describe("euros()", () => {
   });
   it("gère zéro", () => {
     expect(euros(0)).toContain("0");
+  });
+});
+
+describe("eurosDoc() — montants de documents légaux (2 décimales, A06-002)", () => {
+  // Intl insère une espace fine insécable (U+202F/U+00A0) avant le symbole €.
+  const norm = (s: string) => s.replace(/[  ]/g, " ");
+  it("affiche TOUJOURS deux décimales (pas d'arrondi à l'euro)", () => {
+    expect(norm(eurosDoc(160.65))).toBe("160,65 €");
+    expect(norm(eurosDoc(0.01))).toBe("0,01 €");
+    expect(norm(eurosDoc(113.4))).toBe("113,40 €");
+    expect(norm(eurosDoc(178.8))).toBe("178,80 €");
+  });
+  it("gère zéro et les entiers avec deux décimales", () => {
+    expect(norm(eurosDoc(0))).toBe("0,00 €");
+    expect(norm(eurosDoc(59))).toBe("59,00 €");
   });
 });

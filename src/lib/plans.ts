@@ -162,3 +162,18 @@ export function monthlyRevenue(
 export function euros(n: number): string {
   return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
 }
+
+/**
+ * Montant monétaire pour les DOCUMENTS légaux (factures, contrats) : toujours
+ * deux décimales. À utiliser partout où le montant affiché doit coïncider au
+ * centime avec le XML Factur-X et le prélèvement (cf. audit A06-002). Ne pas
+ * utiliser `euros()` (0 décimale) sur un document — réservé aux tableaux de bord.
+ */
+export function eurosDoc(n: number): string {
+  return new Intl.NumberFormat("fr-FR", {
+    style: "currency",
+    currency: "EUR",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(n);
+}
