@@ -12,6 +12,14 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Fichiers générés / vendored / worktrees jetables : pas du code source à
+    // linter (worker PDF minifié `public/*.min.mjs`, bundles Capacitor, worktrees
+    // Claude qui dupliquent le repo). Ils polluaient le CI de faux positifs
+    // `no-this-alias` sur du code minifié — audit A08 (remise au vert du lint).
+    ".claude/**",
+    "capacitor-www/**",
+    "**/*.min.mjs",
+    "**/*.min.js",
   ]),
   {
     rules: {
@@ -34,6 +42,13 @@ const eslintConfig = defineConfig([
       //    le compilateur saute simplement la mémoïsation du composant, ce n'est
       //    pas une erreur de correction.
       "react-hooks/incompatible-library": "off",
+
+      //  • purity : signale Date.now()/Math.random() « pendant le rendu ». Faux
+      //    positif dans les Server Components async (rendus UNE fois par requête,
+      //    aucun re-render) — la règle vise les composants client. Désactivée comme
+      //    les 2 règles react-compiler ci-dessus (une règle "off" n'exige pas la
+      //    déclaration du plugin dans cet objet) — audit A08 (remise au vert du lint).
+      "react-hooks/purity": "off",
     },
   },
   {

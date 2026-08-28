@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { QrCode, CalendarClock, BadgeCheck, Lock, ShieldCheck } from "lucide-react";
+import Link from "next/link";
 import { VerificationForm } from "@/components/verification/verification-form";
 
 export const metadata: Metadata = {
@@ -63,14 +64,14 @@ export default function VerificationPage() {
       {/* Barre de marque */}
       <div className="relative z-10 border-b border-white/10 bg-white/5 backdrop-blur-md">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3.5 sm:px-6">
-          <a
+          <Link
             href="/"
             aria-label="Accueil OF MANAGER"
             className="inline-flex items-center rounded-xl bg-white px-2.5 py-1.5 shadow-sm transition hover:opacity-90"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/ofmanager-logo.png" alt="OF MANAGER" className="h-10 w-auto sm:h-11" />
-          </a>
+          </Link>
           <span className="inline-flex items-center gap-1.5 text-xs font-medium text-white/70">
             <Lock className="h-3.5 w-3.5" />
             Vérification des titres délivrés
