@@ -1,4 +1,4 @@
-import { euros, type FormuleKey } from "@/lib/plans";
+import { eurosDoc, type FormuleKey } from "@/lib/plans";
 import {
   optionByKey,
   packByKey,
@@ -154,7 +154,7 @@ export function contratPrestationHtml(opts: {
       if (!o) return fRow(esc(k), `<span style="color:#94a3b8">—</span>`);
       const st = optionStatut(o, contrat.palier);
       const val =
-        st === "souscriptible" ? `${esc(euros(o.prixMois))} /mois`
+        st === "souscriptible" ? `${esc(eurosDoc(o.prixMois))} /mois`
           : st === "incluse" ? `<span style="color:#16a34a">inclus</span>`
             : `<span style="color:#94a3b8">—</span>`;
       return fRow(esc(o.label), val);
@@ -164,27 +164,27 @@ export function contratPrestationHtml(opts: {
   const packRows = contrat.packs
     .map((k) => {
       const p = packByKey(k);
-      return p ? fRow(esc(p.label), `${esc(euros(p.prixMois))} /mois`) : "";
+      return p ? fRow(esc(p.label), `${esc(eurosDoc(p.prixMois))} /mois`) : "";
     })
     .join("");
 
   const totalEngagementRow =
-    contrat.engagement === "ANNUEL" ? fRow("Total sur 12 mois (HT)", esc(euros(t.totalEngagement))) : "";
+    contrat.engagement === "ANNUEL" ? fRow("Total sur 12 mois (HT)", esc(eurosDoc(t.totalEngagement))) : "";
 
   const grossCadeaux = fraisMiseEnService(contrat.palier) + totalPacksActivation(contrat.packs);
   const fraisSection = contrat.pionnier
     ? `<p style="margin:0">Dans le cadre de l'<b>offre de lancement « Pionniers OFManager »</b> :</p>
        <ul style="margin:6px 0 0;padding-left:18px">
-         <li>Mise en service et activation des packs métier <b>offertes</b>${grossCadeaux > 0 ? ` <span style="color:#94a3b8">(valeur ${esc(euros(grossCadeaux))})</span>` : ""}.</li>
+         <li>Mise en service et activation des packs métier <b>offertes</b>${grossCadeaux > 0 ? ` <span style="color:#94a3b8">(valeur ${esc(eurosDoc(grossCadeaux))})</span>` : ""}.</li>
          ${contrat.pionnier.prixGele ? `<li><b>Prix gelé à vie</b> sur le palier souscrit, tant que l'abonnement reste actif.</li>` : ""}
        </ul>
-       <p style="margin:8px 0 0"><b>À régler à la signature : ${esc(euros(t.encaisseSignature))} HT</b> (${contrat.engagement === "ANNUEL" ? "12 mois payés d'avance" : "premier mois"}, mise en service offerte).</p>`
+       <p style="margin:8px 0 0"><b>À régler à la signature : ${esc(eurosDoc(t.encaisseSignature))} HT</b> (${contrat.engagement === "ANNUEL" ? "12 mois payés d'avance" : "premier mois"}, mise en service offerte).</p>`
     : `<table>
-         ${t.fraisUnique > 0 ? fRow("Frais de mise en service", esc(euros(t.fraisUnique))) : ""}
-         ${t.activationUnique > 0 ? fRow("Activation pack(s) métier", esc(euros(t.activationUnique))) : ""}
-         ${fRow("Total à la mise en service (HT)", `<b>${esc(euros(t.oneTimeTotal))}</b>`)}
+         ${t.fraisUnique > 0 ? fRow("Frais de mise en service", esc(eurosDoc(t.fraisUnique))) : ""}
+         ${t.activationUnique > 0 ? fRow("Activation pack(s) métier", esc(eurosDoc(t.activationUnique))) : ""}
+         ${fRow("Total à la mise en service (HT)", `<b>${esc(eurosDoc(t.oneTimeTotal))}</b>`)}
        </table>
-       <p class="muted" style="margin:6px 0 0;font-size:11px">Prélevé avec le premier mois — une seule facture. À régler à la signature : <b>${esc(euros(t.encaisseSignature))} HT</b>.</p>`;
+       <p class="muted" style="margin:6px 0 0;font-size:11px">Prélevé avec le premier mois — une seule facture. À régler à la signature : <b>${esc(eurosDoc(t.encaisseSignature))} HT</b>.</p>`;
 
   const cachet =
     prestataire.cachetUrl && prestataire.cachetUrl.startsWith("data:image/")
@@ -233,12 +233,12 @@ export function contratPrestationHtml(opts: {
   <h2>Article 2 — Formule &amp; conditions financières</h2>
   <table>
     ${fRow("Formule", `<b>${esc(contrat.formuleNom)}</b>`)}
-    ${fRow("Abonnement mensuel (HT)", esc(euros(contrat.montantMensuel)))}
+    ${fRow("Abonnement mensuel (HT)", esc(eurosDoc(contrat.montantMensuel)))}
     ${remiseHtml}
-    ${fRow("Abonnement net (HT)", `<b>${esc(euros(t.abonnementNet))}</b>`)}
+    ${fRow("Abonnement net (HT)", `<b>${esc(eurosDoc(t.abonnementNet))}</b>`)}
     ${optionRows}
     ${packRows}
-    ${fRow("Total mensuel récurrent (HT)", `<b>${esc(euros(t.recurrentMois))}</b>`)}
+    ${fRow("Total mensuel récurrent (HT)", `<b>${esc(eurosDoc(t.recurrentMois))}</b>`)}
     ${fRow("Engagement", esc(ENGAGEMENT_LABELS[contrat.engagement]))}
     ${totalEngagementRow}
     ${fRow("Date d'effet", fmtDate(contrat.dateDebut))}

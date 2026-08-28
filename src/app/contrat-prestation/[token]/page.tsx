@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { CheckCircle2, FileText } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { euros } from "@/lib/plans";
+import { eurosDoc } from "@/lib/plans";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ENGAGEMENT_LABELS, montantNet, montantEngagement } from "@/lib/contrats/prestation";
 import { getPrestataire, clientFromOrg, contratDataFrom } from "@/lib/contrats/prestation-data";
@@ -70,11 +70,11 @@ export default async function ContratPrestationPublicPage({
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
           <Ligne label="Formule" value={data.formuleNom} strong />
-          <Ligne label="Abonnement mensuel (HT)" value={euros(data.montantMensuel)} />
+          <Ligne label="Abonnement mensuel (HT)" value={eurosDoc(data.montantMensuel)} />
           {data.remisePct > 0 && <Ligne label="Remise commerciale" value={`− ${data.remisePct} %`} />}
-          <Ligne label="Montant mensuel net (HT)" value={euros(net)} strong />
+          <Ligne label="Montant mensuel net (HT)" value={eurosDoc(net)} strong />
           <Ligne label="Engagement" value={ENGAGEMENT_LABELS[data.engagement]} />
-          {data.engagement === "ANNUEL" && <Ligne label="Total annuel (HT)" value={euros(total)} />}
+          {data.engagement === "ANNUEL" && <Ligne label="Total annuel (HT)" value={eurosDoc(total)} />}
           <Ligne label="Date d'effet" value={fmtDate(data.dateDebut)} />
           {data.options.length > 0 && (
             <div className="pt-1">

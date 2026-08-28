@@ -9,6 +9,7 @@ import { getTenantDb } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { generateToken } from "@/lib/token";
 import { nextRef, maxSuffix } from "@/lib/numerotation";
+import { calcDevisTotals } from "@/lib/factures/devis-calc";
 import { devisFormSchema, type DevisFormValues } from "@/lib/validators/devis";
 import { type ActionResult, toActionError } from "@/lib/action-result";
 
@@ -38,8 +39,9 @@ export async function createDevis(values: DevisFormValues): Promise<DevisResult>
   });
   const tva = org?.assujettiTva === false ? 0 : v.tva;
 
-  const montantHT = v.lignes.reduce((s, l) => s + l.quantite * l.puHT, 0);
-  const montantTTC = montantHT * (1 + tva / 100);
+  // Totaux arrondis au centime (méthode calcMontants) — évite HT+TVA ≠ TTC et une
+  // ligne TVA (ttc − ht) incohérente avec le taux affiché (A06-008).
+  const { montantHT, montantTTC } = calcDevisTotals(v.lignes, tva);
   const year = new Date().getFullYear();
 
   const baseData = {
