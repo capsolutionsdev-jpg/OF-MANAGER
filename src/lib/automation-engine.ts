@@ -89,9 +89,13 @@ type Counts = {
  * Exécute tous les automatismes du parcours (idempotent grâce aux jalons
  * datés sur l'inscription). Appelé par le cron quotidien ou manuellement.
  */
-export async function runAutomations(): Promise<Counts> {
+export async function runAutomations(scopeOrganismeId?: string): Promise<Counts> {
   const now = new Date();
   const base = appBaseUrl();
+  // Audit 07 (A07-010/A07-001) : cloisonnement optionnel. Sans argument (cron),
+  // balayage global de tous les tenants (inchangé). Avec un organismeId (bouton
+  // « Exécuter maintenant » d'un OF), on ne balaie QUE cet organisme.
+  const orgFilter = scopeOrganismeId ? { organismeId: scopeOrganismeId } : {};
   const counts: Counts = {
     convocations: 0,
     rappels: 0,
@@ -164,7 +168,7 @@ export async function runAutomations(): Promise<Counts> {
   };
 
   const inscriptions = await prisma.inscription.findMany({
-    where: { statut: { not: "ANNULEE" } },
+    where: { statut: { not: "ANNULEE" }, ...orgFilter },
     include: { candidat: { include: { entreprise: true } }, session: { include: { formation: true } } },
   });
 
@@ -684,6 +688,7 @@ ${org.representant} — ${org.name}`,
       statut: { not: "ANNULEE" },
       dateFin: { lt: now },
       crFormateurSentAt: null,
+      ...orgFilter,
     },
     include: { formation: true, formateurs: true },
   });
@@ -736,7 +741,7 @@ ${org.representant} — ${org.name}`;
   const demiLabel = demiNow === DemiJournee.MATIN ? "matin" : "après-midi";
 
   const emargs = await prisma.emargementSignature.findMany({
-    where: { date: { gte: startToday, lt: endToday }, demi: demiNow, sentAt: null },
+    where: { date: { gte: startToday, lt: endToday }, demi: demiNow, sentAt: null, ...orgFilter },
     include: { session: { include: { formation: true } } },
   });
 
