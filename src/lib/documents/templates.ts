@@ -478,7 +478,9 @@ export const DOCUMENTS: Record<string, { label: string; html: string }> = {
         <tr><td>Action de formation</td><td>{{formation}} (réf. {{reference_formation}})</td></tr>
         <tr><td>Nature de l'action</td><td>Action de formation</td></tr>
         <tr><td>Dates de réalisation</td><td>du {{date_debut}} au {{date_fin}}</td></tr>
-        <tr><td>Durée totale</td><td>{{duree}}</td></tr>
+        <tr><td>Durée prévue</td><td>{{heures_prevues}}</td></tr>
+        <tr><td>Heures réellement suivies</td><td>{{heures_suivies}}</td></tr>
+        <tr><td>Taux d'assiduité</td><td>{{taux_assiduite}}</td></tr>
         <tr><td>Modalité</td><td>{{modalite}}</td></tr>
       </table>
       <p>Certificat établi le {{date_jour}} pour faire valoir ce que de droit (financeur, OPCO, CPF…).</p>

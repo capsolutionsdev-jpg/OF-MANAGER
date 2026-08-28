@@ -10,6 +10,7 @@ import {
   renderTemplate,
 } from "@/lib/documents/templates";
 import { buildVariables } from "@/lib/documents/resolve";
+import { assiduiteFromSession } from "@/lib/assiduite";
 import { isDocAllowedForFormation } from "@/lib/documents/families";
 import { orgConfigFor } from "@/lib/org-identity";
 import { getDocOverride } from "@/lib/documents/overrides";
@@ -27,7 +28,16 @@ export default async function DocumentPage({
 
   const inscription = await db.inscription.findUnique({
     where: { id: inscriptionId },
-    include: { candidat: { include: { entreprise: true } }, session: { include: { formation: true, salle: true } } },
+    include: {
+      candidat: { include: { entreprise: true } },
+      session: {
+        include: {
+          formation: true,
+          salle: true,
+          seances: { select: { type: true, presences: { select: { statut: true, apprenantId: true } } } },
+        },
+      },
+    },
   });
   if (!inscription) notFound();
 
@@ -37,7 +47,12 @@ export default async function DocumentPage({
   if (!isDocAllowedForFormation(type, inscription.session.formation)) notFound();
 
   const org = await orgConfigFor(inscription.organismeId);
-  const vars = buildVariables(inscription, org);
+  const assiduite = assiduiteFromSession(
+    inscription.session.seances,
+    inscription.apprenantId,
+    inscription.session.formation.dureeHeures,
+  );
+  const vars = buildVariables(inscription, org, assiduite);
   const html = renderTemplate(DOCUMENTS[type].html, vars)
     .split("/ofmanager-logo.png")
     .join(org.logoUrl ?? "/ofmanager-logo.png")
