@@ -401,7 +401,7 @@ export default async function HomePage() {
               <p>95 % de vos documents générés, signés et archivés.</p>
               <ul>
                 <li><span className="chk">✓</span> Conventions, devis, attestations en un clic</li>
-                <li><span className="chk">✓</span> Signature électronique eIDAS (YouSign)</li>
+                <li><span className="chk">✓</span> Signature électronique eIDAS horodatée</li>
                 <li><span className="chk">✓</span> Exports CSV/Excel/PDF par module</li>
               </ul>
             </div>

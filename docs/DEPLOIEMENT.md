@@ -1,91 +1,92 @@
-# Déploiement OFManager sur Vercel (multi-tenant, sous-domaines)
+# Déploiement OFManager (Vercel + Neon)
 
-Objectif : déployer **une seule** application OFManager qui sert **tous les organismes**,
-chacun sur son **sous-domaine** (`aspr.ofmanager.fr`, `cap.ofmanager.fr`, …). Les données
-sont déjà cloisonnées par `organismeId` dans la base Neon partagée.
+Application **unique** servant tous les organismes (multi-tenant, données cloisonnées
+par `organismeId` dans une base Neon partagée). Production : **`ofmanager.info`**
+(domaine unique ; le tenant est résolu par la **session**, pas par sous-domaine).
+Éditeur : CAP SOLUTIONS.
 
-> Le repo est prêt : `postinstall: prisma generate`, headers de sécurité, `serverActions`
-> 5 Mo, Chromium serverless (`@sparticuz/chromium`) pour les PDF, crons dans `vercel.json`,
-> `trustHost: true` (gère plusieurs domaines/sous-domaines).
-
----
+> Repo : `github.com/capsolutionsdev-jpg/OF-MANAGER` · Hébergeur : **Vercel** (région
+> `fra1`) · Base : **Neon** PostgreSQL (région `eu-central-1`, Francfort).
 
 ## 1. Pré-requis
-- Repo GitHub `infocapcomp-dotcom/cap-competence-manager` (✅), branche **`main`** à jour
-  (fusionner `feat/finitions-essai` → `main`).
-- Base **Neon** de production (celle déjà utilisée, qui contient CAP + ASPR + …).
-- Compte **Vercel** — **plan Pro requis** pour les **domaines wildcard** (`*.ofmanager.fr`).
-- Un **nom de domaine** (ex. `ofmanager.fr`).
+- Repo GitHub `capsolutionsdev-jpg/OF-MANAGER`, branche **`main`** à jour.
+- Base **Neon** de production (région Francfort).
+- Compte **Vercel** (voir §5 sur le plan).
+- Domaine **`ofmanager.info`** (DNS chez OVH).
 
-## 2. Créer le projet Vercel
-1. Vercel → **Add New… → Project** → importer le repo.
-2. Framework : **Next.js** (auto). Build : `next build` (auto). Install : `npm install`
-   (le `postinstall` lance `prisma generate`). Rien à modifier.
+## 2. Projet Vercel
+1. Vercel → **Add New… → Project** → importer `capsolutionsdev-jpg/OF-MANAGER`.
+2. Framework : **Next.js** (auto). Build : `next build`. Install : `npm install`
+   (le `postinstall` lance `prisma generate`). **Région : `fra1`** (colocalisée Neon).
 3. Production Branch : **`main`**.
 
-## 3. Variables d'environnement (Project → Settings → Environment Variables)
-Obligatoires :
-| Variable | Valeur |
-|---|---|
-| `DATABASE_URL` | URL Neon **pooler** (`...-pooler...?sslmode=require`) |
-| `DIRECT_URL` | URL Neon **directe** (migrations) |
-| `AUTH_SECRET` | `openssl rand -base64 32` |
-| `AUTH_TRUST_HOST` | `true` *(indispensable en multi-sous-domaine)* |
-| `APP_URL` | `https://app.ofmanager.fr` *(domaine principal — liens e-mail)* |
+## 3. Variables d'environnement (Settings → Environment Variables, scope *Production*)
+Bloquantes : `DATABASE_URL` (pooler Neon), `DIRECT_URL` (direct), `AUTH_SECRET`,
+`SECRETS_ENCRYPTION_KEY`, `NEXT_PUBLIC_SITE_URL=https://ofmanager.info`,
+`AUTH_TRUST_HOST=true`, `VITRINE_ORGANISME_ID`, `CRON_SECRET`, `BLOB_READ_WRITE_TOKEN`,
+`RESEND_API_KEY` + `RESEND_SENDER`, `UPSTASH_REDIS_REST_URL` + `..._TOKEN`,
+`STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET`. Recommandé : `SENTRY_DSN` (suivi
+d'erreurs). Inventaire complet + procédure : `docs/PROD-ENV-CHECKLIST.md` et
+`.env.example`.
+> ⚠️ `SECRETS_ENCRYPTION_KEY` et `AUTH_SECRET` doivent rester **stables** : les
+> changer rend illisibles les secrets tenant chiffrés / déconnecte tout le monde.
 
-> **Ne PAS** figer `AUTH_URL`/`NEXTAUTH_URL` sur un seul sous-domaine : avec
-> `AUTH_TRUST_HOST=true`, Auth.js utilise l'hôte de la requête → la connexion marche sur
-> **chaque** sous-domaine. Laisse-les vides (ou = `APP_URL`).
+## 4. Domaine & TLS
+Dans **Settings → Domains**, ajouter **`ofmanager.info`** (apex) et
+**`www.ofmanager.info`** (en **redirection** vers l'apex). DNS chez OVH :
+- A apex → `76.76.21.21` (Vercel).
+- `www` → CNAME `cname.vercel-dns.com`. ⚠️ **Retirer tout enregistrement AAAA OVH
+  résiduel sur `www`** (sinon les clients IPv6 tombent sur le parking OVH — audit A08-010).
+Le certificat TLS (Let's Encrypt) est émis et renouvelé **automatiquement** par Vercel.
+> **Sous-domaine par tenant** (`<of>.ofmanager.info`) = wildcard `*.ofmanager.info`,
+> qui **exige Vercel Pro**. Non activé aujourd'hui : le tenant est résolu par la
+> session (`lib/tenant-host.ts` gère les deux modes). Évolution future.
 
-Optionnelles (sinon mode démo) :
-`BREVO_API_KEY`, `BREVO_SENDER`, `BREVO_SMS_SENDER`, `ANTHROPIC_API_KEY`,
-`YOUSIGN_API_KEY`, `LEAD_API_SECRET`, `LEAD_NOTIF_EMAIL`, `CRON_SECRET`.
+## 5. Plan Vercel
+⚠️ Le plan **Hobby interdit l'usage commercial** (CGU Vercel) et **plafonne les crons**
+(fréquence quotidienne, nombre limité). Or `vercel.json` déclare **8 crons** (dont
+`parcours` 2×/jour et `rgpd-purge`). → **Passer en Vercel Pro avant le 1er client
+payant** (audit A08-004), puis vérifier que les 8 crons figurent dans l'onglet *Crons*.
 
-> Les clés d'intégration peuvent aussi être définies **par organisme** dans la console
-> (`brevoApiKey`, `anthropicApiKey`, `yousignApiKey`) ; la variable d'environnement globale
-> sert alors de **repli**. Idem quota `maxSmsMois` et matrice d'automatisations
-> (`automationsConfig`) : pilotés par OF, en direct, sans redéploiement.
+## 6. Crons (`vercel.json`)
+`parcours` (7 h + 13 h), `documents-b2b` (8 h), `rgpd-purge` (3 h), `purge-demos`
+(3 h 30), `purge-pdf-cache` (dim. 4 h), `mrr-snapshot` (1er du mois, 5 h),
+`suspend-trials` (6 h). Tous protégés par `CRON_SECRET` (Vercel envoie
+`Authorization: Bearer <CRON_SECRET>`).
 
-## 4. Domaine principal + wildcard (le cœur du multi-tenant)
-Dans **Project → Settings → Domains**, ajouter :
-1. `app.ofmanager.fr` (ou l'apex `ofmanager.fr`) → domaine principal (console éditeur + accueil).
-2. **`*.ofmanager.fr`** → wildcard (tous les sous-domaines tenants). *(Pro)*
+## 7. Schéma de base (migrations)
+⚠️ Le schéma évolue aujourd'hui par `npx prisma db push` **manuel** sur la base Neon
+partagée — **sans migration versionnée ni rollback de schéma** (audit A08-002).
+À faire avant une exploitation durable : **re-baseline** puis `prisma migrate deploy`
+(procédure outillée : `docs/MIGRATIONS.md` + `docs/db-baseline.sql`).
+En attendant : tout `db push` en prod se fait **hors heures de pointe**, après un
+`prisma migrate diff` de contrôle, **jamais** avec `--accept-data-loss`.
 
-**DNS** (chez ton registrar / Cloudflare) — suivre ce que Vercel affiche, en général :
-| Type | Nom | Valeur |
-|---|---|---|
-| CNAME | `app` | `cname.vercel-dns.com` |
-| CNAME | `*` | `cname.vercel-dns.com` |
-| (apex) A/ALIAS | `@` | IP/cible indiquée par Vercel |
+## 8. Mises à jour
+`git push` / merge sur `main` → Vercel redéploie automatiquement.
+⚠️ Le déploiement Vercel **n'est pas conditionné au vert du CI GitHub** aujourd'hui
+(constat audit A08) : vérifier le CI (lint / tsc / tests / build) **avant** de merger,
+ou configurer une *required status check* sur `main` (GitHub) + « wait for CI » (Vercel).
 
-Comment ça marche : `lib/tenant-host.ts` lit le **1er label** de l'hôte (`aspr` dans
-`aspr.ofmanager.fr`) et résout l'organisme via `Organisme.sousDomaine`. Labels réservés
-ignorés : `www`, `app`, `localhost`.
+## 9. Rollback (procédure) — audit A08-005
+Trois niveaux, à connaître **avant** l'incident :
+1. **Code** — Vercel → *Deployments* → sélectionner le déploiement sain précédent →
+   **Promote to Production** (« Instant Rollback »). Effet < 1 min. Corréler au commit
+   via le SHA affiché (ou `GET /api/version`).
+2. **Schéma** — ⚠️ **pas de rollback automatique** tant que le schéma est piloté par
+   `db push` (cf. §7). Un rollback code après un changement de schéma peut laisser
+   l'app incohérente → coordonner code + schéma, ou basculer d'abord sur
+   `migrate deploy` (migrations réversibles).
+3. **Données** — Neon → *Branches* → *Create branch from timestamp* (PITR) → vérifier
+   les données → basculer `DATABASE_URL` vers la branche restaurée (jamais d'écrasement
+   direct). Cf. `docs/EXPLOITATION.md`.
+> **À éprouver une fois** (test à blanc) : promouvoir un ancien déploiement Vercel,
+> chronométrer, re-promouvoir l'actuel. Consigner le délai réel ici : `____`.
 
-## 5. Après le 1er déploiement
-1. **Créer le compte éditeur (SUPERADMIN)** s'il n'existe pas en prod : via la console ou un
-   script (`scripts/create-superadmin.cjs`). Idem comptes gérants.
-2. Vérifier : `https://app.ofmanager.fr` (accueil) → `/login` → `/console`.
-3. Vérifier un tenant : régler `sousDomaine` d'un organisme dans la console, puis ouvrir
-   `https://<sousDomaine>.ofmanager.fr/login` → la marque de l'OF doit s'afficher.
-4. **Crons** : Vercel lit `vercel.json` (parcours 7h/13h). Si `CRON_SECRET` est défini,
-   vérifier que `/api/cron/parcours` exige l'en-tête `Authorization: Bearer $CRON_SECRET`.
-
-## 6. Bascule d'ASPR vers OFManager
-ASPR est déjà un **locataire** (`sousDomaine = aspr`, données migrées).
-1. Communiquer aux utilisateurs ASPR la nouvelle URL **`https://aspr.ofmanager.fr`**
-   (connexion `admin@aspr.fr`).
-2. Si ASPR a un **domaine propre** (ex. `manager.aspr-formation.fr`) : ajouter ce domaine au
-   projet OFManager (Settings → Domains) et **repointer son DNS** (CNAME → Vercel). Il faut
-   aussi que `Organisme.sousDomaine` ou le mapping de domaine corresponde (option : gérer le
-   domaine custom comme alias → afficher la marque ASPR).
-3. **Décommissionner l'ancien déploiement** `aspr-formation-manager` (Vercel) **une fois la
-   bascule confirmée** — sinon les nouvelles saisies iraient sur l'ancienne base.
-
-   ⚠️ L'URL `aspr-formation-manager.vercel.app` (sous-domaine de l'ancien projet) ne peut pas
-   être réattribuée à OFManager : utiliser un domaine custom ou `aspr.ofmanager.fr`.
-
-## 7. Mises à jour ultérieures
-`git push` sur `main` → Vercel redéploie. Les changements de schéma : `npx prisma db push`
-(sur la base Neon) **avant** que le code dépendant ne soit en prod (jamais `migrate dev` — cf.
-règle projet). Les options/design d'un OF se pilotent **en direct** depuis la console.
+## 10. Après le 1er déploiement
+1. Créer le **SUPERADMIN** s'il n'existe pas : `scripts/create-superadmin.cjs`
+   (`SUPERADMIN_EMAIL` / `SUPERADMIN_PASSWORD`).
+2. Vérifier `https://ofmanager.info` → `/login` → `/console`.
+3. Sonde : `GET https://ofmanager.info/api/health` → `200 {status:"ok"}`.
+4. Version : `GET https://ofmanager.info/api/version` → SHA du déploiement.
+5. Crons : vérifier une exécution de `/api/cron/*` (Vercel → Cron logs).

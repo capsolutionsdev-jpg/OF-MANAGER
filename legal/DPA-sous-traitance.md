@@ -5,7 +5,7 @@
 
 **Entre :**
 
-- **Le Sous-traitant** : **CAP Compétences**, éditeur du logiciel **OFManager**, [forme juridique], au capital de [montant], SIREN [n°], siège social [adresse], représentée par [nom, qualité] (ci-après « l'Éditeur » ou « le Sous-traitant ») ;
+- **Le Sous-traitant** : **CAP SOLUTIONS**, éditeur du logiciel **OFManager**, Société par Actions Simplifiée Unipersonnelle (SASU) au capital de 100 €, immatriculée au RCS de Nanterre sous le n° 109 171 751 (SIRET du siège 109 171 751 00018), n° TVA intracommunautaire FR03109171751, dont le siège social est situé 32 rue de Paris, 92100 Boulogne-Billancourt, représentée par M. Moussa HAMOUMI, en sa qualité de Président (ci-après « l'Éditeur » ou « le Sous-traitant ») ;
 
 - **Le Responsable de traitement** : l'organisme de formation client souscripteur du service (ci-après « le Client » ou « le Responsable de traitement »), tel qu'identifié dans les Conditions Particulières / le bon de commande.
 
@@ -64,7 +64,7 @@ Le Client autorise l'Éditeur à recourir aux sous-traitants ultérieurs suivant
 | **Vercel** | Hébergement applicatif / CDN | UE `[à confirmer : région déployée]` |
 | **Neon** | Base de données PostgreSQL | UE — `eu-central-1` (Francfort) |
 | **Upstash** | Limitation de débit / cache Redis | UE `[région à confirmer]` |
-| **[Fournisseur e-mail — ex. Resend]** | Envoi d'e-mails transactionnels | `[à confirmer]` |
+| **Resend** | Envoi d'e-mails transactionnels | **UE — Irlande** (`eu-west-1`) ; société éditrice établie aux États-Unis, garanties CCT |
 | **Stripe** | Paiement en ligne de l'abonnement | UE/`[à confirmer]` |
 
 Tout changement de sous-traitant ultérieur est notifié au Client, qui peut s'y opposer pour un motif légitime.
@@ -100,7 +100,7 @@ Chaque partie assume la responsabilité de ses manquements au RGPD. La responsab
 
 ---
 
-**Fait à [lieu], le [date].**
+**Fait à Boulogne-Billancourt, le ……………………** (date de signature).
 
-Pour l'Éditeur (Sous-traitant) : [nom, qualité, signature]
+Pour l'Éditeur (Sous-traitant) : M. Moussa HAMOUMI, Président de CAP SOLUTIONS — signature :
 Pour le Client (Responsable de traitement) : [nom, qualité, signature]

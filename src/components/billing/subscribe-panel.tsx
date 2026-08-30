@@ -25,12 +25,17 @@ export function SubscribePanel({
   const [pending, start] = useTransition();
   const [busy, setBusy] = useState<FormuleKey | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [accepted, setAccepted] = useState(false);
 
   const subscribe = (key: FormuleKey) => {
+    if (!accepted) {
+      setError("Merci d'accepter les CGV et la politique de confidentialité avant de souscrire.");
+      return;
+    }
     setError(null);
     setBusy(key);
     start(async () => {
-      const res = await createCheckout(key);
+      const res = await createCheckout(key, "mensuel", accepted);
       if (res.url) {
         window.location.href = res.url;
         return;
@@ -77,13 +82,15 @@ export function SubscribePanel({
                 <button
                   type="button"
                   onClick={() => subscribe(p.key)}
-                  disabled={pending}
+                  disabled={pending || !accepted}
+                  aria-disabled={pending || !accepted}
+                  title={!accepted ? "Acceptez les CGV pour souscrire" : undefined}
                   className={cn(
                     "mt-3 inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition",
                     isPopular
                       ? "bg-primary text-primary-foreground hover:opacity-90"
                       : "border border-border hover:bg-muted",
-                    pending && "opacity-60",
+                    (pending || !accepted) && "opacity-60",
                   )}
                 >
                   {busy === p.key ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Souscrire <ArrowRight className="h-4 w-4" /></>}
@@ -100,6 +107,31 @@ export function SubscribePanel({
           );
         })}
       </div>
+
+      {configured && (
+        <label className="flex items-start justify-center gap-2 text-[11px] leading-snug text-muted-foreground">
+          <input
+            type="checkbox"
+            checked={accepted}
+            onChange={(e) => {
+              setAccepted(e.target.checked);
+              if (e.target.checked) setError(null);
+            }}
+            className="mt-0.5 h-3.5 w-3.5 shrink-0 accent-primary"
+          />
+          <span className="max-w-md text-left">
+            J&apos;ai lu et j&apos;accepte les{" "}
+            <Link href="/cgv" target="_blank" className="font-medium text-primary hover:underline">
+              conditions générales de vente
+            </Link>{" "}
+            et la{" "}
+            <Link href="/confidentialite" target="_blank" className="font-medium text-primary hover:underline">
+              politique de confidentialité
+            </Link>
+            .
+          </span>
+        </label>
+      )}
 
       {!configured && (
         <p className="text-center text-[11px] text-muted-foreground">

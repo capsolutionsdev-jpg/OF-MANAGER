@@ -6,8 +6,11 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { requireSection } from "@/lib/section-guard";
+import { montantDu } from "@/lib/comptabilite/montant-du";
 import { ExportMenu } from "@/components/export-menu";
 import { getTenantDb } from "@/lib/tenant";
+import { loadSessionsAFacturer } from "@/lib/factures/a-facturer";
+import { AFacturerCard } from "@/components/comptabilite/a-facturer-card";
 import { Badge } from "@/components/ui/badge";
 import { TONE_CLASSES } from "@/components/ui/status-badge";
 import {
@@ -44,6 +47,7 @@ export default async function ComptabilitePage({
   // défense en profondeur sur ces données financières sensibles.)
   await requireSection("comptabilite");
   const db = await getTenantDb();
+  const sessionsAFacturer = await loadSessionsAFacturer();
 
   const sp = await searchParams;
   const nowYear = new Date().getFullYear();
@@ -104,7 +108,7 @@ export default async function ComptabilitePage({
   const now = new Date();
   const lignes: Ligne[] = inscriptions.map((i) => {
     const facturesTtc = i.factures.reduce((s, f) => s + Number(f.montantTTC), 0);
-    const du = i.montant != null ? Number(i.montant) : facturesTtc;
+    const du = montantDu(i.montant != null ? Number(i.montant) : null, facturesTtc);
 
     // Encaissements réels (relevé Paiement)
     const events: { date: Date; montant: number }[] = [];
@@ -360,6 +364,8 @@ export default async function ComptabilitePage({
           </CardContent>
         </Card>
       </div>
+
+      <AFacturerCard sessions={sessionsAFacturer} />
 
       {/* Onglets in-page */}
       <Tabs defaultValue="creances" className="space-y-4">

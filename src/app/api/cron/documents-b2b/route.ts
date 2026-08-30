@@ -1,5 +1,5 @@
-import { assertCronAuthorized } from "@/lib/cron-auth";
 import { publierDocumentsAutoParDate } from "@/lib/documents/publish-auto";
+import { runCron } from "@/lib/cron-runner";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -8,14 +8,12 @@ export const maxDuration = 60;
 
 /**
  * Cron quotidien — cycle de vie documentaire B2B (volet automatique du modèle
- * hybride). Publie les documents « sûrs » (RI/CGV/convocation des conventions
- * signées, attestation d'entrée des sessions commencées) dans l'espace client.
- * Protégé par CRON_SECRET (Authorization: Bearer <CRON_SECRET>).
+ * hybride) : publie les documents « sûrs » des conventions signées / sessions
+ * commencées dans l'espace client. Protégé par CRON_SECRET.
  */
-export async function GET(req: Request) {
-  const denied = assertCronAuthorized(req);
-  if (denied) return denied;
-
-  const counts = await publierDocumentsAutoParDate();
-  return Response.json({ ok: true, ranAt: new Date().toISOString(), counts });
+export function GET(req: Request) {
+  return runCron(req, "documents-b2b", async () => {
+    const counts = await publierDocumentsAutoParDate();
+    return { counts };
+  });
 }

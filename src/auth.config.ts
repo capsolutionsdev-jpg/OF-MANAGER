@@ -15,7 +15,7 @@ import {
 // Config partagée (compatible edge/middleware) — SANS accès base de données.
 // Les providers (Credentials + Prisma + bcrypt) sont ajoutés dans auth.ts (runtime Node).
 export const authConfig = {
-  // Fait confiance au domaine de la requête (app.capacademy.fr) pour construire
+  // Fait confiance au domaine de la requête (ofmanager.info) pour construire
   // les URLs de redirection, au lieu de l'URL système Vercel (…vercel.app).
   trustHost: true,
   pages: {

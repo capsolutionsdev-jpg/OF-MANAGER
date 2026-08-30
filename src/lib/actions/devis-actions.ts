@@ -9,6 +9,8 @@ import { getTenantDb } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { generateToken } from "@/lib/token";
 import { nextRef, maxSuffix } from "@/lib/numerotation";
+import { calcDevisTotals } from "@/lib/factures/devis-calc";
+import { canSetDevisStatut } from "@/lib/statut-transitions";
 import { devisFormSchema, type DevisFormValues } from "@/lib/validators/devis";
 import { type ActionResult, toActionError } from "@/lib/action-result";
 
@@ -38,8 +40,9 @@ export async function createDevis(values: DevisFormValues): Promise<DevisResult>
   });
   const tva = org?.assujettiTva === false ? 0 : v.tva;
 
-  const montantHT = v.lignes.reduce((s, l) => s + l.quantite * l.puHT, 0);
-  const montantTTC = montantHT * (1 + tva / 100);
+  // Totaux arrondis au centime (méthode calcMontants) — évite HT+TVA ≠ TTC et une
+  // ligne TVA (ttc − ht) incohérente avec le taux affiché (A06-008).
+  const { montantHT, montantTTC } = calcDevisTotals(v.lignes, tva);
   const year = new Date().getFullYear();
 
   const baseData = {
@@ -138,6 +141,12 @@ export async function setDevisStatut(formData: FormData): Promise<ActionResult> 
     const id = String(formData.get("id"));
     const raw = String(formData.get("statut"));
     if (!STATUTS.has(raw)) return { ok: false, error: "Statut invalide." };
+    const courant = await db.devis.findUnique({ where: { id }, select: { statut: true } });
+    if (!courant) return { ok: false, error: "Devis introuvable." };
+    // Un devis finalisé (payé/partiel/annulé) ne revient pas en brouillon (A06-011).
+    if (!canSetDevisStatut(courant.statut, raw as FactureStatut)) {
+      return { ok: false, error: "Transition interdite : un devis finalisé ne peut pas revenir en brouillon." };
+    }
     await db.devis.update({ where: { id }, data: { statut: raw as FactureStatut } });
     revalidatePath("/devis");
     revalidatePath(`/devis/${id}`);

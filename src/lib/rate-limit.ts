@@ -9,7 +9,7 @@
 import { Redis } from "@upstash/redis";
 
 export type LimitResult = { ok: boolean; remaining: number; retryAfter: number };
-export type LimitOpts = { limit?: number; windowMs?: number };
+export type LimitOpts = { limit?: number; windowMs?: number; failClosed?: boolean };
 
 type Bucket = { count: number; reset: number };
 const store = new Map<string, Bucket>();
@@ -60,9 +60,24 @@ function getRedis(): Redis | null {
  * l'utilisateur : repli silencieux sur le compteur mémoire.
  */
 export async function checkLimit(key: string, opts: LimitOpts = {}): Promise<LimitResult> {
-  const { limit = 5, windowMs = 60_000 } = opts;
+  const { limit = 5, windowMs = 60_000, failClosed = false } = opts;
   const r = getRedis();
-  if (!r) return rateLimit(key, opts);
+  if (!r) {
+    // Pas de backend partagé (Upstash non configuré). En VRAIE PRODUCTION, si l'appelant
+    // exige un rate-limit fiable (failClosed), on REFUSE plutôt que de retomber sur un
+    // compteur mémoire par-instance contournable (SEC-07). NB : ceci ne mord que sur
+    // l'ABSENCE de configuration ; un hoquet transitoire de Redis reste géré en repli
+    // (catch ci-dessous) pour ne pas s'auto-infliger un déni de service.
+    // Détection de la VRAIE prod via VERCEL_ENV : `NODE_ENV` vaut aussi "production" sur
+    // les déploiements Preview Vercel (PR/QA), où Upstash n'est pas scopé — on n'y coupe
+    // pas l'IA. Hors Vercel (self-host), VERCEL_ENV est absent → on retombe sur NODE_ENV.
+    const isRealProd =
+      (process.env.VERCEL_ENV ?? process.env.NODE_ENV) === "production";
+    if (failClosed && isRealProd) {
+      return { ok: false, remaining: 0, retryAfter: Math.ceil(windowMs / 1000) };
+    }
+    return rateLimit(key, opts);
+  }
   try {
     const k = `rl:${key}`;
     const count = await r.incr(k);

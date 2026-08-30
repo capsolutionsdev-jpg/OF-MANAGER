@@ -26,7 +26,9 @@ import { EnrollForm } from "@/components/inscriptions/enroll-form";
 import { InscriptionQuickActions } from "@/components/inscriptions/inscription-quick-actions";
 import { InscriptionActionsMenu } from "@/components/inscriptions/inscription-actions-menu";
 import { PaiementEditor } from "@/components/inscriptions/paiement-editor";
+import { PaiementDialog } from "@/components/inscriptions/paiement-dialog";
 import { CertificationSelect } from "@/components/inscriptions/certification-select";
+import { userCanAccessSection } from "@/lib/section-guard";
 
 const STATUT_BADGE_CLS: Record<string, string> = {
   EN_ATTENTE: TONE_CLASSES.neutral,
@@ -49,6 +51,8 @@ export default async function SessionParticipantsPage({
   if (!detail) notFound();
 
   const { s, candidatsDisponibles, attestationForDocs, prereq, vstate } = detail;
+  // Saisie des règlements (montants) réservée à la section « comptabilité ».
+  const canManagePaiement = await userCanAccessSection("comptabilite");
 
   return (
     <div className="space-y-6">
@@ -119,11 +123,29 @@ export default async function SessionParticipantsPage({
                         : "—"}
                     </TableCell>
                     <TableCell>
-                      <PaiementEditor
-                        inscriptionId={i.id}
-                        modePaiement={i.modePaiement}
-                        paiementStatut={i.paiementStatut}
-                      />
+                      <div className="flex flex-col items-start gap-1.5">
+                        <PaiementEditor
+                          key={`${i.paiementStatut}-${i.modePaiement ?? ""}`}
+                          inscriptionId={i.id}
+                          modePaiement={i.modePaiement}
+                          paiementStatut={i.paiementStatut}
+                        />
+                        {canManagePaiement && (
+                          <PaiementDialog
+                            inscriptionId={i.id}
+                            candidatNom={`${i.candidat.prenom} ${i.candidat.nom}`}
+                            montant={i.montant != null ? Number(i.montant) : null}
+                            paiementStatut={i.paiementStatut}
+                            paiements={i.paiements.map((p) => ({
+                              id: p.id,
+                              montant: Number(p.montant),
+                              date: p.date.toISOString(),
+                              mode: p.mode,
+                              reference: p.reference,
+                            }))}
+                          />
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Badge

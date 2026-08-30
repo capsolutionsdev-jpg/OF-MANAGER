@@ -14,4 +14,12 @@ describe("maxSuffix() — amorçage de la numérotation depuis l'historique", ()
   it("ignore les entrées non numériques", () => {
     expect(maxSuffix(["DEV-2026-xxxx", "DEV-2026-0005"])).toBe(5);
   });
+
+  it("lit la séquence même avec un suffixe de variante, sans confondre l'année (A06-021)", () => {
+    // Ancien code (split-pop) → « BIS »/« xxxx » = NaN → sous-amorçage à 0.
+    expect(maxSuffix(["FAC-2026-0007-BIS"])).toBe(7);
+    // Ne doit jamais prendre l'année (2026) comme séquence.
+    expect(maxSuffix(["DEV-2026-xxxx"])).toBe(0);
+    expect(maxSuffix(["CONV-2026-0012", "CONV-2026-0009-DUP"])).toBe(12);
+  });
 });

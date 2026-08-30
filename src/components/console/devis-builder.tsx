@@ -78,6 +78,10 @@ export function DevisBuilder({
     }
   }, [state, router]);
 
+  // Clés dérivées (expressions simples) pour la liste de deps du useMemo : la
+  // règle React Compiler exige des identifiants simples, pas `[...x].join(",")`.
+  const optionsKey = [...options].join(",");
+  const packsKey = [...packs].join(",");
   const preview = useMemo<ContratData>(() => {
     const v = isPionnier ? OFFRE_PIONNIERS.variantes[variante as PionnierVariante] : null;
     return {
@@ -93,7 +97,7 @@ export function DevisBuilder({
       pionnier: v ? { variante, prixGele: true } : null,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isPionnier, variante, palier, base, planPrice, remise, engagement, [...options].join(","), [...packs].join(",")]);
+  }, [isPionnier, variante, palier, base, planPrice, remise, engagement, optionsKey, packsKey]);
 
   const t = computeContratTotals(preview);
 

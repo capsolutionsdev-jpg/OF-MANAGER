@@ -54,3 +54,30 @@ export async function requireSection(section: string) {
 
   return session;
 }
+
+/**
+ * Variante NON redirigeante de {@link requireSection} : retourne `true` si
+ * l'utilisateur courant peut accéder à la section, `false` sinon. Utile pour
+ * afficher/masquer une action côté serveur sans dérouter la page (le serveur
+ * de l'action reste gardé par requireSection). Revalidation LIVE depuis la base.
+ */
+export async function userCanAccessSection(section: string): Promise<boolean> {
+  const session = await auth();
+  if (!session?.user?.id) return false;
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: {
+      isActive: true,
+      role: true,
+      permissions: true,
+      organisme: { select: { fonctionnalites: true } },
+    },
+  });
+  if (!user || !user.isActive) return false;
+  if (!roleAllowedInSection(user.role, section) || !canAccessSection(user.role, user.permissions, section)) {
+    return false;
+  }
+  const fonctionnalites = user.organisme?.fonctionnalites ?? [];
+  if (fonctionnalites.length > 0 && !fonctionnalites.includes(section)) return false;
+  return true;
+}

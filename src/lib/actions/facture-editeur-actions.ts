@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { Prisma, FactureEditeurStatut } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/superadmin-guard";
+import { canSetFactureEditeurStatut } from "@/lib/statut-transitions";
 import { calcMontants, overageLignes, sirenFromSiret, type LigneFacture } from "@/lib/factures/editeur";
 import { montantNet } from "@/lib/contrats/prestation";
 import { PLANS, planForOrg, OVERAGE_EMAIL_EUR, OVERAGE_INSCRIPTION_EUR, type FormuleKey } from "@/lib/plans";
@@ -11,10 +12,17 @@ import { getOrgUsage } from "@/lib/usage";
 import { getEmetteur, partieFromOrg, factureDataFrom } from "@/lib/factures/editeur-data";
 import { renderFacturx } from "@/lib/factures/editeur-render";
 import { getPdpAdapter } from "@/lib/factures/pdp";
+import { nextRef, maxSuffix } from "@/lib/numerotation";
 
 export type FactureEditeurState = { ok?: boolean; error?: string; id?: string };
 
 const FACTURE_STATUTS = new Set(Object.values(FactureEditeurStatut) as string[]);
+
+// La numérotation des factures ÉDITEUR (`F-AAAA-NNNN`) est GLOBALE (un seul
+// émetteur = l'éditeur du SaaS), pas par tenant. On loge donc son compteur sous un
+// scope constant dans `NumeroSequence` (dont `organismeId` est une simple String,
+// sans FK) pour réutiliser l'incrément atomique de `nextRef`.
+const EDITEUR_SEQ_SCOPE = "__editeur__";
 
 /**
  * Génère une facture mensuelle (BROUILLON) pour un client : ligne d'abonnement
@@ -94,25 +102,59 @@ export async function emettreFactureEditeur(id: string): Promise<FactureEditeurS
   if (!f) return { error: "Facture introuvable." };
   if (f.numero) return { error: "Facture déjà émise." };
 
+  // Garde de conformité (PC-JUR-02) : une facture officielle exige un émetteur
+  // immatriculé. On vérifie la source RÉELLE de la facture — getEmetteur() (Organisme
+  // éditeur en base, VITRINE_ORGANISME_ID) — et non les mentions légales de la vitrine.
+  const emetteur = await getEmetteur();
+  const emetteurManques: string[] = [];
+  if (!sirenFromSiret(emetteur.siret ?? "")) emetteurManques.push("SIRET");
+  if (!emetteur.tva?.trim()) emetteurManques.push("n° de TVA");
+  if (emetteurManques.length > 0) {
+    return {
+      error: `Émission bloquée : l'identité de l'émetteur est incomplète (${emetteurManques.join(
+        ", ",
+      )}). Complétez le SIRET / n° de TVA de l'organisme éditeur avant d'émettre une facture.`,
+    };
+  }
+
   const now = new Date();
   const annee = now.getFullYear();
-  // Séquence sans trou : nombre de factures déjà émises cette année + 1.
-  const dejaEmises = await prisma.factureEditeur.count({ where: { numero: { startsWith: `F-${annee}-` } } });
-  const numero = `F-${annee}-${String(dejaEmises + 1).padStart(4, "0")}`;
   const echeance = new Date(now.getTime() + 30 * 86_400_000);
 
-  await prisma.factureEditeur.update({
-    where: { id },
-    data: {
-      numero,
-      statut: FactureEditeurStatut.EMISE,
-      dateEmission: now,
-      dateEcheance: echeance,
-    },
-  });
-
-  revalidatePath(`/console/${f.organismeId}`);
-  return { ok: true, id };
+  // Numérotation ATOMIQUE (BACK-01) : compteur éditeur global `F-AAAA` via `nextRef`
+  // (remplace `count()+1`, qui produisait des doublons en émission concurrente). La
+  // garde `numero: null` de l'updateMany empêche toute double-émission d'une même
+  // facture ; en cas de collision résiduelle sur la contrainte unique `numero`
+  // (P2002), on régénère un numéro et on réessaie.
+  for (let tentative = 0; tentative < 5; tentative++) {
+    const numero = await nextRef(EDITEUR_SEQ_SCOPE, "F", async () => {
+      const rows = await prisma.factureEditeur.findMany({
+        where: { numero: { startsWith: `F-${annee}-` } },
+        select: { numero: true },
+      });
+      return maxSuffix(rows.map((r) => r.numero).filter((n): n is string => !!n));
+    });
+    try {
+      const res = await prisma.factureEditeur.updateMany({
+        where: { id, numero: null },
+        data: {
+          numero,
+          statut: FactureEditeurStatut.EMISE,
+          dateEmission: now,
+          dateEcheance: echeance,
+        },
+      });
+      if (res.count === 0) return { error: "Facture déjà émise." };
+      revalidatePath(`/console/${f.organismeId}`);
+      return { ok: true, id };
+    } catch (e) {
+      // P2002 = numéro déjà pris (course résiduelle) → régénérer et réessayer.
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002")
+        continue;
+      throw e;
+    }
+  }
+  return { error: "Numérotation impossible, réessayez." };
 }
 
 /**
@@ -168,8 +210,15 @@ export async function transmettreFactureEditeur(id: string): Promise<FactureEdit
 export async function setFactureEditeurStatut(id: string, statut: string): Promise<FactureEditeurState> {
   await requireSuperAdmin();
   if (!FACTURE_STATUTS.has(statut)) return { error: "Statut invalide." };
-  const f = await prisma.factureEditeur.findUnique({ where: { id }, select: { organismeId: true } });
+  const f = await prisma.factureEditeur.findUnique({
+    where: { id },
+    select: { organismeId: true, statut: true },
+  });
   if (!f) return { error: "Facture introuvable." };
+  // Transition interdite : une facture émise/encaissée ne revient pas en brouillon (A06-011).
+  if (!canSetFactureEditeurStatut(f.statut, statut as FactureEditeurStatut)) {
+    return { error: "Transition interdite : une facture émise ne peut pas revenir en brouillon." };
+  }
 
   await prisma.factureEditeur.update({
     where: { id },

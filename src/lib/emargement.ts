@@ -1,10 +1,19 @@
 // Helpers d'émargement partagés (non "use server").
 
+import { estJourFerie } from "@/lib/jours-feries";
+
+// Borne haute de sécurité de l'énumération jour par jour : ~2 ans de calendrier.
+// Remplace l'ancien plafond de 60 jours qui TRONQUAIT silencieusement l'émargement
+// des formations longues (titre pro, alternance…) au 60e jour (A06-004). Au-delà
+// de 2 ans, les séances doivent être planifiées explicitement.
+const MAX_JOURS = 732;
+
 /**
  * Jours d'une session (séances si générées, sinon jours OUVRÉS de la plage),
  * normalisés à minuit. Quand aucune séance n'est explicitement planifiée, on
- * énumère les jours ouvrés (lun→ven) — pas d'émargement le week-end. Repli : si
- * la plage tombe entièrement sur un week-end, on garde ces jours (jamais vide).
+ * énumère les jours ouvrés (lun→ven, hors jours fériés) — pas d'émargement le
+ * week-end ni un férié (A06-019). Repli : si la plage tombe entièrement sur des
+ * jours non ouvrés, on garde ces jours (jamais vide).
  */
 export function joursSession(
   seances: { date: Date }[],
@@ -22,11 +31,11 @@ export function joursSession(
   const d = norm(dateDebut);
   const end = norm(dateFin);
   let guard = 0;
-  while (d <= end && guard < 60) {
+  while (d <= end && guard < MAX_JOURS) {
     const cur = new Date(d);
     tous.push(cur);
     const jour = cur.getDay(); // 0 = dimanche, 6 = samedi
-    if (jour !== 0 && jour !== 6) ouvres.push(cur);
+    if (jour !== 0 && jour !== 6 && !estJourFerie(cur)) ouvres.push(cur);
     d.setDate(d.getDate() + 1);
     guard++;
   }

@@ -78,21 +78,27 @@ export default async function ConfidentialitePage() {
         </section>
 
         <section>
-          <h2 className="text-lg font-semibold text-foreground">5. Destinataires, hébergement et transferts</h2>
+          <h2 className="text-lg font-semibold text-foreground">5. Destinataires, sous-traitants et hébergement</h2>
           <p className="mt-2">
-            Les données sont accessibles au personnel habilité de votre organisme de formation.
-            L&apos;application et la base de données sont hébergées dans l&apos;Union européenne.
-            Des sous-traitants techniques interviennent pour des services spécifiques : envoi
-            d&apos;e-mails, signature électronique, stockage de fichiers, paiement, supervision
-            technique et, le cas échéant, assistance par intelligence artificielle.
+            Les données sont accessibles au personnel habilité de votre organisme de formation et, dans
+            la stricte mesure nécessaire à la fourniture du service, à celui de l&apos;Éditeur.
+            L&apos;Éditeur recourt à des sous-traitants techniques, encadrés contractuellement (clauses
+            conformes à l&apos;article 28 du RGPD) :
           </p>
+          <ul className="mt-2 list-disc space-y-1 pl-5">
+            <li><strong>Hébergement applicatif</strong> — Vercel (fonctions en région Union européenne).</li>
+            <li><strong>Base de données</strong> — Neon, PostgreSQL (Union européenne, Francfort).</li>
+            <li><strong>Limitation de débit / cache technique</strong> — Upstash (Redis).</li>
+            <li><strong>E-mails transactionnels</strong> — Resend (traités dans l&apos;Union européenne, Irlande) : acheminement des messages (convocations, notifications).</li>
+            <li><strong>Paiement de l&apos;abonnement</strong> — Stripe.</li>
+          </ul>
           <p className="mt-2">
-            Certains de ces prestataires (notamment l&apos;envoi d&apos;e-mails et l&apos;assistance
-            par intelligence artificielle) peuvent être situés en dehors de l&apos;Union européenne.
-            Dans ce cas, le transfert est encadré par des garanties appropriées au sens du RGPD
-            (clauses contractuelles types ou cadre de protection des données UE–États-Unis). La liste
-            des sous-traitants et de leur localisation est tenue à jour et peut vous être communiquée
-            sur demande.
+            La base de données, les fichiers et l&apos;envoi des e-mails transactionnels sont traités
+            dans l&apos;Union européenne. Certains prestataires relèvent de groupes établis hors UE ;
+            les accès éventuels sont encadrés par des garanties appropriées (clauses contractuelles
+            types / accord de traitement). La liste des sous-traitants peut évoluer ; toute modification
+            substantielle est portée à la connaissance du Client, qui peut s&apos;y opposer pour un
+            motif légitime.
           </p>
         </section>
 

@@ -86,20 +86,16 @@ type Counts = {
 };
 
 /**
- * Exécute les automatismes du parcours (idempotent grâce aux jalons datés sur
- * l'inscription).
- * - `orgId` ABSENT → balayage GLOBAL de tous les tenants : réservé au cron
- *   quotidien (`api/cron/parcours`), seul point d'entrée cross-tenant légitime.
- * - `orgId` FOURNI → balayage CLOISONNÉ à cet organisme : utilisé par le
- *   déclencheur manuel (`runAutomationsNow`), qui ne doit jamais toucher les
- *   données d'un autre tenant (audit multi-tenant A05-001).
+ * Exécute tous les automatismes du parcours (idempotent grâce aux jalons
+ * datés sur l'inscription). Appelé par le cron quotidien ou manuellement.
  */
-export async function runAutomations(orgId?: string): Promise<Counts> {
-  // Filtre tenant appliqué à CHAQUE balayage quand un organisme est fourni
-  // (déclenchement manuel). Vide pour le cron (global).
-  const orgWhere = orgId ? { organismeId: orgId } : {};
+export async function runAutomations(scopeOrganismeId?: string): Promise<Counts> {
   const now = new Date();
   const base = appBaseUrl();
+  // Audit 07 (A07-010/A07-001) : cloisonnement optionnel. Sans argument (cron),
+  // balayage global de tous les tenants (inchangé). Avec un organismeId (bouton
+  // « Exécuter maintenant » d'un OF), on ne balaie QUE cet organisme.
+  const orgFilter = scopeOrganismeId ? { organismeId: scopeOrganismeId } : {};
   const counts: Counts = {
     convocations: 0,
     rappels: 0,
@@ -172,7 +168,7 @@ export async function runAutomations(orgId?: string): Promise<Counts> {
   };
 
   const inscriptions = await prisma.inscription.findMany({
-    where: { statut: { not: "ANNULEE" }, ...orgWhere },
+    where: { statut: { not: "ANNULEE" }, ...orgFilter },
     include: { candidat: { include: { entreprise: true } }, session: { include: { formation: true } } },
   });
 
@@ -692,7 +688,7 @@ ${org.representant} — ${org.name}`,
       statut: { not: "ANNULEE" },
       dateFin: { lt: now },
       crFormateurSentAt: null,
-      ...orgWhere,
+      ...orgFilter,
     },
     include: { formation: true, formateurs: true },
   });
@@ -745,7 +741,7 @@ ${org.representant} — ${org.name}`;
   const demiLabel = demiNow === DemiJournee.MATIN ? "matin" : "après-midi";
 
   const emargs = await prisma.emargementSignature.findMany({
-    where: { date: { gte: startToday, lt: endToday }, demi: demiNow, sentAt: null, ...orgWhere },
+    where: { date: { gte: startToday, lt: endToday }, demi: demiNow, sentAt: null, ...orgFilter },
     include: { session: { include: { formation: true } } },
   });
 

@@ -22,7 +22,18 @@ export default async function CandidatsPage() {
   const [candidats, sessions] = await Promise.all([
     db.candidat.findMany({
       orderBy: [{ nom: "asc" }, { prenom: "asc" }],
-      include: {
+      // Audit 07 (A07-002/A07-011) : select explicite = on ne charge PAS la photo
+      // base64 (@db.Text) ni les ~50 colonnes inutiles ; la liste affiche des
+      // initiales, la photo reste sur la fiche candidat.
+      select: {
+        id: true,
+        prenom: true,
+        nom: true,
+        email: true,
+        telephone: true,
+        ville: true,
+        statut: true,
+        formationSouhaiteeId: true,
         formationSouhaitee: { select: { id: true, titre: true } },
       },
     }),
@@ -47,7 +58,6 @@ export default async function CandidatsPage() {
     id: c.id,
     prenom: c.prenom,
     nom: c.nom,
-    photoUrl: c.photoUrl,
     email: c.email,
     telephone: c.telephone,
     ville: c.ville,

@@ -1,0 +1,82 @@
+# Planification GRATUITE des tâches automatiques (relais du plan Vercel Hobby).
+#
+# Pourquoi : sur le plan gratuit Vercel (Hobby), les crons de `vercel.json` ne
+# s'exécutent pas (limite du plan). Ce workflow appelle les MÊMES endpoints
+# /api/cron/* aux MÊMES horaires (UTC), gratuitement, via GitHub Actions.
+#
+# ── ACTIVER (une fois) ──────────────────────────────────────────────────────
+#   GitHub → dépôt → Settings → Secrets and variables → Actions :
+#     • onglet Variables → New variable : EXTERNAL_CRON_ENABLED = true
+#     • onglet Secrets   → New secret   : CRON_SECRET = (même valeur que dans Vercel)
+#
+# ── PASSAGE À VERCEL PRO ─────────────────────────────────────────────────────
+#   Les crons natifs de `vercel.json` prennent alors le relais automatiquement.
+#   Pour éviter que les DEUX tournent en même temps (ex. double envoi de relances),
+#   repasser la variable EXTERNAL_CRON_ENABLED = false. Un seul interrupteur,
+#   aucun code à changer.
+name: Cron gratuit (relais Hobby)
+
+on:
+  schedule:
+    - cron: "0 7 * * *"    # parcours (matin)
+    - cron: "0 13 * * *"   # parcours (après-midi)
+    - cron: "0 8 * * *"    # documents-b2b
+    - cron: "0 3 * * *"    # rgpd-purge
+    - cron: "30 3 * * *"   # purge-demos
+    - cron: "0 4 * * 0"    # purge-pdf-cache (dimanche)
+    - cron: "0 5 1 * *"    # mrr-snapshot (1er du mois)
+    - cron: "0 6 * * *"    # suspend-trials
+  workflow_dispatch:
+    inputs:
+      endpoint:
+        description: "Cron à déclencher manuellement (ex : rgpd-purge)"
+        required: false
+
+# Jamais deux exécutions du même déclenchement en parallèle.
+concurrency:
+  group: cron-gratuit
+  cancel-in-progress: false
+
+jobs:
+  trigger:
+    # Ne tourne QUE si la variable de dépôt EXTERNAL_CRON_ENABLED vaut "true".
+    # (Non définie = OFF : aucun risque avant que tu l'actives.)
+    if: ${{ vars.EXTERNAL_CRON_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Déclencher le cron
+        env:
+          BASE_URL: "https://ofmanager.info"
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          case "${{ github.event.schedule }}" in
+            "0 7 * * *"|"0 13 * * *") ENDPOINT="parcours" ;;
+            "0 8 * * *")  ENDPOINT="documents-b2b" ;;
+            "0 3 * * *")  ENDPOINT="rgpd-purge" ;;
+            "30 3 * * *") ENDPOINT="purge-demos" ;;
+            "0 4 * * 0")  ENDPOINT="purge-pdf-cache" ;;
+            "0 5 1 * *")  ENDPOINT="mrr-snapshot" ;;
+            "0 6 * * *")  ENDPOINT="suspend-trials" ;;
+            *) ENDPOINT="${{ github.event.inputs.endpoint }}" ;;
+          esac
+          if [ -z "${ENDPOINT:-}" ]; then
+            echo "Aucun endpoint (exécution manuelle sans paramètre)."
+            exit 0
+          fi
+          if [ -z "${CRON_SECRET:-}" ]; then
+            echo "::error::Secret CRON_SECRET manquant dans les réglages du dépôt."
+            exit 1
+          fi
+          echo "→ GET $BASE_URL/api/cron/$ENDPOINT"
+          STATUS=$(curl -sS -o /tmp/body -w "%{http_code}" \
+            -X GET "$BASE_URL/api/cron/$ENDPOINT" \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            --max-time 120 --retry 2 --retry-delay 10)
+          echo "HTTP $STATUS"
+          cat /tmp/body || true
+          echo
+          if [ "$STATUS" != "200" ]; then
+            echo "::error::Le cron $ENDPOINT a échoué (HTTP $STATUS)."
+            exit 1
+          fi

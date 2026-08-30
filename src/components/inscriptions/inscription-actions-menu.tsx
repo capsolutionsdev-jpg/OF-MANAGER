@@ -109,9 +109,13 @@ export function InscriptionActionsMenu({
       fd.set("id", inscriptionId);
       fd.set("sessionId", sessionId);
       fd.set("candidatId", candidatId);
-      await deleteInscriptionAction(fd);
-      toast.success("Candidat retiré de la session.");
-      router.refresh();
+      const res = await deleteInscriptionAction(fd);
+      if (res?.ok) {
+        toast.success("Candidat retiré de la session.");
+        router.refresh();
+      } else {
+        toast.error(res?.error ?? "Suppression impossible.");
+      }
     });
   }
 

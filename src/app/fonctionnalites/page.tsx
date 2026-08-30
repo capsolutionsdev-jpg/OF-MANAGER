@@ -203,7 +203,7 @@ const FEATURES: { cat: string; em: string; items: { nom: string; desc: string }[
     cat: "Documents & signature", em: "✍️",
     items: [
       { nom: "Génération automatique", desc: "Conventions, convocations, attestations en PDF en 1 clic." },
-      { nom: "Signature électronique eIDAS", desc: "Signature horodatée conforme (YouSign)." },
+      { nom: "Signature électronique eIDAS", desc: "Signature électronique simple, horodatée et traçable (IP)." },
       { nom: "GED & archivage", desc: "Tous les documents rattachés, classés et retrouvables." },
       { nom: "Exports CSV / Excel / PDF", desc: "Par module, pour vos analyses et vos obligations." },
     ],
@@ -221,7 +221,7 @@ const FEATURES: { cat: string; em: string; items: { nom: string; desc: string }[
     cat: "Financement & facturation", em: "💶",
     items: [
       { nom: "Simulateur de financement", desc: "CPF, OPCO, France Travail, PTP selon le profil." },
-      { nom: "Devis & factures automatisés", desc: "Paiement en ligne Stripe (CB, SEPA)." },
+      { nom: "Devis & factures", desc: "Devis générés et signés en ligne ; suivi des factures et des règlements." },
       { nom: "BPF pré-rempli", desc: "Votre Bilan Pédagogique et Financier à partir de vos données." },
       { nom: "Trésorerie & relances", desc: "Suivi des paiements et des OPCO, relances intégrées." },
     ],

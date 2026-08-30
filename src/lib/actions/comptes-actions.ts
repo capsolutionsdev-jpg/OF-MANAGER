@@ -109,6 +109,20 @@ export async function supprimerCompte(type: CompteType, id: string): Promise<Com
       if (u.role === "ADMIN") return { error: "Un administrateur ne peut pas être supprimé ici." };
       await db.user.delete({ where: { id } });
     } else if (type === "formateur") {
+      // Garde explicite : Formateur n'a AUCUNE relation Restrict (factures et
+      // séances sont en cascade) → le catch FK plus bas ne se déclencherait jamais
+      // et la suppression effacerait ses FactureFormateur. On bloque en amont. (A06-010)
+      const f = await db.formateur.findUnique({
+        where: { id },
+        select: { _count: { select: { factures: true, sessions: true, seances: true } } },
+      });
+      if (!f) return { error: "Formateur introuvable." };
+      if (f._count.factures > 0 || f._count.sessions > 0 || f._count.seances > 0) {
+        return {
+          error:
+            "Suppression impossible : ce formateur est rattaché à des sessions ou des factures. Suspendez-le plutôt.",
+        };
+      }
       await db.formateur.delete({ where: { id } });
     } else {
       await db.candidat.delete({ where: { id } });

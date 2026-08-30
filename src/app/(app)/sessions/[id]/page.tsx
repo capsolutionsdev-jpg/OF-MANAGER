@@ -14,6 +14,8 @@ import { MODALITE_LABELS } from "@/lib/validators/formation";
 import { setResultatsDeclares } from "@/lib/actions/session-actions";
 import { SessionGardeFou } from "@/components/sessions/session-garde-fou";
 import { SessionClotureBar } from "@/components/sessions/session-cloture-bar";
+import { loadSessionProformas } from "@/lib/factures/proforma-data";
+import { SessionProformaPanel } from "@/components/sessions/session-proforma-panel";
 
 function Field({ label, value }: { label: string; value?: string | null }) {
   return (
@@ -40,6 +42,7 @@ export default async function SessionDetailPage({
   if (!detail) notFound();
 
   const { s, gardeFouGroups, vstate, canArchive, dejaArchivee } = detail;
+  const proformas = await loadSessionProformas(s.id);
   const fmt = (d: Date) => d.toLocaleDateString("fr-FR");
   const actifs = s.inscriptions.filter((i) => i.statut !== "ANNULEE").length;
   const remplissage = s.nbPlaces > 0 ? Math.round((actifs / s.nbPlaces) * 100) : 0;
@@ -82,11 +85,22 @@ export default async function SessionDetailPage({
               (ses documents).
             </p>
           </div>
-          <Button variant="outline" size="sm" render={<a href={`/documents/session/${s.id}`} />}>
-            <Download className="mr-1.5 h-4 w-4" /> Télécharger le dossier (ZIP)
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" size="sm" render={<a href={`/documents/session/${s.id}`} />}>
+              <Download className="mr-1.5 h-4 w-4" /> Télécharger le dossier (ZIP)
+            </Button>
+            <Button variant="outline" size="sm" render={<a href={`/sessions/${s.id}/pre-facture`} />}>
+              <Download className="mr-1.5 h-4 w-4" /> Exporter les pré-factures (CSV)
+            </Button>
+          </div>
         </CardContent>
       </Card>
+
+      <SessionProformaPanel
+        sessionId={s.id}
+        cibles={proformas?.cibles ?? []}
+        terminee={proformas?.session.terminee ?? false}
+      />
 
       <Card>
         <CardHeader>

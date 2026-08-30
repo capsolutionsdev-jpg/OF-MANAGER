@@ -105,8 +105,9 @@ export default function CgvPage() {
             Dans le cadre du Service, l&apos;Éditeur agit en qualité de sous-traitant du Client au sens du RGPD.
             Les conditions du traitement figurent dans la{" "}
             <Link href="/confidentialite" className="font-medium text-primary hover:underline">politique de confidentialité</Link>{" "}
-            et, le cas échéant, dans un accord de sous-traitance (DPA) fourni au Client. Les données sont hébergées
-            au sein de l&apos;Union européenne.
+            et dans l&apos;accord de sous-traitance (DPA) conclu avec le Client. L&apos;hébergement principal est
+            situé dans l&apos;Union européenne ; certains sous-traitants techniques peuvent être situés hors UE,
+            sous garanties appropriées (voir la politique de confidentialité et le DPA).
           </p>
         </Art>
 

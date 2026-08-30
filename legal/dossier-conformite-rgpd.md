@@ -48,7 +48,7 @@ Procédure de notification **sans délai au client**, assistance à la notificat
 - [ ] (Recommandé) **pentest externe**.
 
 ## 8. Contact
-Référent protection des données (DPO / point de contact RGPD) : **[À COMPLÉTER — nom + e-mail]**.
+Référent protection des données (point de contact RGPD) : **M. Moussa HAMOUMI — contact@ofmanager.info**. *(Adresse dédiée `rgpd@ofmanager.info` à créer si souhaité ; désignation d'un DPO formel à trancher avec un juriste au regard des données art. 9.)*
 
 ---
-*OFManager est édité par CAP Compétences. Ce dossier décrit les mesures techniques et organisationnelles ; il ne se substitue pas au DPA contractuel signé avec chaque client.*
+*OFManager est édité par CAP SOLUTIONS. Ce dossier décrit les mesures techniques et organisationnelles ; il ne se substitue pas au DPA contractuel signé avec chaque client.*

@@ -114,7 +114,7 @@ export default async function MesDocumentsPage() {
                     <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
                     <span className="flex-1">{docLabel(d.type)}</span>
                     {d.fileUrl ? (
-                      <a href={d.fileUrl} target="_blank" rel="noopener noreferrer"
+                      <a href={`/mon-dossier/download?kind=document&id=${d.id}`}
                         className="inline-flex items-center gap-1 text-primary hover:underline">
                         <FileDown className="h-3.5 w-3.5" /> Télécharger
                       </a>

@@ -23,9 +23,10 @@ const ALLOWLIST = new Set([
   // Wedof : lit UNIQUEMENT l'Organisme de la session (where { id: orgId de session })
   // pour l'état de connexion ; les dossiers de financement passent par getTenantDb.
   "financements/page.tsx",
-  // Site vitrine : les données tenant passent par getTenantDb() ; le client brut
-  // ne sert qu'à prisma.user.findUnique (entité d'auth GLOBALE cross-tenant) —
-  // cf. audit SEC-054/F-33, revue manuelle : pas de fuite inter-tenant.
+  // Site vitrine : TOUTES les données tenant (formations, sessions) passent par
+  // getTenantDb() ; le client brut ne lit QUE le User de la session
+  // (where { id: session.user.id }, entité d'auth GLOBALE) pour la permission
+  // « blog ». Self-scopé, hors-tenant — même motif que mon-compte/administration.
   "site-vitrine/page.tsx",
 ]);
 
@@ -159,6 +160,9 @@ const ACTIONS_ALLOWLIST = new Set([
   // E-learning : tout passe par getTenantDb ; prismaBase (RLS) n'est utilisé que
   // pour l'échange atomique d'ordre sur des entités DÉJÀ vérifiées in-tenant (txWithOrg).
   "cours-actions.ts",
+  // Facturation proforma : scopé manuellement par l'organisme de session
+  // (emailLog.create { organismeId }, orgConfigFor(organismeId)). Self-scopé.
+  "proforma-actions.ts",
 ]);
 
 const ACTIONS_DIR = path.resolve(__dirname, "../actions");
@@ -207,6 +211,9 @@ describe("Garde-fou : pas d'accès prisma direct dans les server actions", () =>
 const APP_RAW_GRANDFATHER = new Set([
   // ── route handlers (relatifs à src/app) ──
   "(app)/examen-civique/facture/[id]/route.ts",
+  // Pré-facture (proforma) : charge via getTenantDb() ; raw prisma seulement pour
+  // lire l'Organisme de session (where { id: orgId }). Self-scopé.
+  "(app)/sessions/[id]/pre-facture/route.ts",
   "api/candidats/[id]/expression-besoin/route.ts",
   "api/civique/candidates/[id]/provision/route.ts",
   "api/civique/checkout/route.ts",
@@ -231,6 +238,8 @@ const APP_RAW_GRANDFATHER = new Set([
   "api/push/register/route.ts",
   "api/stripe/webhook/route.ts",
   "api/verification/route.ts",
+  // Sonde de disponibilité : prismaBase.$queryRaw SELECT 1, aucune donnée tenant.
+  "api/health/route.ts",
   "api/webhooks/brevo/route.ts",
   "api/webhooks/resend/route.ts",
   "api/webhooks/wedof/[orgId]/route.ts",

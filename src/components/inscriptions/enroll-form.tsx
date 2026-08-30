@@ -53,10 +53,23 @@ export function EnrollForm({
   const [positionnement, setPositionnement] = useState<"lien" | "sur_place">("lien");
   const [prerequisOk, setPrerequisOk] = useState(false);
 
-  const { register, handleSubmit, reset } = useForm<InscriptionFormValues>({
+  const { register, handleSubmit, reset, setValue, watch } = useForm<InscriptionFormValues>({
     resolver: zodResolver(inscriptionFormSchema),
     defaultValues: { candidatId: "", sessionId, financementType: "", statut: "EN_ATTENTE", montant: "" },
   });
+
+  // Combobox candidat (recherche par nom/prénom, insensible aux accents).
+  const [q, setQ] = useState("");
+  const [openList, setOpenList] = useState(false);
+  const selectedId = watch("candidatId");
+  const norm = (str: string) => str.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  const filtered = (() => {
+    const needle = norm(q.trim());
+    const base = needle
+      ? candidats.filter((c) => norm(`${c.prenom} ${c.nom}`).includes(needle))
+      : candidats;
+    return base.slice(0, 8);
+  })();
 
   const showSection = hasPrereq(prereq) || piecesAttendues.length > 0;
 
@@ -88,35 +101,94 @@ export function EnrollForm({
       toast.success("Candidat inscrit à la session.");
       if (res.warning) toast.warning(res.warning);
       reset({ candidatId: "", sessionId, financementType: "", statut: "EN_ATTENTE", montant: "" });
+      setQ("");
       setSsiapNum(""); setSsiapDate(""); setCnaps(""); setCarteProNum(""); setCarteProVal("");
       setSstCert(false); setMedical(false); setChecks({}); setPrerequisOk(false); setPositionnement("lien");
       router.refresh();
     });
   }
 
-  if (candidats.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground">
-        Tous les candidats sont déjà inscrits à cette session (ou aucun candidat n&apos;existe encore).
-      </p>
-    );
-  }
-
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form
+      onSubmit={handleSubmit(onSubmit, (errors) =>
+        toast.error(
+          errors.candidatId ? "Choisissez un candidat dans la liste." : "Formulaire incomplet.",
+        ),
+      )}
+      className="space-y-4"
+    >
       <input type="hidden" {...register("sessionId")} />
 
-      {/* Ligne principale */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:items-end">
-        <div className="grid gap-2 lg:col-span-2">
-          <Label htmlFor="candidatId">Candidat</Label>
-          <select id="candidatId" className={selectClass} {...register("candidatId")}>
-            <option value="">— Choisir un candidat —</option>
-            {candidats.map((c) => (
-              <option key={c.id} value={c.id}>{c.prenom} {c.nom}</option>
-            ))}
-          </select>
+      {/* Candidat : recherche + nouveau candidat */}
+      <div className="grid gap-2">
+        <div className="flex items-center justify-between gap-2">
+          <Label htmlFor="candidat-search">Candidat</Label>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            render={<a href="/candidats/nouveau" target="_blank" rel="noopener" />}
+          >
+            <UserPlus className="mr-1.5 h-3.5 w-3.5" /> Nouveau candidat
+          </Button>
         </div>
+        <input type="hidden" {...register("candidatId")} />
+        <div className="relative">
+          <Input
+            id="candidat-search"
+            autoComplete="off"
+            placeholder="Rechercher un candidat par nom ou prénom…"
+            value={q}
+            onChange={(e) => {
+              setQ(e.target.value);
+              setValue("candidatId", "");
+              setOpenList(true);
+            }}
+            onFocus={() => setOpenList(true)}
+            onBlur={() => setTimeout(() => setOpenList(false), 150)}
+            onKeyDown={(e) => {
+              // Entrée sélectionne le 1er résultat (évite de valider avec un texte
+              // saisi mais aucun candidat réellement choisi).
+              if (e.key === "Enter" && !selectedId && filtered.length > 0) {
+                e.preventDefault();
+                const c = filtered[0];
+                setValue("candidatId", c.id, { shouldValidate: true });
+                setQ(`${c.prenom} ${c.nom}`);
+                setOpenList(false);
+              }
+            }}
+          />
+          {openList && filtered.length > 0 && (
+            <ul className="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-lg border bg-popover shadow-lg">
+              {filtered.map((c) => (
+                <li key={c.id}>
+                  <button
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => {
+                      setValue("candidatId", c.id, { shouldValidate: true });
+                      setQ(`${c.prenom} ${c.nom}`);
+                      setOpenList(false);
+                    }}
+                    className="flex w-full items-center px-3 py-2 text-left text-sm hover:bg-muted"
+                  >
+                    {c.prenom} {c.nom}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          {openList && q.trim() !== "" && filtered.length === 0 && (
+            <div className="absolute z-20 mt-1 w-full rounded-lg border bg-popover px-3 py-2 text-sm text-muted-foreground shadow-lg">
+              Aucun candidat trouvé — utilisez «&nbsp;Nouveau candidat&nbsp;».
+            </div>
+          )}
+        </div>
+        {selectedId && <p className="text-xs font-medium text-emerald-600">✓ {q} sélectionné</p>}
+      </div>
+
+      {/* Financement / Statut / Montant */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="grid gap-2">
           <Label htmlFor="financementType">Financement</Label>
           <select id="financementType" className={selectClass} {...register("financementType")}>

@@ -1,5 +1,6 @@
 import "server-only";
 import { Prisma } from "@prisma/client";
+import { reportError } from "@/lib/observability/report-error";
 
 // Type de retour standard des Server Actions (cf. audit BCK-03/FRT-01).
 // Permet à l'UI d'afficher un retour cohérent (toast succès/erreur) au lieu de
@@ -22,6 +23,9 @@ export function toActionError(e: unknown): { ok: false; error: string } {
   if (e instanceof Error && e.message.startsWith("Accès refusé")) {
     return { ok: false, error: "Accès refusé." };
   }
-  console.error("[action]", e);
+  // Erreur INATTENDUE (ni Prisma connue, ni refus de cloisonnement) → incident :
+  // report best-effort (logs structurés + Sentry si configuré), sans bloquer le
+  // retour utilisateur. reportError journalise déjà en console.
+  void reportError(e, { tag: "action" });
   return { ok: false, error: "Une erreur est survenue. Réessayez." };
 }

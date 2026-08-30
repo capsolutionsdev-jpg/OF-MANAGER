@@ -34,12 +34,13 @@ import {
 
 export default async function RgpdPage() {
   const { organismeId, db } = await requireTenant();
-  const [org, requests, consentements, nbConsent] = await Promise.all([
+  const [org, requests, nbRequests, consentements, nbConsent] = await Promise.all([
     prisma.organisme.findUnique({
       where: { id: organismeId },
       select: { dureeConservationMois: true, referentHandicapNom: true, referentHandicapContact: true },
     }),
-    db.dataRequest.findMany({ orderBy: { requestedAt: "desc" } }),
+    db.dataRequest.findMany({ orderBy: { requestedAt: "desc" }, take: 300 }),
+    db.dataRequest.count(),
     db.consentement.findMany({
       orderBy: { accepteLe: "desc" },
       take: 15,
@@ -88,7 +89,7 @@ export default async function RgpdPage() {
         <StatCard
           icon={ClipboardList}
           label="Demandes d'exercice des droits"
-          value={requests.length}
+          value={nbRequests}
           tint="amber"
         />
       </div>

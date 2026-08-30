@@ -51,10 +51,19 @@ function Kpi({ label, value, sub, icon: Icon }: { label: string; value: string; 
 export default async function RapportsPage() {
   const db = await getTenantDb();
 
-  const [candidats, devis, factures, sessions, paiementsSum] = await Promise.all([
-    db.candidat.findMany({
+  const [stageGroups, sourceGroups, devis, factures, sessions, paiementsSum] = await Promise.all([
+    // Audit 07 (A07-012) : agrégations en base (groupBy) au lieu de charger toute la
+    // table candidats pour compter/sommer en mémoire.
+    db.candidat.groupBy({
+      by: ["crmStage"],
       where: { statut: { not: "ARCHIVE" } },
-      select: { crmStage: true, valeurEstimee: true, statut: true, sourceConnaissance: true, createdAt: true },
+      _count: { _all: true },
+      _sum: { valeurEstimee: true },
+    }),
+    db.candidat.groupBy({
+      by: ["sourceConnaissance"],
+      where: { statut: { not: "ARCHIVE" } },
+      _count: { _all: true },
     }),
     // acceptedAt : un devis signé en ligne garde statut=ENVOYEE (le « payé » est
     // réservé au cycle facture) → c'est acceptedAt qui fait foi pour l'acceptation.
@@ -80,28 +89,26 @@ export default async function RapportsPage() {
   // ── Funnel pipeline ──
   const stageCounts = new Map<CrmStage, number>();
   for (const s of CRM_STAGE_ORDER) stageCounts.set(s, 0);
-  for (const c of candidats) stageCounts.set(c.crmStage, (stageCounts.get(c.crmStage) ?? 0) + 1);
+  for (const g of stageGroups) stageCounts.set(g.crmStage, g._count._all);
   const maxStage = Math.max(1, ...[...stageCounts.values()]);
 
-  const total = candidats.length;
+  const total = stageGroups.reduce((a, g) => a + g._count._all, 0);
   const gagnes = stageCounts.get("GAGNE") ?? 0;
   const perdus = stageCounts.get("PERDU") ?? 0;
   const decides = gagnes + perdus;
   const tauxConversion = decides > 0 ? Math.round((gagnes / decides) * 100) : 0;
 
   // ── CA prévisionnel pondéré (opportunités ouvertes) ──
-  const caPondere = candidats
-    .filter((c) => c.crmStage !== "GAGNE" && c.crmStage !== "PERDU")
-    .reduce((a, c) => a + (c.valeurEstimee ? Number(c.valeurEstimee) * STAGE_PROBA[c.crmStage] : 0), 0);
-  const caGagne = candidats
-    .filter((c) => c.crmStage === "GAGNE")
-    .reduce((a, c) => a + (c.valeurEstimee ? Number(c.valeurEstimee) : 0), 0);
+  const caPondere = stageGroups
+    .filter((g) => g.crmStage !== "GAGNE" && g.crmStage !== "PERDU")
+    .reduce((a, g) => a + Number(g._sum.valeurEstimee ?? 0) * STAGE_PROBA[g.crmStage], 0);
+  const caGagne = Number(stageGroups.find((g) => g.crmStage === "GAGNE")?._sum.valeurEstimee ?? 0);
 
   // ── Sources d'acquisition ──
   const sourceCounts = new Map<string, number>();
-  for (const c of candidats) {
-    const k = c.sourceConnaissance?.trim() || "Non renseigné";
-    sourceCounts.set(k, (sourceCounts.get(k) ?? 0) + 1);
+  for (const g of sourceGroups) {
+    const k = g.sourceConnaissance?.trim() || "Non renseigné";
+    sourceCounts.set(k, (sourceCounts.get(k) ?? 0) + g._count._all);
   }
   const sources = [...sourceCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8);
   const maxSource = Math.max(1, ...sources.map(([, n]) => n));

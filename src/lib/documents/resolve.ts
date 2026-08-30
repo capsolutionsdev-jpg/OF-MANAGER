@@ -1,5 +1,6 @@
 import type { Candidat, Entreprise, Formation, Inscription, Salle, Session } from "@prisma/client";
 import { DEFAULT_ORG_IDENTITY, type OrgIdentity } from "@/lib/org-identity";
+import type { Assiduite } from "@/lib/assiduite";
 import { MODALITE_LABELS } from "@/lib/validators/formation";
 import { FINANCEMENT_LABELS, CNAPS_STATUT_LABELS } from "@/lib/validators/candidat";
 import { ssiapNiveauOfFormation } from "@/lib/documents/families";
@@ -20,10 +21,12 @@ export type InscriptionComplete = Omit<Inscription, "dossierPdf"> & {
 export function buildVariables(
   i: InscriptionComplete,
   org: OrgIdentity = DEFAULT_ORG_IDENTITY,
+  assiduite?: Assiduite | null,
 ): Record<string, string> {
   const c = i.candidat;
   const s = i.session;
   const f = s.formation;
+  const dureePrevue = f.duree ?? (f.dureeHeures != null ? `${f.dureeHeures} h` : "—");
   const d = (date: Date | null) => (date ? date.toLocaleDateString("fr-FR") : "");
   // Texte long (multi-lignes) → HTML : on ÉCHAPPE d'abord le contenu (données
   // saisies), PUIS on convertit les retours à la ligne en <br/> (le seul HTML
@@ -107,6 +110,13 @@ export function buildVariables(
     reference_formation: f.reference,
     certification: f.certification ?? "—",
     duree: f.duree ?? (f.dureeHeures ? `${f.dureeHeures}h` : "—"),
+    // Assiduité réelle (émargement) pour le certificat de réalisation (A06-001) :
+    // heures suivies + taux. À défaut de présence saisie, retombe sur la durée
+    // prévue et un taux inconnu (« — ») — jamais de sur-déclaration silencieuse.
+    heures_prevues: dureePrevue,
+    heures_suivies:
+      assiduite?.heuresSuivies != null ? `${assiduite.heuresSuivies} h` : dureePrevue,
+    taux_assiduite: assiduite && assiduite.poidsTotal > 0 ? `${assiduite.tauxPct} %` : "—",
     tarif: f.tarif
       ? `${Number(f.tarif)} € HT`
       : i.montant

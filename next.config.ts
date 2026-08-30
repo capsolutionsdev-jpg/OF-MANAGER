@@ -67,6 +67,7 @@ const PDF_ENTRYPOINTS = [
   "/documents",
   "/titres",
   "/diplomes",
+  "/paiements", // reçu de paiement (PDF)
   "/jurys/affectation",
   "/examen-civique/facture",
   "/examen-civique/export",
@@ -90,6 +91,15 @@ const PDF_ENTRYPOINTS = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Horodatage de build exposé au runtime (traçabilité de version — cf. /api/version, A08-006).
+  env: {
+    BUILD_TIME: new Date().toISOString(),
+  },
+  // Sur Vercel : Image Optimization native. Hors Vercel (self-host Docker) : pas de
+  // service d'optimisation → sert les images d'origine, évite un couplage Vercel (A08-025).
+  images: {
+    unoptimized: !process.env.VERCEL,
+  },
   // Épingle la racine du projet : évite que Next infère un mauvais workspace root
   // à cause d'un package-lock.json parasite ailleurs sur la machine (ex.
   // C:\Users\…\package-lock.json). Fiabilise aussi le tracing du build standalone.

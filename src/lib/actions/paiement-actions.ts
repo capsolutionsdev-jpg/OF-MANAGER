@@ -51,13 +51,34 @@ export async function enregistrerPaiement(
   });
   if (!inscription) return { error: "Inscription introuvable." };
 
+  const modeNorm = mode && mode.trim() !== "" ? mode : null;
+  const refNorm = reference && reference.trim() !== "" ? reference : null;
+
+  // Anti double-soumission (double-clic / renvoi réseau) : un règlement identique
+  // (même inscription, montant, mode, référence) enregistré il y a moins de 10 s
+  // est un doublon → on l'ignore, l'opération reste idempotente. (A06-009)
+  const doublon = await db.paiement.findFirst({
+    where: {
+      inscriptionId,
+      montant,
+      mode: modeNorm,
+      reference: refNorm,
+      createdAt: { gte: new Date(Date.now() - 10_000) },
+    },
+    select: { id: true },
+  });
+  if (doublon) {
+    revalidatePath("/comptabilite");
+    return { ok: true };
+  }
+
   await db.paiement.create({
     data: {
       inscriptionId,
       montant,
       date,
-      mode: mode && mode.trim() !== "" ? mode : null,
-      reference: reference && reference.trim() !== "" ? reference : null,
+      mode: modeNorm,
+      reference: refNorm,
       enregistreParId: userId,
     },
   });
@@ -91,5 +112,48 @@ export async function enregistrerPaiement(
   // La liste des règlements vit désormais dans l'onglet dédié → on revalide
   // aussi la sous-route pour que l'encaissement s'y reflète immédiatement.
   revalidatePath(`/candidats/${inscription.candidat.id}/paiements`);
+  return { ok: true };
+}
+
+/**
+ * Supprime un règlement (correction de saisie) et recalcule l'état de paiement
+ * de l'inscription. Réservé à la section « comptabilite ».
+ */
+export async function supprimerPaiement(paiementId: string): Promise<PaiementState> {
+  await requireSection("comptabilite");
+  const db = await getTenantDb();
+
+  const paiement = await db.paiement.findFirst({
+    where: { id: paiementId },
+    select: { id: true, inscriptionId: true },
+  });
+  if (!paiement?.inscriptionId) return { error: "Règlement introuvable." };
+  const inscriptionId = paiement.inscriptionId;
+
+  await db.paiement.deleteMany({ where: { id: paiementId } });
+
+  const insc = await db.inscription.findUnique({
+    where: { id: inscriptionId },
+    include: {
+      candidat: { select: { id: true } },
+      factures: { select: { montantTTC: true } },
+      paiements: { select: { montant: true } },
+    },
+  });
+  if (insc) {
+    const du =
+      insc.montant != null
+        ? Number(insc.montant)
+        : insc.factures.reduce((s, f) => s + Number(f.montantTTC), 0);
+    const totalPaye = insc.paiements.reduce((s, p) => s + Number(p.montant), 0);
+    let statut: PaiementStatut;
+    if (du > 0 && totalPaye + 0.005 >= du) statut = PaiementStatut.PAYE;
+    else if (totalPaye > 0) statut = PaiementStatut.ACOMPTE;
+    else statut = PaiementStatut.EN_ATTENTE;
+    await db.inscription.update({ where: { id: inscriptionId }, data: { paiementStatut: statut } });
+    revalidatePath(`/candidats/${insc.candidat.id}`);
+    revalidatePath(`/candidats/${insc.candidat.id}/paiements`);
+  }
+  revalidatePath("/comptabilite");
   return { ok: true };
 }

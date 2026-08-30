@@ -350,6 +350,20 @@ export async function refundCivicPayment(paiementId: string): Promise<ActionResu
 /** Annule un paiement (erreur de saisie). */
 export async function cancelCivicPayment(paiementId: string): Promise<ActionResult> {
   const { organismeId } = await requireStaff();
+  // Une facture émise ne peut pas être « annulée » sans avoir (rupture comptable /
+  // fiscale) : si une facture existe, rediriger vers le remboursement, qui émet
+  // l'avoir. Éviter une facture numérotée orpheline. (A06-006)
+  const facture = await prisma.civicFacture.findFirst({
+    where: { paiementId, organismeId, type: "FACTURE" },
+    select: { id: true },
+  });
+  if (facture) {
+    return {
+      ok: false,
+      error:
+        "Ce paiement a déjà été facturé : utilisez « Rembourser » (émet un avoir) plutôt qu'« Annuler ».",
+    };
+  }
   const res = await prisma.civicPaiement.updateMany({
     where: { id: paiementId, organismeId },
     data: { statut: "annule" },

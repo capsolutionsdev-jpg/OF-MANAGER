@@ -5,6 +5,7 @@ import HTMLtoDOCX from "@turbodocx/html-to-docx";
 import { prisma } from "@/lib/prisma";
 import { DOCUMENTS, EMPTY_IMAGE, STAMP_PLACEHOLDER, renderTemplate } from "@/lib/documents/templates";
 import { buildVariables } from "@/lib/documents/resolve";
+import { assiduiteFromSession } from "@/lib/assiduite";
 import { docContextFromInscription, isDocApplicable } from "@/lib/documents/families";
 import { orgConfigFor } from "@/lib/org-identity";
 import {
@@ -61,12 +62,26 @@ export async function addInscriptionDossier(
 ): Promise<string | null> {
   const inscription = await prisma.inscription.findUnique({
     where: { id: inscriptionId },
-    include: { candidat: { include: { entreprise: true } }, session: { include: { formation: true, salle: true } } },
+    include: {
+      candidat: { include: { entreprise: true } },
+      session: {
+        include: {
+          formation: true,
+          salle: true,
+          seances: { select: { type: true, presences: { select: { statut: true, apprenantId: true } } } },
+        },
+      },
+    },
   });
   if (!inscription) return null;
 
   const org = await orgConfigFor(inscription.organismeId);
-  const vars = buildVariables(inscription, org);
+  const assiduite = assiduiteFromSession(
+    inscription.session.seances,
+    inscription.apprenantId,
+    inscription.session.formation.dureeHeures,
+  );
+  const vars = buildVariables(inscription, org, assiduite);
 
   const nomComplet =
     vars.nom_complet || `${inscription.candidat.prenom} ${inscription.candidat.nom}`;
