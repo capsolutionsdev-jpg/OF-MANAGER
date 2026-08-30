@@ -11,9 +11,16 @@ const MAX_BYTES = 4 * 1024 * 1024; // 4 Mo
  * du fichier (magic bytes), pas le MIME annoncé par le client (spoofable). Seules
  * les images matricielles sont acceptées — SVG refusé (vecteur XSS).
  */
+// Rôles autorisés à uploader une image de marque (audit SEC-041 / F-21) :
+// personnel de l'OF + éditeur (console). Exclut APPRENANT/FORMATEUR/ENTREPRISE.
+const UPLOAD_ROLES = new Set(["SUPERADMIN", "ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"]);
+
 export async function POST(req: Request) {
   const session = await auth();
-  if (!session?.user) return new Response("Non authentifié.", { status: 401 });
+  const role = session?.user?.role;
+  if (!session?.user || !role || !UPLOAD_ROLES.has(role)) {
+    return new Response("Non autorisé.", { status: 403 });
+  }
 
   const form = await req.formData();
   const file = form.get("file");
@@ -26,7 +33,12 @@ export async function POST(req: Request) {
     return Response.json({ error: "Format non supporté (image PNG/JPEG/WEBP/GIF attendue)." }, { status: 415 });
   }
 
-  const folder = String(form.get("folder") ?? "uploads").replace(/[^a-z0-9/_-]/gi, "") || "uploads";
+  const rawFolder = String(form.get("folder") ?? "uploads").replace(/[^a-z0-9/_-]/gi, "") || "uploads";
+  // Cloisonnement (audit A05-012) : préfixer le chemin par l'organisme évite toute
+  // collision/écrasement logique entre tenants dans le store blob (le SUPERADMIN
+  // éditeur, sans organisme, range sous "_editor").
+  const orgId = (session.user as { organismeId?: string | null }).organismeId ?? null;
+  const folder = `${orgId ?? "_editor"}/${rawFolder}`;
   const url = await storeUpload({ data: buf, folder, ext: extFromMime(detected!), contentType: detected! });
   return Response.json({ url, stored: process.env.BLOB_READ_WRITE_TOKEN ? "blob" : "data-url" });
 }

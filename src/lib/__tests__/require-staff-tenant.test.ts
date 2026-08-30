@@ -9,6 +9,17 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mockAuth = vi.fn();
 vi.mock("@/auth", () => ({ auth: () => mockAuth() }));
 
+// La garde revalide désormais la session EN BASE (audit SEC-014 : isActive + sid).
+// On mocke le client brut : utilisateur actif, sans `sid` en session → le contrôle
+// de session unique est ignoré (token hérité), seul isActive compte ici.
+vi.mock("@/lib/prisma", () => ({
+  prismaBase: {
+    $extends: () => ({ __scopedDb: true }),
+    user: { findUnique: vi.fn(async () => ({ isActive: true, activeSessionId: null })) },
+  },
+  withOrgVar: (_v: string, op: unknown) => op,
+}));
+
 const { requireStaffTenant } = await import("@/lib/tenant");
 
 describe("requireStaffTenant — garde BFLA", () => {

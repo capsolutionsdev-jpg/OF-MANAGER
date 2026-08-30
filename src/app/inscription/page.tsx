@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { GraduationCap } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { getOrganismeFromHost } from "@/lib/tenant-host";
 import { PublicInscriptionForm } from "@/components/public/public-inscription-form";
 import {
   Card,
@@ -18,12 +19,27 @@ export const metadata: Metadata = {
 // Liste les sessions ouvertes depuis la base → rendu dynamique (pas de build).
 export const dynamic = "force-dynamic";
 
-export default async function PublicInscriptionPage() {
-  const sessions = await prisma.session.findMany({
-    where: { statut: { in: ["PLANIFIEE", "OUVERTE"] } },
-    include: { formation: true },
-    orderBy: { dateDebut: "asc" },
-  });
+export default async function PublicInscriptionPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ organisme?: string }>;
+}) {
+  // Cloisonnement multi-tenant (audit A05-003) : ne lister QUE les sessions de
+  // l'organisme résolu — param `?organisme=`, sinon sous-domaine de la requête,
+  // sinon l'env VITRINE_ORGANISME_ID. Sans organisme identifiable → aucune
+  // session (on ne fuit jamais le planning de tous les OF).
+  const sp = await searchParams;
+  const orgFromHost = await getOrganismeFromHost();
+  const organismeId =
+    sp?.organisme?.trim() || orgFromHost?.id || process.env.VITRINE_ORGANISME_ID || null;
+
+  const sessions = organismeId
+    ? await prisma.session.findMany({
+        where: { organismeId, statut: { in: ["PLANIFIEE", "OUVERTE"] } },
+        include: { formation: true },
+        orderBy: { dateDebut: "asc" },
+      })
+    : [];
 
   const options = sessions.map((s) => ({
     id: s.id,

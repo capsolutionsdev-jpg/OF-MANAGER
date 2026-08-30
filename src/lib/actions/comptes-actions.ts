@@ -76,6 +76,17 @@ export async function toggleCompteActif(type: CompteType, id: string): Promise<C
     where: { id: userId },
     data: { isActive: !u.isActive, activeSessionId: randomUUID() },
   });
+  // Traçabilité (audit SEC-038) : journaliser suspension / réactivation.
+  await db.auditLog
+    .create({
+      data: {
+        userId: me.id,
+        action: u.isActive ? "SUSPEND" : "REACTIVATE",
+        entityType: "User",
+        entityId: userId,
+      },
+    })
+    .catch(() => {});
   revalidatePath("/administration/comptes");
   return { ok: true };
 }
@@ -116,6 +127,18 @@ export async function supprimerCompte(type: CompteType, id: string): Promise<Com
     } else {
       await db.candidat.delete({ where: { id } });
     }
+    // Traçabilité (audit SEC-038) : journaliser la suppression de compte.
+    await db.auditLog
+      .create({
+        data: {
+          userId: me.id,
+          action: "DELETE",
+          entityType:
+            type === "collaborateur" ? "User" : type === "formateur" ? "Formateur" : "Candidat",
+          entityId: id,
+        },
+      })
+      .catch(() => {});
     revalidatePath("/administration/comptes");
     return { ok: true };
   } catch (e) {

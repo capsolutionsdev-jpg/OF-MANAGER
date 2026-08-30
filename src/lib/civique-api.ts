@@ -38,6 +38,26 @@ export const civicCors: Record<string, string> = {
   "Access-Control-Allow-Headers": "Authorization, Content-Type",
 };
 
+/**
+ * Résout l'organisme cible des endpoints PUBLICS de la prépa civique.
+ * Sécurité multi-tenant (audit A05-002) : l'organisme n'est JAMAIS pris
+ * librement dans le corps de la requête (sinon écriture PII cross-tenant dans le
+ * CRM d'un tenant arbitraire). Il provient de l'env `CIVIC_ORGANISME_ID`. Pour
+ * un déploiement multi-vitrine, l'env `CIVIC_ORGANISME_IDS` (liste séparée par
+ * des virgules) autorise un id fourni par l'appelant UNIQUEMENT s'il figure dans
+ * cette liste blanche. Sinon → null (l'appelant reçoit « organisme non configuré »).
+ */
+export function resolveCivicOrganismeId(requested?: string | null): string | null {
+  const pinned = process.env.CIVIC_ORGANISME_ID?.trim();
+  if (pinned) return pinned;
+  const allow = (process.env.CIVIC_ORGANISME_IDS ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const req = (requested ?? "").trim();
+  return req && allow.includes(req) ? req : null;
+}
+
 // ---------- Mappings énumérations ----------
 const MENTION_TO_DB: Record<string, CivicMention> = {
   csp: CivicMention.CSP,

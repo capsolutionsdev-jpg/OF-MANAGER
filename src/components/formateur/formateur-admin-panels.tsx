@@ -11,6 +11,7 @@ import {
   setFactureFormateurStatut,
   createFormateurAccess,
 } from "@/lib/actions/formateur-actions";
+import { genProvisionalPassword } from "@/lib/gen-password";
 
 const LABELS: Record<string, string> = {
   EN_ATTENTE: "En attente", EN_COURS: "En cours", PAYEE: "Payée", REJETEE: "Rejetée",
@@ -82,7 +83,7 @@ export function FormateurAccessPanel({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
-  const [pwd, setPwd] = useState(() => `FORM-${Math.random().toString(36).slice(2, 8).toUpperCase()}`);
+  const [pwd, setPwd] = useState(() => genProvisionalPassword("FORM"));
   const [done, setDone] = useState(false);
 
   function submit() {

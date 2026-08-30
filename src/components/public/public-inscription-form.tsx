@@ -415,7 +415,17 @@ export function PublicInscriptionForm({
         />
         <span>
           J&apos;accepte que mes données soient traitées par l&apos;organisme de
-          formation dans le cadre de ma demande d&apos;inscription (RGPD). *
+          formation dans le cadre de ma demande d&apos;inscription. Vos données
+          sont traitées conformément à notre{" "}
+          <a
+            href="/confidentialite"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline"
+          >
+            politique de confidentialité
+          </a>
+          . *
         </span>
       </label>
       <ErrorText msg={errors.consentement?.message} />

@@ -55,3 +55,20 @@ export async function purgeExpiredCandidats(): Promise<{ organismes: number; ano
 
   return { organismes: orgs.length, anonymises };
 }
+
+// Conservation des journaux d'e-mails (matrice de conservation : « 6 mois à 1 an »).
+const EMAILLOG_RETENTION_MONTHS = 12;
+
+/**
+ * Purge des journaux d'e-mails au-delà de la durée de conservation (audit A02-008).
+ * La matrice de conservation prévoyait une durée, mais AUCUN cron ne l'appliquait →
+ * les `EmailLog` (destinataire nominatif + sujet/corps) s'accumulaient sans limite.
+ * Suppression globale (tous tenants) — c'est une purge de rétention, exécutée par
+ * le cron RGPD protégé par CRON_SECRET.
+ */
+export async function purgeOldEmailLogs(): Promise<{ emailLogs: number }> {
+  const cutoff = new Date();
+  cutoff.setMonth(cutoff.getMonth() - EMAILLOG_RETENTION_MONTHS);
+  const { count } = await prisma.emailLog.deleteMany({ where: { createdAt: { lt: cutoff } } });
+  return { emailLogs: count };
+}

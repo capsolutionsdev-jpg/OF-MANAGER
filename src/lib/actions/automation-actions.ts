@@ -30,9 +30,12 @@ export async function runAutomationsNow(): Promise<RunResult> {
   // Réservé aux gestionnaires (déclenche le balayage des automatismes).
   if (!session?.user || !["ADMIN", "RESPONSABLE_FORMATION"].includes(session.user.role as string))
     return { ok: false, demo: true, counts: ZERO_COUNTS };
-  // Audit 07 (A07-010) : cloisonne le déclenchement manuel au tenant courant
-  // (le cron global reste le seul balayage tous-tenants).
-  const counts = await runAutomations(session.user.organismeId ?? undefined);
+  // Cloisonnement multi-tenant (audit A05-001) : le déclenchement MANUEL ne
+  // traite QUE les automatismes de l'organisme de l'utilisateur. Seul le cron
+  // (api/cron/parcours) balaie l'ensemble des tenants.
+  const organismeId = (session.user as { organismeId?: string | null }).organismeId ?? null;
+  if (!organismeId) return { ok: false, demo: true, counts: ZERO_COUNTS };
+  const counts = await runAutomations(organismeId);
   revalidatePath("/automatisations");
   return { ok: true, demo: !emailConfigured(), counts };
 }

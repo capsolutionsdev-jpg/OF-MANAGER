@@ -1,4 +1,4 @@
-import { purgeExpiredCandidats } from "@/lib/rgpd-retention";
+import { purgeExpiredCandidats, purgeOldEmailLogs } from "@/lib/rgpd-retention";
 import { runCron } from "@/lib/cron-runner";
 
 export const runtime = "nodejs";
@@ -9,6 +9,8 @@ export const dynamic = "force-dynamic";
 export function GET(req: Request) {
   return runCron(req, "rgpd-purge", async () => {
     const res = await purgeExpiredCandidats();
-    return { ...res };
+    // Purge des journaux d'e-mails au-delà de la durée de conservation (audit A02-008).
+    const logs = await purgeOldEmailLogs();
+    return { ...res, ...logs };
   });
 }

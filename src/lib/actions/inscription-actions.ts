@@ -386,6 +386,18 @@ export async function createInscription(
   if (!parsed.success) return { ok: false, error: "Données invalides." };
   const v = parsed.data;
 
+  // Cloisonnement multi-tenant (audit A05-004) : candidatId/sessionId viennent du
+  // formulaire (validés seulement comme chaînes non vides). Le create scopé pose
+  // l'organismeId sur l'Inscription mais NE revérifie PAS l'appartenance des FK →
+  // sans ce contrôle, on peut rattacher le candidat d'un AUTRE organisme (puis lire
+  // sa PII via `include`). On confirme donc que candidat ET session sont bien du
+  // tenant courant (le client scopé renvoie null pour une ressource d'un autre org).
+  const [candOk, sessOk] = await Promise.all([
+    db.candidat.findFirst({ where: { id: v.candidatId }, select: { id: true } }),
+    db.session.findFirst({ where: { id: v.sessionId }, select: { id: true } }),
+  ]);
+  if (!candOk || !sessOk) return { ok: false, error: "Candidat ou session introuvable." };
+
   const montant =
     v.montant && v.montant.trim() !== ""
       ? Number(v.montant.replace(",", "."))

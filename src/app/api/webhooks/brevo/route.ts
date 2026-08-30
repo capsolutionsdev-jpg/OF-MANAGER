@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { logLeadEvent } from "@/lib/growth/events";
 import { checkLimit, clientIp } from "@/lib/rate-limit";
@@ -34,7 +35,10 @@ export async function POST(req: Request) {
 
   const secret = process.env.BREVO_WEBHOOK_SECRET;
   if (secret) {
-    if (new URL(req.url).searchParams.get("secret") !== secret) {
+    // Comparaison à temps constant (audit SEC-048 / F-13) — cf. patron Wedof.
+    const provided = Buffer.from(new URL(req.url).searchParams.get("secret") ?? "");
+    const expected = Buffer.from(secret);
+    if (provided.length !== expected.length || !timingSafeEqual(provided, expected)) {
       return new Response("Unauthorized", { status: 401 });
     }
   } else if (process.env.NODE_ENV === "production") {

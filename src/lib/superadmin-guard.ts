@@ -15,10 +15,16 @@ export async function requireSuperAdmin() {
   if (!session?.user?.id) redirect("/login");
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { role: true, isActive: true },
+    select: { role: true, isActive: true, activeSessionId: true },
   });
   if (!user || !user.isActive || user.role !== "SUPERADMIN") {
     redirect("/dashboard");
+  }
+  // Révocation de session (audit SEC-014) : ce token a-t-il été supplanté par une
+  // connexion plus récente (session unique) ?
+  const sid = (session.user as { sid?: string | null }).sid ?? null;
+  if (sid && user.activeSessionId && user.activeSessionId !== sid) {
+    redirect("/login?reason=session");
   }
   return session;
 }

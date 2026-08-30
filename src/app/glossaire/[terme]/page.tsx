@@ -6,6 +6,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { SITE_URL } from "@/lib/site-url";
+import { safeJsonLd } from "@/lib/json-ld";
 import { ScrollReveal } from "@/components/site/scroll-reveal";
 import { SiteHeader } from "@/components/site/site-header";
 import { SiteFooter } from "@/components/site/site-footer";
@@ -71,7 +72,7 @@ export default async function Page({ params }: { params: Promise<{ terme: string
 
   return (
     <main className="min-h-screen bg-white text-[#0D1B3E]">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />
       <ScrollReveal skip={1} />
 
       {/* ===== HEADER ===== */}

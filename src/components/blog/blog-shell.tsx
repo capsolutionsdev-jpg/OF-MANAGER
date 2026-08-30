@@ -10,6 +10,7 @@
 //   - « mis à jour le … » visible = signal de fraîcheur.
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { safeJsonLd } from "@/lib/json-ld";
 import { ArrowRight, Check } from "lucide-react";
 import { SITE_URL } from "@/lib/site-url";
 import { ScrollReveal } from "@/components/site/scroll-reveal";
@@ -117,7 +118,7 @@ export function BlogArticleShell({
 
   return (
     <main className="min-h-screen bg-white text-[#0D1B3E]">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />
       <ScrollReveal skip={1} />
 
       <SiteHeader />

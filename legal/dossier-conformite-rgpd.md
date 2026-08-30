@@ -14,7 +14,7 @@
 - **CGV/abonnement + SLA** : `CGV-abonnement-SaaS.md`, `SLA.md`.
 
 ## 3. Mesures de sécurité (RGPD art. 32) — en place dans OFManager
-- **Cloisonnement multi-tenant** : chaque requête est automatiquement filtrée par organisme (`getTenantDb`) ; **RLS PostgreSQL** prête au niveau base comme filet.
+- **Cloisonnement multi-tenant** : chaque requête est automatiquement filtrée par organisme via l'intercepteur applicatif (`getTenantDb` / `scopedPrisma`). Une **RLS PostgreSQL** est **conçue et activable** par flag (`RLS_ENABLED`) comme filet de niveau base ; elle **n'est pas activée en production à ce jour** — le cloisonnement repose donc sur la couche applicative (auditée).
 - **Contrôle d'accès** : rôles et permissions fins ; **révocation de session immédiate** au changement de droits.
 - **Authentification** : mots de passe **bcrypt** (≥ 8 caractères), **double authentification (TOTP)** disponible, **rate-limiting** anti-brute-force.
 - **Chiffrement** : HTTPS partout ; **chiffrement des secrets** stockés (clés API tenant) ; signatures électroniques horodatées.
