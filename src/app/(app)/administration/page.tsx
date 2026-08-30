@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ShieldCheck, UserPlus, Users, Building2, UserCog, GraduationCap, ChevronRight, CreditCard, Download } from "lucide-react";
+import { ShieldCheck, UserPlus, Users, Building2, UserCog, GraduationCap, ChevronRight, CreditCard, Download, Trash2 } from "lucide-react";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { orgConfigFor } from "@/lib/org-identity";
@@ -201,6 +201,27 @@ export default async function AdministrationPage() {
             className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90"
           >
             <Download className="h-4 w-4" /> Exporter toutes mes données (JSON)
+          </a>
+        </CardContent>
+      </Card>
+
+      {/* Corbeille — récupération des suppressions (audit A09-003) */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Trash2 className="h-4 w-4 text-primary" /> Corbeille
+          </CardTitle>
+          <CardDescription>
+            Récupérez un candidat, une session, une inscription, une entreprise ou
+            une facture supprimé par erreur (restauration ou purge définitive).
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <a
+            href="/administration/corbeille"
+            className="inline-flex h-9 items-center gap-2 rounded-lg border px-4 text-sm font-medium hover:bg-muted"
+          >
+            <Trash2 className="h-4 w-4" /> Ouvrir la corbeille
           </a>
         </CardContent>
       </Card>
