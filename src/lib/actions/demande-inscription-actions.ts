@@ -10,7 +10,9 @@ import { generateAndStoreConventionPdf } from "@/lib/documents/convention-pdf";
 import { notifyClientDemande } from "@/lib/emails/demande-emails";
 
 /** Un salarié d'une demande : soit un candidat existant, soit un nouveau. */
-export type SalarieDemande = { candidatId: string } | { nom: string; prenom: string; email?: string };
+export type SalarieDemande =
+  | { candidatId: string }
+  | { nom: string; prenom: string; email?: string; genre?: "HOMME" | "FEMME" };
 
 function isExistant(s: SalarieDemande): s is { candidatId: string } {
   return typeof (s as { candidatId?: unknown }).candidatId === "string";
@@ -66,7 +68,12 @@ export async function createDemandeInscription(input: {
   const salariesJson = salaries.map((s) =>
     isExistant(s)
       ? { candidatId: s.candidatId, ...nomsById.get(s.candidatId) }
-      : { nom: s.nom.trim(), prenom: s.prenom.trim(), ...(s.email?.trim() ? { email: s.email.trim() } : {}) },
+      : {
+          nom: s.nom.trim(),
+          prenom: s.prenom.trim(),
+          ...(s.email?.trim() ? { email: s.email.trim() } : {}),
+          ...(s.genre ? { genre: s.genre } : {}),
+        },
   );
 
   await db.demandeInscription.create({
@@ -126,8 +133,8 @@ export async function confirmerDemandeInscription(
   const salaries = (Array.isArray(demande.salariesJson) ? demande.salariesJson : []) as unknown as SalarieDemande[];
   const candidatIdsExistants = salaries.filter(isExistant).map((s) => s.candidatId);
   const nouveaux = salaries
-    .filter((s): s is { nom: string; prenom: string; email?: string } => !isExistant(s))
-    .map((s) => ({ nom: s.nom, prenom: s.prenom, email: s.email }));
+    .filter((s): s is { nom: string; prenom: string; email?: string; genre?: "HOMME" | "FEMME" } => !isExistant(s))
+    .map((s) => ({ nom: s.nom, prenom: s.prenom, email: s.email, genre: s.genre }));
 
   const prix = opts?.prixParCandidat;
   const prixParCandidat = prix != null && Number.isFinite(prix) && prix >= 0 ? prix : undefined;

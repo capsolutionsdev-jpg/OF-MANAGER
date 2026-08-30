@@ -8,6 +8,7 @@ export const candidatFormSchema = z.object({
   // Informations personnelles
   nom: z.string().trim().min(1, "Le nom est requis").max(120, "Nom trop long (120 max)"),
   prenom: z.string().trim().min(1, "Le prénom est requis").max(120, "Prénom trop long (120 max)"),
+  genre: z.enum(["HOMME", "FEMME"], { error: "Sélectionnez le genre (Homme/Femme)" }),
   email: z.string().trim().email("Email invalide").max(190, "Email trop long"),
   telephone: optionalText,
   dateNaissance: optionalText, // chaîne "AAAA-MM-JJ" issue de l'input date

@@ -10,7 +10,7 @@ import { nextRef, maxSuffix } from "@/lib/numerotation";
 const STAFF = ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"];
 const clean = (s?: string | null) => (s && s.trim() !== "" ? s.trim() : null);
 
-export type NouveauSalarie = { nom: string; prenom: string; email?: string };
+export type NouveauSalarie = { nom: string; prenom: string; email?: string; genre?: "HOMME" | "FEMME" };
 
 export type ConventionInput = {
   sessionId: string;
@@ -97,6 +97,7 @@ export async function createConventionEntreprise(
       data: {
         nom,
         prenom,
+        genre: s.genre ?? null,
         email: email ?? `${prenom}.${nom}@${Date.now()}.local`.toLowerCase().replace(/\s+/g, ""),
         entrepriseId: input.entrepriseId,
         financementType: fin,

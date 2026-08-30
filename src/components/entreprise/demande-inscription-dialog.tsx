@@ -24,7 +24,7 @@ const FINANCEMENTS: { value: FinancementType; label: string }[] = [
   { value: "AUTRE", label: "Autre" },
 ];
 
-type Row = { nom: string; prenom: string; email: string };
+type Row = { nom: string; prenom: string; email: string; genre: string };
 type Candidat = { id: string; nom: string; prenom: string };
 
 export function DemandeInscriptionDialog({
@@ -54,7 +54,12 @@ export function DemandeInscriptionDialog({
       ...existants.map((id) => ({ candidatId: id })),
       ...rows
         .filter((r) => r.nom.trim() && r.prenom.trim())
-        .map((r) => ({ nom: r.nom.trim(), prenom: r.prenom.trim(), email: r.email.trim() || undefined })),
+        .map((r) => ({
+          nom: r.nom.trim(),
+          prenom: r.prenom.trim(),
+          email: r.email.trim() || undefined,
+          genre: r.genre === "HOMME" ? ("HOMME" as const) : r.genre === "FEMME" ? ("FEMME" as const) : undefined,
+        })),
     ];
     if (salaries.length === 0) {
       toast.error("Sélectionnez ou ajoutez au moins un salarié.");
@@ -152,6 +157,18 @@ export function DemandeInscriptionDialog({
                       <Label className="text-xs">E-mail (facultatif)</Label>
                       <Input type="email" value={r.email} onChange={(e) => setRow(i, "email", e.target.value)} />
                     </div>
+                    <div className="w-24 space-y-1">
+                      <Label className="text-xs">Genre</Label>
+                      <select
+                        value={r.genre}
+                        onChange={(e) => setRow(i, "genre", e.target.value)}
+                        className="h-9 w-full rounded-md border bg-background px-2 text-sm"
+                      >
+                        <option value="">—</option>
+                        <option value="HOMME">Homme</option>
+                        <option value="FEMME">Femme</option>
+                      </select>
+                    </div>
                     <Button
                       type="button"
                       size="icon"
@@ -168,7 +185,7 @@ export function DemandeInscriptionDialog({
                 type="button"
                 size="sm"
                 variant="outline"
-                onClick={() => setRows((p) => [...p, { nom: "", prenom: "", email: "" }])}
+                onClick={() => setRows((p) => [...p, { nom: "", prenom: "", email: "", genre: "" }])}
               >
                 <Plus className="mr-1.5 h-4 w-4" />
                 Ajouter un salarié

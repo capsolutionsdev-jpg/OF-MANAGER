@@ -4,6 +4,7 @@ import { candidatFormSchema } from "@/lib/validators/candidat";
 const valide = {
   nom: "Dupont",
   prenom: "Marie",
+  genre: "FEMME",
   email: "marie.dupont@exemple.fr",
   statut: "NOUVEAU",
 };
@@ -24,6 +25,11 @@ describe("candidatFormSchema — cas négatifs", () => {
   });
   it("refuse un nom vide", () => {
     expect(candidatFormSchema.safeParse({ ...valide, nom: "" }).success).toBe(false);
+  });
+  it("refuse un genre absent ou invalide", () => {
+    const { genre: _g, ...sansGenre } = valide;
+    expect(candidatFormSchema.safeParse(sansGenre).success).toBe(false);
+    expect(candidatFormSchema.safeParse({ ...valide, genre: "AUTRE" }).success).toBe(false);
   });
   it("refuse un nom composé uniquement d'espaces (après trim)", () => {
     expect(candidatFormSchema.safeParse({ ...valide, nom: "   " }).success).toBe(false);

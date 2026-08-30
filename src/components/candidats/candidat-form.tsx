@@ -210,6 +210,21 @@ export function CandidatForm({
             <ErrorText msg={errors.prenom?.message} />
           </div>
           <div className="grid gap-2">
+            <Label>Genre *</Label>
+            <div className="flex gap-2">
+              {(["HOMME", "FEMME"] as const).map((g) => (
+                <label
+                  key={g}
+                  className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm has-[:checked]:border-primary has-[:checked]:bg-primary/5"
+                >
+                  <input type="radio" value={g} {...register("genre")} className="accent-[color:var(--primary)]" />
+                  {g === "HOMME" ? "Homme" : "Femme"}
+                </label>
+              ))}
+            </div>
+            <ErrorText msg={errors.genre?.message} />
+          </div>
+          <div className="grid gap-2">
             <Label htmlFor="email">Email *</Label>
             <Input id="email" type="email" {...register("email")} />
             <ErrorText msg={errors.email?.message} />

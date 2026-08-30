@@ -59,6 +59,7 @@ export async function submitPublicInscription(
         organismeId: orgId,
         nom: v.nom.trim(),
         prenom: v.prenom.trim(),
+        genre: v.genre,
         email: v.email.trim(),
         telephone: clean(v.telephone),
         // Date non fiable (formulaire public) : un format invalide ne doit pas
