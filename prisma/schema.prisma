@@ -650,6 +650,11 @@ model DeviceToken {
 //  MODULE 1 — CANDIDATS
 // =============================================================
 
+enum Genre {
+  HOMME
+  FEMME
+}
+
 model Candidat {
   id String @id @default(cuid())
   organismeId String? // tenant (multi-OF)
@@ -657,6 +662,7 @@ model Candidat {
   // Informations personnelles
   nom           String
   prenom        String
+  genre         Genre? // état civil (Homme/Femme) — nullable : renseigné à la saisie, pas rétro-actif
   dateNaissance DateTime?
   lieuNaissance String? // commune de naissance
   departementNaissance String? // code département (ou "99" pour l'étranger)

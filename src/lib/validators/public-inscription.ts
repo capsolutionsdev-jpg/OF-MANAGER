@@ -8,6 +8,7 @@ export const publicInscriptionSchema = z.object({
   sessionId: z.string().trim().min(1, "Choisissez une session").max(50),
   nom: z.string().trim().min(1, "Le nom est requis").max(120, "Nom trop long (120 max)"),
   prenom: z.string().trim().min(1, "Le prénom est requis").max(120, "Prénom trop long (120 max)"),
+  genre: z.enum(["HOMME", "FEMME"], { error: "Sélectionnez le genre (Homme/Femme)" }),
   email: z.string().trim().email("Email invalide").max(190, "Email trop long"),
   telephone: optionalText,
   dateNaissance: optionalText,

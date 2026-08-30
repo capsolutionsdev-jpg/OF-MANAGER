@@ -20,6 +20,7 @@ function toData(v: CandidatFormValues) {
   return {
     nom: v.nom.trim(),
     prenom: v.prenom.trim(),
+    genre: v.genre,
     email: v.email.trim(),
     telephone: clean(v.telephone),
     dateNaissance: v.dateNaissance ? new Date(v.dateNaissance) : null,

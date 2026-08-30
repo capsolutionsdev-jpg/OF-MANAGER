@@ -53,6 +53,7 @@ export default async function ModifierCandidatPage({
           defaultValues={{
             nom: c.nom,
             prenom: c.prenom,
+            genre: c.genre ?? undefined,
             email: c.email,
             telephone: c.telephone ?? "",
             dateNaissance: c.dateNaissance
