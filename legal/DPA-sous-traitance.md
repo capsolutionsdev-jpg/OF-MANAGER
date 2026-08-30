@@ -5,7 +5,7 @@
 
 **Entre :**
 
-- **Le Sous-traitant** : **CAP SOLUTIONS**, éditeur du logiciel **OFManager**, [forme juridique], au capital de [montant], SIREN [n°], siège social [adresse], représentée par [nom, qualité] (ci-après « l'Éditeur » ou « le Sous-traitant ») ;
+- **Le Sous-traitant** : **CAP SOLUTIONS**, éditeur du logiciel **OFManager**, Société par Actions Simplifiée Unipersonnelle (SASU) au capital de 100 €, immatriculée au RCS de Nanterre sous le n° 109 171 751 (SIRET du siège 109 171 751 00018), n° TVA intracommunautaire FR03109171751, dont le siège social est situé 32 rue de Paris, 92100 Boulogne-Billancourt, représentée par M. Moussa HAMOUMI, en sa qualité de Président (ci-après « l'Éditeur » ou « le Sous-traitant ») ;
 
 - **Le Responsable de traitement** : l'organisme de formation client souscripteur du service (ci-après « le Client » ou « le Responsable de traitement »), tel qu'identifié dans les Conditions Particulières / le bon de commande.
 
@@ -100,7 +100,7 @@ Chaque partie assume la responsabilité de ses manquements au RGPD. La responsab
 
 ---
 
-**Fait à [lieu], le [date].**
+**Fait à Boulogne-Billancourt, le ……………………** (date de signature).
 
-Pour l'Éditeur (Sous-traitant) : [nom, qualité, signature]
+Pour l'Éditeur (Sous-traitant) : M. Moussa HAMOUMI, Président de CAP SOLUTIONS — signature :
 Pour le Client (Responsable de traitement) : [nom, qualité, signature]

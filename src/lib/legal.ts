@@ -7,15 +7,16 @@
 const env = (k: string, fallback = "[à compléter]") =>
   (process.env[k]?.trim() || fallback);
 
-// Valeurs issues des statuts CAP SOLUTIONS (SASU, PV du 20/08/2026). SIRET/RCS/TVA
-// seront disponibles à l'immatriculation → mettre à jour ici (ou via env).
+// CAP SOLUTIONS — SASU immatriculée le 20/08/2026 (SIREN 109 171 751).
+// Données officielles INSEE/INPI (annuaire-entreprises.data.gouv.fr).
+// Surchargables par variable d'environnement NEXT_PUBLIC_LEGAL_* si besoin.
 export const EDITEUR = {
   raisonSociale: env("NEXT_PUBLIC_LEGAL_RAISON_SOCIALE", "CAP SOLUTIONS"),
   forme: env("NEXT_PUBLIC_LEGAL_FORME", "Société par Actions Simplifiée Unipersonnelle (SASU)"),
   capital: env("NEXT_PUBLIC_LEGAL_CAPITAL", "100 €"),
-  siret: env("NEXT_PUBLIC_LEGAL_SIRET", "En cours d'immatriculation"),
-  rcs: env("NEXT_PUBLIC_LEGAL_RCS", "En cours d'immatriculation (RCS Nanterre)"),
-  tva: env("NEXT_PUBLIC_LEGAL_TVA", "En cours d'immatriculation"),
+  siret: env("NEXT_PUBLIC_LEGAL_SIRET", "109 171 751 00018"),
+  rcs: env("NEXT_PUBLIC_LEGAL_RCS", "RCS Nanterre 109 171 751"),
+  tva: env("NEXT_PUBLIC_LEGAL_TVA", "FR03109171751"),
   adresse: env("NEXT_PUBLIC_LEGAL_ADRESSE", "32 rue de Paris, 92100 Boulogne-Billancourt"),
   directeurPublication: env("NEXT_PUBLIC_LEGAL_DIRECTEUR", "Moussa HAMOUMI, Président"),
   telephone: env("NEXT_PUBLIC_LEGAL_TEL", ""),
@@ -31,4 +32,4 @@ export const EDITEUR = {
 /** Un champ légal est-il encore un placeholder (pour signaler « à compléter ») ? */
 export const estAComplter = (v: string) => v.startsWith("[");
 
-export const MAJ_LEGAL = "24 août 2026";
+export const MAJ_LEGAL = "30 août 2026";

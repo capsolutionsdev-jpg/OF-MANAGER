@@ -29,7 +29,7 @@ Toute destruction, perte, altération, divulgation ou accès non autorisé à de
 Toute violation (même non notifiée) est **consignée** : date, faits, effets, mesures. Tenue par l'éditeur, à disposition du client et de la CNIL.
 
 ## À COMPLÉTER pour opérationnaliser
-- [ ] Désigner le **référent sécurité / DPO** (nom + contact) et l'inscrire au DPA.
+- [x] Désigner le **référent sécurité / point de contact RGPD** : M. Moussa HAMOUMI — contact@ofmanager.info (inscrit au DPA et au registre).
 - [ ] Créer le **registre des violations** (fichier/outil).
 - [ ] Modèle d'e-mail de notification client (pré-rédigé).
 - [ ] Brancher un **monitoring/alerte** (erreurs, accès anormaux) — cf. audit OPS-4 (Sentry) — pour détecter vite.

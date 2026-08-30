@@ -2,12 +2,12 @@
 
 # Registre des activités de traitement — CAP SOLUTIONS (sous-traitant, OFManager)
 
-**Responsable du registre :** [nom / DPO éventuel] — [contact].
-**Dernière mise à jour :** [date].
+**Responsable du registre :** M. Moussa HAMOUMI, Président de CAP SOLUTIONS — contact@ofmanager.info.
+**Dernière mise à jour :** 30 août 2026.
 
 ## 1. Coordonnées
 
-- **Sous-traitant** : CAP SOLUTIONS, SIREN [n°], [adresse], [contact DPO/référent RGPD].
+- **Sous-traitant** : CAP SOLUTIONS (SASU), SIREN 109 171 751, RCS Nanterre, siège 32 rue de Paris, 92100 Boulogne-Billancourt — point de contact RGPD : contact@ofmanager.info.
 - **Responsables de traitement (clients)** : organismes de formation abonnés (liste tenue à jour côté commercial/facturation).
 
 ## 2. Catégories de traitements réalisés pour le compte des clients
