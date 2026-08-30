@@ -6,6 +6,7 @@ import {
   InscriptionStatut,
   PaiementStatut,
   CertificationResultat,
+  SessionStatut,
 } from "@prisma/client";
 import { requireStaffTenant } from "@/lib/tenant";
 import { auth } from "@/auth";
@@ -710,4 +711,110 @@ export async function deleteInscriptionAction(
   if (sessionId) revalidatePath(`/sessions/${sessionId}`);
   if (candidatId) revalidatePath(`/candidats/${candidatId}`);
   return { ok: true };
+}
+
+// ── Déplacer un candidat vers une autre session de la MÊME formation ──────────
+// L'inscription change simplement de sessionId : paiements, factures, documents,
+// signature et statut suivent (rattachés à l'inscription). Signalé si déjà signé.
+export type SessionCible = {
+  id: string;
+  dateDebut: string;
+  dateFin: string;
+  /** null = capacité non plafonnée (nbPlaces = 0). */
+  placesRestantes: number | null;
+  complet: boolean;
+};
+
+/** Sessions planifiées de la MÊME formation où l'on peut déplacer l'inscription. */
+export async function listerSessionsCibles(
+  inscriptionId: string,
+): Promise<{ ok: true; sessions: SessionCible[] } | { ok: false; error: string }> {
+  const { db } = await requireStaffTenant();
+  const insc = await db.inscription.findUnique({
+    where: { id: inscriptionId },
+    select: { sessionId: true, session: { select: { formationId: true } } },
+  });
+  if (!insc) return { ok: false, error: "Inscription introuvable." };
+
+  const sessions = await db.session.findMany({
+    where: {
+      formationId: insc.session.formationId,
+      id: { not: insc.sessionId },
+      isArchived: false,
+      statut: { notIn: [SessionStatut.ANNULEE, SessionStatut.TERMINEE] },
+    },
+    orderBy: { dateDebut: "asc" },
+    take: 100,
+    select: {
+      id: true,
+      dateDebut: true,
+      dateFin: true,
+      nbPlaces: true,
+      _count: { select: { inscriptions: { where: { statut: { not: InscriptionStatut.ANNULEE } } } } },
+    },
+  });
+
+  return {
+    ok: true,
+    sessions: sessions.map((s) => {
+      const restantes = s.nbPlaces > 0 ? s.nbPlaces - s._count.inscriptions : null;
+      return {
+        id: s.id,
+        dateDebut: s.dateDebut.toISOString(),
+        dateFin: s.dateFin.toISOString(),
+        placesRestantes: restantes,
+        complet: restantes != null && restantes <= 0,
+      };
+    }),
+  };
+}
+
+/** Déplace l'inscription vers une autre session de la même formation. */
+export async function changerSessionInscription(
+  inscriptionId: string,
+  sessionCibleId: string,
+): Promise<{ ok: true; warning?: string } | { ok: false; error: string }> {
+  const { db } = await requireStaffTenant();
+  const insc = await db.inscription.findUnique({
+    where: { id: inscriptionId },
+    select: {
+      sessionId: true,
+      candidatId: true,
+      signedAt: true,
+      session: { select: { formationId: true } },
+    },
+  });
+  if (!insc) return { ok: false, error: "Inscription introuvable." };
+  if (sessionCibleId === insc.sessionId) return { ok: false, error: "C'est déjà la session actuelle." };
+
+  const cible = await db.session.findUnique({
+    where: { id: sessionCibleId },
+    select: {
+      formationId: true,
+      nbPlaces: true,
+      statut: true,
+      isArchived: true,
+      _count: { select: { inscriptions: { where: { statut: { not: InscriptionStatut.ANNULEE } } } } },
+    },
+  });
+  if (!cible) return { ok: false, error: "Session cible introuvable." };
+  if (cible.formationId !== insc.session.formationId)
+    return { ok: false, error: "La session cible doit être de la même formation." };
+  if (cible.isArchived || cible.statut === SessionStatut.ANNULEE || cible.statut === SessionStatut.TERMINEE)
+    return { ok: false, error: "La session cible n'est pas disponible (annulée, terminée ou archivée)." };
+  if (cible.nbPlaces > 0 && cible._count.inscriptions >= cible.nbPlaces)
+    return { ok: false, error: "La session cible est complète." };
+
+  await db.inscription.update({ where: { id: inscriptionId }, data: { sessionId: sessionCibleId } });
+
+  revalidatePath(`/sessions/${insc.sessionId}`);
+  revalidatePath(`/sessions/${sessionCibleId}`);
+  revalidatePath(`/candidats/${insc.candidatId}`);
+
+  return {
+    ok: true,
+    warning: insc.signedAt
+      ? "Le candidat avait signé des documents pour l'ancienne session : pensez à les régénérer et à les faire re-signer."
+      : undefined,
+  };
 }

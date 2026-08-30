@@ -13,6 +13,7 @@ import {
   Send,
   ShieldCheck,
   PenLine,
+  ArrowLeftRight,
 } from "lucide-react";
 import { InscriptionStatut } from "@prisma/client";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,7 @@ import {
 import { relanceParcours } from "@/lib/actions/parcours-actions";
 import { genererAttestation } from "@/lib/actions/titre-actions";
 import { SignerSurPlaceDialog } from "@/components/inscriptions/signer-sur-place-dialog";
+import { ChangerSessionDialog } from "@/components/inscriptions/changer-session-dialog";
 
 export function InscriptionActionsMenu({
   inscriptionId,
@@ -51,6 +53,7 @@ export function InscriptionActionsMenu({
   const confirm = useConfirm();
   const [isPending, startTransition] = useTransition();
   const [signOpen, setSignOpen] = useState(false);
+  const [changeSessionOpen, setChangeSessionOpen] = useState(false);
 
   function genererAttestationDoc() {
     if (!attestation) return;
@@ -167,6 +170,12 @@ export function InscriptionActionsMenu({
           </DropdownMenuItem>
         )}
         {statut !== "ANNULEE" && (
+          <DropdownMenuItem onClick={() => setChangeSessionOpen(true)}>
+            <ArrowLeftRight className="mr-2 h-4 w-4 text-primary" />
+            Changer de session
+          </DropdownMenuItem>
+        )}
+        {statut !== "ANNULEE" && (
           <DropdownMenuItem
             onClick={() => changeStatut("ANNULEE", "Inscription annulée.")}
           >
@@ -202,6 +211,11 @@ export function InscriptionActionsMenu({
         inscriptionId={inscriptionId}
         open={signOpen}
         onOpenChange={setSignOpen}
+      />
+      <ChangerSessionDialog
+        inscriptionId={inscriptionId}
+        open={changeSessionOpen}
+        onOpenChange={setChangeSessionOpen}
       />
     </>
   );
