@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { FileText, Download } from "lucide-react";
 import type { ProformaCible } from "@/lib/factures/proforma";
+import { ProformaSendButton } from "@/components/sessions/proforma-send-button";
 
 const eur = (n: number) =>
   n.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
@@ -57,13 +58,16 @@ export function SessionProformaPanel({
                   {c.sansConvention ? " · entreprise sans convention" : ""}
                 </div>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                render={<a href={`/sessions/${sessionId}/proforma?cible=${encodeURIComponent(c.key)}`} />}
-              >
-                <Download className="mr-1.5 h-4 w-4" /> PDF
-              </Button>
+              <div className="flex shrink-0 items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  render={<a href={`/sessions/${sessionId}/proforma?cible=${encodeURIComponent(c.key)}`} />}
+                >
+                  <Download className="mr-1.5 h-4 w-4" /> PDF
+                </Button>
+                {c.clientEmail && <ProformaSendButton sessionId={sessionId} cibleKey={c.key} />}
+              </div>
             </li>
           ))}
         </ul>
