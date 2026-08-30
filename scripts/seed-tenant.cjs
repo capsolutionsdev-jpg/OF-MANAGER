@@ -1,5 +1,6 @@
 // Gabarit — ne pas exécuter tel quel sur le fork commercial.
 const { PrismaClient } = require("@prisma/client");
+require("./_guard.cjs").assertSafeDb({ label: "seed-tenant" });
 const p = new PrismaClient();
 (async () => {
   // Gabarit d'organisme neutre — renseigner les valeurs réelles avant exécution.

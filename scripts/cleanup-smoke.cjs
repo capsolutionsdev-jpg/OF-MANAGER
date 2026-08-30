@@ -1,4 +1,5 @@
 const { PrismaClient } = require("@prisma/client");
+require("./_guard.cjs").assertSafeDb({ label: "cleanup-smoke" });
 const p = new PrismaClient();
 (async () => {
   const t = await p.tache.deleteMany({
