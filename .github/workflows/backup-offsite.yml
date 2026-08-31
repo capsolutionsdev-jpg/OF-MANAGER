@@ -11,7 +11,8 @@
 #   GitHub → dépôt → Settings → Secrets and variables → Actions :
 #     • Variables → BACKUP_ENABLED = true
 #     • Secrets   → BACKUP_DATABASE_URL (chaîne DIRECT_URL Neon)
-#                   BACKUP_AGE_PUBLIC_KEY (clé publique age ; garder la privée HORS LIGNE)
+#                   BACKUP_AGE_PUBLIC_KEY (OPTIONNEL — clé publique age pour un chiffrement de bout en bout ;
+#                     garder la privée HORS LIGNE. Absente = on s'appuie sur le chiffrement au repos du bucket.)
 #                   BACKUP_S3_BUCKET, BACKUP_S3_ENDPOINT (R2/B2 ; vide pour AWS)
 #                   BACKUP_S3_ACCESS_KEY_ID, BACKUP_S3_SECRET_ACCESS_KEY
 #                   BLOB_READ_WRITE_TOKEN (même valeur que Vercel)
@@ -55,17 +56,24 @@ jobs:
           S3_ENDPOINT: ${{ secrets.BACKUP_S3_ENDPOINT }}
         run: |
           set -euo pipefail
-          if [ -z "${DIRECT_URL:-}" ] || [ -z "${AGE_PUBLIC_KEY:-}" ] || [ -z "${S3_BUCKET:-}" ]; then
-            echo "::error::Secrets de sauvegarde manquants (BACKUP_DATABASE_URL / BACKUP_AGE_PUBLIC_KEY / BACKUP_S3_BUCKET)."
+          if [ -z "${DIRECT_URL:-}" ] || [ -z "${S3_BUCKET:-}" ]; then
+            echo "::error::Secrets manquants (BACKUP_DATABASE_URL / BACKUP_S3_BUCKET)."
             exit 1
           fi
           STAMP=$(date -u +%Y%m%dT%H%M%SZ)
-          printf '%s\n' "$AGE_PUBLIC_KEY" > /tmp/age.pub
-          pg_dump -Fc --no-owner --no-privileges "$DIRECT_URL" | age -R /tmp/age.pub -o "db-$STAMP.dump.age"
-          SIZE=$(du -h "db-$STAMP.dump.age" | cut -f1)
           EP=""; [ -n "${S3_ENDPOINT:-}" ] && EP="--endpoint-url $S3_ENDPOINT"
-          aws s3 cp $EP "db-$STAMP.dump.age" "s3://$S3_BUCKET/db/db-$STAMP.dump.age"
-          echo "✅ Base sauvegardée : db-$STAMP.dump.age ($SIZE)"
+          if [ -n "${AGE_PUBLIC_KEY:-}" ]; then
+            # Chiffrement de bout en bout (optionnel) : le fournisseur du bucket ne peut pas lire le dump.
+            printf '%s\n' "$AGE_PUBLIC_KEY" > /tmp/age.pub
+            pg_dump -Fc --no-owner --no-privileges "$DIRECT_URL" | age -R /tmp/age.pub -o "db-$STAMP.dump.age"
+            aws s3 cp $EP "db-$STAMP.dump.age" "s3://$S3_BUCKET/db/db-$STAMP.dump.age"
+            echo "✅ Base sauvegardée (chiffrée age) : db-$STAMP.dump.age"
+          else
+            # Sans clé age : TLS (transit) + chiffrement au repos du bucket.
+            pg_dump -Fc --no-owner --no-privileges "$DIRECT_URL" -f "db-$STAMP.dump"
+            aws s3 cp $EP "db-$STAMP.dump" "s3://$S3_BUCKET/db/db-$STAMP.dump"
+            echo "✅ Base sauvegardée (chiffrement au repos du bucket) : db-$STAMP.dump"
+          fi
 
       - name: Blobs → archive chiffrée → stockage tiers
         env:
@@ -78,13 +86,18 @@ jobs:
         run: |
           set -euo pipefail
           STAMP=$(date -u +%Y%m%dT%H%M%SZ)
+          EP=""; [ -n "${S3_ENDPOINT:-}" ] && EP="--endpoint-url $S3_ENDPOINT"
           node scripts/backup-blobs.mjs
           if [ -d _blob-backup ] && [ -n "$(ls -A _blob-backup 2>/dev/null)" ]; then
-            printf '%s\n' "$AGE_PUBLIC_KEY" > /tmp/age.pub
-            tar -czf - _blob-backup | age -R /tmp/age.pub -o "blobs-$STAMP.tgz.age"
-            EP=""; [ -n "${S3_ENDPOINT:-}" ] && EP="--endpoint-url $S3_ENDPOINT"
-            aws s3 cp $EP "blobs-$STAMP.tgz.age" "s3://$S3_BUCKET/blobs/blobs-$STAMP.tgz.age"
-            echo "✅ Fichiers sauvegardés : blobs-$STAMP.tgz.age"
+            if [ -n "${AGE_PUBLIC_KEY:-}" ]; then
+              printf '%s\n' "$AGE_PUBLIC_KEY" > /tmp/age.pub
+              tar -czf - _blob-backup | age -R /tmp/age.pub -o "blobs-$STAMP.tgz.age"
+              aws s3 cp $EP "blobs-$STAMP.tgz.age" "s3://$S3_BUCKET/blobs/blobs-$STAMP.tgz.age"
+            else
+              tar -czf "blobs-$STAMP.tgz" _blob-backup
+              aws s3 cp $EP "blobs-$STAMP.tgz" "s3://$S3_BUCKET/blobs/blobs-$STAMP.tgz"
+            fi
+            echo "✅ Fichiers sauvegardés."
           else
             echo "ℹ️  Aucun blob (token absent ou store vide) — rien à archiver."
           fi
