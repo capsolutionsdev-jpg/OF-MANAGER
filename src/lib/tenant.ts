@@ -1,6 +1,7 @@
 import type { Session } from "next-auth";
 import { auth } from "@/auth";
 import { prismaBase, withOrgVar } from "@/lib/prisma";
+import { SOFT_DELETE_MODELS, softWhere } from "@/lib/tenant-scope";
 
 /**
  * Cloisonnement multi-tenant — DOUBLE garantie :
@@ -38,9 +39,14 @@ function delegateName(model: string) {
 
 export type TenantDb = ReturnType<typeof scopedPrisma>;
 
-export function scopedPrisma(organismeId: string) {
+export function scopedPrisma(organismeId: string, opts?: { includeDeleted?: boolean }) {
+  const includeDeleted = opts?.includeDeleted ?? false;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const run = (op: any) => withOrgVar<any>(organismeId, op);
+  // Délégué BRUT (non étendu) : évite la récursion de l'extension lors des
+  // conversions soft-delete / vérifications d'appartenance.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const raw = (model: string) => (prismaBase as any)[delegateName(model)];
 
   return prismaBase.$extends({
     query: {
@@ -48,6 +54,9 @@ export function scopedPrisma(organismeId: string) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         async $allOperations({ model, operation, args, query }: any) {
           if (GLOBAL_MODELS.has(model)) return query(args);
+
+          // Modèle à corbeille ? (sauf en mode includeDeleted = corbeille elle-même)
+          const soft = SOFT_DELETE_MODELS.has(model) && !includeDeleted;
 
           // ── Écritures ──
           // Sécurité : le organismeId du tenant est TOUJOURS placé en dernier
@@ -66,11 +75,7 @@ export function scopedPrisma(organismeId: string) {
           if (operation === "upsert") {
             args.create = { ...args.create, organismeId };
             const existing = await run(
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              (prismaBase as any)[delegateName(model)].findFirst({
-                where: args.where,
-                select: { organismeId: true },
-              }),
+              raw(model).findFirst({ where: args.where, select: { organismeId: true } }),
             );
             if (existing && (existing as { organismeId?: string }).organismeId !== organismeId) {
               throw new Error("Accès refusé : ressource d'un autre organisme.");
@@ -78,26 +83,42 @@ export function scopedPrisma(organismeId: string) {
             return run(query(args));
           }
 
-          // ── Filtres de masse : injection directe du organismeId ──
+          // ── Soft-delete (corbeille) : delete/deleteMany → update(deletedAt) ──
+          if (soft && operation === "deleteMany") {
+            args.where = softWhere(args.where, organismeId, true);
+            return run(raw(model).updateMany({ where: args.where, data: { deletedAt: new Date() } }));
+          }
+          if (soft && operation === "delete") {
+            const target = await run(
+              raw(model).findFirst({ where: softWhere(args.where, organismeId, true), select: { id: true } }),
+            );
+            if (!target) {
+              throw new Error("Accès refusé : ressource introuvable pour cet organisme.");
+            }
+            const upd: Record<string, unknown> = {
+              where: { id: (target as { id: string }).id },
+              data: { deletedAt: new Date() },
+            };
+            if (args.select) upd.select = args.select;
+            if (args.include) upd.include = args.include;
+            return run(raw(model).update(upd));
+          }
+
+          // ── Filtres de masse : injection organismeId (+ exclusion corbeille si soft) ──
           if (WHERE_OPS.has(operation)) {
-            args.where = { ...(args.where ?? {}), organismeId };
+            args.where = softWhere(args.where, organismeId, soft);
             return run(query(args));
           }
 
           // ── Opérations par identifiant unique : vérification d'appartenance ──
           if (operation === "findUnique" || operation === "findUniqueOrThrow") {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const d = (prismaBase as any)[delegateName(model)];
-            const fargs = { ...args, where: { ...args.where, organismeId } };
+            const d = raw(model);
+            const fargs = { ...args, where: softWhere(args.where, organismeId, soft) };
             return run(operation === "findUniqueOrThrow" ? d.findFirstOrThrow(fargs) : d.findFirst(fargs));
           }
           if (operation === "update" || operation === "delete") {
             const exists = await run(
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              (prismaBase as any)[delegateName(model)].findFirst({
-                where: { ...args.where, organismeId },
-                select: { id: true },
-              }),
+              raw(model).findFirst({ where: softWhere(args.where, organismeId, soft), select: { id: true } }),
             );
             if (!exists) {
               throw new Error("Accès refusé : ressource introuvable pour cet organisme.");
@@ -209,4 +230,19 @@ export async function requireStaffTenant() {
   }
   await assertLiveSession(session);
   return { session, organismeId, role, db: scopedPrisma(organismeId) };
+}
+
+/**
+ * Comme `requireStaffTenant()`, mais le client INCLUT les éléments en corbeille
+ * (soft-deleted) — pour la corbeille : lister, restaurer, ou purger définitivement.
+ * En mode `includeDeleted`, `delete` redevient une suppression DÉFINITIVE (purge).
+ */
+export async function requireTrashTenant() {
+  const { session, organismeId, role } = await requireStaffTenant();
+  return {
+    session,
+    organismeId,
+    role,
+    db: scopedPrisma(organismeId, { includeDeleted: true }),
+  };
 }

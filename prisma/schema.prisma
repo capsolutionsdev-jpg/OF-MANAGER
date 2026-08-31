@@ -658,6 +658,7 @@ enum Genre {
 model Candidat {
   id String @id @default(cuid())
   organismeId String? // tenant (multi-OF)
+  deletedAt DateTime? // corbeille soft-delete (audit A09-003) — filtré par scopedPrisma
 
   // Informations personnelles
   nom           String
@@ -903,6 +904,7 @@ model Formation {
 model Session {
   id          String        @id @default(cuid())
   organismeId String? // tenant (multi-OF)
+  deletedAt   DateTime? // corbeille soft-delete (audit A09-003) — distinct de archivedAt (clôture Qualiopi)
   formationId String
   formation   Formation     @relation(fields: [formationId], references: [id])
   reference   String? // unique PAR organisme (cf. @@unique plus bas)
@@ -1060,6 +1062,7 @@ model Apprenant {
 model Inscription {
   id          String   @id @default(cuid())
   organismeId String? // tenant (multi-OF)
+  deletedAt   DateTime? // corbeille soft-delete (audit A09-003) — filtré par scopedPrisma
   candidatId  String
   candidat    Candidat @relation(fields: [candidatId], references: [id])
   sessionId   String
@@ -1448,6 +1451,7 @@ model Audit {
 model Entreprise {
   id            String   @id @default(cuid())
   organismeId String? // tenant (multi-OF)
+  deletedAt   DateTime? // corbeille soft-delete (audit A09-003) — filtré par scopedPrisma
   raisonSociale String
   siret         String?
   adresse       String?
@@ -1606,6 +1610,7 @@ model SmsLog {
 model Facture {
   id            String        @id @default(cuid())
   organismeId String? // tenant (multi-OF)
+  deletedAt   DateTime? // corbeille soft-delete (audit A09-003) — filtré par scopedPrisma
   reference     String // unique PAR organisme (cf. @@unique)
   entrepriseId  String?
   entreprise    Entreprise?   @relation(fields: [entrepriseId], references: [id])
