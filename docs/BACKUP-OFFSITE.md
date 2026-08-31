@@ -13,12 +13,13 @@ Objectif : disposer d'une copie **chiffrée, hors du fournisseur de production (
 ## Mise en place — actions manuelles (ce que TOI seul peux faire)
 
 1. **Créer un bucket** chez un fournisseur ≠ Neon/Vercel, région UE, **object-lock activé** + rétention.
-2. **Générer une paire de clés `age`** (chiffrement) : `age-keygen -o backup-age-key.txt`.
+2. *(OPTIONNEL — chiffrement de bout en bout)* **Générer une paire de clés `age`** : `age-keygen -o backup-age-key.txt`.
    - Conserver `backup-age-key.txt` (clé **PRIVÉE**) **hors ligne / dans un coffre** — c'est elle qui déchiffre les sauvegardes.
-   - Noter la **clé publique** affichée (`age1...`).
+   - Noter la **clé publique** affichée (`age1...`) → secret `BACKUP_AGE_PUBLIC_KEY`.
+   - **Sans cette étape**, les sauvegardes s'appuient sur le chiffrement au repos du bucket (+ TLS en transit) — plus simple, suffisant pour démarrer.
 3. **GitHub → Settings → Secrets and variables → Actions** :
    - Variable : `BACKUP_ENABLED = true`.
-   - Secrets : `BACKUP_DATABASE_URL` (= `DIRECT_URL` Neon), `BACKUP_AGE_PUBLIC_KEY` (`age1...`), `BACKUP_S3_BUCKET`, `BACKUP_S3_ENDPOINT` (vide pour AWS), `BACKUP_S3_ACCESS_KEY_ID`, `BACKUP_S3_SECRET_ACCESS_KEY`, `BLOB_READ_WRITE_TOKEN` (même valeur que Vercel).
+   - Secrets : `BACKUP_DATABASE_URL` (= `DIRECT_URL` Neon), `BACKUP_S3_BUCKET`, `BACKUP_S3_ENDPOINT` (vide pour AWS), `BACKUP_S3_ACCESS_KEY_ID`, `BACKUP_S3_SECRET_ACCESS_KEY`, `BLOB_READ_WRITE_TOKEN` (même valeur que Vercel), et **si chiffrement** `BACKUP_AGE_PUBLIC_KEY` (`age1...`).
 4. **Lancer une fois à la main** (Actions → *backup-offsite* → *Run workflow*) et vérifier les objets déposés dans le bucket.
 
 ## Test de restauration — A09-007 (critère absolu de l'audit ; ≥ 1×/an)
@@ -26,7 +27,7 @@ Objectif : disposer d'une copie **chiffrée, hors du fournisseur de production (
 > C'est l'action la plus importante de tout l'audit : une sauvegarde non restaurée n'est pas une sauvegarde.
 
 1. Télécharger le dernier `db-*.dump.age` du bucket.
-2. Déchiffrer : `age -d -i backup-age-key.txt db-XXXX.dump.age > db.dump`.
+2. Déchiffrer **si chiffré** : `age -d -i backup-age-key.txt db-XXXX.dump.age > db.dump` (sinon le fichier est déjà `db-XXXX.dump`).
 3. Créer une **branche Neon de test** (Console Neon → Branches) et récupérer sa chaîne de connexion.
 4. Restaurer : `pg_restore --no-owner --no-privileges -d "<URL_branche_test>" db.dump`.
 5. Comparer **3-5 compteurs** (organismes, candidats, sessions, factures) branche vs prod.
