@@ -20,6 +20,7 @@ try {
   }
 } catch { /* .env absent */ }
 process.env.DATABASE_URL = env.DIRECT_URL || env.DATABASE_URL || process.env.DATABASE_URL;
+require("./_guard.cjs").assertSafeDb({ label: "clean-aguyse-demo" });
 
 const { PrismaClient } = require("@prisma/client");
 const p = new PrismaClient();

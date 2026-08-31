@@ -1,0 +1,90 @@
+# Sauvegarde OFFSITE (base + fichiers) — réponse audit 09 A09-001 (fichiers) et A09-002 (base hors-fournisseur, règle 3-2-1).
+#
+# Dump chiffré de la base Neon + archive chiffrée des blobs Vercel, poussés vers un stockage TIERS
+# (différent de Neon/Vercel), en région UE, idéalement avec object-lock/versioning (immuable).
+#
+# ── INERTE PAR DÉFAUT ────────────────────────────────────────────────────────
+#   Ne s'exécute QUE si la variable de dépôt EXTERNAL/BACKUP_ENABLED vaut "true".
+#   (Non définie = OFF : aucun risque tant que tu n'as pas posé les secrets.)
+#
+# ── ACTIVER (une fois) — cf. docs/BACKUP-OFFSITE.md ──────────────────────────
+#   GitHub → dépôt → Settings → Secrets and variables → Actions :
+#     • Variables → BACKUP_ENABLED = true
+#     • Secrets   → BACKUP_DATABASE_URL (chaîne DIRECT_URL Neon)
+#                   BACKUP_AGE_PUBLIC_KEY (clé publique age ; garder la privée HORS LIGNE)
+#                   BACKUP_S3_BUCKET, BACKUP_S3_ENDPOINT (R2/B2 ; vide pour AWS)
+#                   BACKUP_S3_ACCESS_KEY_ID, BACKUP_S3_SECRET_ACCESS_KEY
+#                   BLOB_READ_WRITE_TOKEN (même valeur que Vercel)
+#   Restauration testée : docs/BACKUP-OFFSITE.md (A09-007).
+name: backup-offsite
+
+on:
+  schedule:
+    - cron: "0 2 * * *" # tous les jours 02:00 UTC (avant les purges de 3h)
+  workflow_dispatch: {}
+
+concurrency:
+  group: backup-offsite
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    # Ne tourne QUE si la variable de dépôt BACKUP_ENABLED == "true".
+    if: ${{ vars.BACKUP_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Installer les outils (postgresql-client, age)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client age
+
+      - name: Dépendances Node
+        run: npm ci --no-audit --no-fund
+
+      - name: Dump base → chiffrement → stockage tiers
+        env:
+          DIRECT_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+          AGE_PUBLIC_KEY: ${{ secrets.BACKUP_AGE_PUBLIC_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.BACKUP_S3_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_S3_SECRET_ACCESS_KEY }}
+          S3_BUCKET: ${{ secrets.BACKUP_S3_BUCKET }}
+          S3_ENDPOINT: ${{ secrets.BACKUP_S3_ENDPOINT }}
+        run: |
+          set -euo pipefail
+          if [ -z "${DIRECT_URL:-}" ] || [ -z "${AGE_PUBLIC_KEY:-}" ] || [ -z "${S3_BUCKET:-}" ]; then
+            echo "::error::Secrets de sauvegarde manquants (BACKUP_DATABASE_URL / BACKUP_AGE_PUBLIC_KEY / BACKUP_S3_BUCKET)."
+            exit 1
+          fi
+          STAMP=$(date -u +%Y%m%dT%H%M%SZ)
+          printf '%s\n' "$AGE_PUBLIC_KEY" > /tmp/age.pub
+          pg_dump -Fc --no-owner --no-privileges "$DIRECT_URL" | age -R /tmp/age.pub -o "db-$STAMP.dump.age"
+          SIZE=$(du -h "db-$STAMP.dump.age" | cut -f1)
+          EP=""; [ -n "${S3_ENDPOINT:-}" ] && EP="--endpoint-url $S3_ENDPOINT"
+          aws s3 cp $EP "db-$STAMP.dump.age" "s3://$S3_BUCKET/db/db-$STAMP.dump.age"
+          echo "✅ Base sauvegardée : db-$STAMP.dump.age ($SIZE)"
+
+      - name: Blobs → archive chiffrée → stockage tiers
+        env:
+          BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
+          AGE_PUBLIC_KEY: ${{ secrets.BACKUP_AGE_PUBLIC_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.BACKUP_S3_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_S3_SECRET_ACCESS_KEY }}
+          S3_BUCKET: ${{ secrets.BACKUP_S3_BUCKET }}
+          S3_ENDPOINT: ${{ secrets.BACKUP_S3_ENDPOINT }}
+        run: |
+          set -euo pipefail
+          STAMP=$(date -u +%Y%m%dT%H%M%SZ)
+          node scripts/backup-blobs.mjs
+          if [ -d _blob-backup ] && [ -n "$(ls -A _blob-backup 2>/dev/null)" ]; then
+            printf '%s\n' "$AGE_PUBLIC_KEY" > /tmp/age.pub
+            tar -czf - _blob-backup | age -R /tmp/age.pub -o "blobs-$STAMP.tgz.age"
+            EP=""; [ -n "${S3_ENDPOINT:-}" ] && EP="--endpoint-url $S3_ENDPOINT"
+            aws s3 cp $EP "blobs-$STAMP.tgz.age" "s3://$S3_BUCKET/blobs/blobs-$STAMP.tgz.age"
+            echo "✅ Fichiers sauvegardés : blobs-$STAMP.tgz.age"
+          else
+            echo "ℹ️  Aucun blob (token absent ou store vide) — rien à archiver."
+          fi

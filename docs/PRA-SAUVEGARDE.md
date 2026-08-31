@@ -15,6 +15,10 @@
 | **RTO** (temps de rétablissement) | ≤ 4 h ouvrées | Restauration branche + bascule `DATABASE_URL`. |
 | Rétention sauvegarde | ≥ 7 j (selon plan Neon) | À relever au plan souscrit. |
 
+> Ces cibles sont **provisoires** tant que le test de restauration réel (OPS-2, A09-007) n'a pas mesuré le RTO/RPO effectifs. Ce tableau est la **source unique** ; `docs/SECURITE-OPS.md` et `legal/SLA.md` s'y alignent.
+>
+> **Sauvegarde ≠ conservation légale (A09-021).** Le PITR (quelques jours) est un mécanisme de **reprise**, pas d'**archivage** : les obligations de conservation (factures 10 ans, preuves Qualiopi) reposent sur la base active + un archivage applicatif, **pas** sur la fenêtre PITR (cf. `legal/matrice-conservation.md`).
+
 ## Procédure de restauration (à TESTER en conditions réelles)
 
 1. Créer une **branche Neon** à l'instant T souhaité (console Neon → Branches → *Create from timestamp*).

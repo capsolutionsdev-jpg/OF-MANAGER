@@ -216,10 +216,19 @@ export async function deletePieceParcours(
   if (!insc) return { ok: false, error: "Lien invalide ou expiré." };
   const piece = await prisma.pieceJointe.findFirst({
     where: { id: pieceId, candidatId: insc.candidatId },
-    select: { id: true, label: true },
+    select: { id: true, label: true, url: true },
   });
   if (!piece) return { ok: false, error: "Pièce introuvable." };
   await prisma.pieceJointe.delete({ where: { id: piece.id } });
+  // A09-020 : supprimer aussi le blob associé pour éviter un fichier orphelin.
+  if (piece.url && /^https?:\/\//.test(piece.url)) {
+    try {
+      const { del } = await import("@vercel/blob");
+      await del(piece.url);
+    } catch {
+      /* best-effort : ne bloque jamais la suppression de la pièce */
+    }
+  }
   // Si plus aucune pièce ne porte ce label, on retire la coche « reçue ».
   const reste = await prisma.pieceJointe.count({
     where: { candidatId: insc.candidatId, label: piece.label },

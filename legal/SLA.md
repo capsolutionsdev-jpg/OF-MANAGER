@@ -27,12 +27,14 @@ Niveaux de gravité : **Critique** (service indisponible), **Majeur** (fonction 
 
 - Base de données : sauvegardes **automatiques** + restauration à un instant T (**PITR**) via l'hébergeur Neon.
 - Rétention : `[ex. 7 jours PITR + sauvegardes quotidiennes 30 jours]` `[à confirmer selon offre Neon]`.
-- Les documents (PDF) et pièces déposées sont `[stockés/inclus dans les sauvegardes — à préciser]`.
+- Les documents (PDF) et pièces déposées (Vercel Blob) sont en **copie unique sans versioning** ; une **sauvegarde tierce chiffrée** est en cours de mise en place (A09-001). Jusqu'à sa livraison, le **RPO des documents n'est pas garanti**.
 
 ## 4. Plan de reprise d'activité (PRA)
 
-- **RTO (délai de remise en service) cible : [4] h.**
-- **RPO (perte de données maximale) cible : [1] h** (borné par la fréquence PITR).
+- **RTO (délai de remise en service) cible : ≤ 4 h ouvrées** `[à confirmer par le test de restauration OPS-2]`.
+- **RPO (perte de données maximale) cible : ≤ 5 min** (borné par le PITR Neon **et par la rétention du plan souscrit**) `[à confirmer]`.
+
+> Valeurs **alignées** avec `docs/PRA-SAUVEGARDE.md` et `docs/SECURITE-OPS.md` (source unique = le tableau de `PRA-SAUVEGARDE.md`).
 - La procédure de restauration doit être **documentée et testée** au moins `[une fois par an]` (cf. audit OPS-2). *À ce stade : PITR disponible, procédure de restauration à formaliser et éprouver avant engagement ferme.*
 
 ## 5. Sécurité et hébergement

@@ -25,6 +25,18 @@ export const ETAPE_ENTREE: DocumentType[] = ["ATTESTATION_ENTREE"];
 
 type Db = Awaited<ReturnType<typeof getTenantDb>>;
 
+// A09-018 : un blob perdu ne doit pas être considéré comme « déjà publié ».
+// Conservateur : on ne régénère que sur un 404/410 franc (incertitude réseau → on garde l'existant).
+async function blobStillThere(url: string): Promise<boolean> {
+  if (url.startsWith("data:")) return true; // fichier embarqué (repli) → toujours présent
+  try {
+    const r = await fetch(url, { method: "HEAD" });
+    return !(r.status === 404 || r.status === 410);
+  } catch {
+    return true;
+  }
+}
+
 /**
  * Publie UN document pour une inscription. Idempotent : si un document de ce type
  * (avec fichier) existe déjà, on ne régénère pas. Renvoie true si publié/déjà là.
@@ -37,10 +49,11 @@ export async function publierDocument(
   generatedById?: string | null,
 ): Promise<boolean> {
   const existing = await db.documentGenere.findFirst({
-    where: { inscriptionId, type, fileUrl: { not: null } },
-    select: { id: true },
+    where: { inscriptionId, type },
+    select: { id: true, fileUrl: true },
   });
-  if (existing) return true;
+  // « Déjà publié » seulement si le fichier existe ENCORE (A09-018 : auto-heal après perte de blob).
+  if (existing?.fileUrl && (await blobStillThere(existing.fileUrl))) return true;
 
   const pdf = await buildSingleDocPdf(inscriptionId, type);
   if (!pdf) return false; // document non applicable à cette inscription
@@ -57,9 +70,17 @@ export async function publierDocument(
     return false;
   }
 
-  await db.documentGenere.create({
-    data: { type, inscriptionId, sessionId, fileUrl, generatedById: generatedById ?? null },
-  });
+  // Met à jour la ligne existante si elle existe (fichier perdu régénéré) → jamais de doublon.
+  if (existing) {
+    await db.documentGenere.update({
+      where: { id: existing.id },
+      data: { fileUrl, sessionId, generatedById: generatedById ?? null },
+    });
+  } else {
+    await db.documentGenere.create({
+      data: { type, inscriptionId, sessionId, fileUrl, generatedById: generatedById ?? null },
+    });
+  }
   return true;
 }
 

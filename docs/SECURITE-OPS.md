@@ -10,14 +10,16 @@
 ## 1. Plan de reprise d'activité (PRA) — §66
 
 ### Objectifs
-- **RPO** (perte de données max tolérée) : **≤ 5 min** (fenêtre du point-in-time Neon).
-- **RTO** (délai de remise en service) : **≤ 2 h**.
+> ⚠️ Cibles **provisoires** — à confirmer par un test de restauration réel (OPS-2, cf. A09-007).
+> Source unique = le tableau de `docs/PRA-SAUVEGARDE.md` ; ce fichier et `legal/SLA.md` s'y alignent.
+- **RPO** (perte de données max tolérée) : **≤ 5 min** (fenêtre du point-in-time Neon, **sous réserve de la rétention du plan souscrit**).
+- **RTO** (délai de remise en service) : **≤ 4 h ouvrées** (restauration manuelle : branche Neon + bascule `DATABASE_URL` + redéploiement, par un exploitant unique).
 
 ### Sauvegardes
 | Élément | Mécanisme | Rétention |
 |---|---|---|
 | Base PostgreSQL | **Neon** — restauration point-in-time (PITR) + branches | selon le plan Neon (à confirmer / relever) |
-| Fichiers (PDF, pièces) | **Vercel Blob** | versionné côté Vercel |
+| Fichiers (PDF, pièces) | **Vercel Blob** | ⚠️ **copie unique — PAS de versioning ni PITR** ; sauvegarde tierce chiffrée à mettre en place (A09-001) |
 | Code | **GitHub** (`main`) | illimité |
 | Secrets | **Variables d'env Vercel** (+ ce dépôt = liste, jamais les valeurs) | — |
 

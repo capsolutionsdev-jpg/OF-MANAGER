@@ -1,4 +1,5 @@
 const { PrismaClient } = require("@prisma/client");
+require("./_guard.cjs").assertSafeDb({ label: "cleanup-6modules" });
 const p = new PrismaClient();
 (async () => {
   const lead = await p.candidat.deleteMany({ where: { nom: { startsWith: "SMOKE6 Lead" } } });

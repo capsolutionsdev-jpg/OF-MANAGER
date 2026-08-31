@@ -19,6 +19,20 @@ async function main() {
       return "(inconnue)";
     }
   })();
+  // ⛔ Garde d'hôte (audit A09-004) : refuse une base distante non reconnue comme locale/test.
+  {
+    const isLocal = /^(localhost|127\.0\.0\.1|\[?::1\]?)(:\d+)?$/i.test(dbHost);
+    const looksTest = /(_test|-test|staging|preview|\.local)/i.test(dbHost);
+    const acked = process.env.ALLOW_DB_WRITE === dbHost;
+    if (!(isLocal || looksTest || acked)) {
+      console.error(
+        `\n⛔ reset-data BLOQUÉ — base cible « ${dbHost} » non reconnue comme locale/test (A09-004).\n` +
+          `   Pour forcer volontairement CET hôte :\n` +
+          `     ALLOW_DB_WRITE=${dbHost} CONFIRM_DESTRUCTIVE=RESET_DATA npx tsx scripts/reset-data.ts\n`,
+      );
+      process.exit(1);
+    }
+  }
   if (process.env.CONFIRM_DESTRUCTIVE !== "RESET_DATA") {
     console.error(
       "\n⛔ reset-data ANNULÉ.\n" +
