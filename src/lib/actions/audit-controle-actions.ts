@@ -105,7 +105,9 @@ export async function creerAudit(input: CreerAuditInput): Promise<ActionResult> 
         responsableNom: session.user.name || session.user.email || null,
         createdById: session.user.id,
         dossiers: {
-          create: inscriptionIds.map((iid) => ({ inscriptionId: iid })),
+          // organismeId posé EXPLICITEMENT : l'injection tenant ne couvre pas les
+          // créations imbriquées → sans lui, le dossier serait invisible ensuite.
+          create: inscriptionIds.map((iid) => ({ inscriptionId: iid, organismeId: session.user.organismeId ?? null })),
         },
       },
     });
