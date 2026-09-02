@@ -18,6 +18,7 @@ import {
   Building2,
   Wallet,
   Scale,
+  FileSearch,
   CalendarRange,
   DoorOpen,
   FileText,
@@ -413,6 +414,14 @@ export const navItems: NavItem[] = [
     permission: "qualiopi",
   },
   {
+    label: "Audit",
+    href: "/audit",
+    icon: FileSearch,
+    roles: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
+    permission: "qualiopi",
+    feature: "audit",
+  },
+  {
     label: "RGPD",
     href: "/rgpd",
     icon: Shield,
@@ -443,7 +452,7 @@ const GROUP_BY_HREF: Record<string, string> = {
   "/communication": "Communication", "/sms": "Communication", "/ia": "Communication", "/signatures": "Communication",
   "/automatisations": "Communication",
   "/comptabilite": "Finance", "/tresorerie": "Finance", "/devis": "Finance", "/bpf": "Finance", "/rapports": "Finance",
-  "/qualiopi": "Qualité",
+  "/qualiopi": "Qualité", "/audit": "Qualité",
   "/rgpd": "__footer", "/support": "__footer",
 };
 
