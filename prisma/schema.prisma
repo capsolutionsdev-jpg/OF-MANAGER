@@ -1486,6 +1486,9 @@ model AuditControle {
   statut         AuditControleStatut @default(EN_COURS)
   responsableNom String? // collaborateur en charge de l'audit
   notes          String?             @db.Text
+  // Visas manuels des documents Qualiopi de la SESSION (rubrique 1 de l'audit) :
+  // { "<checkKey>": { "nom": "<collaborateur>", "date": "<ISO>" } }
+  sessionValidations Json?
   createdById    String?
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt

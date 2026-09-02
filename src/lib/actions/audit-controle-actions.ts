@@ -231,6 +231,49 @@ export async function relancerCheckAudit(dossierId: string, checkKey: string): P
   }
 }
 
+// ─────────────────────────────────────────────────────────────
+//  Visa manuel des documents Qualiopi de la SESSION (rubrique 1)
+// ─────────────────────────────────────────────────────────────
+
+/** Pose un visa manuel « fait / présent » sur un document Qualiopi de la session. */
+export async function validerSessionCheck(auditId: string, checkKey: string): Promise<ActionResult> {
+  const session = await auth();
+  if (!session?.user) return { ok: false, error: "Non autorisé." };
+  if (!checkKey || checkKey.length > 120) return { ok: false, error: "Élément invalide." };
+  const db = await getTenantDb();
+  try {
+    const a = await db.auditControle.findUnique({ where: { id: auditId }, select: { sessionValidations: true } });
+    if (!a) return { ok: false, error: "Audit introuvable." };
+    const v = a.sessionValidations && typeof a.sessionValidations === "object" ? { ...(a.sessionValidations as Record<string, unknown>) } : {};
+    v[checkKey] = { nom: session.user.name || session.user.email || "Collaborateur", date: new Date().toISOString() };
+    await db.auditControle.update({ where: { id: auditId }, data: { sessionValidations: v } });
+    revalidateAudit(auditId);
+    return { ok: true, id: auditId };
+  } catch (e) {
+    console.error("validerSessionCheck:", e);
+    return { ok: false, error: "Validation impossible." };
+  }
+}
+
+/** Retire le visa manuel d'un document Qualiopi de la session. */
+export async function annulerSessionCheck(auditId: string, checkKey: string): Promise<ActionResult> {
+  const session = await auth();
+  if (!session?.user) return { ok: false, error: "Non autorisé." };
+  const db = await getTenantDb();
+  try {
+    const a = await db.auditControle.findUnique({ where: { id: auditId }, select: { sessionValidations: true } });
+    if (!a) return { ok: false, error: "Audit introuvable." };
+    const v = a.sessionValidations && typeof a.sessionValidations === "object" ? { ...(a.sessionValidations as Record<string, unknown>) } : {};
+    delete v[checkKey];
+    await db.auditControle.update({ where: { id: auditId }, data: { sessionValidations: v } });
+    revalidateAudit(auditId);
+    return { ok: true, id: auditId };
+  } catch (e) {
+    console.error("annulerSessionCheck:", e);
+    return { ok: false, error: "Annulation impossible." };
+  }
+}
+
 /** Met à jour le suivi d'un dossier audité (statut / commentaire). */
 export async function majDossierAudit(
   dossierId: string,

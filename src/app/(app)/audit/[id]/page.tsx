@@ -1,12 +1,16 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import { auth } from "@/auth";
 import { getTenantDb } from "@/lib/tenant";
+import { orgConfigFor } from "@/lib/org-identity";
+import { auditSession } from "@/lib/qualiopi/audit";
 import { dossierChecklist, dossierConformite } from "@/lib/audit/dossier";
 import { PageHeader } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { AuditDossiers, type DossierDto } from "@/components/audit/audit-dossiers";
+import { AuditSessionDocs, type SessionCheckDto } from "@/components/audit/audit-session-docs";
 
 export const dynamic = "force-dynamic";
 
@@ -95,6 +99,69 @@ export default async function AuditDetailPage({ params }: { params: Promise<{ id
   const conformes = dossiers.filter((d) => d.conforme).length;
   const total = dossiers.length;
 
+  // Rubrique 1 — documents Qualiopi de la SESSION (moteur auditSession réutilisé).
+  let sessionChecks: SessionCheckDto[] = [];
+  if (audit.sessionId) {
+    const authSession = await auth();
+    const organismeId = authSession?.user?.organismeId ?? null;
+    const [s, org] = await Promise.all([
+      db.session.findUnique({
+        where: { id: audit.sessionId },
+        select: {
+          statut: true, dateDebut: true, dateFin: true, crFormateurCompletedAt: true,
+          formation: {
+            select: {
+              objectifs: true, programme: true, prerequis: true, publicVise: true,
+              modalitesEvaluation: true, dureeHeures: true, tarif: true, positionnementQuestions: true,
+            },
+          },
+          _count: { select: { formateurs: true } },
+          emargementSignatures: { select: { signedAt: true } },
+          inscriptions: {
+            select: {
+              positionnementCompletedAt: true, convocationSentAt: true, resultatCertification: true,
+              attestationReussiteSentAt: true, satisfactionCompletedAt: true, suivi6moisCompletedAt: true,
+            },
+          },
+        },
+      }),
+      orgConfigFor(organismeId),
+    ]);
+    if (s) {
+      const pq = s.formation.positionnementQuestions;
+      const hasPositionnement = Array.isArray(pq) ? pq.length > 0 : !!pq;
+      const referentHandicap = !!(org.referentHandicapNom || org.referentHandicapContact);
+      const result = auditSession({
+        now: new Date(),
+        session: {
+          statut: s.statut, dateDebut: s.dateDebut, dateFin: s.dateFin,
+          formateurCount: s._count.formateurs,
+          emargementTotal: s.emargementSignatures.length,
+          emargementSignes: s.emargementSignatures.filter((e) => e.signedAt).length,
+          crFormateurCompletedAt: s.crFormateurCompletedAt,
+        },
+        formation: {
+          objectifs: s.formation.objectifs, programme: s.formation.programme, prerequis: s.formation.prerequis,
+          publicVise: s.formation.publicVise, modalitesEvaluation: s.formation.modalitesEvaluation,
+          dureeHeures: s.formation.dureeHeures,
+          tarif: s.formation.tarif != null ? Number(s.formation.tarif) : null,
+          hasPositionnement,
+        },
+        inscriptions: s.inscriptions,
+        org: { referentHandicap },
+      });
+      const visas = (audit.sessionValidations && typeof audit.sessionValidations === "object" ? audit.sessionValidations : {}) as Record<string, { nom?: string; date?: string }>;
+      sessionChecks = result.checks.map((c) => {
+        const visa = visas[c.key];
+        return {
+          key: c.key, label: c.label, indicateur: c.indicateur,
+          statut: visa && c.statut !== "OK" ? "OK" : c.statut,
+          detail: c.detail, visa: visa ?? null,
+        } satisfies SessionCheckDto;
+      });
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -119,7 +186,19 @@ export default async function AuditDetailPage({ params }: { params: Promise<{ id
         </CardContent>
       </Card>
 
-      <AuditDossiers dossiers={dossiers} />
+      {sessionChecks.length > 0 && (
+        <section className="space-y-2">
+          <h2 className="text-sm font-semibold text-muted-foreground">1 · Documents de la session</h2>
+          <AuditSessionDocs auditId={audit.id} checks={sessionChecks} />
+        </section>
+      )}
+
+      <section className="space-y-2">
+        <h2 className="text-sm font-semibold text-muted-foreground">
+          {sessionChecks.length > 0 ? "2 · " : ""}Dossiers des candidats
+        </h2>
+        <AuditDossiers dossiers={dossiers} />
+      </section>
     </div>
   );
 }
