@@ -50,6 +50,9 @@ async function logAndSend(opts: {
     html: opts.html,
     attachments: opts.attachments,
     organismeId: opts.organismeId,
+    // Tout ce fichier = envois déclenchés À LA MAIN par un collaborateur :
+    // ils passent même si les e-mails automatiques du tenant sont suspendus.
+    manuel: true,
   });
   await prisma.emailLog.create({
     data: {

@@ -42,6 +42,7 @@ import {
  */
 export async function startParcours(
   inscriptionId: string,
+  opts?: { manuel?: boolean },
 ): Promise<{ ok: boolean; error?: string; sent?: boolean; emailReason?: string }> {
   // Action exportée (endpoint) : se garde elle-même. Les appels internes
   // (createInscription, setInscriptionStatut) ont déjà une session même-organisme.
@@ -95,6 +96,7 @@ export async function startParcours(
     to: insc.candidat.email,
     subject,
     html,
+    manuel: opts?.manuel,
     attachments: progPdf
       ? [{ name: "Programme-formation.pdf", content: toBase64(progPdf.data) }]
       : undefined,
@@ -161,7 +163,7 @@ export async function relanceParcours(
   // produit un plant de rendu (« Cette page n'a pas pu s'afficher », digest en
   // prod). On renvoie toujours un résultat exploitable par le toast.
   try {
-    const r = await startParcours(inscriptionId);
+    const r = await startParcours(inscriptionId, { manuel: true });
     revalidatePath("/signatures");
     return { ok: r.ok, demo: !emailConfigured(), error: r.error };
   } catch (e) {

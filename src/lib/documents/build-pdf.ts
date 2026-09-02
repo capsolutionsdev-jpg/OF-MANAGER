@@ -13,6 +13,7 @@ import { MODALITE_LABELS } from "@/lib/validators/formation";
 import { SATISFACTION_CRITERES, SATISFACTION_NOTES } from "@/lib/satisfaction";
 import { buildVariables } from "@/lib/documents/resolve";
 import { assiduiteFromSession } from "@/lib/assiduite";
+import { dateJourPourDoc } from "@/lib/documents/doc-dates";
 import { escapeHtml } from "@/lib/documents/escape";
 import { orgConfigFor } from "@/lib/org-identity";
 import {
@@ -176,8 +177,11 @@ export async function buildInscriptionPdf(
           : isDocApplicable(type, ctx),
   );
 
-  const htmls = entries.map(([, doc]) => {
-    const inner = inlineImages(renderTemplate(doc.html, vars)) + mention;
+  const htmls = entries.map(([type, doc]) => {
+    // Date « Fait le » propre au type de document (chronologie de la formation).
+    const dj = dateJourPourDoc(type, inscription.session);
+    const v = dj ? { ...vars, date_jour: dj } : vars;
+    const inner = inlineImages(renderTemplate(doc.html, v)) + mention;
     return `<!DOCTYPE html><html><head><meta charset="utf-8" />${DOC_STYLE}</head><body>${inner}</body></html>`;
   });
 

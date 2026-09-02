@@ -11,6 +11,7 @@ import {
 } from "@/lib/documents/templates";
 import { buildVariables } from "@/lib/documents/resolve";
 import { assiduiteFromSession } from "@/lib/assiduite";
+import { dateJourPourDoc } from "@/lib/documents/doc-dates";
 import { isDocAllowedForFormation } from "@/lib/documents/families";
 import { orgConfigFor } from "@/lib/org-identity";
 import { getDocOverride } from "@/lib/documents/overrides";
@@ -53,6 +54,9 @@ export default async function DocumentPage({
     inscription.session.formation.dureeHeures,
   );
   const vars = buildVariables(inscription, org, assiduite);
+  // Date « Fait le » propre au type de document (chronologie de la formation).
+  const dj = dateJourPourDoc(type, inscription.session);
+  if (dj) vars.date_jour = dj;
   const html = renderTemplate(DOCUMENTS[type].html, vars)
     .split("/ofmanager-logo.png")
     .join(org.logoUrl ?? "/ofmanager-logo.png")

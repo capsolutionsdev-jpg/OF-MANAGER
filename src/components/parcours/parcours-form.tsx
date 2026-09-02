@@ -86,11 +86,8 @@ export function ParcoursForm({
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!v.photoDataUrl) {
-      toast.error("Merci d'ajouter votre photo d'identité (choisir ou prendre une photo).");
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      return;
-    }
+    // Photo d'identité FACULTATIVE : elle peut être fournie plus tard (pièce du
+    // dossier) — ne bloque plus la complétion du formulaire.
     if (!v.consent) {
       toast.error("Merci de cocher le consentement RGPD.");
       return;
@@ -114,7 +111,6 @@ export function ParcoursForm({
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <PhotoCapture
-        required
         value={v.photoDataUrl || undefined}
         onChange={(dataUrl) => setV((p) => ({ ...p, photoDataUrl: dataUrl ?? "" }))}
       />

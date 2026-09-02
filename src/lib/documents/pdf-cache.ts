@@ -16,7 +16,9 @@ import { buildInscriptionPdf, type PdfResult } from "@/lib/documents/build-pdf";
  */
 
 // Bumper pour invalider TOUS les caches d'un coup (ex. refonte des gabarits).
-const TEMPLATE_VERSION = "v1";
+// v2 : dates « Fait le » par type de document (chronologie de la formation) —
+// bump = invalide les dossiers PDF en cache générés avec la date uniforme.
+const TEMPLATE_VERSION = "v2";
 
 /** Ne cache pas les très gros PDF en base (garde-fou anti-bloat). */
 const MAX_CACHE_BYTES = 8 * 1024 * 1024; // 8 Mo

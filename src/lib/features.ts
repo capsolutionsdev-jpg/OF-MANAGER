@@ -46,6 +46,7 @@ export const FEATURES: Feature[] = [
   { key: "jurys", label: "Gestion de jury", description: "Jurys d'examen, défraiement personnalisé, notes de défraiement", group: "Modules avancés" },
   { key: "communication", label: "Communication & réseaux sociaux", description: "Génération IA de posts (LinkedIn, Instagram, X, TikTok, YouTube, WhatsApp) + visuels, validation et export", group: "Modules avancés" },
   { key: "parcours-t3p", label: "Parcours examen Taxi / VTC (T3P)", description: "Suivi du parcours CMA : prérequis, inscription, frais, épreuves, carte professionnelle", group: "Modules avancés" },
+  { key: "audit", label: "Audit & contrôle des dossiers", description: "Auditer sessions/dossiers indicateur par indicateur (Qualiopi), relancer les manques par e-mail, suivi de mise en conformité", group: "Modules avancés" },
 
   // ── Support (inclus dans toutes les formules) ──
   { key: "support", label: "Support technique", description: "Le client contacte l'éditeur depuis sa plateforme (incidents, renseignements)", group: "Support" },

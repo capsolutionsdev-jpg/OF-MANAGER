@@ -145,6 +145,10 @@ model Organisme {
   dureeConservationMois  Int     @default(36) // durée de conservation des données candidats (mois) → purge auto
   referentHandicapNom    String? // référent handicap désigné par l'OF
   referentHandicapContact String? // e-mail / téléphone du référent handicap
+  // Pièces Qualiopi au niveau de l'organisme (audit/contrôle) : état par pièce du
+  // catalogue src/lib/audit/pieces-organisme.ts → { "<cle>": { statut, responsable,
+  // dateObtention, nomFichier, observations, updatedBy, updatedAt } }
+  piecesQualiopi         Json?
 
   // Environnement de DÉMONSTRATION (provisionné automatiquement pour un prospect).
   // Un tenant démo est isolé, pré-rempli, bridé (pas d'envoi réel/facturation) et
@@ -1442,6 +1446,86 @@ model Audit {
   notes            String?   @db.Text
   createdAt        DateTime  @default(now())
   @@index([organismeId])
+}
+
+// =============================================================
+//  MODULE — AUDIT & CONTRÔLE DES DOSSIERS (qualité / Qualiopi)
+//
+//  Formalise un audit (interne, suite à notification de contrôle, ou aléatoire)
+//  portant sur une session entière OU un dossier (= une inscription). La
+//  conformité indicateur-par-indicateur est CALCULÉE en direct (lib/qualiopi/
+//  audit.ts + lib/validation) ; ces tables ne stockent que le CADRE de l'audit
+//  et le SUIVI (relances, résolution) — traçabilité Qualiopi.
+// =============================================================
+
+enum AuditControleType {
+  INTERNE // auto-contrôle interne
+  CONTROLE // suite à notification d'un contrôle externe (EDOF/CDC…)
+  ALEATOIRE // session/dossier tiré au hasard
+}
+
+enum AuditPerimetre {
+  SESSION
+  DOSSIER
+}
+
+enum AuditControleStatut {
+  EN_COURS
+  TERMINE
+}
+
+enum AuditDossierStatut {
+  A_TRAITER
+  EN_COURS
+  CONFORME
+}
+
+model AuditControle {
+  id             String              @id @default(cuid())
+  organismeId    String? // tenant (multi-OF)
+  type           AuditControleType
+  perimetre      AuditPerimetre
+  sessionId      String? // périmètre SESSION (ou session du dossier ciblé)
+  titre          String
+  statut         AuditControleStatut @default(EN_COURS)
+  responsableNom String? // collaborateur en charge de l'audit
+  notes          String?             @db.Text
+  // Visas manuels des documents Qualiopi de la SESSION (rubrique 1 de l'audit) :
+  // { "<checkKey>": { "nom": "<collaborateur>", "date": "<ISO>" } }
+  sessionValidations Json?
+  createdById    String?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  dossiers AuditControleDossier[]
+
+  @@index([organismeId])
+  @@index([statut])
+}
+
+// Un dossier (inscription) suivi dans le cadre d'un audit : état + relances.
+model AuditControleDossier {
+  id            String             @id @default(cuid())
+  organismeId   String? // tenant (multi-OF)
+  auditId       String
+  audit         AuditControle      @relation(fields: [auditId], references: [id], onDelete: Cascade)
+  inscriptionId String // scalaire (pas de relation : évite de toucher le modèle Inscription)
+  statut        AuditDossierStatut @default(A_TRAITER)
+  // Visas manuels par élément de checklist (traçabilité Qualiopi) :
+  // { "<checkKey>": { "nom": "<collaborateur>", "date": "<ISO>" } }
+  validations   Json?
+  relanceSentAt DateTime? // dernière relance par e-mail
+  relanceCount  Int                @default(0)
+  compteSentAt  DateTime? // dernier envoi des identifiants du compte candidat
+  compteSentCount Int              @default(0)
+  resolvedAt    DateTime? // mis en conformité le
+  commentaire   String?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  @@unique([auditId, inscriptionId])
+  @@index([organismeId])
+  @@index([inscriptionId])
 }
 
 // =============================================================
