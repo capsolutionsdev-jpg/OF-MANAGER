@@ -1504,6 +1504,9 @@ model AuditControleDossier {
   audit         AuditControle      @relation(fields: [auditId], references: [id], onDelete: Cascade)
   inscriptionId String // scalaire (pas de relation : évite de toucher le modèle Inscription)
   statut        AuditDossierStatut @default(A_TRAITER)
+  // Visas manuels par élément de checklist (traçabilité Qualiopi) :
+  // { "<checkKey>": { "nom": "<collaborateur>", "date": "<ISO>" } }
+  validations   Json?
   relanceSentAt DateTime? // dernière relance par e-mail
   relanceCount  Int                @default(0)
   resolvedAt    DateTime? // mis en conformité le

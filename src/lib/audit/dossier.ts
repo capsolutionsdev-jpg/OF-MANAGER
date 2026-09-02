@@ -1,20 +1,27 @@
 /**
- * Checklist de conformité d'un DOSSIER (= une inscription) pour le module Audit.
- * Calculée EN DIRECT à partir de l'état réel de l'inscription (signatures,
- * pièces, positionnement, convocation, satisfaction, résultat) et de la
- * formation. Module pur (aucune écriture) — utilisable côté serveur.
+ * Checklist de conformité d'un DOSSIER (= une inscription) pour le module Audit,
+ * alignée sur le Référentiel National Qualité (RNQ « Qualiopi » v9, 7 critères /
+ * 32 indicateurs). Statut calculé EN DIRECT quand l'info est traçable ; sinon
+ * l'élément est « à valider » (visa manuel du collaborateur). Module pur.
  *
- * Le niveau SESSION (émargements, formateur, programme…) reste géré par
- * lib/qualiopi/audit.ts (auditSession) ; ici on couvre le niveau candidat.
+ * Chaque élément indique :
+ *  - `indicateur` : n° d'indicateur RNQ concerné ;
+ *  - `relance` : action d'e-mail ciblée si le document dépend du candidat
+ *    ("parcours" = renvoi du lien compléter+signer ; sinon un événement ciblé) ;
+ *  - `manuel` : élément non détectable automatiquement → visa collaborateur.
  */
 
-export type DossierCheckStatut = "PRESENT" | "A_SIGNER" | "MANQUANT" | "NA";
+export type DossierCheckStatut = "PRESENT" | "A_SIGNER" | "MANQUANT" | "A_VALIDER" | "NA";
+
+export type RelanceKind = "parcours" | "convocation" | "positionnement" | "satisfaction" | "docs_fin" | null;
 
 export type DossierCheck = {
   key: string;
   label: string;
-  indicateur: number | null; // n° d'indicateur RNQ concerné
+  indicateur: number | null;
   statut: DossierCheckStatut;
+  relance: RelanceKind;
+  manuel: boolean;
 };
 
 export type DossierAuditInput = {
@@ -23,86 +30,70 @@ export type DossierAuditInput = {
   positionnementCompletedAt: Date | null;
   convocationSentAt: Date | null;
   satisfactionCompletedAt: Date | null;
-  resultatCertification: string; // CertificationResultat
+  docsFinSentAt: Date | null;
   attestationReussiteSentAt: Date | null;
+  suivi6moisCompletedAt: Date | null;
+  resultatCertification: string; // CertificationResultat
   formation: {
     piecesAttendues: string[];
     examen: boolean | null;
+    diplomante: boolean | null;
     positionnementQuestions: unknown;
   };
 };
 
 const has = (v: unknown) => v !== null && v !== undefined;
 
-/** Construit la checklist documentaire d'un dossier. */
-export function dossierChecklist(i: DossierAuditInput): DossierCheck[] {
-  const checks: DossierCheck[] = [];
+/**
+ * Construit la checklist Qualiopi d'un dossier.
+ * `validated` = ensemble des clés visées manuellement (remplace le statut par PRESENT).
+ */
+export function dossierChecklist(i: DossierAuditInput, validated: Set<string> = new Set()): DossierCheck[] {
   const f = i.formation;
+  const raw: DossierCheck[] = [];
 
-  // 1) Documents contractuels signés (fiche, contrat/convention, CGV, RI…).
-  checks.push({
-    key: "signatures",
-    label: "Documents contractuels signés",
-    indicateur: 4,
-    statut: i.signedAt ? "PRESENT" : "A_SIGNER",
-  });
+  // — Critère 1/2 : information & analyse du besoin —
+  raw.push({ key: "signatures", label: "Documents contractuels signés (fiche, contrat/convention, CGV, RI)", indicateur: 4, statut: i.signedAt ? "PRESENT" : "A_SIGNER", relance: "parcours", manuel: false });
 
-  // 2) Pièces du dossier administratif attendues.
   for (const piece of f.piecesAttendues ?? []) {
-    checks.push({
-      key: `piece::${piece}`,
-      label: `Pièce : ${piece}`,
-      indicateur: 4,
-      statut: i.piecesRecues?.includes(piece) ? "PRESENT" : "MANQUANT",
-    });
+    raw.push({ key: `piece::${piece}`, label: `Pièce du dossier : ${piece}`, indicateur: 4, statut: i.piecesRecues?.includes(piece) ? "PRESENT" : "MANQUANT", relance: "parcours", manuel: false });
   }
 
-  // 3) Positionnement à l'entrée (si la formation en prévoit).
+  // — Critère 2 : conception (programme, objectifs) —
+  raw.push({ key: "programme", label: "Programme de formation remis au stagiaire", indicateur: 6, statut: "A_VALIDER", relance: null, manuel: true });
+
+  // — Critère 3 : accueil / conditions de déroulement —
   const pq = f.positionnementQuestions;
   const hasPositionnement = Array.isArray(pq) ? pq.length > 0 : has(pq);
-  checks.push({
-    key: "positionnement",
-    label: "Test de positionnement",
-    indicateur: 8,
-    statut: !hasPositionnement ? "NA" : i.positionnementCompletedAt ? "PRESENT" : "MANQUANT",
-  });
+  raw.push({ key: "positionnement", label: "Positionnement / évaluation du besoin à l'entrée", indicateur: 8, statut: !hasPositionnement ? "NA" : i.positionnementCompletedAt ? "PRESENT" : "MANQUANT", relance: "positionnement", manuel: false });
+  raw.push({ key: "convocation", label: "Convocation envoyée", indicateur: 9, statut: i.convocationSentAt ? "PRESENT" : "MANQUANT", relance: "convocation", manuel: false });
+  raw.push({ key: "reglement_interieur", label: "Règlement intérieur remis", indicateur: 9, statut: "A_VALIDER", relance: null, manuel: true });
+  raw.push({ key: "livret_accueil", label: "Livret d'accueil / info accessibilité handicap", indicateur: 26, statut: "A_VALIDER", relance: null, manuel: true });
 
-  // 4) Convocation envoyée.
-  checks.push({
-    key: "convocation",
-    label: "Convocation envoyée",
-    indicateur: 5,
-    statut: i.convocationSentAt ? "PRESENT" : "MANQUANT",
-  });
+  // — Critère 3 : engagement / assiduité (émargement) —
+  raw.push({ key: "emargement", label: "Feuille d'émargement / présence signée", indicateur: 12, statut: "A_VALIDER", relance: null, manuel: true });
 
-  // 5) Enquête de satisfaction.
-  checks.push({
-    key: "satisfaction",
-    label: "Enquête de satisfaction",
-    indicateur: 30,
-    statut: i.satisfactionCompletedAt ? "PRESENT" : "MANQUANT",
-  });
-
-  // 6) Résultat / certification (formations sanctionnées par un examen).
+  // — Critère 4 : atteinte des objectifs (évaluation, résultats, attestation) —
   if (f.examen) {
-    checks.push({
-      key: "resultat",
-      label: "Résultat d'évaluation saisi",
-      indicateur: 11,
-      statut: i.resultatCertification && i.resultatCertification !== "NON_EVALUE" ? "PRESENT" : "MANQUANT",
-    });
-    checks.push({
-      key: "attestation",
-      label: "Attestation de réussite délivrée",
-      indicateur: 11,
-      statut: i.attestationReussiteSentAt ? "PRESENT" : "NA",
-    });
+    raw.push({ key: "resultat", label: "Résultat / évaluation des acquis saisi", indicateur: 11, statut: i.resultatCertification && i.resultatCertification !== "NON_EVALUE" ? "PRESENT" : "MANQUANT", relance: null, manuel: false });
+  } else {
+    raw.push({ key: "evaluation_acquis", label: "Évaluation des acquis (fin de formation)", indicateur: 11, statut: "A_VALIDER", relance: null, manuel: true });
+  }
+  raw.push({ key: "docs_fin", label: "Attestation de fin / certificat de réalisation", indicateur: 11, statut: i.docsFinSentAt || i.attestationReussiteSentAt ? "PRESENT" : "MANQUANT", relance: "docs_fin", manuel: false });
+
+  // — Critère 6 : appréciations (satisfaction) —
+  raw.push({ key: "satisfaction", label: "Enquête de satisfaction (à chaud)", indicateur: 30, statut: i.satisfactionCompletedAt ? "PRESENT" : "MANQUANT", relance: "satisfaction", manuel: false });
+
+  // — Suivi du devenir (formations certifiantes / diplômantes) —
+  if (f.diplomante) {
+    raw.push({ key: "suivi_6mois", label: "Enquête de suivi à 6 mois (devenir)", indicateur: 11, statut: i.suivi6moisCompletedAt ? "PRESENT" : "MANQUANT", relance: null, manuel: true });
   }
 
-  return checks;
+  // Applique les visas manuels : une clé validée passe à PRESENT.
+  return raw.map((c) => (validated.has(c.key) && c.statut !== "PRESENT" ? { ...c, statut: "PRESENT" as const } : c));
 }
 
-/** Synthèse d'un dossier : conforme si aucun manque ni signature en attente. */
+/** Synthèse d'un dossier : conforme si aucun élément ni « à traiter » ni « à valider ». */
 export function dossierConformite(checks: DossierCheck[]): {
   total: number;
   ok: number;
@@ -112,7 +103,7 @@ export function dossierConformite(checks: DossierCheck[]): {
 } {
   const applicables = checks.filter((c) => c.statut !== "NA");
   const ok = applicables.filter((c) => c.statut === "PRESENT").length;
-  const aTraiter = applicables.filter((c) => c.statut === "MANQUANT" || c.statut === "A_SIGNER").length;
+  const aTraiter = applicables.length - ok;
   const total = applicables.length;
   return {
     total,
@@ -127,5 +118,6 @@ export const DOSSIER_CHECK_LABEL: Record<DossierCheckStatut, string> = {
   PRESENT: "Présent",
   A_SIGNER: "À signer",
   MANQUANT: "Manquant",
+  A_VALIDER: "À valider",
   NA: "N/A",
 };

@@ -38,12 +38,14 @@ export default async function AuditDetailPage({ params }: { params: Promise<{ id
           positionnementCompletedAt: true,
           convocationSentAt: true,
           satisfactionCompletedAt: true,
+          docsFinSentAt: true,
+          suivi6moisCompletedAt: true,
           resultatCertification: true,
           attestationReussiteSentAt: true,
           candidat: { select: { nom: true, prenom: true, email: true } },
           session: {
             select: {
-              formation: { select: { piecesAttendues: true, examen: true, positionnementQuestions: true } },
+              formation: { select: { piecesAttendues: true, examen: true, diplomante: true, positionnementQuestions: true } },
             },
           },
         },
@@ -55,16 +57,23 @@ export default async function AuditDetailPage({ params }: { params: Promise<{ id
     .map((d) => {
       const i = byId.get(d.inscriptionId);
       if (!i) return null;
-      const checks = dossierChecklist({
-        signedAt: i.signedAt,
-        piecesRecues: i.piecesRecues,
-        positionnementCompletedAt: i.positionnementCompletedAt,
-        convocationSentAt: i.convocationSentAt,
-        satisfactionCompletedAt: i.satisfactionCompletedAt,
-        resultatCertification: i.resultatCertification,
-        attestationReussiteSentAt: i.attestationReussiteSentAt,
-        formation: i.session.formation,
-      });
+      const validations = (d.validations && typeof d.validations === "object" ? d.validations : {}) as Record<string, { nom?: string; date?: string }>;
+      const validated = new Set(Object.keys(validations));
+      const checks = dossierChecklist(
+        {
+          signedAt: i.signedAt,
+          piecesRecues: i.piecesRecues,
+          positionnementCompletedAt: i.positionnementCompletedAt,
+          convocationSentAt: i.convocationSentAt,
+          satisfactionCompletedAt: i.satisfactionCompletedAt,
+          docsFinSentAt: i.docsFinSentAt,
+          suivi6moisCompletedAt: i.suivi6moisCompletedAt,
+          resultatCertification: i.resultatCertification,
+          attestationReussiteSentAt: i.attestationReussiteSentAt,
+          formation: i.session.formation,
+        },
+        validated,
+      );
       const conf = dossierConformite(checks);
       return {
         id: d.id,
@@ -75,6 +84,7 @@ export default async function AuditDetailPage({ params }: { params: Promise<{ id
         relanceSentAt: d.relanceSentAt ? d.relanceSentAt.toISOString() : null,
         relanceCount: d.relanceCount,
         checks,
+        validations,
         pct: conf.pct,
         conforme: conf.conforme,
         aTraiter: conf.aTraiter,

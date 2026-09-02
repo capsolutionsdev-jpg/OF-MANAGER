@@ -5,6 +5,7 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { getTenantDb } from "@/lib/tenant";
 import { relanceParcours } from "@/lib/actions/parcours-actions";
+import { sendAutomationEventNow } from "@/lib/actions/manual-send-actions";
 
 export type ActionResult = { ok: true; id: string } | { ok: false; error: string };
 
@@ -135,6 +136,97 @@ export async function relancerDossierAudit(dossierId: string): Promise<ActionRes
     return { ok: true, id: dossierId, demo: res.demo };
   } catch (e) {
     console.error("relancerDossierAudit:", e);
+    return { ok: false, error: "Relance impossible." };
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Visa manuel par élément de checklist + relance ciblée
+// ─────────────────────────────────────────────────────────────
+
+/** Pose un visa manuel « fait / présent » sur un élément de la checklist. */
+export async function validerCheckAudit(dossierId: string, checkKey: string): Promise<ActionResult> {
+  const session = await auth();
+  if (!session?.user) return { ok: false, error: "Non autorisé." };
+  if (!checkKey || checkKey.length > 120) return { ok: false, error: "Élément invalide." };
+  const db = await getTenantDb();
+  try {
+    const d = await db.auditControleDossier.findUnique({ where: { id: dossierId }, select: { auditId: true, validations: true } });
+    if (!d) return { ok: false, error: "Dossier introuvable." };
+    const v = d.validations && typeof d.validations === "object" ? { ...(d.validations as Record<string, unknown>) } : {};
+    v[checkKey] = { nom: session.user.name || session.user.email || "Collaborateur", date: new Date().toISOString() };
+    await db.auditControleDossier.update({ where: { id: dossierId }, data: { validations: v } });
+    revalidateAudit(d.auditId);
+    return { ok: true, id: dossierId };
+  } catch (e) {
+    console.error("validerCheckAudit:", e);
+    return { ok: false, error: "Validation impossible." };
+  }
+}
+
+/** Retire le visa manuel d'un élément. */
+export async function annulerCheckAudit(dossierId: string, checkKey: string): Promise<ActionResult> {
+  const session = await auth();
+  if (!session?.user) return { ok: false, error: "Non autorisé." };
+  const db = await getTenantDb();
+  try {
+    const d = await db.auditControleDossier.findUnique({ where: { id: dossierId }, select: { auditId: true, validations: true } });
+    if (!d) return { ok: false, error: "Dossier introuvable." };
+    const v = d.validations && typeof d.validations === "object" ? { ...(d.validations as Record<string, unknown>) } : {};
+    delete v[checkKey];
+    await db.auditControleDossier.update({ where: { id: dossierId }, data: { validations: v } });
+    revalidateAudit(d.auditId);
+    return { ok: true, id: dossierId };
+  } catch (e) {
+    console.error("annulerCheckAudit:", e);
+    return { ok: false, error: "Annulation impossible." };
+  }
+}
+
+/** Relance ciblée d'un élément (document dépendant du candidat). */
+export async function relancerCheckAudit(dossierId: string, checkKey: string): Promise<ActionResult & { demo?: boolean }> {
+  const session = await auth();
+  if (!session?.user) return { ok: false, error: "Non autorisé." };
+  const db = await getTenantDb();
+  try {
+    const d = await db.auditControleDossier.findUnique({ where: { id: dossierId }, select: { auditId: true, inscriptionId: true } });
+    if (!d) return { ok: false, error: "Dossier introuvable." };
+
+    const insc = await db.inscription.findUnique({ where: { id: d.inscriptionId }, select: { session: { select: { dateFin: true } } } });
+    const dateFin = insc?.session?.dateFin ?? null;
+    const now = new Date();
+
+    // Détermine le type de relance depuis la clé de l'élément.
+    const kind =
+      checkKey === "signatures" || checkKey.startsWith("piece::") ? "parcours"
+        : checkKey === "positionnement" ? "positionnement"
+        : checkKey === "convocation" ? "convocation"
+        : checkKey === "satisfaction" ? "satisfaction"
+        : checkKey === "docs_fin" ? "docs_fin"
+        : null;
+    if (!kind) return { ok: false, error: "Cet élément n'a pas de relance automatique (à cocher manuellement)." };
+
+    // Garde chronologique : satisfaction / documents de fin uniquement après la fin.
+    if ((kind === "satisfaction" || kind === "docs_fin") && dateFin && dateFin > now) {
+      return { ok: false, error: "La formation n'est pas terminée : cette relance sera possible après la date de fin." };
+    }
+
+    let res: { ok: boolean; error?: string; demo?: boolean };
+    if (kind === "parcours") {
+      res = await relanceParcours(d.inscriptionId);
+    } else {
+      res = await sendAutomationEventNow(d.inscriptionId, kind);
+    }
+    if (!res.ok) return { ok: false, error: res.error ?? "Relance impossible." };
+
+    await db.auditControleDossier.update({
+      where: { id: dossierId },
+      data: { relanceSentAt: new Date(), relanceCount: { increment: 1 }, statut: "EN_COURS" },
+    });
+    revalidateAudit(d.auditId);
+    return { ok: true, id: dossierId, demo: (res as { demo?: boolean }).demo };
+  } catch (e) {
+    console.error("relancerCheckAudit:", e);
     return { ok: false, error: "Relance impossible." };
   }
 }
