@@ -84,8 +84,9 @@ export function dossierChecklist(i: DossierAuditInput, validated: Set<string> = 
   // — Critère 6 : appréciations (satisfaction) —
   raw.push({ key: "satisfaction", label: "Enquête de satisfaction (à chaud)", indicateur: 30, statut: i.satisfactionCompletedAt ? "PRESENT" : "MANQUANT", relance: "satisfaction", manuel: false });
 
-  // — Suivi du devenir (formations certifiantes / diplômantes) —
-  if (f.diplomante) {
+  // — Suivi du devenir — affiché pour les formations diplômantes ET dès qu'une
+  // enquête a été complétée (une réponse ne doit jamais rester invisible).
+  if (f.diplomante || i.suivi6moisCompletedAt) {
     raw.push({ key: "suivi_6mois", label: "Enquête de suivi à 6 mois (devenir)", indicateur: 11, statut: i.suivi6moisCompletedAt ? "PRESENT" : "MANQUANT", relance: null, manuel: true });
   }
 
