@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { FileSearch } from "lucide-react";
+import { FileSearch, Building2 } from "lucide-react";
 import { getTenantDb } from "@/lib/tenant";
 import { PageHeader } from "@/components/ui/page-header";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -41,7 +42,11 @@ export default async function AuditPage() {
       <PageHeader
         title="Audit & contrôle des dossiers"
         subtitle="Auditez une session ou un dossier indicateur par indicateur (Qualiopi), relancez les manques et suivez la mise en conformité."
-      />
+      >
+        <Button variant="outline" size="sm" render={<Link href="/audit/organisme" />}>
+          <Building2 className="mr-1.5 h-4 w-4" /> Documents de l'organisme
+        </Button>
+      </PageHeader>
 
       <CreerAuditForm sessions={sessionOpts} />
 

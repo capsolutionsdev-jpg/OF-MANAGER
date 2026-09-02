@@ -145,6 +145,10 @@ model Organisme {
   dureeConservationMois  Int     @default(36) // durée de conservation des données candidats (mois) → purge auto
   referentHandicapNom    String? // référent handicap désigné par l'OF
   referentHandicapContact String? // e-mail / téléphone du référent handicap
+  // Pièces Qualiopi au niveau de l'organisme (audit/contrôle) : état par pièce du
+  // catalogue src/lib/audit/pieces-organisme.ts → { "<cle>": { statut, responsable,
+  // dateObtention, nomFichier, observations, updatedBy, updatedAt } }
+  piecesQualiopi         Json?
 
   // Environnement de DÉMONSTRATION (provisionné automatiquement pour un prospect).
   // Un tenant démo est isolé, pré-rempli, bridé (pas d'envoi réel/facturation) et

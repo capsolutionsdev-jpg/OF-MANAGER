@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { DOCUMENTS, EMPTY_IMAGE, STAMP_PLACEHOLDER, renderTemplate } from "@/lib/documents/templates";
 import { buildVariables } from "@/lib/documents/resolve";
 import { assiduiteFromSession } from "@/lib/assiduite";
+import { dateJourPourDoc } from "@/lib/documents/doc-dates";
 import { docContextFromInscription, isDocApplicable } from "@/lib/documents/families";
 import { orgConfigFor } from "@/lib/org-identity";
 import {
@@ -132,8 +133,11 @@ export async function addInscriptionDossier(
     opts?.only ? opts.only.includes(type) : isDocApplicable(type, ctx),
   );
 
-  for (const [, doc] of entries) {
-    const inner = inlineImages(renderTemplate(doc.html, vars)) + mention;
+  for (const [type, doc] of entries) {
+    // Date « Fait le » propre au type de document (chronologie de la formation).
+    const dj = dateJourPourDoc(type, inscription.session);
+    const v = dj ? { ...vars, date_jour: dj } : vars;
+    const inner = inlineImages(renderTemplate(doc.html, v)) + mention;
     const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8" />${DOC_STYLE}</head><body>${inner}</body></html>`;
     const result = (await HTMLtoDOCX(fullHtml, undefined, {
       table: { row: { cantSplit: true } },
