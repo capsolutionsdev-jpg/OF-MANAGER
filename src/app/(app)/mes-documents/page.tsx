@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { FileText, FileDown, FolderOpen, ExternalLink, Paperclip, Award, GraduationCap } from "lucide-react";
+import { FileText, FileDown, FolderOpen, ExternalLink, Paperclip, Award, GraduationCap, PenLine, ClipboardList, Star, CalendarClock, CheckCircle2 } from "lucide-react";
 import { getTenantDb } from "@/lib/tenant";
 import { auth } from "@/auth";
+import { generateToken } from "@/lib/token";
 import { coursComplete } from "@/lib/elearning";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
@@ -46,14 +47,36 @@ export default async function MesDocumentsPage() {
     where: { candidatId: apprenant.candidatId },
     orderBy: { createdAt: "desc" },
     select: {
-      id: true, accessToken: true,
-      session: { select: { dateDebut: true, dateFin: true, formation: { select: { titre: true } } } },
+      id: true, accessToken: true, signedAt: true,
+      positionnementToken: true, positionnementCompletedAt: true,
+      satisfactionToken: true, satisfactionCompletedAt: true,
+      suivi6moisToken: true, suivi6moisCompletedAt: true,
+      session: {
+        select: {
+          dateDebut: true, dateFin: true,
+          formation: { select: { titre: true, positionnementQuestions: true } },
+        },
+      },
       documents: {
         orderBy: { createdAt: "desc" },
         select: { id: true, type: true, fileUrl: true, createdAt: true },
       },
     },
   });
+
+  // Liens manquants générés à la volée (idempotent) : tout doit être accessible
+  // depuis l'espace candidat (signature, positionnement, satisfaction, suivi).
+  for (const i of inscriptions) {
+    const patch: Record<string, string> = {};
+    if (!i.accessToken) patch.accessToken = generateToken();
+    if (!i.positionnementToken) patch.positionnementToken = generateToken();
+    if (!i.satisfactionToken) patch.satisfactionToken = generateToken();
+    if (!i.suivi6moisToken) patch.suivi6moisToken = generateToken();
+    if (Object.keys(patch).length) {
+      await db.inscription.update({ where: { id: i.id }, data: patch });
+      Object.assign(i, patch);
+    }
+  }
 
   const pieces = await db.pieceJointe.findMany({
     where: { candidatId: apprenant.candidatId },
@@ -89,6 +112,7 @@ export default async function MesDocumentsPage() {
     .filter((c) => coursComplete(c.modules.flatMap((m) => m.lecons), doneSet, quizAll));
 
   const fmt = (d: Date) => d.toLocaleDateString("fr-FR");
+  const maintenant = +new Date();
 
   return (
     <div className="space-y-6">
@@ -98,7 +122,25 @@ export default async function MesDocumentsPage() {
         <Card><CardContent className="p-10 text-center text-sm text-muted-foreground">Aucune formation enregistrée.</CardContent></Card>
       )}
 
-      {inscriptions.map((i) => (
+      {inscriptions.map((i) => {
+        const pq = i.session.formation.positionnementQuestions;
+        const aPositionnement = Array.isArray(pq) ? pq.length > 0 : !!pq;
+        const finie = +i.session.dateFin <= maintenant;
+        const suivi6moisOuvert = maintenant >= +i.session.dateFin + 180 * 86_400_000;
+        const todos: { key: string; label: string; href: string; icon: typeof PenLine; fait: boolean }[] = [
+          { key: "signer", label: "Lire et signer mes documents", href: `/parcours/${i.accessToken}`, icon: PenLine, fait: !!i.signedAt },
+          ...(aPositionnement
+            ? [{ key: "posi", label: "Test de positionnement", href: `/positionnement/${i.positionnementToken}`, icon: ClipboardList, fait: !!i.positionnementCompletedAt }]
+            : []),
+          ...(finie
+            ? [{ key: "satisf", label: "Enquête de satisfaction", href: `/satisfaction/${i.satisfactionToken}`, icon: Star, fait: !!i.satisfactionCompletedAt }]
+            : []),
+          ...(suivi6moisOuvert
+            ? [{ key: "suivi", label: "Enquête de suivi à 6 mois", href: `/suivi/${i.suivi6moisToken}`, icon: CalendarClock, fait: !!i.suivi6moisCompletedAt }]
+            : []),
+        ];
+        const restants = todos.filter((t) => !t.fait).length;
+        return (
         <Card key={i.id}>
           <CardHeader>
             <CardTitle className="text-base">{i.session.formation.titre}</CardTitle>
@@ -107,6 +149,33 @@ export default async function MesDocumentsPage() {
             </p>
           </CardHeader>
           <CardContent className="space-y-3">
+            <div className="rounded-lg border p-3">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                À compléter et signer {restants > 0 ? `· ${restants} restant(s)` : "· tout est fait ✓"}
+              </p>
+              <ul className="space-y-1.5">
+                {todos.map((t) => {
+                  const Icon = t.icon;
+                  return (
+                    <li key={t.key} className="flex items-center gap-2 text-sm">
+                      {t.fait ? (
+                        <>
+                          <CheckCircle2 className="h-4 w-4 shrink-0 text-success" />
+                          <span className="flex-1 text-muted-foreground line-through">{t.label}</span>
+                          <span className="text-xs text-success">Fait</span>
+                        </>
+                      ) : (
+                        <>
+                          <Icon className="h-4 w-4 shrink-0 text-warning" />
+                          <Link href={t.href} className="flex-1 font-medium text-primary hover:underline">{t.label}</Link>
+                          <span className="text-xs text-warning">À faire</span>
+                        </>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
             {i.documents.length > 0 ? (
               <ul className="space-y-1">
                 {i.documents.map((d) => (
@@ -137,7 +206,8 @@ export default async function MesDocumentsPage() {
             )}
           </CardContent>
         </Card>
-      ))}
+        );
+      })}
 
       {attestations.length > 0 && (
         <Card>

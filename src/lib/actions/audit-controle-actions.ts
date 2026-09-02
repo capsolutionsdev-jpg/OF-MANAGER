@@ -6,6 +6,13 @@ import { auth } from "@/auth";
 import { getTenantDb } from "@/lib/tenant";
 import { relanceParcours } from "@/lib/actions/parcours-actions";
 import { sendAutomationEventNow } from "@/lib/actions/manual-send-actions";
+import { createApprenantAccount } from "@/lib/actions/apprenant-actions";
+import { prisma } from "@/lib/prisma";
+import { sendEmail } from "@/lib/email";
+import { orgConfigFor } from "@/lib/org-identity";
+import { generateToken, appBaseUrl } from "@/lib/token";
+import { emailShell, emailParagraph, emailButton, emailBox, emailSignoff, emailLogoSrc, esc } from "@/lib/email-templates";
+import { EmailStatut } from "@prisma/client";
 
 export type ActionResult = { ok: true; id: string } | { ok: false; error: string };
 
@@ -228,6 +235,147 @@ export async function relancerCheckAudit(dossierId: string, checkKey: string): P
   } catch (e) {
     console.error("relancerCheckAudit:", e);
     return { ok: false, error: "Relance impossible." };
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Compte candidat : création + envoi des identifiants (manuel)
+// ─────────────────────────────────────────────────────────────
+
+/** Mot de passe provisoire aléatoire, lisible (pas d'ambiguïté 0/O, 1/l). */
+function motDePasseProvisoire(): string {
+  const chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+  let s = "";
+  for (let i = 0; i < 8; i++) s += chars[Math.floor(Math.random() * chars.length)];
+  return `CAP-${s}`;
+}
+
+/**
+ * Crée (ou réinitialise) le compte candidat et lui envoie ses identifiants.
+ * - mot de passe provisoire aléatoire + changement OBLIGATOIRE au 1er login ;
+ * - génère les liens manquants (parcours, positionnement, satisfaction, suivi 6 mois)
+ *   pour que TOUT soit accessible depuis le compte ;
+ * - trace l'envoi sur le dossier d'audit (compteSentAt / compteSentCount).
+ * Si les e-mails du tenant sont suspendus, rien ne part (l'envoi est journalisé).
+ */
+export async function envoyerIdentifiantsAudit(dossierId: string): Promise<ActionResult & { suspendu?: boolean }> {
+  const session = await auth();
+  if (!session?.user) return { ok: false, error: "Non autorisé." };
+  const db = await getTenantDb();
+  try {
+    const d = await db.auditControleDossier.findUnique({
+      where: { id: dossierId },
+      select: { auditId: true, inscriptionId: true },
+    });
+    if (!d) return { ok: false, error: "Dossier introuvable." };
+
+    const i = await db.inscription.findUnique({
+      where: { id: d.inscriptionId },
+      select: {
+        id: true, organismeId: true, accessToken: true, positionnementToken: true,
+        satisfactionToken: true, suivi6moisToken: true,
+        candidat: { select: { id: true, nom: true, prenom: true, email: true } },
+        session: { select: { formation: { select: { titre: true } } } },
+      },
+    });
+    if (!i) return { ok: false, error: "Inscription introuvable." };
+    const to = i.candidat.email;
+    if (!to || !to.includes("@")) return { ok: false, error: "Le candidat n'a pas d'e-mail valide." };
+
+    // 1) Compte : mdp provisoire aléatoire + changement forcé au 1er login.
+    const password = motDePasseProvisoire();
+    const res = await createApprenantAccount(i.candidat.id, password);
+    if (!res.ok) return { ok: false, error: res.error ?? "Création du compte impossible." };
+    const apprenant = await prisma.apprenant.findUnique({ where: { candidatId: i.candidat.id }, select: { userId: true } });
+    if (apprenant?.userId) {
+      await prisma.user.update({ where: { id: apprenant.userId }, data: { mustChangePassword: true } });
+    }
+
+    // 2) Liens manquants → tout est accessible depuis le compte.
+    const patch: Record<string, string> = {};
+    if (!i.accessToken) patch.accessToken = generateToken();
+    if (!i.positionnementToken) patch.positionnementToken = generateToken();
+    if (!i.satisfactionToken) patch.satisfactionToken = generateToken();
+    if (!i.suivi6moisToken) patch.suivi6moisToken = generateToken();
+    if (Object.keys(patch).length) await db.inscription.update({ where: { id: i.id }, data: patch });
+
+    // 3) E-mail d'identifiants.
+    const org = await orgConfigFor(i.organismeId);
+    const loginUrl = `${appBaseUrl()}/login`;
+    const prenom = i.candidat.prenom;
+    const html = emailShell({
+      organisme: org.name,
+      representant: org.representant,
+      logoUrl: emailLogoSrc(org.id, org.logoUrl),
+      body:
+        emailParagraph(`Bonjour ${esc(prenom)},`) +
+        emailParagraph(
+          `${esc(org.name)} met à votre disposition un <b>espace personnel en ligne</b> pour votre formation <b>« ${esc(i.session.formation.titre)} »</b>. Vous y trouverez tous vos documents à lire et à signer, votre test de positionnement et vos questionnaires.`,
+        ) +
+        emailBox(
+          `🔑 <b>Vos identifiants de connexion</b><br/>Identifiant : <b>${esc(to)}</b><br/>Mot de passe provisoire : <b>${esc(password)}</b><br/><i>Un nouveau mot de passe vous sera demandé à la première connexion.</i>`,
+        ) +
+        emailButton("Accéder à mon espace", loginUrl) +
+        emailParagraph(
+          `Une fois connecté, ouvrez « Mes documents » : vous pourrez tout consulter, remplir et signer au même endroit.`,
+        ) +
+        emailParagraph(`Besoin d'aide ? Appelez-nous au <b>01 39 09 01 99</b>.`) +
+        emailSignoff("Cordialement,", org.representant),
+    });
+    const sent = await sendEmail({
+      to,
+      subject: `Vos identifiants — espace personnel ${org.name}`,
+      html,
+      organismeId: i.organismeId,
+    });
+    await prisma.emailLog.create({
+      data: {
+        organismeId: i.organismeId,
+        destinataire: to,
+        sujet: `Vos identifiants — espace personnel ${org.name}`,
+        corps: html,
+        statut: sent.sent ? EmailStatut.ENVOYE : EmailStatut.EN_ATTENTE,
+        sentAt: sent.sent ? new Date() : null,
+      },
+    });
+
+    // 4) Suivi sur le dossier d'audit.
+    await db.auditControleDossier.update({
+      where: { id: dossierId },
+      data: { compteSentAt: new Date(), compteSentCount: { increment: 1 } },
+    });
+    revalidateAudit(d.auditId);
+    return { ok: true, id: dossierId, suspendu: !sent.sent };
+  } catch (e) {
+    console.error("envoyerIdentifiantsAudit:", e);
+    return { ok: false, error: "Envoi impossible." };
+  }
+}
+
+/** Envoie les identifiants à TOUS les dossiers de l'audit (sans compte envoyé ou tous si `retous`). */
+export async function envoyerIdentifiantsAuditEnMasse(
+  auditId: string,
+  retous = false,
+): Promise<{ ok: true; envoyes: number; erreurs: string[] } | { ok: false; error: string }> {
+  const session = await auth();
+  if (!session?.user) return { ok: false, error: "Non autorisé." };
+  const db = await getTenantDb();
+  try {
+    const dossiers = await db.auditControleDossier.findMany({
+      where: { auditId, ...(retous ? {} : { compteSentAt: null }) },
+      select: { id: true },
+    });
+    let envoyes = 0;
+    const erreurs: string[] = [];
+    for (const d of dossiers) {
+      const r = await envoyerIdentifiantsAudit(d.id);
+      if (r.ok) envoyes++;
+      else erreurs.push(r.error);
+    }
+    return { ok: true, envoyes, erreurs };
+  } catch (e) {
+    console.error("envoyerIdentifiantsAuditEnMasse:", e);
+    return { ok: false, error: "Envoi en masse impossible." };
   }
 }
 

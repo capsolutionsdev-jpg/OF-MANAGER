@@ -1516,6 +1516,8 @@ model AuditControleDossier {
   validations   Json?
   relanceSentAt DateTime? // dernière relance par e-mail
   relanceCount  Int                @default(0)
+  compteSentAt  DateTime? // dernier envoi des identifiants du compte candidat
+  compteSentCount Int              @default(0)
   resolvedAt    DateTime? // mis en conformité le
   commentaire   String?
   createdAt     DateTime           @default(now())

@@ -87,6 +87,8 @@ export default async function AuditDetailPage({ params }: { params: Promise<{ id
         statut: d.statut,
         relanceSentAt: d.relanceSentAt ? d.relanceSentAt.toISOString() : null,
         relanceCount: d.relanceCount,
+        compteSentAt: d.compteSentAt ? d.compteSentAt.toISOString() : null,
+        compteSentCount: d.compteSentCount,
         checks,
         validations,
         pct: conf.pct,
@@ -197,7 +199,7 @@ export default async function AuditDetailPage({ params }: { params: Promise<{ id
         <h2 className="text-sm font-semibold text-muted-foreground">
           {sessionChecks.length > 0 ? "2 · " : ""}Dossiers des candidats
         </h2>
-        <AuditDossiers dossiers={dossiers} />
+        <AuditDossiers auditId={audit.id} dossiers={dossiers} />
       </section>
     </div>
   );

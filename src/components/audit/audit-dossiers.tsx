@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { AlertTriangle, Check, ChevronDown, FileText, Send, Undo2 } from "lucide-react";
+import { AlertTriangle, Check, ChevronDown, FileText, Send, Undo2, UserPlus } from "lucide-react";
 
 import {
   relancerDossierAudit,
@@ -11,6 +11,8 @@ import {
   validerCheckAudit,
   annulerCheckAudit,
   relancerCheckAudit,
+  envoyerIdentifiantsAudit,
+  envoyerIdentifiantsAuditEnMasse,
 } from "@/lib/actions/audit-controle-actions";
 import { DOSSIER_CHECK_LABEL, type DossierCheck } from "@/lib/audit/dossier";
 import { Card, CardContent } from "@/components/ui/card";
@@ -28,6 +30,8 @@ export type DossierDto = {
   statut: "A_TRAITER" | "EN_COURS" | "CONFORME";
   relanceSentAt: string | null;
   relanceCount: number;
+  compteSentAt: string | null;
+  compteSentCount: number;
   checks: DossierCheck[];
   validations: Record<string, { nom?: string; date?: string }>;
   pct: number;
@@ -45,7 +49,10 @@ const CHECK_TONE: Record<string, string> = {
   NA: "text-muted-foreground",
 };
 
-export function AuditDossiers({ dossiers }: { dossiers: DossierDto[] }) {
+export function AuditDossiers({ auditId, dossiers }: { auditId: string; dossiers: DossierDto[] }) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+
   if (dossiers.length === 0) {
     return (
       <Card>
@@ -55,8 +62,26 @@ export function AuditDossiers({ dossiers }: { dossiers: DossierDto[] }) {
       </Card>
     );
   }
+
+  const sansCompte = dossiers.filter((d) => !d.compteSentAt).length;
+
+  function envoyerATous() {
+    startTransition(async () => {
+      const res = await envoyerIdentifiantsAuditEnMasse(auditId);
+      if (!res.ok) { toast.error(res.error); return; }
+      toast.success(`Identifiants traités pour ${res.envoyes} dossier(s).${res.erreurs.length ? ` ${res.erreurs.length} erreur(s).` : ""}`);
+      router.refresh();
+    });
+  }
+
   return (
     <div className="space-y-3">
+      <div className="flex items-center justify-end">
+        <Button size="sm" variant="outline" className="h-8 gap-1" disabled={isPending || sansCompte === 0} onClick={envoyerATous}
+          title="Crée les comptes candidats et envoie les identifiants à tous les dossiers pas encore traités">
+          <UserPlus className="h-3.5 w-3.5" /> Comptes + identifiants à tous ({sansCompte})
+        </Button>
+      </div>
       {dossiers.map((d) => (
         <DossierRow key={d.id} d={d} />
       ))}
@@ -107,6 +132,16 @@ function DossierRow({ d }: { d: DossierDto }) {
       router.refresh();
     });
   }
+  function envoyerCompte() {
+    startTransition(async () => {
+      const res = await envoyerIdentifiantsAudit(d.id);
+      if (!res.ok) { toast.error(res.error); return; }
+      toast.success(res.suspendu
+        ? "Compte créé. E-mails suspendus : les identifiants partiront à la réactivation."
+        : "Compte créé et identifiants envoyés par e-mail.");
+      router.refresh();
+    });
+  }
 
   const statutBadge =
     d.statut === "CONFORME"
@@ -131,9 +166,18 @@ function DossierRow({ d }: { d: DossierDto }) {
         </span>
 
         <div className="ml-auto flex items-center gap-2">
+          {d.compteSentAt && (
+            <span className="text-xs text-emerald-600 dark:text-emerald-400" title="Compte candidat créé, identifiants envoyés">
+              Compte le {fmt(d.compteSentAt)}{d.compteSentCount > 1 ? ` (×${d.compteSentCount})` : ""}
+            </span>
+          )}
           {d.relanceSentAt && (
             <span className="text-xs text-muted-foreground">Relancé le {fmt(d.relanceSentAt)}{d.relanceCount > 1 ? ` (×${d.relanceCount})` : ""}</span>
           )}
+          <Button size="sm" variant={d.compteSentAt ? "ghost" : "outline"} className="h-8 gap-1" disabled={isPending} onClick={envoyerCompte}
+            title="Crée (ou réinitialise) le compte candidat et envoie les identifiants — tout se signe et se remplit dans son espace">
+            <UserPlus className="h-3.5 w-3.5" /> {d.compteSentAt ? "Renvoyer" : "Compte + identifiants"}
+          </Button>
           <Button size="sm" variant="outline" className="h-8 gap-1" disabled={isPending || d.conforme} onClick={relancerTout} title="Renvoyer le lien complet (compléter + signer)">
             <Send className="h-3.5 w-3.5" /> Relancer
           </Button>
