@@ -321,7 +321,7 @@ export async function envoyerIdentifiantsAudit(dossierId: string): Promise<Actio
         emailParagraph(
           `Une fois connecté, ouvrez « Mes documents » : vous pourrez tout consulter, remplir et signer au même endroit.`,
         ) +
-        emailParagraph(`Besoin d'aide ? Appelez-nous au <b>01 39 09 01 99</b>.`) +
+        (org.telephone ? emailParagraph(`Besoin d'aide ? Appelez-nous au <b>${esc(org.telephone)}</b>.`) : "") +
         emailSignoff("Cordialement,", org.representant),
     });
     const sent = await sendEmail({
