@@ -75,20 +75,36 @@ export async function createApprenantAccount(
     // `user.create` → exception non gérée → crash. Cf. lib/tenant.ts.
     const existingUser = await prisma.user.findUnique({
       where: { email },
-      select: { id: true, role: true, apprenant: { select: { id: true } } },
+      select: { id: true, role: true, organismeId: true, apprenant: { select: { id: true } } },
     });
 
-    // Ne JAMAIS rétrograder un compte privilégié (admin/formateur…) en apprenant :
-    // une même adresse peut être à la fois collaborateur ET inscrite à une formation.
+    // Un compte privilégié (admin/formateur…) ne doit JAMAIS être touché par la
+    // création d'un accès apprenant : réinitialiser son mot de passe ici serait
+    // une prise de contrôle de compte (cross-tenant qui plus est). Refus net.
     const PRIVILEGED_ROLES = ["SUPERADMIN", "ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT", "FORMATEUR"];
+    const ERREUR_EMAIL_COLLABORATEUR =
+      "Cette adresse e-mail correspond à un compte collaborateur (admin/formateur…). Par sécurité, l'accès apprenant ne peut pas être créé dessus : utilisez une autre adresse e-mail pour ce candidat.";
 
     if (apprenant.userId) {
-      // Compte déjà lié → réinitialise le mot de passe (sans toucher au rôle).
+      // Compte déjà lié → réinitialise le mot de passe, APRÈS contrôle du rôle.
+      const linked = await prisma.user.findUnique({ where: { id: apprenant.userId }, select: { role: true } });
+      if (linked && PRIVILEGED_ROLES.includes(linked.role)) {
+        return { ok: false, error: ERREUR_EMAIL_COLLABORATEUR };
+      }
       await prisma.user.update({
         where: { id: apprenant.userId },
         data: { passwordHash, isActive: true },
       });
     } else if (existingUser) {
+      if (PRIVILEGED_ROLES.includes(existingUser.role)) {
+        return { ok: false, error: ERREUR_EMAIL_COLLABORATEUR };
+      }
+      if (existingUser.organismeId && candidat.organismeId && existingUser.organismeId !== candidat.organismeId) {
+        return {
+          ok: false,
+          error: "Cette adresse e-mail est déjà utilisée par un compte d'un autre organisme. Utilisez une autre adresse e-mail pour ce candidat.",
+        };
+      }
       // `Apprenant.userId` est UNIQUE : si cet utilisateur (même e-mail) est déjà
       // l'apprenant d'un AUTRE candidat, on ne peut pas le relier ici (c'était la
       // cause du crash — violation de contrainte unique lors du rattachement).
@@ -99,10 +115,9 @@ export async function createApprenantAccount(
             "Un compte apprenant existe déjà pour cette adresse e-mail (rattaché à un autre candidat). Utilisez une autre adresse e-mail pour ce candidat.",
         };
       }
-      const keepRole = PRIVILEGED_ROLES.includes(existingUser.role);
       await prisma.user.update({
         where: { id: existingUser.id },
-        data: { passwordHash, isActive: true, name, ...(keepRole ? {} : { role: "APPRENANT" }) },
+        data: { passwordHash, isActive: true, name, role: "APPRENANT" },
       });
       await prisma.apprenant.update({
         where: { id: apprenant.id },
