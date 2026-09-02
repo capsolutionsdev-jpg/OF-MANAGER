@@ -15,7 +15,7 @@ export async function GET(
     select: { id: true, session: { select: { dateFin: true } } },
   });
   if (!i) return new Response("Lien invalide", { status: 404 });
-  if (linkExpired(i.session?.dateFin, 6)) return new Response("Lien expiré", { status: 410 });
+  if (linkExpired(i.session?.dateFin)) return new Response("Lien expiré", { status: 410 });
 
   const pdf = await buildSatisfactionPdf(i.id);
   if (!pdf) return new Response("Document introuvable", { status: 404 });

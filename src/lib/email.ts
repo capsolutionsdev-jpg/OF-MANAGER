@@ -134,6 +134,12 @@ export async function sendEmail(params: {
   attachments?: EmailAttachment[];
   /** Tenant émetteur (utilise son compte Brevo si configuré). */
   organismeId?: string | null;
+  /**
+   * Envoi déclenché MANUELLEMENT par un collaborateur (bouton d'un écran) :
+   * passe outre la suspension `emailsSuspendus`, qui ne coupe donc que les
+   * envois AUTOMATIQUES (cron, déclencheurs de parcours…).
+   */
+  manuel?: boolean;
 }): Promise<{ sent: boolean; reason?: string }> {
   // Bac à sable démo : un tenant de démonstration n'émet JAMAIS de vrai e-mail.
   // On simule un envoi réussi (expérience réaliste côté prospect) sans rien transmettre.

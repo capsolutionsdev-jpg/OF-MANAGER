@@ -27,7 +27,7 @@ export default async function FrancaisPage({
   });
   if (!insc) notFound();
   // Lien d'enquête expiré (~180 j après la fin de session). §magic-links
-  if (linkExpired(insc.session?.dateFin, 6)) notFound();
+  if (linkExpired(insc.session?.dateFin)) notFound();
   const org = await orgConfigFor(insc.organismeId);
 
   const f = insc.session.formation;

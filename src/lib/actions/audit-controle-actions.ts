@@ -329,6 +329,7 @@ export async function envoyerIdentifiantsAudit(dossierId: string): Promise<Actio
       subject: `Vos identifiants — espace personnel ${org.name}`,
       html,
       organismeId: i.organismeId,
+      manuel: true,
     });
     await prisma.emailLog.create({
       data: {
