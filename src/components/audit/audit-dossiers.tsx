@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { AlertTriangle, Check, ChevronDown, FileText, Send, Undo2, UserPlus } from "lucide-react";
+import { AlertTriangle, Check, ChevronDown, Eye, FileText, Send, Undo2, UserPlus } from "lucide-react";
 
 import {
   relancerDossierAudit,
@@ -22,6 +22,9 @@ import { Button } from "@/components/ui/button";
 const selectClass =
   "h-8 rounded-lg border border-input bg-transparent px-2 text-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30";
 
+/** Élément de checklist enrichi d'un lien de consultation (ouvre la pièce). */
+export type CheckAvecLien = DossierCheck & { href?: string | null };
+
 export type DossierDto = {
   id: string;
   inscriptionId: string;
@@ -32,7 +35,7 @@ export type DossierDto = {
   relanceCount: number;
   compteSentAt: string | null;
   compteSentCount: number;
-  checks: DossierCheck[];
+  checks: CheckAvecLien[];
   validations: Record<string, { nom?: string; date?: string }>;
   pct: number;
   conforme: boolean;
@@ -214,6 +217,13 @@ function DossierRow({ d }: { d: DossierDto }) {
 
                   {!isNa && (
                     <div className="flex items-center gap-1.5">
+                      {/* Consultation directe de la pièce (contrôle) */}
+                      {c.href && (
+                        <Button size="sm" variant="ghost" className="h-7 gap-1 text-xs" title="Consulter la pièce"
+                          render={<a href={c.href} target="_blank" rel="noopener noreferrer" />}>
+                          <Eye className="h-3 w-3" /> Voir
+                        </Button>
+                      )}
                       {/* Relance ciblée quand le document dépend du candidat */}
                       {!isPresent && c.relance && (
                         <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" disabled={isPending} onClick={() => relancerCheck(c.key)} title="Relancer le candidat pour cet élément">

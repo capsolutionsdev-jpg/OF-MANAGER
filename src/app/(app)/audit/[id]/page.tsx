@@ -40,13 +40,16 @@ export default async function AuditDetailPage({ params }: { params: Promise<{ id
           signedAt: true,
           piecesRecues: true,
           positionnementCompletedAt: true,
+          positionnementToken: true,
           convocationSentAt: true,
           satisfactionCompletedAt: true,
+          satisfactionToken: true,
           docsFinSentAt: true,
           suivi6moisCompletedAt: true,
+          suivi6moisToken: true,
           resultatCertification: true,
           attestationReussiteSentAt: true,
-          candidat: { select: { nom: true, prenom: true, email: true } },
+          candidat: { select: { id: true, nom: true, prenom: true, email: true } },
           session: {
             select: {
               formation: { select: { piecesAttendues: true, examen: true, diplomante: true, positionnementQuestions: true } },
@@ -57,8 +60,39 @@ export default async function AuditDetailPage({ params }: { params: Promise<{ id
     : [];
   const byId = new Map(inscriptions.map((i) => [i.id, i]));
 
+  // Pièces jointes des candidats (consultation directe depuis la checklist).
+  const candidatIds = [...new Set(inscriptions.map((i) => i.candidat.id))];
+  const piecesJointes = candidatIds.length
+    ? await db.pieceJointe.findMany({
+        where: { candidatId: { in: candidatIds } },
+        select: { id: true, candidatId: true, label: true },
+      })
+    : [];
+  const pieceParCandidatLabel = new Map(piecesJointes.map((p) => [`${p.candidatId}|${p.label}`, p.id]));
+
+  /** Lien de consultation d'un élément de checklist (null = rien à ouvrir). */
+  type Insc = (typeof inscriptions)[number];
+  function hrefPourCheck(key: string, i: Insc): string | null {
+    if (key === "signatures") return `/documents/${i.id}/pdf`;
+    if (key.startsWith("piece::")) {
+      const pj = pieceParCandidatLabel.get(`${i.candidat.id}|${key.slice("piece::".length)}`);
+      return pj ? `/api/public/piece/${pj}` : null;
+    }
+    if (key === "programme") return `/documents/${i.id}/PROGRAMME`;
+    if (key === "positionnement") return i.positionnementCompletedAt && i.positionnementToken ? `/positionnement/${i.positionnementToken}` : null;
+    if (key === "convocation") return `/documents/${i.id}/CONVOCATION`;
+    if (key === "reglement_interieur") return `/documents/${i.id}/REGLEMENT_INTERIEUR`;
+    if (key === "emargement") return audit!.sessionId ? `/sessions/${audit!.sessionId}/emargement` : null;
+    if (key === "resultat") return audit!.sessionId ? `/sessions/${audit!.sessionId}/resultats` : null;
+    if (key === "evaluation_acquis") return `/documents/${i.id}/EVALUATION_ACQUIS`;
+    if (key === "docs_fin") return `/documents/${i.id}/ATTESTATION_FIN`;
+    if (key === "satisfaction") return i.satisfactionCompletedAt && i.satisfactionToken ? `/satisfaction/${i.satisfactionToken}/document` : null;
+    if (key === "suivi_6mois") return i.suivi6moisCompletedAt && i.suivi6moisToken ? `/suivi/${i.suivi6moisToken}/document` : null;
+    return null; // livret d'accueil… : pas de document à ouvrir
+  }
+
   const dossiers: DossierDto[] = audit.dossiers
-    .map((d) => {
+    .map((d): DossierDto | null => {
       const i = byId.get(d.inscriptionId);
       if (!i) return null;
       const validations = (d.validations && typeof d.validations === "object" ? d.validations : {}) as Record<string, { nom?: string; date?: string }>;
@@ -89,7 +123,7 @@ export default async function AuditDetailPage({ params }: { params: Promise<{ id
         relanceCount: d.relanceCount,
         compteSentAt: d.compteSentAt ? d.compteSentAt.toISOString() : null,
         compteSentCount: d.compteSentCount,
-        checks,
+        checks: checks.map((c) => ({ ...c, href: hrefPourCheck(c.key, i) })),
         validations,
         pct: conf.pct,
         conforme: conf.conforme,
