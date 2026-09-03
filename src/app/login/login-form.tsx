@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { AlertCircle, LogIn } from "lucide-react";
+import Link from "next/link";
 import { authenticate } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +38,15 @@ export function LoginForm() {
           required
           autoComplete="current-password"
         />
+      </div>
+
+      <div className="-mt-1 text-right">
+        <Link
+          href="/mot-de-passe-oublie"
+          className="text-xs text-white/60 transition hover:text-white hover:underline"
+        >
+          Mot de passe oublié ?
+        </Link>
       </div>
 
       <div className="space-y-2">

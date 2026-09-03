@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import type { CSSProperties } from "react";
 import Image from "next/image";
-import { ShieldCheck, FileSignature, GraduationCap, MonitorSmartphone } from "lucide-react";
+import { ShieldCheck, FileSignature, GraduationCap, MonitorSmartphone, CheckCircle2 } from "lucide-react";
 import { LoginForm } from "./login-form";
 import { LoginBackdrop } from "./login-backdrop";
 import { getPublicBranding } from "@/lib/tenant-host";
@@ -33,9 +33,9 @@ const points = [
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ reason?: string }>;
+  searchParams: Promise<{ reason?: string; reset?: string }>;
 }) {
-  const { reason } = await searchParams;
+  const { reason, reset } = await searchParams;
   const brand = await getPublicBranding();
   const design = getDesign(brand.design);
   const dataDesign = design && design.key !== "defaut" ? design.key : undefined;
@@ -116,6 +116,16 @@ export default async function LoginPage({
                 <span>
                   Vous avez été déconnecté car ce compte vient d&apos;être utilisé sur un autre
                   appareil. Un compte ne peut être actif que sur un seul appareil à la fois.
+                </span>
+              </div>
+            )}
+
+            {reset && (
+              <div className="mb-4 flex items-start gap-2 rounded-lg border border-emerald-400/40 bg-emerald-400/10 px-3 py-2.5 text-sm text-emerald-200">
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>
+                  Votre mot de passe a été réinitialisé. Connectez-vous avec votre
+                  nouveau mot de passe.
                 </span>
               </div>
             )}
