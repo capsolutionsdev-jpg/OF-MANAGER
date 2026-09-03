@@ -22,8 +22,8 @@ export default async function SuiviPage() {
           hint="Les résultats (certifié, ajourné, abandon) apparaîtront ici à l'issue des formations."
         />
       ) : (
-        <div className="overflow-hidden rounded-xl border">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto rounded-xl border">
+          <table className="w-full min-w-[34rem] text-sm">
             <thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
                 <th className="px-4 py-2 font-medium">Salarié</th>

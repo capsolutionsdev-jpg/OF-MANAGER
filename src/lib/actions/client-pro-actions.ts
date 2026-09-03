@@ -4,6 +4,9 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { getTenantDb } from "@/lib/tenant";
+import { isValidSiret, SIRET_ERROR_MESSAGE } from "@/lib/validators/siret";
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 async function requireUser() {
   // Correctif audit P2-1 (BFLA) : réservé au personnel — rejette APPRENANT/FORMATEUR
@@ -18,7 +21,7 @@ async function requireUser() {
 
 function champs(formData: FormData) {
   const v = (k: string) => String(formData.get(k) ?? "").trim() || null;
-  return {
+  const data = {
     raisonSociale: String(formData.get("raisonSociale") ?? "").trim(),
     siret: v("siret"),
     numeroTva: v("numeroTva"),
@@ -33,6 +36,12 @@ function champs(formData: FormData) {
     opco: v("opco"),
     notes: v("notes"),
   };
+  // Le SIRET et l'e-mail du contact partent dans les conventions/devis : on les
+  // refuse à la source plutôt que de les laisser filer dans un document signé.
+  if (data.siret && !isValidSiret(data.siret)) throw new Error(SIRET_ERROR_MESSAGE);
+  if (data.contactEmail && !EMAIL_RE.test(data.contactEmail))
+    throw new Error("Adresse e-mail du contact invalide.");
+  return data;
 }
 
 export async function creerClientPro(formData: FormData) {
