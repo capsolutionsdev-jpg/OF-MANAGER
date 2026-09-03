@@ -5,6 +5,7 @@ import {
   EmailStatut,
   WorkflowTrigger,
   WorkflowAction,
+  InscriptionStatut,
 } from "@prisma/client";
 import { requireStaffTenant } from "@/lib/tenant";
 import { auth } from "@/auth";
@@ -21,6 +22,13 @@ import { orgConfigFor } from "@/lib/org-identity";
 
 const fmt = (d: Date) => d.toLocaleDateString("fr-FR");
 
+// Statuts d'inscription convocables : on exclut ANNULEE et SUSPENDUE — une
+// convocation officielle ne doit jamais partir à un candidat annulé/suspendu.
+const STATUTS_CONVOCABLES: InscriptionStatut[] = [
+  InscriptionStatut.VALIDEE,
+  InscriptionStatut.EN_ATTENTE,
+];
+
 /**
  * Envoie les convocations d'une session et RENVOIE un résultat
  * (pour afficher un retour à l'utilisateur).
@@ -35,7 +43,13 @@ export async function sendConvocationsForSession(
   const { db } = await requireStaffTenant();
   const s = await db.session.findUnique({
     where: { id: sessionId },
-    include: { formation: true, inscriptions: { include: { candidat: true } } },
+    include: {
+      formation: true,
+      inscriptions: {
+        where: { statut: { in: STATUTS_CONVOCABLES } },
+        include: { candidat: true },
+      },
+    },
   });
   if (!s)
     return { ok: false, total: 0, sent: 0, demo: true, error: "Session introuvable." };
@@ -91,7 +105,13 @@ export async function sendConvocations(formData: FormData) {
   const sessionId = String(formData.get("sessionId"));
   const s = await db.session.findUnique({
     where: { id: sessionId },
-    include: { formation: true, inscriptions: { include: { candidat: true } } },
+    include: {
+      formation: true,
+      inscriptions: {
+        where: { statut: { in: STATUTS_CONVOCABLES } },
+        include: { candidat: true },
+      },
+    },
   });
   if (!s) return;
   const org = await orgConfigFor(s.organismeId);

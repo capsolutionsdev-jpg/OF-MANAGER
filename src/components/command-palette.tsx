@@ -1,28 +1,42 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search, Command } from "lucide-react";
-import { navigationGroups } from "@/lib/navigation-groups";
+import { Search } from "lucide-react";
+import type { Role } from "@prisma/client";
+import { buildNav } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 
 /**
- * Global Command Palette (Cmd+K / Ctrl+K)
- * Search and navigate to any page in the app
+ * Palette de commandes globale (Cmd+K / Ctrl+K).
+ * Recherche et navigation vers n'importe quelle page RÉELLE de l'app,
+ * filtrée par rôle/permissions/fonctionnalités (source unique : lib/navigation.ts).
  */
-export function CommandPalette() {
+export function CommandPalette({
+  role,
+  permissions,
+  fonctionnalites,
+}: {
+  role: Role;
+  permissions: string[];
+  fonctionnalites: string[];
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
 
-  // Flatten all items from all groups
-  const allItems = navigationGroups.flatMap((group) =>
-    group.items.map((item) => ({
-      ...item,
-      groupLabel: group.label,
-    }))
-  );
+  // Toutes les entrées visibles par cet utilisateur, avec le libellé de leur groupe.
+  const allItems = useMemo(() => {
+    const nav = buildNav(role, permissions, fonctionnalites);
+    return [
+      ...nav.standalone.map((item) => ({ ...item, groupLabel: "" })),
+      ...nav.groups.flatMap((group) =>
+        group.items.map((item) => ({ ...item, groupLabel: group.name })),
+      ),
+      ...nav.footer.map((item) => ({ ...item, groupLabel: "" })),
+    ];
+  }, [role, permissions, fonctionnalites]);
 
   // Filter items based on search
   const filtered = allItems.filter((item) =>
@@ -137,9 +151,11 @@ export function CommandPalette() {
                       <item.icon className="h-4 w-4" />
                       <div className="flex-1">
                         <p className="text-sm font-medium">{item.label}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {item.groupLabel}
-                        </p>
+                        {item.groupLabel ? (
+                          <p className="text-xs text-muted-foreground">
+                            {item.groupLabel}
+                          </p>
+                        ) : null}
                       </div>
                     </div>
                   </li>

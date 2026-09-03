@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { toast } from "sonner";
 import { ChevronRight, Home, Copy } from "lucide-react";
-import { navigationGroups } from "@/lib/navigation-groups";
+import { navItems } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 
 /**
@@ -26,14 +27,17 @@ export function Breadcrumbs() {
   // Filter out admin paths, etc.
   if (pathname === "/" || !segments.length) return null;
 
-  // Find the parent item from navigation
-  const parentItem = navigationGroups
-    .flatMap((g) => g.items)
-    .find((item) => pathname.startsWith(item.href));
+  // Rubrique parente depuis la navigation réelle (source unique : lib/navigation.ts).
+  // On retient la correspondance la plus longue (ex. /crm/pipeline → /crm).
+  const parentItem = navItems
+    .filter((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))
+    .sort((a, b) => b.href.length - a.href.length)[0];
 
   const breadcrumbs = [
-    { label: "Home", href: "/dashboard" },
-    ...(parentItem ? [{ label: parentItem.label, href: parentItem.href }] : []),
+    { label: "Tableau de bord", href: "/dashboard" },
+    ...(parentItem && parentItem.href !== "/dashboard"
+      ? [{ label: parentItem.label, href: parentItem.href }]
+      : []),
     ...segments.slice(1).map((seg) => ({
       label: seg.label,
       href: seg.href,
@@ -42,8 +46,10 @@ export function Breadcrumbs() {
 
   const handleCopyLink = () => {
     const url = `${window.location.origin}${pathname}`;
-    navigator.clipboard.writeText(url);
-    // TODO: Show toast "Copied!"
+    navigator.clipboard.writeText(url).then(
+      () => toast.success("Lien de la page copié."),
+      () => toast.error("Copie impossible — sélectionnez le lien manuellement."),
+    );
   };
 
   return (
@@ -81,8 +87,8 @@ export function Breadcrumbs() {
           "text-muted-foreground hover:bg-muted",
           "transition-colors"
         )}
-        title="Copy link"
-        aria-label="Copy page link"
+        title="Copier le lien"
+        aria-label="Copier le lien de la page"
       >
         <Copy className="h-4 w-4" />
       </button>
@@ -91,16 +97,17 @@ export function Breadcrumbs() {
 }
 
 /**
- * Format URL segment to display label
- * e.g., "sessions" → "Sessions", "123" → "ID: 123"
+ * Met en forme un segment d'URL pour l'affichage.
+ * Ex. : "sessions" → "Sessions", "simulateur-financement" → "Simulateur Financement".
+ * Un identifiant (cuid/uuid/numérique) devient un libellé neutre « Détail »
+ * plutôt qu'un hash illisible (#cmqc20ql).
  */
 function formatLabel(segment: string): string {
-  // If it looks like an ID, shorten it
-  if (/^\d+$/.test(segment) || segment.length > 20) {
-    return `#${segment.substring(0, 8)}`;
-  }
+  const looksLikeId =
+    /^\d+$/.test(segment) || (/^[a-z0-9]+$/i.test(segment) && segment.length >= 16);
+  if (looksLikeId) return "Détail";
 
-  // Convert kebab-case to Title Case
+  // kebab-case → Titre Lisible
   return segment
     .split("-")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
