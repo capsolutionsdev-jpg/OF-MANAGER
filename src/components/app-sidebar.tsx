@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown, HelpCircle, ArrowRight, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { Search, HelpCircle, ArrowRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 import type { Role } from "@prisma/client";
-import { buildNav, type NavItem } from "@/lib/navigation";
+import { buildRail, type NavItem } from "@/lib/navigation";
+import { PlusLauncher } from "@/components/plus-launcher";
 import { useRail } from "@/components/rail-context";
 import { cn } from "@/lib/utils";
 
@@ -20,8 +20,36 @@ type NavUser = {
 const ITEM_ACTIVE = "bg-[#1f3a6f] text-[#8cbcff]";
 const ITEM_IDLE = "text-[#a8b9d1] hover:bg-[#1f2d47] hover:text-[#eaf0ff]";
 
-/** Contenu de navigation (rail desktop + tiroir mobile). Groupé par catégories ;
- * liste plate en icônes quand le rail est replié. */
+/** Bouton « Rechercher… » du rail : ouvre la palette de commandes globale
+ * (⌘K) au clic, pour la découvrabilité. Replié → icône seule. */
+function RailSearchButton({ collapsed = false }: { collapsed?: boolean }) {
+  return (
+    <button
+      type="button"
+      onClick={() => window.dispatchEvent(new Event("ofm:command-palette"))}
+      title="Rechercher (⌘K)"
+      aria-label="Rechercher un module"
+      className={cn(
+        "flex items-center gap-2 rounded-lg border border-[#1f2d47] bg-[#122142] text-[#7a8aa3] transition-colors hover:border-[#2a3a52] hover:text-[#a8b9d1]",
+        collapsed ? "h-9 w-9 justify-center" : "w-full px-2.5 py-2",
+      )}
+    >
+      <Search className="h-[15px] w-[15px] shrink-0" />
+      {!collapsed && (
+        <>
+          <span className="rail-label text-[12.5px]">Rechercher…</span>
+          <kbd className="rail-label ml-auto rounded border border-[#2a3a52] px-1.5 py-0.5 font-sans text-[10px] leading-none">
+            ⌘K
+          </kbd>
+        </>
+      )}
+    </button>
+  );
+}
+
+/** Contenu de navigation (rail desktop + tiroir mobile). Barre épurée : recherche
+ * ⌘K + 3 piliers quotidiens ; le reste est rangé dans le launcher « Plus ».
+ * Liste plate en icônes quand le rail est replié. */
 export function SidebarNav({
   user,
   onNavigate,
@@ -32,47 +60,13 @@ export function SidebarNav({
   collapsed?: boolean;
 }) {
   const pathname = usePathname();
-  const { standalone, groups, footer } = buildNav(
+  const { standalone, pillars, secondary } = buildRail(
     user.role,
     user.permissions ?? [],
     user.fonctionnalites ?? [],
   );
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(`${href}/`);
-
-  const activeGroup =
-    groups.find((g) => g.items.some((it) => isActive(it.href)))?.name ?? null;
-
-  // Repli par groupe, persistant (localStorage). Par défaut seul le groupe de
-  // la page courante est ouvert → le rail reste court.
-  const [open, setOpen] = useState<Record<string, boolean>>({});
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem("ofm.nav.groups");
-      if (raw) setOpen(JSON.parse(raw));
-    } catch {
-      /* stockage indisponible : on garde les valeurs par défaut */
-    }
-  }, []);
-  useEffect(() => {
-    if (activeGroup) {
-      setOpen((prev) =>
-        prev[activeGroup] ? prev : { ...prev, [activeGroup]: true },
-      );
-    }
-  }, [activeGroup]);
-  const isOpen = (name: string) => open[name] ?? name === activeGroup;
-  const toggleGroup = (name: string) =>
-    setOpen((prev) => {
-      const cur = prev[name] ?? name === activeGroup;
-      const next = { ...prev, [name]: !cur };
-      try {
-        localStorage.setItem("ofm.nav.groups", JSON.stringify(next));
-      } catch {
-        /* ignore */
-      }
-      return next;
-    });
 
   const renderItem = (it: NavItem) => {
     const active = isActive(it.href);
@@ -101,20 +95,22 @@ export function SidebarNav({
     );
   };
 
-  // Rail replié → liste plate (toutes les entrées en icônes), sans en-têtes de
-  // groupe (sinon les groupes fermés cacheraient leurs items).
+  // Rail replié → recherche (icône) + liste plate des piliers en icônes + launcher.
   if (collapsed) {
-    const flat = [...standalone, ...groups.flatMap((g) => g.items)];
+    const flatIcons = [...standalone, ...pillars.flatMap((p) => p.items)];
     return (
       <nav
         id="main-nav"
         aria-label="Navigation principale"
-        className="flex-1 space-y-0.5 overflow-y-auto px-3 py-4"
+        className="flex-1 space-y-1 overflow-y-auto px-3 py-4"
       >
-        {flat.map(renderItem)}
-        {footer.length > 0 && (
-          <div className="mt-3 space-y-0.5 border-t border-[#1f2d47] pt-3">
-            {footer.map(renderItem)}
+        <div className="flex justify-center">
+          <RailSearchButton collapsed />
+        </div>
+        <div className="space-y-0.5 pt-1">{flatIcons.map(renderItem)}</div>
+        {secondary.length > 0 && (
+          <div className="flex justify-center pt-1">
+            <PlusLauncher secondary={secondary} collapsed onNavigate={onNavigate} />
           </div>
         )}
       </nav>
@@ -125,38 +121,24 @@ export function SidebarNav({
     <nav
       id="main-nav"
       aria-label="Navigation principale"
-      className="flex-1 space-y-5 overflow-y-auto px-3 py-4"
+      className="flex-1 space-y-4 overflow-y-auto px-3 py-4"
     >
+      <RailSearchButton />
+
       {standalone.length > 0 && (
         <div className="space-y-0.5">{standalone.map(renderItem)}</div>
       )}
-      {groups.map((g) => {
-        const expanded = isOpen(g.name);
-        return (
-          <div key={g.name} className="space-y-0.5">
-            <button
-              type="button"
-              onClick={() => toggleGroup(g.name)}
-              aria-expanded={expanded}
-              className="flex w-full items-center gap-1.5 rounded-md px-2.5 py-1 text-[10.5px] font-semibold uppercase tracking-wider text-[#7a8aa3] transition-colors hover:text-[#eaf0ff]"
-            >
-              <ChevronDown
-                className={cn(
-                  "h-3 w-3 shrink-0 transition-transform duration-200",
-                  expanded ? "" : "-rotate-90",
-                )}
-              />
-              <span>{g.name}</span>
-            </button>
-            {expanded && g.items.map(renderItem)}
-          </div>
-        );
-      })}
-      {footer.length > 0 && (
-        <div className="space-y-0.5 border-t border-[#1f2d47] pt-3">
-          {footer.map(renderItem)}
+
+      {pillars.map((p) => (
+        <div key={p.name} className="space-y-0.5">
+          <p className="px-2.5 py-1 text-[10.5px] font-semibold uppercase tracking-wider text-[#7a8aa3]">
+            {p.name}
+          </p>
+          {p.items.map(renderItem)}
         </div>
-      )}
+      ))}
+
+      <PlusLauncher secondary={secondary} onNavigate={onNavigate} />
     </nav>
   );
 }

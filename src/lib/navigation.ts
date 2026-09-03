@@ -491,6 +491,110 @@ export function buildNav(
   return { standalone, groups, footer };
 }
 
+// ── Rail épuré (refonte navigation) ─────────────────────────────────────────
+// Trois piliers QUOTIDIENS visibles en permanence + des groupes SECONDAIRES
+// rangés dans le launcher « Plus ». Divulgation progressive : on montre le
+// quotidien, on range le reste — mais tout reste atteignable (palette ⌘K).
+
+/** Ordre des piliers quotidiens de la barre. */
+export const PILLAR_ORDER = ["Commercial", "Formation", "Finance"] as const;
+
+/** Items (par href, dans l'ordre d'affichage) de chaque pilier quotidien. */
+export const PILLARS: Record<(typeof PILLAR_ORDER)[number], string[]> = {
+  Commercial: ["/crm", "/leads-multicanal", "/simulateur-financement", "/kanban", "/taches"],
+  // Candidats en 1er, Sessions en 2e (pages les plus utilisées au quotidien).
+  Formation: ["/candidats", "/sessions", "/demandes-inscription", "/planning", "/formations", "/elearning"],
+  Finance: ["/devis", "/comptabilite", "/financements"],
+};
+
+/** Ordre des groupes secondaires (launcher « Plus »). */
+export const SECONDARY_ORDER = [
+  "Pilotage",
+  "Marketing & communication",
+  "Pédagogie & ressources",
+  "Documents",
+  "Conformité & bilan",
+  "Aide",
+] as const;
+
+/** Items (par href) de chaque groupe secondaire. */
+export const SECONDARY: Record<(typeof SECONDARY_ORDER)[number], string[]> = {
+  Pilotage: ["/scoring", "/validations", "/rapports", "/notifications"],
+  "Marketing & communication": ["/portail-client", "/communication", "/sms", "/ia", "/site-vitrine"],
+  "Pédagogie & ressources": ["/diplomes", "/jurys", "/salles", "/formateurs", "/clients-pro"],
+  Documents: ["/signatures", "/automatisations"],
+  "Conformité & bilan": ["/qualiopi", "/bpf", "/rgpd", "/tresorerie"],
+  Aide: ["/support"],
+};
+
+// Index inversé href → placement (pilier/secondaire + ordre), construit une fois.
+type Placement = { kind: "pillar" | "secondary"; group: string; order: number };
+const PLACEMENT: Record<string, Placement> = (() => {
+  const map: Record<string, Placement> = {};
+  for (const group of PILLAR_ORDER) {
+    PILLARS[group].forEach((href, order) => (map[href] = { kind: "pillar", group, order }));
+  }
+  for (const group of SECONDARY_ORDER) {
+    SECONDARY[group].forEach((href, order) => (map[href] = { kind: "secondary", group, order }));
+  }
+  return map;
+})();
+
+export type RailGroup = { name: string; items: NavItem[] };
+export type Rail = {
+  /** Liens directs, hors pilier (Tableau de bord ; espaces apprenant/formateur). */
+  standalone: NavItem[];
+  /** Piliers quotidiens (Commercial / Formation / Finance), non vides, ordonnés. */
+  pillars: RailGroup[];
+  /** Groupes secondaires du launcher « Plus », non vides, ordonnés. */
+  secondary: RailGroup[];
+};
+
+/**
+ * Construit le rail épuré : piliers quotidiens + groupes secondaires (launcher),
+ * en respectant rôle / permissions / fonctionnalités. Tout item visible non
+ * explicitement rangé retombe en `standalone` (jamais perdu) — d'où le rail à
+ * plat des espaces apprenant/formateur.
+ */
+export function buildRail(
+  role: Role,
+  permissions: string[],
+  fonctionnalites: string[] = [],
+): Rail {
+  const items = visibleNavItems(role, permissions, fonctionnalites);
+  const standalone: NavItem[] = [];
+  const pillarMap = new Map<string, NavItem[]>();
+  const secondaryMap = new Map<string, NavItem[]>();
+
+  for (const it of items) {
+    const p = PLACEMENT[it.href];
+    if (!p) {
+      standalone.push(it);
+      continue;
+    }
+    const target = p.kind === "pillar" ? pillarMap : secondaryMap;
+    const arr = target.get(p.group) ?? [];
+    arr.push(it);
+    target.set(p.group, arr);
+  }
+
+  const ordered = (arr: NavItem[]) =>
+    arr
+      .slice()
+      .sort((a, b) => (PLACEMENT[a.href]?.order ?? 0) - (PLACEMENT[b.href]?.order ?? 0));
+
+  const pillars = PILLAR_ORDER.filter((g) => pillarMap.has(g)).map((g) => ({
+    name: g,
+    items: ordered(pillarMap.get(g)!),
+  }));
+  const secondary = SECONDARY_ORDER.filter((g) => secondaryMap.has(g)).map((g) => ({
+    name: g,
+    items: ordered(secondaryMap.get(g)!),
+  }));
+
+  return { standalone, pillars, secondary };
+}
+
 export const roleLabels: Record<Role, string> = {
   SUPERADMIN: "Super-administrateur (éditeur)",
   ADMIN: "Administrateur",

@@ -77,6 +77,18 @@ export function CommandPalette() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [open, search, filtered, selectedIndex, router]);
 
+  // Ouverture au CLIC (ex. bouton « Rechercher… » du rail) via un événement
+  // global — complète le raccourci ⌘K pour la découvrabilité.
+  useEffect(() => {
+    const openPalette = () => {
+      setOpen(true);
+      setSearch("");
+      setSelectedIndex(0);
+    };
+    window.addEventListener("ofm:command-palette", openPalette);
+    return () => window.removeEventListener("ofm:command-palette", openPalette);
+  }, []);
+
   // Clamp selectedIndex quand filtered change (ex: recherche affinée)
   useEffect(() => {
     setSelectedIndex((prev) => Math.min(prev, Math.max(0, filtered.length - 1)));
