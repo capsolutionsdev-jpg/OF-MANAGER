@@ -95,6 +95,12 @@ const ACTIONS_ALLOWLIST = new Set([
   "emargement-signature-actions.ts",
   "apprenant-actions.ts",
   "manual-send-actions.ts",
+  // Flux PUBLIC « mot de passe oublié » (pas de session → pas de getTenantDb).
+  // User = entité GLOBALE (e-mail unique cross-tenant) : recherche par e-mail
+  // (étape 1) ou par empreinte de jeton `resetTokenHash` (étape 2), puis mutation
+  // self-scopée (where { id }). Aucune requête large tenant → pas de fuite possible.
+  // Même motif que entreprise-account-actions.
+  "password-reset-actions.ts",
   // Compte client B2B (rôle ENTREPRISE) : même motif que apprenant-actions —
   // lit l'Entreprise via getTenantDb() (findFirst { id, organismeId }) AVANT toute
   // écriture, puis crée/lie le User via le client brut (entité GLOBALE, unicité
@@ -270,6 +276,10 @@ const APP_RAW_GRANDFATHER = new Set([
   "contrat-formateur/[token]/page.tsx",
   "contrat-prestation/[token]/page.tsx",
   "definir-mot-de-passe/[token]/page.tsx",
+  // Page publique de réinitialisation : lit UNIQUEMENT le User par empreinte de
+  // jeton (`resetTokenHash` unique, entité d'auth GLOBALE) pour valider le lien.
+  // Même motif que definir-mot-de-passe/[token].
+  "reinitialisation/[token]/page.tsx",
   "devis-accept/[token]/page.tsx",
   "emarger/[token]/page.tsx",
   "emarger/salle/[sessionId]/[token]/page.tsx",

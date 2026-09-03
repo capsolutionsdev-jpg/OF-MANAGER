@@ -609,6 +609,12 @@ model User {
   totpEnabled  Boolean  @default(false)
   inviteToken       String?   @unique
   inviteTokenExpiry DateTime?
+  // « Mot de passe oublié » : on stocke l'EMPREINTE SHA-256 du jeton (jamais le
+  // jeton en clair) + une expiration courte (60 min). Les deux champs sont
+  // effacés dès la réinitialisation (usage unique). Une fuite de base ne permet
+  // donc pas de forger un lien de réinitialisation valide.
+  resetTokenHash    String?   @unique
+  resetTokenExpiry  DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
