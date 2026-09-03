@@ -50,7 +50,7 @@ export default async function ContratPrestationPublicPage({
         <p className="text-sm font-semibold text-primary">{prestataire.raisonSociale || prestataire.nom}</p>
         <h1 className="mt-1 text-2xl font-bold tracking-tight">Contrat de prestation</h1>
         <p className="text-sm text-muted-foreground">
-          Abonnement OF Manager · Réf. {contrat.reference}
+          Abonnement OFManager · Réf. {contrat.reference}
         </p>
       </div>
 

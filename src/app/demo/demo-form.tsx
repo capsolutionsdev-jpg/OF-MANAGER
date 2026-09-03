@@ -46,7 +46,7 @@ export function DemoForm() {
         </div>
         <div className="space-y-1.5">
           <label htmlFor="telephone" className="text-sm font-medium text-[#0D1B3E]">Téléphone</label>
-          <input id="telephone" name="telephone" className="h-11 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-[#3B6EF5] focus:ring-2 focus:ring-[#3B6EF5]/20" placeholder="06 12 34 56 78" />
+          <input id="telephone" name="telephone" type="tel" inputMode="tel" className="h-11 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-[#3B6EF5] focus:ring-2 focus:ring-[#3B6EF5]/20" placeholder="06 12 34 56 78" />
         </div>
       </div>
 

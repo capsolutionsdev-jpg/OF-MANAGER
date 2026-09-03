@@ -53,7 +53,7 @@ export function CandidatAccountForm() {
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="c-tel">Téléphone</Label>
-          <Input id="c-tel" name="telephone" placeholder="06…" />
+          <Input id="c-tel" name="telephone" type="tel" inputMode="tel" placeholder="06…" />
         </div>
         <div className="space-y-1.5 sm:col-span-2">
           <Label htmlFor="c-pwd">Mot de passe provisoire *</Label>
@@ -93,7 +93,7 @@ export function FormateurAccountForm() {
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="f-tel">Téléphone</Label>
-          <Input id="f-tel" name="telephone" placeholder="06…" />
+          <Input id="f-tel" name="telephone" type="tel" inputMode="tel" placeholder="06…" />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="f-spec">Spécialités</Label>

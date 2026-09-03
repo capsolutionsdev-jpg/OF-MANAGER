@@ -92,7 +92,7 @@ export default function NouveauClientProPage() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="contactTel">Téléphone</Label>
-              <Input id="contactTel" name="contactTel" />
+              <Input id="contactTel" name="contactTel" type="tel" inputMode="tel" />
             </div>
             <div className="space-y-1.5 sm:col-span-2">
               <Label htmlFor="contactEmail">E-mail (envoi des conventions, convocations, attestations)</Label>

@@ -4,7 +4,7 @@
  * tabulation). C'est le fichier que l'administration / l'expert-comptable
  * peuvent importer.
  *
- * ⚠️ OF Manager n'est pas un logiciel comptable : ce FEC est une « pré-compta »
+ * ⚠️ OFManager n'est pas un logiciel comptable : ce FEC est une « pré-compta »
  * fidèle aux données saisies (factures, encaissements, charges). Les numéros de
  * compte ci-dessous sont des valeurs indicatives du Plan Comptable Général ;
  * l'expert-comptable les remappe si besoin. Chaque écriture est équilibrée

@@ -62,7 +62,7 @@ export function InstallPrompt() {
       <div className="flex items-start gap-3">
         <div className="flex-1">
           <h3 className="font-semibold text-foreground mb-1">
-            Installer OF Manager
+            Installer OFManager
           </h3>
           <p className="text-sm text-muted-foreground">
             Accédez rapidement depuis votre écran d'accueil

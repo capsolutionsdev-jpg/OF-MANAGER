@@ -57,7 +57,7 @@ export async function genererFactureMensuelle(organismeId: string): Promise<Fact
 
   const lignes: LigneFacture[] = [
     {
-      libelle: `Abonnement OF Manager — ${libelleFormule} (${moisLabel})`,
+      libelle: `Abonnement OFManager — ${libelleFormule} (${moisLabel})`,
       quantite: 1,
       prixUnitaire: montantAbo,
       montantHT: montantAbo,

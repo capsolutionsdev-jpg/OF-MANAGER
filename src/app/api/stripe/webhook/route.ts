@@ -138,10 +138,10 @@ export async function POST(req: Request) {
               : "";
             await sendEmail({
               to: org.email,
-              subject: "Paiement de votre abonnement OF Manager en échec",
+              subject: "Paiement de votre abonnement OFManager en échec",
               body:
-                `Bonjour,\n\nLe paiement de votre abonnement OF Manager n'a pas abouti (tentative ${inv.attempt_count}).${prochaine}\n\n` +
-                `Merci de vérifier votre moyen de paiement (carte ou mandat SEPA) pour éviter toute interruption de service.\n\nL'équipe OF Manager`,
+                `Bonjour,\n\nLe paiement de votre abonnement OFManager n'a pas abouti (tentative ${inv.attempt_count}).${prochaine}\n\n` +
+                `Merci de vérifier votre moyen de paiement (carte ou mandat SEPA) pour éviter toute interruption de service.\n\nL'équipe OFManager`,
             });
           }
         } catch (e) {

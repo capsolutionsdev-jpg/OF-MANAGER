@@ -9,7 +9,7 @@ export const devisLineSchema = z.object({
 export const devisFormSchema = z.object({
   entrepriseId: z.string().trim().optional(),
   clientNom: z.string().trim().optional(),
-  clientEmail: z.string().trim().optional(),
+  clientEmail: z.string().trim().email("Adresse e-mail invalide").or(z.literal("")).optional(),
   objet: z.string().trim().optional(),
   validUntil: z.string().trim().optional(),
   tva: z.coerce.number().min(0).max(100),

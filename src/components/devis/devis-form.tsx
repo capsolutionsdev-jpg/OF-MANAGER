@@ -33,7 +33,10 @@ export function DevisForm({
     const n = parseFloat(s.replace(",", "."));
     return Number.isFinite(n) ? n : 0;
   };
-  const totalHT = lignes.reduce((s, l) => s + num(l.quantite) * num(l.puHT), 0);
+  // Le total ne compte QUE les lignes réellement enregistrées (avec désignation),
+  // pour que le montant affiché corresponde au montant du devis créé.
+  const lignesValides = lignes.filter((l) => l.designation.trim());
+  const totalHT = lignesValides.reduce((s, l) => s + num(l.quantite) * num(l.puHT), 0);
   const totalTVA = totalHT * (num(tva) / 100);
   const totalTTC = totalHT + totalTVA;
   const euro = (n: number) =>
@@ -46,6 +49,28 @@ export function DevisForm({
     setLignes((ls) => (ls.length > 1 ? ls.filter((_, j) => j !== i) : ls));
 
   function submit() {
+    const email = clientEmail.trim();
+    const montantSansDesignation = lignes.some(
+      (l) => !l.designation.trim() && num(l.puHT) > 0,
+    );
+    if (!entrepriseId && !clientNom.trim()) {
+      toast.error("Indiquez l'entreprise cliente ou le nom du client.");
+      return;
+    }
+    if (lignesValides.length === 0) {
+      toast.error("Ajoutez au moins une ligne avec une désignation.");
+      return;
+    }
+    if (montantSansDesignation) {
+      toast.error(
+        "Une ligne comporte un montant sans désignation : elle ne serait pas enregistrée. Complétez la désignation ou supprimez la ligne.",
+      );
+      return;
+    }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error("Adresse e-mail du client invalide.");
+      return;
+    }
     startTransition(async () => {
       const res = await createDevis({
         entrepriseId: entrepriseId || undefined,
@@ -54,9 +79,11 @@ export function DevisForm({
         objet,
         validUntil,
         tva: num(tva),
-        lignes: lignes
-          .filter((l) => l.designation.trim())
-          .map((l) => ({ designation: l.designation.trim(), quantite: num(l.quantite), puHT: num(l.puHT) })),
+        lignes: lignesValides.map((l) => ({
+          designation: l.designation.trim(),
+          quantite: num(l.quantite),
+          puHT: num(l.puHT),
+        })),
       });
       if (res.ok) {
         toast.success("Devis créé.");

@@ -60,7 +60,7 @@ export function ManualLeadForm() {
         </div>
         <div className="grid gap-1.5">
           <Label htmlFor="telephone">Téléphone</Label>
-          <Input id="telephone" name="telephone" />
+          <Input id="telephone" name="telephone" type="tel" inputMode="tel" />
         </div>
         <div className="grid gap-1.5">
           <Label htmlFor="canal">Canal d&apos;acquisition</Label>
