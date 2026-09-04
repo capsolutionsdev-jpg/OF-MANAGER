@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { ArrowLeft, Building2 } from "lucide-react";
 import { auth } from "@/auth";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -91,7 +92,7 @@ export default async function CompteClientProPage() {
         </Card>
 
         <div className="flex gap-2">
-          <Button type="submit">Créer le client pro</Button>
+          <SubmitButton pendingLabel="Création…">Créer le client pro</SubmitButton>
           <Button variant="outline" render={<Link href="/clients-pro" />}>Voir les clients pro</Button>
         </div>
       </form>
