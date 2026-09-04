@@ -20,6 +20,7 @@ import {
 } from "@/lib/actions/client-pro-actions";
 import { ConventionDialog } from "@/components/conventions/convention-dialog";
 import { CreateAccessButton } from "@/components/clients-pro/create-access-button";
+import { SavedToast } from "@/components/saved-toast";
 import { DepositFactureForm } from "@/components/clients-pro/deposit-facture-form";
 import { ConventionRowActions } from "@/components/clients-pro/convention-row-actions";
 import { ConventionDocumentsPanel } from "@/components/clients-pro/convention-documents-panel";
@@ -91,6 +92,7 @@ export default async function ClientProPage({
 
   return (
     <div className="space-y-6">
+      <SavedToast message="Client mis à jour." />
       {/* En-tête */}
       <div>
         <Link
