@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import Link from "next/link";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import {
   AlertTriangle,
   CarTaxiFront,
@@ -85,6 +86,7 @@ function AlerteBanner({ alerte }: { alerte: T3PAlerte }) {
 
 function EpreuveRow({ epreuve }: { epreuve: T3PEpreuveLike }) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [isPending, startTransition] = useTransition();
   const [convoc, setConvoc] = useState(toInput(epreuve.convocationRecueLe));
   const [date, setDate] = useState(toInput(epreuve.date));
@@ -110,8 +112,14 @@ function EpreuveRow({ epreuve }: { epreuve: T3PEpreuveLike }) {
     });
   }
 
-  function remove() {
-    if (!window.confirm("Supprimer cette présentation (saisie par erreur) ?")) return;
+  async function remove() {
+    const ok = await confirm({
+      title: "Supprimer cette présentation ?",
+      description: "Épreuve saisie par erreur — cette suppression est définitive.",
+      confirmLabel: "Supprimer",
+      destructive: true,
+    });
+    if (!ok) return;
     startTransition(async () => {
       const res = await supprimerEpreuveT3P(epreuve.id);
       if (!res.ok) {
@@ -163,7 +171,7 @@ function EpreuveRow({ epreuve }: { epreuve: T3PEpreuveLike }) {
         <Button size="sm" onClick={save} disabled={isPending}>
           Enregistrer
         </Button>
-        <Button size="sm" variant="ghost" onClick={remove} disabled={isPending} aria-label="Supprimer">
+        <Button size="sm" variant="ghost" onClick={() => void remove()} disabled={isPending} aria-label="Supprimer">
           <Trash2 className="h-4 w-4" />
         </Button>
       </div>
