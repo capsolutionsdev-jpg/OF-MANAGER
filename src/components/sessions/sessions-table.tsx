@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Search,
   ArrowUpDown,
@@ -72,18 +73,44 @@ const selectCx =
 const headCx = "sticky top-0 z-10 bg-background";
 
 export function SessionsTable({ rows }: { rows: SessionRow[] }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
   const [etat, setEtat] = useState<SessionEtat>(() => {
+    const u = searchParams.get("etat") as SessionEtat | null;
+    if (u && ETATS.some((e) => e.key === u)) return u;
     for (const e of ETATS) if (rows.some((r) => r.etat === e.key)) return e.key;
     return "AVENIR";
   });
-  const [q, setQ] = useState("");
-  const [academy, setAcademy] = useState("");
-  const [statut, setStatut] = useState<SessionStatut | "">("");
-  const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" }>({
-    key: "dateDebut",
-    dir: "asc",
+  const [q, setQ] = useState(() => searchParams.get("q") ?? "");
+  const [academy, setAcademy] = useState(() => searchParams.get("academy") ?? "");
+  const [statut, setStatut] = useState<SessionStatut | "">(
+    () => (searchParams.get("statut") as SessionStatut) ?? "",
+  );
+  const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" }>(() => {
+    const raw = searchParams.get("sort");
+    if (raw) {
+      const [key, dir] = raw.split(".");
+      if (key) return { key: key as SortKey, dir: dir === "desc" ? "desc" : "asc" };
+    }
+    return { key: "dateDebut", dir: "asc" };
   });
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useState(() => Number(searchParams.get("page")) || 0);
+
+  // Persistance des filtres dans l'URL : le retour navigateur et le partage de
+  // lien retrouvent l'état exact de la liste (A10-005).
+  useEffect(() => {
+    const p = new URLSearchParams();
+    if (etat) p.set("etat", etat);
+    if (q.trim()) p.set("q", q.trim());
+    if (academy) p.set("academy", academy);
+    if (statut) p.set("statut", statut);
+    if (sort.key !== "dateDebut" || sort.dir !== "asc") p.set("sort", `${sort.key}.${sort.dir}`);
+    if (page > 0) p.set("page", String(page));
+    const qs = p.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }, [etat, q, academy, statut, sort, page, pathname, router]);
 
   // Académies réellement présentes (pour le filtre), ordonnées par domaine.
   const academies = useMemo(() => {
