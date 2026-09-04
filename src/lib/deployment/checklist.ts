@@ -181,7 +181,7 @@ export function getDeploymentReadiness(): {
  */
 export function generateDeploymentNotification(version: string): string {
   const lines = [
-    "# OF Manager — Mise à jour majeure",
+    "# OFManager — Mise à jour majeure",
     "",
     `**Version**: ${version}`,
     `**Date**: ${new Date().toLocaleDateString("fr-FR", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}`,

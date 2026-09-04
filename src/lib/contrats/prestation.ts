@@ -10,7 +10,7 @@ import {
 } from "@/lib/options";
 
 // =============================================================
-//  CONTRAT DE PRESTATION éditeur ↔ OF client (abonnement OF Manager)
+//  CONTRAT DE PRESTATION éditeur ↔ OF client (abonnement OFManager)
 //  Helpers PURS + gabarit HTML (→ PDF via lib/pdf.ts, + aperçu page de signature).
 //  Aucune dépendance serveur : importable partout (imports plans/options = purs).
 // =============================================================
@@ -214,7 +214,7 @@ export function contratPrestationHtml(opts: {
   <div class="head">
     <div>
       <h1>Contrat de prestation de services</h1>
-      <p class="muted" style="margin:0">Abonnement à la plateforme OF Manager</p>
+      <p class="muted" style="margin:0">Abonnement à la plateforme OFManager</p>
     </div>
     <div class="ref">
       Réf. <b>${esc(contrat.reference)}</b><br>
@@ -228,7 +228,7 @@ export function contratPrestationHtml(opts: {
   </div>
 
   <h2>Article 1 — Objet</h2>
-  <p style="margin:0">Le Prestataire met à la disposition du Client, sous forme d'abonnement (logiciel en tant que service), la plateforme de gestion pour organismes de formation <b>OF Manager</b>, selon la formule, les options et les packs définis ci-après.</p>
+  <p style="margin:0">Le Prestataire met à la disposition du Client, sous forme d'abonnement (logiciel en tant que service), la plateforme de gestion pour organismes de formation <b>OFManager</b>, selon la formule, les options et les packs définis ci-après.</p>
 
   <h2>Article 2 — Formule &amp; conditions financières</h2>
   <table>

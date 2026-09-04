@@ -240,7 +240,7 @@ export function SessionsTable({ rows }: { rows: SessionRow[] }) {
           <TableHeader>
             <TableRow>
               <SortHead label="Formation" sortKey="formation" sort={sort} onToggle={toggleSort} />
-              <SortHead label="Académie" sortKey="academy" sort={sort} onToggle={toggleSort} className="hidden sm:table-cell" />
+              <SortHead label="Domaine" sortKey="academy" sort={sort} onToggle={toggleSort} className="hidden sm:table-cell" />
               <SortHead label="Dates" sortKey="dateDebut" sort={sort} onToggle={toggleSort} />
               <TableHead className={cn(headCx, "hidden md:table-cell")}>Formateur(s)</TableHead>
               <TableHead className={cn(headCx, "hidden lg:table-cell")}>Lieu</TableHead>

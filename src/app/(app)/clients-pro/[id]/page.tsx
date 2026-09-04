@@ -360,7 +360,7 @@ export default async function ClientProPage({
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="contactTel">Téléphone</Label>
-                <Input id="contactTel" name="contactTel" defaultValue={client.contactTel ?? ""} />
+                <Input id="contactTel" name="contactTel" type="tel" inputMode="tel" defaultValue={client.contactTel ?? ""} />
               </div>
               <div className="space-y-1.5 sm:col-span-2">
                 <Label htmlFor="contactEmail">E-mail (documents)</Label>

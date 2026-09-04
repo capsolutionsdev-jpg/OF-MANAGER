@@ -26,7 +26,7 @@ export function FormateurTabs({
   ] as const;
 
   return (
-    <div className="flex items-center gap-1 border-b">
+    <div className="flex items-center gap-1 overflow-x-auto border-b">
       {tabs.map((t) => {
         const isActive = t.key === active;
         const Icon = t.icon;
@@ -34,7 +34,7 @@ export function FormateurTabs({
           <Link
             key={t.key}
             href={t.href}
-            className={`-mb-px inline-flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors ${
+            className={`-mb-px inline-flex shrink-0 items-center gap-2 whitespace-nowrap border-b-2 px-4 py-2.5 text-sm font-medium transition-colors ${
               isActive
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"

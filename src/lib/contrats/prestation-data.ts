@@ -11,7 +11,7 @@ import type {
 
 /**
  * Identité du PRESTATAIRE (l'éditeur) = l'organisme désigné par
- * `VITRINE_ORGANISME_ID` (CAP Compétences, qui édite OF Manager). Repli générique
+ * `VITRINE_ORGANISME_ID` (CAP Compétences, qui édite OFManager). Repli générique
  * si l'env n'est pas posée. cf. [[projet_vitrine_console_integration]].
  */
 export async function getPrestataire(): Promise<PrestataireIdentite> {
@@ -25,7 +25,7 @@ export async function getPrestataire(): Promise<PrestataireIdentite> {
         },
       })
     : null;
-  if (!org) return { nom: "OF Manager" };
+  if (!org) return { nom: "OFManager" };
   return {
     nom: org.nom,
     raisonSociale: org.raisonSociale,

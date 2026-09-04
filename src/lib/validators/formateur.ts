@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { Academy } from "@prisma/client";
+import { siretOptionalSchema } from "@/lib/validators/siret";
 
 const optionalText = z.string().trim().optional().or(z.literal(""));
 
@@ -11,7 +12,7 @@ export const formateurFormSchema = z.object({
   specialites: optionalText,
   experienceAnnees: optionalText,
   adresse: optionalText,
-  siret: optionalText,
+  siret: siretOptionalSchema,
   tarifJournalier: optionalText,
   // Interne (salarié, pas de contrat) ou externe (sous-traitant à contractualiser).
   typeContrat: z.enum(["INTERNE", "EXTERNE"]).optional(),

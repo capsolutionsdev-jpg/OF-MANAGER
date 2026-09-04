@@ -36,8 +36,8 @@ export default async function FacturesPage() {
           hint="Vos factures seront déposées ici par votre organisme et téléchargeables en un clic."
         />
       ) : (
-        <div className="overflow-hidden rounded-xl border">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto rounded-xl border">
+          <table className="w-full min-w-[34rem] text-sm">
             <thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
                 <th className="px-4 py-2 font-medium">Référence</th>

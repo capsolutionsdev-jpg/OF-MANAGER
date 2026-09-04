@@ -110,7 +110,7 @@ function AddForm({ onDone }: { onDone: () => void }) {
           </div>
           <div>
             <label className={labelCls} htmlFor="l-tel">Téléphone</label>
-            <Input id="l-tel" name="telephone" className={field} />
+            <Input id="l-tel" name="telephone" type="tel" inputMode="tel" className={field} />
           </div>
           <div>
             <label className={labelCls} htmlFor="l-site">Site web</label>

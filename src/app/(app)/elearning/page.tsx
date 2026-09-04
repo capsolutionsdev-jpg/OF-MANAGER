@@ -30,7 +30,7 @@ export default async function ElearningPage() {
             <GraduationCap className="h-6 w-6" /> E-learning
           </h1>
           <p className="text-sm text-muted-foreground">
-            Créez et organisez vos cours en ligne par academy et par formation.
+            Créez et organisez vos cours en ligne par domaine et par formation.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

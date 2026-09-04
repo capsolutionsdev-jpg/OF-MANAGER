@@ -17,7 +17,7 @@ export async function getEmetteur(): Promise<PartieFacture> {
         },
       })
     : null;
-  if (!org) return { nom: "OF Manager" };
+  if (!org) return { nom: "OFManager" };
   return {
     nom: org.nom,
     raisonSociale: org.raisonSociale,

@@ -120,11 +120,11 @@ export async function sendContratPrestation(id: string): Promise<ContratPrestati
     try {
       await sendEmail({
         to,
-        subject: `Votre contrat OF Manager à signer — ${contrat.reference}`,
+        subject: `Votre contrat OFManager à signer — ${contrat.reference}`,
         html:
           `<div style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#1e293b;font-size:15px;line-height:1.6">` +
           `<p>Bonjour,</p>` +
-          `<p>Votre contrat d'abonnement à <b>OF Manager</b> (réf. ${contrat.reference}) est prêt à être signé en ligne.</p>` +
+          `<p>Votre contrat d'abonnement à <b>OFManager</b> (réf. ${contrat.reference}) est prêt à être signé en ligne.</p>` +
           `<p><a href="${link}" style="display:inline-block;background:#2C53C0;color:#fff;text-decoration:none;padding:10px 18px;border-radius:8px;font-weight:600">Consulter et signer mon contrat →</a></p>` +
           `<p style="color:#64748b;font-size:13px">Signature électronique simple (tracé manuscrit horodaté, adresse IP enregistrée).</p>` +
           `</div>`,

@@ -14,7 +14,7 @@ import { PDFDocument, AFRelationship, PDFName } from "pdf-lib";
 //  transmission en production ; la PDP re-valide/normalise généralement le flux.
 // =============================================================
 
-const CREATOR_TOOL = "OF Manager";
+const CREATOR_TOOL = "OFManager";
 
 /** Métadonnées XMP Factur-X : marqueurs PDF/A-3B + schéma d'extension (profil EN 16931). */
 export function facturxXmp(meta: { numero: string; dateIso: string }): string {

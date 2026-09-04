@@ -41,7 +41,15 @@ export default function NouveauClientProPage() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="siret">SIRET</Label>
-              <Input id="siret" name="siret" placeholder="14 chiffres" />
+              <Input
+                id="siret"
+                name="siret"
+                inputMode="numeric"
+                maxLength={17}
+                pattern="[0-9 ]{14,17}"
+                title="14 chiffres (les espaces sont autorisés)"
+                placeholder="14 chiffres"
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="numeroTva">N° TVA intracommunautaire</Label>
@@ -84,7 +92,7 @@ export default function NouveauClientProPage() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="contactTel">Téléphone</Label>
-              <Input id="contactTel" name="contactTel" />
+              <Input id="contactTel" name="contactTel" type="tel" inputMode="tel" />
             </div>
             <div className="space-y-1.5 sm:col-span-2">
               <Label htmlFor="contactEmail">E-mail (envoi des conventions, convocations, attestations)</Label>

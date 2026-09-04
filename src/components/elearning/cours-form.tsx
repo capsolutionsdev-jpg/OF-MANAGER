@@ -80,7 +80,7 @@ export function CoursForm({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="grid gap-2">
-          <Label htmlFor="academy">Academy *</Label>
+          <Label htmlFor="academy">Domaine *</Label>
           <select
             id="academy"
             className={sx}
@@ -105,7 +105,7 @@ export function CoursForm({
             value={v.formationId}
             onChange={(e) => set("formationId", e.target.value)}
           >
-            <option value="">— Aucune (cours libre de l&apos;academy) —</option>
+            <option value="">— Aucune (cours libre du domaine) —</option>
             {formationsAcademy.map((f) => (
               <option key={f.id} value={f.id}>
                 {f.titre}

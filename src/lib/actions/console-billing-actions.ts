@@ -38,14 +38,14 @@ export async function createSepaSetupForClient(organismeId: string): Promise<Con
 
   let interval: "month" | "year" = "month";
   let unitAmount = plan.price * 100;
-  let libelle = `OF Manager — formule ${plan.name}`;
+  let libelle = `OFManager — formule ${plan.name}`;
   if (contrat) {
     const data = contratDataFrom(contrat);
     const t = computeContratTotals(data);
     const annuel = data.engagement === "ANNUEL";
     interval = annuel ? "year" : "month";
     unitAmount = Math.round(t.recurrentMois * (annuel ? 12 : 1) * 100);
-    libelle = `OF Manager — ${data.formuleNom} (contrat ${contrat.reference})`;
+    libelle = `OFManager — ${data.formuleNom} (contrat ${contrat.reference})`;
   }
 
   // Client Stripe : réutilise s'il existe, sinon le crée et le mémorise.
