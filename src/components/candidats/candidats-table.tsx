@@ -151,7 +151,7 @@ export function CandidatsTable({
             <TableHeader>
               <TableRow>
                 <TableHead>Nom</TableHead>
-                <TableHead>Email</TableHead>
+                <TableHead>E-mail</TableHead>
                 <TableHead className="hidden md:table-cell">Téléphone</TableHead>
                 <TableHead>Formation souhaitée</TableHead>
                 <TableHead>État</TableHead>

@@ -132,6 +132,7 @@ export function FinanceRecap({ rows }: { rows: RecapRow[] }) {
             <CardTitle className="text-base">Cumul annuel</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
+            <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/40 text-left">
@@ -154,6 +155,7 @@ export function FinanceRecap({ rows }: { rows: RecapRow[] }) {
                 ))}
               </tbody>
             </table>
+            </div>
           </CardContent>
         </Card>
       )}

@@ -225,7 +225,7 @@ export function CandidatForm({
             <ErrorText msg={errors.genre?.message} />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="email">Email *</Label>
+            <Label htmlFor="email">E-mail *</Label>
             <Input id="email" type="email" {...register("email")} />
             <ErrorText msg={errors.email?.message} />
           </div>

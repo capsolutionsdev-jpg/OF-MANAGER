@@ -76,7 +76,7 @@ export function LeadsTable({ rows }: { rows: LeadRow[] }) {
           <TableHeader>
             <TableRow>
               <TableHead className={headCx}>Prospect</TableHead>
-              <TableHead className={cn(headCx, "hidden md:table-cell")}>Email</TableHead>
+              <TableHead className={cn(headCx, "hidden md:table-cell")}>E-mail</TableHead>
               <TableHead className={headCx}>Canal</TableHead>
               <TableHead className={cn(headCx, "hidden text-right sm:table-cell")}>Reçu le</TableHead>
             </TableRow>

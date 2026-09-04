@@ -48,7 +48,7 @@ export default async function FormateursPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Nom</TableHead>
-                <TableHead>Email</TableHead>
+                <TableHead>E-mail</TableHead>
                 <TableHead>Spécialités</TableHead>
                 <TableHead>Sessions</TableHead>
               </TableRow>
