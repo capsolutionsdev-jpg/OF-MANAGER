@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, Pencil, ClipboardCheck, FileText } from "lucide-react";
+import { ArrowLeft, Pencil, ClipboardCheck, FileText, Copy } from "lucide-react";
 import type { SessionStatut } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -60,6 +60,12 @@ export function SessionDetailHeader({
               <FileText className="mr-2 h-4 w-4" /> Contrat formateur
             </Button>
           )}
+          <Button
+            variant="outline"
+            render={<Link href={`/sessions/nouvelle?from=${session.id}`} />}
+          >
+            <Copy className="mr-2 h-4 w-4" /> Dupliquer
+          </Button>
           <Button
             variant="outline"
             render={<Link href={`/sessions/${session.id}/modifier`} />}
