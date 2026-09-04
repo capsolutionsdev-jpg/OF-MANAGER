@@ -105,7 +105,7 @@ export async function sendAutomationEventNow(inscriptionId: string, event: Manua
         emailParagraph(`👉 Merci de vous présenter muni(e) d'une <b>pièce d'identité</b> en cours de validité.`) +
         emailSignoff("Cordialement,", org.representant),
     });
-    const sent = await logAndSend({ organismeId, to, subject: `Votre convocation — ${f.titre} 📅`, html, sessionId: s.id });
+    const sent = await logAndSend({ organismeId, to, subject: `Votre convocation — ${f.titre}`, html, sessionId: s.id });
     await prisma.inscription.update({ where: { id: i.id }, data: { convocationSentAt: new Date() } });
     return sent ? { ok: true } : { ok: false, error: "E-mail non envoyé (config e-mail ?)." };
   }
@@ -123,7 +123,7 @@ export async function sendAutomationEventNow(inscriptionId: string, event: Manua
         emailSignoff("Bonne formation,", org.representant),
     });
     const sent = await logAndSend({
-      organismeId, to, subject: `✅ Votre attestation d'entrée — ${f.titre}`, html, sessionId: s.id,
+      organismeId, to, subject: `Votre attestation d'entrée — ${f.titre}`, html, sessionId: s.id,
       attachments: pdf ? [{ name: "Attestation-entree.pdf", content: toBase64(pdf.data) }] : undefined,
     });
     await prisma.inscription.update({ where: { id: i.id }, data: { attestationEntreeSentAt: new Date() } });
@@ -150,7 +150,7 @@ export async function sendAutomationEventNow(inscriptionId: string, event: Manua
         emailSignoff("Encore bravo,", org.representant),
     });
     const sent = await logAndSend({
-      organismeId, to, subject: `🎓 Votre attestation de fin de formation — ${f.titre}`, html, sessionId: s.id,
+      organismeId, to, subject: `Votre attestation de fin de formation — ${f.titre}`, html, sessionId: s.id,
       attachments: pdf ? [{ name: "Attestation-fin.pdf", content: toBase64(pdf.data) }] : undefined,
     });
     await prisma.inscription.update({ where: { id: i.id }, data: { docsFinSentAt: new Date() } });
@@ -238,7 +238,7 @@ export async function sendAttestationRecyclage(inscriptionId: string): Promise<R
   const sent = await logAndSend({
     organismeId,
     to,
-    subject: `Votre attestation de recyclage — ${f.titre} ✅`,
+    subject: `Votre attestation de recyclage — ${f.titre}`,
     html,
     sessionId: i.session.id,
     attachments: pdf ? [{ name: "Attestation-recyclage.pdf", content: toBase64(pdf.data) }] : undefined,

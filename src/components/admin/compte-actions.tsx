@@ -4,6 +4,7 @@ import { useTransition } from "react";
 import { Power, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { toggleCompteActif, supprimerCompte, type CompteType } from "@/lib/actions/comptes-actions";
 
 /** Boutons de gestion d'un compte : suspendre / réactiver (si compte d'accès) + supprimer. */
@@ -19,6 +20,7 @@ export function CompteActions({
   hasLogin: boolean;
 }) {
   const [pending, start] = useTransition();
+  const confirm = useConfirm();
 
   function toggle() {
     start(async () => {
@@ -28,8 +30,14 @@ export function CompteActions({
     });
   }
 
-  function supprimer() {
-    if (!window.confirm("Supprimer définitivement ce compte ? Cette action est irréversible.")) return;
+  async function supprimer() {
+    const ok = await confirm({
+      title: "Supprimer définitivement ce compte ?",
+      description: "Cette action est irréversible.",
+      confirmLabel: "Supprimer le compte",
+      destructive: true,
+    });
+    if (!ok) return;
     start(async () => {
       const res = await supprimerCompte(type, id);
       if (!res.ok) toast.error(res.error ?? "Échec.");
@@ -55,7 +63,7 @@ export function CompteActions({
       )}
       <button
         type="button"
-        onClick={supprimer}
+        onClick={() => void supprimer()}
         disabled={pending}
         className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium text-rose-600 hover:bg-rose-50 disabled:opacity-60 dark:hover:bg-rose-950/30"
       >

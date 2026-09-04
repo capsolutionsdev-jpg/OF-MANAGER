@@ -5,6 +5,7 @@ import { FileText, FileCode2, FileCheck2, Send, Trash2, Plus, AlertTriangle, Loa
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { Badge } from "@/components/ui/badge";
 import { TONE_CLASSES } from "@/components/ui/status-badge";
 import { euros } from "@/lib/plans";
@@ -99,6 +100,7 @@ export function FacturesEditeurCard({
 
 function FactureRow({ organismeId, f }: { organismeId: string; f: FactureEditeurRow }) {
   const [pending, start] = useTransition();
+  const confirm = useConfirm();
   const brouillon = f.statut === "BROUILLON";
 
   function emettre() {
@@ -119,8 +121,14 @@ function FactureRow({ organismeId, f }: { organismeId: string; f: FactureEditeur
       toast[res.ok ? "success" : "error"](res.ok ? "Facture transmise à la PDP." : res.error ?? "Échec.");
     });
   }
-  function supprimer() {
-    if (!window.confirm("Supprimer ce brouillon de facture ?")) return;
+  async function supprimer() {
+    const ok = await confirm({
+      title: "Supprimer ce brouillon de facture ?",
+      description: "Cette suppression est définitive.",
+      confirmLabel: "Supprimer",
+      destructive: true,
+    });
+    if (!ok) return;
     start(() => deleteFactureEditeur(f.id, organismeId));
   }
 
@@ -163,7 +171,7 @@ function FactureRow({ organismeId, f }: { organismeId: string; f: FactureEditeur
             <Button size="sm" variant="outline" onClick={emettre} disabled={pending}>
               <Send className="mr-1 h-3.5 w-3.5" /> Émettre
             </Button>
-            <Button size="sm" variant="ghost" onClick={supprimer} disabled={pending} className="text-destructive hover:text-destructive/80">
+            <Button size="sm" variant="ghost" onClick={() => void supprimer()} disabled={pending} className="text-destructive hover:text-destructive/80">
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
           </>

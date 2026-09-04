@@ -9,6 +9,7 @@ import {
   type CandidatFormValues,
 } from "@/lib/validators/candidat";
 import { createInscription } from "@/lib/actions/inscription-actions";
+import { toActionError } from "@/lib/action-result";
 
 export type ActionResult =
   | { ok: true; id: string; inscriptionId?: string; warning?: string }
@@ -135,48 +136,55 @@ export async function createCandidat(
   const parsed = candidatFormSchema.safeParse(values);
   if (!parsed.success) return { ok: false, error: "Données invalides." };
 
-  const candidat = await db.candidat.create({
-    data: { ...toData(parsed.data), createdById: session.user.id },
-  });
+  // A10-007 : toute erreur INATTENDUE (Neon en pause, réseau…) est convertie en
+  // résultat {ok:false} plutôt que levée — le formulaire affiche un toast et
+  // CONSERVE la saisie, au lieu de l'écran d'erreur qui la perdrait.
+  try {
+    const candidat = await db.candidat.create({
+      data: { ...toData(parsed.data), createdById: session.user.id },
+    });
 
-  await db.auditLog.create({
-    data: {
-      userId: session.user.id,
-      action: "CREATE",
-      entityType: "Candidat",
-      entityId: candidat.id,
-    },
-  });
+    await db.auditLog.create({
+      data: {
+        userId: session.user.id,
+        action: "CREATE",
+        entityType: "Candidat",
+        entityId: candidat.id,
+      },
+    });
 
-  // Rattachement direct à une session choisie (#1) → crée l'inscription en
-  // EN_ATTENTE (pré-rattachement, sans déclencher le parcours/e-mails). Best-effort :
-  // un échec (déjà inscrit, session pleine…) ne doit pas faire échouer la création.
-  let inscriptionId: string | undefined;
-  let warning: string | undefined;
-  const sessionId = parsed.data.sessionId?.trim();
-  if (sessionId && parsed.data.formationSouhaiteeId) {
-    try {
-      const insc = await createInscription({
-        candidatId: candidat.id,
-        sessionId,
-        financementType: parsed.data.financementType ?? "",
-        statut: InscriptionStatut.EN_ATTENTE,
-        montant: "",
-      });
-      // Id de l'inscription créée → permet au formulaire de proposer la signature
-      // « sur place » immédiatement après la création (point d'entrée inscription).
-      // On remonte aussi l'avertissement éventuel (ex. session complète).
-      if (insc.ok) {
-        inscriptionId = insc.inscriptionId;
-        warning = insc.warning;
+    // Rattachement direct à une session choisie (#1) → crée l'inscription en
+    // EN_ATTENTE (pré-rattachement, sans déclencher le parcours/e-mails). Best-effort :
+    // un échec (déjà inscrit, session pleine…) ne doit pas faire échouer la création.
+    let inscriptionId: string | undefined;
+    let warning: string | undefined;
+    const sessionId = parsed.data.sessionId?.trim();
+    if (sessionId && parsed.data.formationSouhaiteeId) {
+      try {
+        const insc = await createInscription({
+          candidatId: candidat.id,
+          sessionId,
+          financementType: parsed.data.financementType ?? "",
+          statut: InscriptionStatut.EN_ATTENTE,
+          montant: "",
+        });
+        // Id de l'inscription créée → permet au formulaire de proposer la signature
+        // « sur place » immédiatement après la création (point d'entrée inscription).
+        // On remonte aussi l'avertissement éventuel (ex. session complète).
+        if (insc.ok) {
+          inscriptionId = insc.inscriptionId;
+          warning = insc.warning;
+        }
+      } catch (e) {
+        console.error("[createCandidat] rattachement à la session échoué", e);
       }
-    } catch (e) {
-      console.error("[createCandidat] rattachement à la session échoué", e);
     }
-  }
 
-  revalidatePath("/candidats");
-  return { ok: true, id: candidat.id, inscriptionId, warning };
+    revalidatePath("/candidats");
+    return { ok: true, id: candidat.id, inscriptionId, warning };
+  } catch (e) {
+    return toActionError(e);
+  }
 }
 
 export async function updateCandidat(
@@ -190,23 +198,27 @@ export async function updateCandidat(
   const parsed = candidatFormSchema.safeParse(values);
   if (!parsed.success) return { ok: false, error: "Données invalides." };
 
-  await db.candidat.update({
-    where: { id },
-    data: toData(parsed.data),
-  });
+  try {
+    await db.candidat.update({
+      where: { id },
+      data: toData(parsed.data),
+    });
 
-  await db.auditLog.create({
-    data: {
-      userId: session.user.id,
-      action: "UPDATE",
-      entityType: "Candidat",
-      entityId: id,
-    },
-  });
+    await db.auditLog.create({
+      data: {
+        userId: session.user.id,
+        action: "UPDATE",
+        entityType: "Candidat",
+        entityId: id,
+      },
+    });
 
-  revalidatePath("/candidats");
-  revalidatePath(`/candidats/${id}`);
-  return { ok: true, id };
+    revalidatePath("/candidats");
+    revalidatePath(`/candidats/${id}`);
+    return { ok: true, id };
+  } catch (e) {
+    return toActionError(e);
+  }
 }
 
 export async function archiveCandidat(id: string): Promise<ActionResult> {

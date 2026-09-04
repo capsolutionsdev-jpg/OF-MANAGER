@@ -85,11 +85,16 @@ export async function setPresence(
   if (!session?.user) return { ok: false };
 
   const db = await getTenantDb();
-  await db.presence.upsert({
-    where: { seanceId_apprenantId: { seanceId, apprenantId } },
-    update: { statut },
-    create: { seanceId, apprenantId, statut },
+  // On évite upsert({ where: { seanceId_apprenantId } }) : le wrapper multi-tenant
+  // vérifie l'appartenance via findFirst, qui n'accepte pas la clé composite.
+  // Update ciblé (where scalaire), sinon création.
+  const updated = await db.presence.updateMany({
+    where: { seanceId, apprenantId },
+    data: { statut },
   });
+  if (updated.count === 0) {
+    await db.presence.create({ data: { seanceId, apprenantId, statut } });
+  }
 
   const seance = await db.seance.findUnique({
     where: { id: seanceId },
@@ -97,4 +102,63 @@ export async function setPresence(
   });
   if (seance) revalidatePath(`/sessions/${seance.sessionId}/emargement`);
   return { ok: true };
+}
+
+/**
+ * Marque TOUS les participants d'une séance « présents » en une action (A10-006).
+ * Le cas nominal (tout le monde est là) ne demande plus un clic par stagiaire ;
+ * les absents/retards se corrigent ensuite individuellement.
+ */
+export async function setAllPresent(
+  seanceId: string,
+): Promise<{ ok: boolean; count: number }> {
+  const session = await auth();
+  if (!session?.user) return { ok: false, count: 0 };
+
+  const db = await getTenantDb();
+  const seance = await db.seance.findUnique({
+    where: { id: seanceId },
+    select: {
+      sessionId: true,
+      session: {
+        select: {
+          inscriptions: {
+            where: { apprenantId: { not: null } },
+            select: { apprenantId: true },
+          },
+        },
+      },
+    },
+  });
+  if (!seance) return { ok: false, count: 0 };
+
+  const apprenantIds = seance.session.inscriptions
+    .map((i) => i.apprenantId)
+    .filter((id): id is string => !!id);
+
+  // Update en masse des présences existantes → PRESENT, puis création des
+  // manquantes. On évite l'upsert à clé composite (incompatible avec le contrôle
+  // d'appartenance du wrapper multi-tenant).
+  const existing = await db.presence.findMany({
+    where: { seanceId },
+    select: { apprenantId: true },
+  });
+  const have = new Set(existing.map((e) => e.apprenantId));
+  await db.presence.updateMany({
+    where: { seanceId },
+    data: { statut: PresenceStatut.PRESENT },
+  });
+  const missing = apprenantIds.filter((a) => !have.has(a));
+  if (missing.length > 0) {
+    await db.presence.createMany({
+      data: missing.map((apprenantId) => ({
+        seanceId,
+        apprenantId,
+        statut: PresenceStatut.PRESENT,
+      })),
+    });
+  }
+
+  revalidatePath(`/sessions/${seance.sessionId}/emargement`);
+  return { ok: true, count: apprenantIds.length };
 }

@@ -59,9 +59,19 @@ export async function majClientPro(formData: FormData) {
   await requireUser();
   const id = String(formData.get("id") ?? "");
   if (!id) return;
-  await db.entreprise.update({ where: { id }, data: champs(formData) });
-  revalidatePath(`/clients-pro/${id}`);
-  revalidatePath("/clients-pro");
+  // Retour visible après enregistrement (D11) + gestion propre des erreurs de
+  // validation (SIRET/e-mail) au lieu d'un 500 : redirection avec un drapeau lu
+  // par <SavedToast>. NB : redirect() lève en interne → hors du try/catch.
+  let error: string | null = null;
+  try {
+    await db.entreprise.update({ where: { id }, data: champs(formData) });
+    revalidatePath(`/clients-pro/${id}`);
+    revalidatePath("/clients-pro");
+  } catch (e) {
+    error = e instanceof Error ? e.message : "Enregistrement impossible.";
+  }
+  if (error) redirect(`/clients-pro/${id}?error=${encodeURIComponent(error)}`);
+  redirect(`/clients-pro/${id}?saved=1`);
 }
 
 export async function rattacherCandidat(formData: FormData) {

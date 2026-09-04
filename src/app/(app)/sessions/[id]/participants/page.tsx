@@ -89,16 +89,16 @@ export default async function SessionParticipantsPage({
               <TableHeader>
                 <TableRow>
                   <TableHead>Candidat</TableHead>
-                  <TableHead>Financement</TableHead>
-                  <TableHead>
+                  <TableHead className="hidden lg:table-cell">Financement</TableHead>
+                  <TableHead className="hidden md:table-cell">
                     <span className="inline-flex items-center gap-1">
                       <CreditCard className="h-3.5 w-3.5" /> Paiement
                     </span>
                   </TableHead>
                   <TableHead>Statut</TableHead>
-                  <TableHead>Dossier</TableHead>
-                  <TableHead>Positionnement</TableHead>
-                  <TableHead>Certification</TableHead>
+                  <TableHead className="hidden md:table-cell">Dossier</TableHead>
+                  <TableHead className="hidden xl:table-cell">Positionnement</TableHead>
+                  <TableHead className="hidden lg:table-cell">Certification</TableHead>
                   <TableHead className="text-right">Action</TableHead>
                 </TableRow>
               </TableHeader>
@@ -117,12 +117,12 @@ export default async function SessionParticipantsPage({
                         {i.candidat.prenom} {i.candidat.nom}
                       </Link>
                     </TableCell>
-                    <TableCell className="text-muted-foreground">
+                    <TableCell className="hidden text-muted-foreground lg:table-cell">
                       {i.financementType
                         ? FINANCEMENT_LABELS[i.financementType]
                         : "—"}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden md:table-cell">
                       <div className="flex flex-col items-start gap-1.5">
                         <PaiementEditor
                           key={`${i.paiementStatut}-${i.modePaiement ?? ""}`}
@@ -155,7 +155,7 @@ export default async function SessionParticipantsPage({
                         {INSCRIPTION_STATUT_LABELS[i.statut]}
                       </Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden md:table-cell">
                       {s.formation.piecesAttendues.length === 0 ? (
                         <span className="text-xs text-muted-foreground">—</span>
                       ) : manquantes.length === 0 ? (
@@ -173,7 +173,7 @@ export default async function SessionParticipantsPage({
                         </Link>
                       )}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden xl:table-cell">
                       {i.positionnementCompletedAt ? (
                         <a
                           href={`/positionnement/${i.positionnementToken}`}
@@ -193,7 +193,7 @@ export default async function SessionParticipantsPage({
                         <span className="text-xs text-muted-foreground">—</span>
                       )}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden lg:table-cell">
                       <CertificationSelect
                         inscriptionId={i.id}
                         value={i.resultatCertification}
