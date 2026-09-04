@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { FileText, FileCode2, Send, Trash2, Loader2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { Badge } from "@/components/ui/badge";
 import { TONE_CLASSES } from "@/components/ui/status-badge";
 import { cn } from "@/lib/utils";
@@ -110,6 +111,7 @@ export function FacturationConsole({
 
 function FactureRow({ f }: { f: FactureConsoleRow }) {
   const [pending, start] = useTransition();
+  const confirm = useConfirm();
   const brouillon = f.statut === "BROUILLON";
 
   const act = (fn: () => Promise<{ ok?: boolean; error?: string }>, okMsg: string) =>
@@ -144,7 +146,7 @@ function FactureRow({ f }: { f: FactureConsoleRow }) {
               <Button size="sm" variant="outline" disabled={pending} onClick={() => act(() => emettreFactureEditeur(f.id), "Facture émise (n° attribué).")}>
                 Émettre
               </Button>
-              <Button size="sm" variant="ghost" disabled={pending} className="text-destructive hover:text-destructive/80" onClick={() => { if (window.confirm("Supprimer ce brouillon ?")) start(() => deleteFactureEditeur(f.id, f.organismeId)); }}>
+              <Button size="sm" variant="ghost" disabled={pending} className="text-destructive hover:text-destructive/80" onClick={() => void (async () => { if (await confirm({ title: "Supprimer ce brouillon de facture ?", description: "Cette suppression est définitive.", confirmLabel: "Supprimer", destructive: true })) start(() => deleteFactureEditeur(f.id, f.organismeId)); })()}>
                 <Trash2 className="h-3.5 w-3.5" />
               </Button>
             </>

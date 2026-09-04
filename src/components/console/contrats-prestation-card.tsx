@@ -5,6 +5,7 @@ import { FileText, Send, Copy, Trash2, Plus, CheckCircle2, Loader2 } from "lucid
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { TONE_CLASSES } from "@/components/ui/status-badge";
@@ -141,6 +142,7 @@ export function ContratsPrestationCard({
 
 function ContratRow({ organismeId, c }: { organismeId: string; c: ContratPrestationRow }) {
   const [pending, start] = useTransition();
+  const confirm = useConfirm();
 
   function envoyer() {
     start(async () => {
@@ -150,8 +152,14 @@ function ContratRow({ organismeId, c }: { organismeId: string; c: ContratPrestat
       );
     });
   }
-  function supprimer() {
-    if (!window.confirm(`Supprimer le contrat ${c.reference} ?`)) return;
+  async function supprimer() {
+    const ok = await confirm({
+      title: `Supprimer le contrat ${c.reference} ?`,
+      description: "Cette suppression est définitive.",
+      confirmLabel: "Supprimer",
+      destructive: true,
+    });
+    if (!ok) return;
     start(() => deleteContratPrestation(c.id, organismeId));
   }
   function copierLien() {
@@ -194,7 +202,7 @@ function ContratRow({ organismeId, c }: { organismeId: string; c: ContratPrestat
           </Button>
         )}
         {c.statut !== "SIGNE" && (
-          <Button size="sm" variant="ghost" onClick={supprimer} disabled={pending} className="text-destructive hover:text-destructive/80">
+          <Button size="sm" variant="ghost" onClick={() => void supprimer()} disabled={pending} className="text-destructive hover:text-destructive/80">
             <Trash2 className="h-3.5 w-3.5" />
           </Button>
         )}

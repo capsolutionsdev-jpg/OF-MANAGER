@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Rocket, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { convertLeadToClient } from "@/lib/actions/console-actions";
 
 /**
@@ -12,14 +13,19 @@ import { convertLeadToClient } from "@/lib/actions/console-actions";
  */
 export function ConvertLeadButton({ leadId, hasDemo }: { leadId: string; hasDemo: boolean }) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [pending, start] = useTransition();
   const [err, setErr] = useState<string | null>(null);
 
-  function onClick() {
-    const msg = hasDemo
-      ? "Convertir ce prospect en client ?\n\nSa démo sera promue en compte client — ses données et son accès sont conservés."
-      : "Convertir ce prospect en client ?\n\nUne instance client pré-remplie sera créée depuis ses informations.";
-    if (!window.confirm(msg)) return;
+  async function onClick() {
+    const ok = await confirm({
+      title: "Convertir ce prospect en client ?",
+      description: hasDemo
+        ? "Sa démo sera promue en compte client — ses données et son accès sont conservés."
+        : "Une instance client pré-remplie sera créée depuis ses informations.",
+      confirmLabel: "Convertir",
+    });
+    if (!ok) return;
     setErr(null);
     start(async () => {
       const res = await convertLeadToClient(leadId);
@@ -33,7 +39,7 @@ export function ConvertLeadButton({ leadId, hasDemo }: { leadId: string; hasDemo
 
   return (
     <div className="inline-flex flex-col items-end gap-1">
-      <Button onClick={onClick} disabled={pending} size="sm">
+      <Button onClick={() => void onClick()} disabled={pending} size="sm">
         {pending ? (
           <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
         ) : (
