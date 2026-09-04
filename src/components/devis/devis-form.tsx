@@ -25,7 +25,12 @@ export function DevisForm({
   const [clientNom, setClientNom] = useState("");
   const [clientEmail, setClientEmail] = useState("");
   const [objet, setObjet] = useState("");
-  const [validUntil, setValidUntil] = useState("");
+  // Validité par défaut : 30 jours (usage courant d'un devis) — D10.
+  const [validUntil, setValidUntil] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 30);
+    return d.toISOString().slice(0, 10);
+  });
   const [tva, setTva] = useState("20");
   const [lignes, setLignes] = useState<Line[]>([{ designation: "", quantite: "1", puHT: "" }]);
 
