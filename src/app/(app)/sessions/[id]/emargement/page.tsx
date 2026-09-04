@@ -15,6 +15,7 @@ import { PresenceCell } from "@/components/emargement/presence-cell";
 import { SeanceFormateurSelect } from "@/components/sessions/seance-formateur-select";
 import { PrepareSignaturesButton } from "@/components/emargement/prepare-signatures-button";
 import { SendEmargementLinkButton } from "@/components/emargement/send-emargement-link-button";
+import { MarkAllPresentButton } from "@/components/emargement/mark-all-present-button";
 
 export default async function EmargementPage({
   params,
@@ -189,6 +190,9 @@ export default async function EmargementPage({
                     formateurId={seance.formateurId}
                     formateurs={formateurs}
                   />
+                  {participants.length > 0 && (
+                    <MarkAllPresentButton seanceId={seance.id} />
+                  )}
                   <Button
                     variant="outline"
                     size="sm"
