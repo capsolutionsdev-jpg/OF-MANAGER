@@ -2,10 +2,27 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, type LucideIcon } from "lucide-react";
+import {
+  Home,
+  Target,
+  GraduationCap,
+  Share2,
+  Wallet,
+  ShieldCheck,
+  type LucideIcon,
+} from "lucide-react";
 import type { Role } from "@prisma/client";
-import { getVisibleGroups } from "@/lib/navigation-groups";
+import { buildNav } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
+
+// Icône par groupe de la navigation réelle (lib/navigation.ts).
+const GROUP_ICON: Record<string, LucideIcon> = {
+  Commercial: Target,
+  Formation: GraduationCap,
+  Communication: Share2,
+  Finance: Wallet,
+  Qualité: ShieldCheck,
+};
 
 /**
  * Barre de navigation basse (mobile) pour les rôles « pilotage » (ADMIN /
@@ -23,11 +40,8 @@ export function MobileBottomNav({
   fonctionnalites: string[];
 }) {
   const pathname = usePathname();
-  const groups = getVisibleGroups(role, permissions, fonctionnalites);
+  const { groups } = buildNav(role, permissions, fonctionnalites);
   if (groups.length === 0) return null;
-
-  // Libellé court = ce qui précède le « & » (Formations & Catalogue → Formations).
-  const short = (label: string) => label.split(" & ")[0].trim();
 
   type Tab = { key: string; label: string; href: string; icon: LucideIcon; active: boolean };
   const tabs: Tab[] = [
@@ -39,10 +53,10 @@ export function MobileBottomNav({
       active: pathname === "/dashboard",
     },
     ...groups.slice(0, 4).map((g): Tab => ({
-      key: g.key,
-      label: short(g.label),
+      key: g.name,
+      label: g.name,
       href: g.items[0]?.href ?? "/dashboard",
-      icon: g.icon,
+      icon: GROUP_ICON[g.name] ?? Home,
       active: g.items.some((it) => pathname === it.href || pathname.startsWith(`${it.href}/`)),
     })),
   ];

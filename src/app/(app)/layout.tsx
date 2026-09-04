@@ -271,7 +271,11 @@ export default async function AppLayout({
               </form>
             </div>
           )}
-          <CommandPalette />
+          <CommandPalette
+            role={navUser.role}
+            permissions={navUser.permissions ?? []}
+            fonctionnalites={navUser.fonctionnalites ?? []}
+          />
           <main id="main-content" data-app-main className="mx-auto w-full max-w-[1400px] flex-1 p-4 pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:p-6 md:pb-6">
             <Breadcrumbs />
             <ConfirmProvider>{children}</ConfirmProvider>

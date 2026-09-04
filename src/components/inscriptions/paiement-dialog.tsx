@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { MODE_PAIEMENT_OPTIONS } from "@/lib/validators/inscription";
 import { enregistrerPaiement, supprimerPaiement } from "@/lib/actions/paiement-actions";
 
@@ -53,6 +54,7 @@ export function PaiementDialog({
   paiementStatut: PaiementStatut;
 }) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [isPending, startTransition] = useTransition();
   const [busy, setBusy] = useState<string | null>(null);
   const [m, setM] = useState("");
@@ -97,10 +99,18 @@ export function PaiementDialog({
     });
   }
 
-  function del(id: string) {
-    setBusy(id);
+  async function del(p: Reglement) {
+    const ok = await confirm({
+      title: `Supprimer le règlement de ${eur(p.montant)} ?`,
+      description:
+        "Cette suppression est définitive et recalcule le total encaissé du dossier. Cette action est irréversible.",
+      confirmLabel: "Supprimer le règlement",
+      destructive: true,
+    });
+    if (!ok) return;
+    setBusy(p.id);
     startTransition(async () => {
-      const res = await supprimerPaiement(id);
+      const res = await supprimerPaiement(p.id);
       setBusy(null);
       if (res.error) {
         toast.error(res.error);
@@ -171,7 +181,7 @@ export function PaiementDialog({
                   </a>
                   <button
                     type="button"
-                    onClick={() => del(p.id)}
+                    onClick={() => void del(p)}
                     disabled={isPending}
                     title="Supprimer ce règlement"
                     className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
