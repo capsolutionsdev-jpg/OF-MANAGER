@@ -10,7 +10,8 @@ export function PageHeader({
   children,
 }: {
   title: string;
-  subtitle?: string;
+  /** Texte simple ou fragment enrichi (ex. compteur mis en avant). */
+  subtitle?: ReactNode;
   icon?: LucideIcon;
   children?: ReactNode;
 }) {
