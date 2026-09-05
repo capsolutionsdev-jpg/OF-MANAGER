@@ -1130,6 +1130,15 @@ model Inscription {
   positionnementJson        Json? // réponses du candidat
   positionnementCompletedAt DateTime?
   positionnementSignature   String?   @db.Text // signature manuscrite (PNG data URL)
+  // ── Conformité CPF : le test de positionnement doit être RÉALISÉ avant la
+  //    création du dossier CPF (au moins J-1 ouvré). On stocke le n° + la date de
+  //    création du dossier ; la date de réalisation reste positionnementCompletedAt
+  //    (vraie date, jamais antidatée). Traçabilité d'une éventuelle dérogation (cas 3).
+  cpfDossierNumero  String?   // n° de dossier CPF / EDOF
+  cpfDossierCreeLe  DateTime? // date de création du dossier CPF
+  positionnementDerogationLe    DateTime? // dérogation accordée (test non antérieur / manquant)
+  positionnementDerogationPar   String?   // userId du collaborateur ayant dérogé
+  positionnementDerogationMotif String?   @db.Text // motif de la dérogation
   francaisToken       String?   @unique // lien test de français (J1)
   francaisSentAt      DateTime?
   francaisJson        Json? // réponses au test de français

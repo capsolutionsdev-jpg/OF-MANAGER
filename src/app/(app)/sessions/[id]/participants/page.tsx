@@ -28,6 +28,7 @@ import { InscriptionActionsMenu } from "@/components/inscriptions/inscription-ac
 import { PaiementEditor } from "@/components/inscriptions/paiement-editor";
 import { PaiementDialog } from "@/components/inscriptions/paiement-dialog";
 import { CertificationSelect } from "@/components/inscriptions/certification-select";
+import { DossierCpfDialog } from "@/components/inscriptions/dossier-cpf-dialog";
 import { userCanAccessSection } from "@/lib/section-guard";
 
 const STATUT_BADGE_CLS: Record<string, string> = {
@@ -174,24 +175,45 @@ export default async function SessionParticipantsPage({
                       )}
                     </TableCell>
                     <TableCell className="hidden xl:table-cell">
-                      {i.positionnementCompletedAt ? (
-                        <a
-                          href={`/positionnement/${i.positionnementToken}`}
-                          target="_blank"
-                          rel="noopener"
-                          title="Voir les réponses signées"
-                        >
-                          <Badge variant="success">
-                            Répondu
+                      <div className="flex flex-col items-start gap-1">
+                        {i.positionnementCompletedAt ? (
+                          <a
+                            href={`/positionnement/${i.positionnementToken}`}
+                            target="_blank"
+                            rel="noopener"
+                            title="Voir les réponses signées"
+                          >
+                            <Badge variant="success">
+                              Répondu
+                            </Badge>
+                          </a>
+                        ) : i.positionnementSentAt ? (
+                          <Badge variant="warning">
+                            Envoyé
                           </Badge>
-                        </a>
-                      ) : i.positionnementSentAt ? (
-                        <Badge variant="warning">
-                          Envoyé
-                        </Badge>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">—</span>
-                      )}
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
+                        {i.financementType === "CPF" && (
+                          <DossierCpfDialog
+                            inscriptionId={i.id}
+                            positionnementCompletedAt={
+                              i.positionnementCompletedAt
+                                ? i.positionnementCompletedAt.toISOString()
+                                : null
+                            }
+                            cpfDossierNumero={i.cpfDossierNumero}
+                            cpfDossierCreeLe={
+                              i.cpfDossierCreeLe ? i.cpfDossierCreeLe.toISOString() : null
+                            }
+                            derogationLe={
+                              i.positionnementDerogationLe
+                                ? i.positionnementDerogationLe.toISOString()
+                                : null
+                            }
+                          />
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="hidden lg:table-cell">
                       <CertificationSelect

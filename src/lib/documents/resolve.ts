@@ -177,5 +177,16 @@ export function buildVariables(
     ssiap_date: d(c.ssiapDiplomeDate),
     // Divers
     date_jour: new Date().toLocaleDateString("fr-FR"),
+    // Date de RÉALISATION du test de positionnement (conformité CPF : preuve que
+    // le test a été fait avant l'inscription). On affiche la VRAIE date de
+    // complétion (positionnementCompletedAt) quand le test a été réalisé (en ligne
+    // ou saisi sur place) ; repli sur la date d'inscription/du jour quand le
+    // formulaire est imprimé VIERGE (pas encore réalisé). Jamais antidatée.
+    date_positionnement:
+      d(i.positionnementCompletedAt) ||
+      d(i.createdAt) ||
+      new Date().toLocaleDateString("fr-FR"),
+    // Date de réalisation seule (vide si le test n'a pas encore été fait).
+    date_realisation_positionnement: d(i.positionnementCompletedAt),
   };
 }
