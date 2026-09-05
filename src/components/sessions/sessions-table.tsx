@@ -10,10 +10,15 @@ import {
   ArrowDown,
   ChevronLeft,
   ChevronRight,
+  Clock,
+  PlayCircle,
+  CheckCircle2,
+  Archive,
+  PackageOpen,
+  type LucideIcon,
 } from "lucide-react";
 import type { Modalite, SessionStatut } from "@prisma/client";
 import { Badge } from "@/components/ui/badge";
-import { TONE_CLASSES } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -24,7 +29,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MODALITE_LABELS } from "@/lib/validators/formation";
 import { SESSION_STATUT_LABELS } from "@/lib/validators/session";
 import { cn } from "@/lib/utils";
@@ -51,11 +55,11 @@ export type SessionRow = {
 type SortKey = "formation" | "academy" | "dateDebut" | "places" | "statut";
 const TEXT_KEYS: SortKey[] = ["formation", "academy", "statut"];
 
-const ETATS: { key: SessionEtat; label: string; badge: string }[] = [
-  { key: "AVENIR", label: "À venir", badge: TONE_CLASSES.info },
-  { key: "ENCOURS", label: "En cours", badge: TONE_CLASSES.success },
-  { key: "PASSEE", label: "Passées", badge: TONE_CLASSES.neutral },
-  { key: "ARCHIVEE", label: "Archivées", badge: TONE_CLASSES.danger },
+const ETATS: { key: SessionEtat; label: string; icon: LucideIcon }[] = [
+  { key: "AVENIR", label: "À venir", icon: Clock },
+  { key: "ENCOURS", label: "En cours", icon: PlayCircle },
+  { key: "PASSEE", label: "Passées", icon: CheckCircle2 },
+  { key: "ARCHIVEE", label: "Archivées", icon: Archive },
 ];
 
 const ACADEMY_RANK: Record<string, number> = {
@@ -69,7 +73,7 @@ const ACADEMY_RANK: Record<string, number> = {
 const PAGE_SIZE = 20;
 
 const selectCx =
-  "h-8 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30";
+  "h-9 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30";
 const headCx = "sticky top-0 z-10 bg-background";
 
 export function SessionsTable({ rows }: { rows: SessionRow[] }) {
@@ -192,22 +196,22 @@ export function SessionsTable({ rows }: { rows: SessionRow[] }) {
 
   return (
     <div className="space-y-3">
-      {/* Barre de filtres */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative w-full sm:max-w-xs">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={q}
-            onChange={(e) => {
-              setQ(e.target.value);
-              reset();
-            }}
-            placeholder="Rechercher une formation, un lieu, un formateur…"
-            className="h-8 pl-8"
-            aria-label="Rechercher une session"
-          />
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
+      {/* Filtres + onglets d'état, regroupés dans une carte */}
+      <div className="rounded-2xl border border-primary/20 bg-card p-4 shadow-sm">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="relative w-full sm:flex-1">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={q}
+              onChange={(e) => {
+                setQ(e.target.value);
+                reset();
+              }}
+              placeholder="Rechercher une formation, un lieu, un formateur…"
+              className="h-9 pl-8"
+              aria-label="Rechercher une session"
+            />
+          </div>
           <select
             value={academy}
             onChange={(e) => {
@@ -215,9 +219,9 @@ export function SessionsTable({ rows }: { rows: SessionRow[] }) {
               reset();
             }}
             className={selectCx}
-            aria-label="Filtrer par académie"
+            aria-label="Filtrer par domaine"
           >
-            <option value="">Toutes les académies</option>
+            <option value="">Tous les domaines</option>
             {academies.map((a) => (
               <option key={a.key} value={a.key}>
                 {a.label}
@@ -241,28 +245,46 @@ export function SessionsTable({ rows }: { rows: SessionRow[] }) {
             ))}
           </select>
         </div>
+
+        {/* Onglets d'état — segments avec icône + compteur */}
+        <div className="mt-3 flex flex-wrap gap-2">
+          {ETATS.map((e) => {
+            const active = etat === e.key;
+            const Icon = e.icon;
+            return (
+              <button
+                key={e.key}
+                type="button"
+                aria-pressed={active}
+                onClick={() => {
+                  setEtat(e.key);
+                  reset();
+                }}
+                className={cn(
+                  "inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-sm font-medium transition-colors",
+                  active
+                    ? "border-primary/40 bg-primary/10 text-primary"
+                    : "border-border bg-background text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                )}
+              >
+                <Icon className="h-4 w-4 shrink-0" />
+                {e.label}
+                <span
+                  className={cn(
+                    "rounded-full px-1.5 py-0.5 text-[0.7rem] font-semibold tabular-nums",
+                    active ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground",
+                  )}
+                >
+                  {countByEtat[e.key]}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      {/* Onglets d'état */}
-      <Tabs
-        value={etat}
-        onValueChange={(v) => {
-          setEtat(v as SessionEtat);
-          reset();
-        }}
-      >
-        <TabsList>
-          {ETATS.map((e) => (
-            <TabsTrigger key={e.key} value={e.key}>
-              {e.label}
-              <Count n={countByEtat[e.key]} />
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
-
       {/* Table dense (en-têtes collants + défilement vertical interne) */}
-      <div className="rounded-lg border [&_[data-slot=table-container]]:max-h-[70vh] [&_[data-slot=table-container]]:overflow-auto">
+      <div className="rounded-2xl border bg-card shadow-sm [&_[data-slot=table-container]]:max-h-[70vh] [&_[data-slot=table-container]]:overflow-auto">
         <Table className="stagger-rows">
           <TableHeader>
             <TableRow>
@@ -278,9 +300,19 @@ export function SessionsTable({ rows }: { rows: SessionRow[] }) {
           </TableHeader>
           <TableBody>
             {pageRows.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={8} className="py-10 text-center text-sm text-muted-foreground">
-                  Aucune session ne correspond à ces filtres.
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={8} className="py-16">
+                  <div className="mx-auto flex max-w-sm flex-col items-center text-center">
+                    <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                      <PackageOpen className="h-8 w-8" />
+                    </span>
+                    <p className="mt-4 font-semibold text-foreground">
+                      Aucune session ne correspond à ces filtres.
+                    </p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Essayez de modifier vos filtres ou recherchez autrement.
+                    </p>
+                  </div>
                 </TableCell>
               </TableRow>
             ) : (
@@ -350,15 +382,6 @@ export function SessionsTable({ rows }: { rows: SessionRow[] }) {
         )}
       </div>
     </div>
-  );
-}
-
-/** Petit compteur affiché dans un onglet. */
-function Count({ n }: { n: number }) {
-  return (
-    <span className="ml-1 rounded-full bg-muted px-1.5 py-0.5 text-[0.7rem] font-semibold tabular-nums text-muted-foreground">
-      {n}
-    </span>
   );
 }
 

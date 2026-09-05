@@ -56,8 +56,16 @@ export default async function SessionsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        icon={CalendarDays}
         title="Sessions"
-        subtitle={`${sessions.length} session${sessions.length > 1 ? "s" : ""} au total`}
+        subtitle={
+          <>
+            <span className="font-semibold text-primary">
+              {sessions.length} session{sessions.length > 1 ? "s" : ""}
+            </span>{" "}
+            au total
+          </>
+        }
       >
         {sessions.length > 0 && <ExportMenu href="/sessions/export" />}
         <Button render={<Link href="/sessions/nouvelle" />}>
