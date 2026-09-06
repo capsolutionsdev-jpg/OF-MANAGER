@@ -761,7 +761,7 @@ export const DOCUMENTS: Record<string, { label: string; html: string }> = {
       <h2>3. Vos attentes</h2>
       <p>Qu'attendez-vous en priorité de cette formation ?</p><div class="fill"></div><div class="fill"></div>
       <p class="mt">Points particuliers à signaler au formateur (rythme, difficultés, adaptations…) :</p><div class="fill"></div>
-      <p class="mt">Fait le {{date_jour}}.</p>
+      <p class="mt">Test réalisé le {{date_positionnement}}.</p>
       <div class="doc-signatures">
         <div><div class="sig-label">Signature du stagiaire — {{nom_complet}}</div><div class="sig-box">{{signature_stagiaire}}</div></div>
       </div>`,

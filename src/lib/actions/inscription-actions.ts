@@ -31,6 +31,7 @@ import { orgConfigFor } from "@/lib/org-identity";
 import { generateToken, appBaseUrl } from "@/lib/token";
 import { hasStrictFeature } from "@/lib/feature-guard";
 import { t3pMetierOfFormation, T3P_FRAIS_EXAMEN } from "@/lib/t3p";
+import { evaluerConformiteCpf } from "@/lib/cpf-compliance";
 
 export type ActionResult =
   | { ok: true; inscriptionId: string; warning?: string }
@@ -214,6 +215,91 @@ export async function setInscriptionPaiement(
   revalidatePath(`/sessions/${insc.sessionId}`);
   revalidatePath(`/candidats/${insc.candidatId}`);
   return { ok: true };
+}
+
+/**
+ * Renseigne le DOSSIER CPF d'une inscription (n° + date de création) et applique
+ * la règle de conformité : le test de positionnement doit avoir été RÉALISÉ avant
+ * (au moins J-1 ouvré). On ne touche JAMAIS à la date de réalisation — on la
+ * constate. Si le test n'est pas antérieur (ou manquant), on BLOQUE, sauf
+ * dérogation explicitement motivée (tracée). Cf. cpf-compliance.evaluerConformiteCpf.
+ */
+export async function setInscriptionDossierCpf(
+  inscriptionId: string,
+  input: { numero?: string | null; dateCreation?: string | null; derogationMotif?: string | null },
+): Promise<SimpleResult & { statut?: string; deadline?: string }> {
+  const { db } = await requireStaffTenant();
+  const session = await auth();
+  if (!session?.user) return { ok: false, error: "Non autorisé." };
+
+  const insc = await db.inscription.findUnique({
+    where: { id: inscriptionId },
+    select: {
+      sessionId: true,
+      candidatId: true,
+      financementType: true,
+      positionnementCompletedAt: true,
+    },
+  });
+  if (!insc) return { ok: false, error: "Inscription introuvable." };
+
+  const numero = input.numero?.trim() ? input.numero.trim() : null;
+  const dateCreation =
+    input.dateCreation && input.dateCreation.trim() !== "" ? new Date(input.dateCreation) : null;
+  const motif = input.derogationMotif?.trim() || "";
+  const derogation = motif !== "";
+
+  const conformite = evaluerConformiteCpf({
+    financementCpf: insc.financementType === "CPF",
+    cpfDossierCreeLe: dateCreation,
+    positionnementCompletedAt: insc.positionnementCompletedAt,
+    derogation,
+  });
+
+  // Blocage (prévention / non-antériorité) tant qu'aucune dérogation motivée.
+  if (conformite.bloquant) {
+    return {
+      ok: false,
+      error: conformite.message ?? "Test de positionnement non conforme pour un dossier CPF.",
+      statut: conformite.statut,
+      deadline: conformite.deadline?.toISOString(),
+    };
+  }
+
+  await db.inscription.update({
+    where: { id: inscriptionId },
+    data: {
+      cpfDossierNumero: numero,
+      cpfDossierCreeLe: dateCreation,
+      ...(derogation
+        ? {
+            positionnementDerogationLe: new Date(),
+            positionnementDerogationPar: session.user.id,
+            positionnementDerogationMotif: motif,
+          }
+        : {
+            // Redevenu conforme / dossier retiré → on efface une dérogation antérieure.
+            positionnementDerogationLe: null,
+            positionnementDerogationPar: null,
+            positionnementDerogationMotif: null,
+          }),
+    },
+  });
+
+  if (derogation) {
+    await db.auditLog.create({
+      data: {
+        userId: session.user.id,
+        action: "CPF_DEROGATION_POSITIONNEMENT",
+        entityType: "Inscription",
+        entityId: inscriptionId,
+      },
+    });
+  }
+
+  revalidatePath(`/sessions/${insc.sessionId}`);
+  revalidatePath(`/candidats/${insc.candidatId}`);
+  return { ok: true, statut: conformite.statut, deadline: conformite.deadline?.toISOString() };
 }
 
 /** Renseigne le résultat de certification (Certifié / Ajourné / Abandon → BPF). */
