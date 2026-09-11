@@ -24,7 +24,10 @@ beforeEach(() => vi.clearAllMocks());
 
 describe("publierDocument — idempotent + persistance DocumentGenere", () => {
   it("ne régénère pas un document déjà publié", async () => {
-    fakeDb.documentGenere.findFirst.mockResolvedValue({ id: "d1" });
+    // « Déjà publié » = ligne existante AVEC un fichier encore présent (A09-018 :
+    // auto-heal des blobs perdus). Un data: URL court-circuite blobStillThere()
+    // (pas d'appel réseau) → le document est considéré présent sans mock de fetch.
+    fakeDb.documentGenere.findFirst.mockResolvedValue({ id: "d1", fileUrl: "data:application/pdf;base64,AAAA" });
     const r = await publierDocument(db, "i1", "s1", "CONVOCATION");
     expect(r).toBe(true);
     expect(buildSingleDocPdf).not.toHaveBeenCalled();

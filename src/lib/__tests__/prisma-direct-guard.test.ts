@@ -28,6 +28,10 @@ const ALLOWLIST = new Set([
   // (where { id: session.user.id }, entité d'auth GLOBALE) pour la permission
   // « blog ». Self-scopé, hors-tenant — même motif que mon-compte/administration.
   "site-vitrine/page.tsx",
+  // Audit Qualiopi « Documents de l'organisme » : lit UNIQUEMENT l'Organisme de la
+  // session (findUnique where { id: session.user.organismeId }) pour ses pièces
+  // Qualiopi. Self-scopé, hors-tenant — même motif que financements/page.tsx (A12-015).
+  "audit/organisme/page.tsx",
 ]);
 
 /**
@@ -169,6 +173,14 @@ const ACTIONS_ALLOWLIST = new Set([
   // Facturation proforma : scopé manuellement par l'organisme de session
   // (emailLog.create { organismeId }, orgConfigFor(organismeId)). Self-scopé.
   "proforma-actions.ts",
+  // Audit/contrôle Qualiopi : getTenantDb() pour toutes les données tenant ; le client
+  // brut ne touche que des entités GLOBALES vérifiées en-tenant d'abord (User/Apprenant
+  // par id du candidat DÉJÀ chargé via getTenantDb) + emailLog.create avec organismeId
+  // EXPLICITE. Motif vérifier-puis-muter, pas de requête large tenant (A12-015).
+  "audit-controle-actions.ts",
+  // Pièces Qualiopi de l'organisme : findUnique/update de l'Organisme de la SESSION
+  // (where { id: session.user.organismeId }, garde STAFF). Self-scopé (A12-015).
+  "pieces-organisme-actions.ts",
 ]);
 
 const ACTIONS_DIR = path.resolve(__dirname, "../actions");
