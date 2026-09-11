@@ -402,7 +402,10 @@ function SortHead({
   const active = sort.key === sortKey;
   const Icon = !active ? ArrowUpDown : sort.dir === "asc" ? ArrowUp : ArrowDown;
   return (
-    <TableHead className={cn(headCx, className)}>
+    <TableHead
+      aria-sort={active ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}
+      className={cn(headCx, className)}
+    >
       <button
         type="button"
         onClick={() => onToggle(sortKey)}
