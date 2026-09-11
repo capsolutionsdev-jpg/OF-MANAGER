@@ -116,7 +116,7 @@ export function emailShell(opts: {
     `<tr><td style="background:${PAPER};padding:20px 30px;border-top:1px solid ${LINE}">` +
     `<p style="margin:0 0 6px;font-size:12px;color:${MUTED};line-height:1.6"><b style="color:${NAVY}">${org}</b> — ${rep}<br>` +
     `Cet e-mail vous est adressé dans le cadre de votre formation. Une question&nbsp;? Répondez simplement à ce message.</p>` +
-    `<p style="margin:0;font-size:11px;color:#9aa7c2">🔒 Données traitées conformément au RGPD · Propulsé par OFManager</p>` +
+    `<p style="margin:0;font-size:11px;color:#5b6b86">🔒 Données traitées conformément au RGPD · Propulsé par OFManager</p>` +
     `</td></tr></table></td></tr></table></body></html>`
   );
 }
