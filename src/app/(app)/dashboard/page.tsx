@@ -272,7 +272,7 @@ export default async function DashboardPage() {
         {/* Col droite : À traiter */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">À traiter</CardTitle>
+            <CardTitle as="h2" className="text-base">À traiter</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             <Link
@@ -317,7 +317,7 @@ export default async function DashboardPage() {
         {/* Remplissage — jauge */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Remplissage des sessions</CardTitle>
+            <CardTitle as="h2" className="text-base">Remplissage des sessions</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col items-center justify-center pt-2">
             <Gauge pct={remplissage} />
@@ -339,7 +339,7 @@ export default async function DashboardPage() {
         ) : (
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-base">Ma consommation du mois</CardTitle>
+              <CardTitle as="h2" className="text-base">Ma consommation du mois</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
@@ -352,7 +352,7 @@ export default async function DashboardPage() {
         {/* Prochaines sessions */}
         <Card>
           <CardHeader className="flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-base">Prochaines sessions</CardTitle>
+            <CardTitle as="h2" className="text-base">Prochaines sessions</CardTitle>
             <Link href="/sessions" className="text-xs font-medium text-primary hover:underline">
               Voir tout →
             </Link>
@@ -408,7 +408,7 @@ export default async function DashboardPage() {
         <Card className="lg:col-span-2">
           <CardHeader className="flex-row items-center justify-between pb-2 space-y-0">
             <div>
-              <CardTitle className="text-base">Cette semaine</CardTitle>
+              <CardTitle as="h2" className="text-base">Cette semaine</CardTitle>
               <p className="mt-0.5 text-xs text-muted-foreground">
                 {fmt(weekStart)} → {fmt(weekEnd)}
               </p>
@@ -458,7 +458,7 @@ export default async function DashboardPage() {
         {/* Activité récente */}
         <Card>
           <CardHeader className="flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-base">Activité récente</CardTitle>
+            <CardTitle as="h2" className="text-base">Activité récente</CardTitle>
             <Link href="/historique" className="text-xs font-medium text-primary hover:underline">
               Voir tout →
             </Link>
@@ -503,7 +503,7 @@ export default async function DashboardPage() {
       {enAttente.length > 0 && (
         <Card id="a-relancer">
           <CardHeader className="flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="flex items-center gap-2 text-base">
+            <CardTitle as="h2" className="flex items-center gap-2 text-base">
               <BellRing className="h-4 w-4 text-warning" /> À relancer ({enAttenteTotal})
             </CardTitle>
             <Link href="/crm" className="text-xs font-medium text-primary hover:underline">
