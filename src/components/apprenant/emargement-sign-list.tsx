@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { TypedSignature } from "@/components/ui/typed-signature";
 import { signMyEmargement } from "@/lib/actions/apprenant-actions";
 
 export type EmargementItem = {
@@ -143,6 +144,7 @@ function SignModal({ item, onClose }: { item: EmargementItem; onClose: () => voi
             <PenLine className="mr-1.5 h-4 w-4" /> {isPending ? "Signature…" : "Signer"}
           </Button>
         </div>
+        <TypedSignature canvasRef={canvasRef} onSigned={() => setHasDrawn(true)} />
         <p className="text-[11px] text-muted-foreground">
           Votre signature manuscrite, horodatée (IP enregistrée), a la même valeur qu&apos;une signature papier.
         </p>

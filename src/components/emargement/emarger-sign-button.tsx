@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { PenLine, Eraser } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { TypedSignature } from "@/components/ui/typed-signature";
 import { signEmargement } from "@/lib/actions/emargement-signature-actions";
 
 export function EmargerSignButton({ token }: { token: string }) {
@@ -92,13 +93,16 @@ export function EmargerSignButton({ token }: { token: string }) {
           style={{ touchAction: "none" }}
         />
       </div>
-      <button
-        type="button"
-        onClick={clear}
-        className="inline-flex w-fit items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-      >
-        <Eraser className="h-3.5 w-3.5" /> Effacer
-      </button>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <button
+          type="button"
+          onClick={clear}
+          className="inline-flex w-fit items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+        >
+          <Eraser className="h-3.5 w-3.5" /> Effacer
+        </button>
+        <TypedSignature canvasRef={canvasRef} onSigned={() => setHasDrawn(true)} />
+      </div>
       <Button onClick={onSign} disabled={isPending} className="w-full">
         <PenLine className="mr-2 h-4 w-4" />
         {isPending ? "Signature…" : "Signer ma présence"}

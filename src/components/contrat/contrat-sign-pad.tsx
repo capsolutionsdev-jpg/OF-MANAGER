@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { FileSignature, Eraser } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { TypedSignature } from "@/components/ui/typed-signature";
 import { signContratFormateur } from "@/lib/actions/contrat-formateur-actions";
 
 export function ContratSignPad({ token }: { token: string }) {
@@ -95,15 +96,18 @@ export function ContratSignPad({ token }: { token: string }) {
           style={{ touchAction: "none" }}
         />
       </div>
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        onClick={clear}
-        className="w-fit text-muted-foreground"
-      >
-        <Eraser className="mr-1 h-3.5 w-3.5" /> Effacer
-      </Button>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={clear}
+          className="w-fit text-muted-foreground"
+        >
+          <Eraser className="mr-1 h-3.5 w-3.5" /> Effacer
+        </Button>
+        <TypedSignature canvasRef={canvasRef} onSigned={() => setHasDrawn(true)} />
+      </div>
       <label className="flex items-start gap-2 text-sm">
         <input
           type="checkbox"

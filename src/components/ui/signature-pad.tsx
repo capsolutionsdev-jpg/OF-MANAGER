@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { Eraser } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { TypedSignature } from "@/components/ui/typed-signature";
 
 /**
  * Pad de signature manuscrite réutilisable (souris / doigt / stylet — pointer
@@ -89,16 +90,26 @@ export function SignaturePad({
           style={{ touchAction: "none", height }}
         />
       </div>
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        onClick={clear}
-        disabled={!hasDrawn}
-        className="text-muted-foreground"
-      >
-        <Eraser className="mr-1 h-3.5 w-3.5" /> Effacer
-      </Button>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={clear}
+          disabled={!hasDrawn}
+          className="text-muted-foreground"
+        >
+          <Eraser className="mr-1 h-3.5 w-3.5" /> Effacer
+        </Button>
+        <TypedSignature
+          canvasRef={canvasRef}
+          onSigned={(dataUrl) => {
+            drawn.current = true;
+            setHasDrawn(true);
+            onChange(dataUrl);
+          }}
+        />
+      </div>
     </div>
   );
 }

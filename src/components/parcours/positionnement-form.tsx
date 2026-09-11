@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Eraser } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { TypedSignature } from "@/components/ui/typed-signature";
 import type { PositionnementQuestion } from "@/lib/positionnement";
 import { submitPositionnement } from "@/lib/actions/parcours-actions";
 
@@ -202,9 +203,12 @@ export function PositionnementForm({
             onPointerLeave={end}
           />
         </div>
-        <Button type="button" variant="ghost" size="sm" onClick={clearPad}>
-          <Eraser className="mr-1 h-3.5 w-3.5" /> Effacer
-        </Button>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <Button type="button" variant="ghost" size="sm" onClick={clearPad}>
+            <Eraser className="mr-1 h-3.5 w-3.5" /> Effacer
+          </Button>
+          <TypedSignature canvasRef={canvasRef} onSigned={() => setHasDrawn(true)} />
+        </div>
       </div>
 
       <Button onClick={submit} disabled={isPending} className="w-full">

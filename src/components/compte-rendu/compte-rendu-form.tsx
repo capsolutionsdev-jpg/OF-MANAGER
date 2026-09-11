@@ -7,6 +7,7 @@ import { Eraser } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { TypedSignature } from "@/components/ui/typed-signature";
 import { CR_QUESTIONS } from "@/lib/compte-rendu";
 import { submitCompteRendu } from "@/lib/actions/compte-rendu-actions";
 
@@ -128,13 +129,16 @@ export function CompteRenduForm({ token }: { token: string }) {
             style={{ touchAction: "none" }}
           />
         </div>
-        <button
-          type="button"
-          onClick={clearSig}
-          className="inline-flex w-fit items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-        >
-          <Eraser className="h-3.5 w-3.5" /> Effacer
-        </button>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <button
+            type="button"
+            onClick={clearSig}
+            className="inline-flex w-fit items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+          >
+            <Eraser className="h-3.5 w-3.5" /> Effacer
+          </button>
+          <TypedSignature canvasRef={canvasRef} onSigned={() => setHasDrawn(true)} />
+        </div>
       </div>
 
       <Button type="submit" className="w-full" disabled={isPending}>

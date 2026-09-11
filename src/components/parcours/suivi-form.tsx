@@ -7,6 +7,7 @@ import { Eraser } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { TypedSignature } from "@/components/ui/typed-signature";
 import { SITUATIONS, LIEN_FORMATION, EMPLOI_KEYS } from "@/lib/suivi6mois";
 import { submitSuivi6Mois } from "@/lib/actions/parcours-actions";
 
@@ -133,9 +134,12 @@ export function SuiviForm({ token }: { token: string }) {
             onPointerDown={start} onPointerMove={move} onPointerUp={end} onPointerLeave={end}
             className="h-[150px] w-full touch-none rounded-md" style={{ touchAction: "none" }} />
         </div>
-        <button type="button" onClick={clearSig} className="inline-flex w-fit items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
-          <Eraser className="h-3.5 w-3.5" /> Effacer
-        </button>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <button type="button" onClick={clearSig} className="inline-flex w-fit items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+            <Eraser className="h-3.5 w-3.5" /> Effacer
+          </button>
+          <TypedSignature canvasRef={canvasRef} onSigned={() => setHasDrawn(true)} />
+        </div>
       </div>
 
       <Button type="submit" className="w-full" disabled={isPending}>

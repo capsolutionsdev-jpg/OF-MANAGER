@@ -7,6 +7,7 @@ import { Eraser } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { TypedSignature } from "@/components/ui/typed-signature";
 import { submitSatisfactionEntreprise } from "@/lib/actions/parcours-actions";
 
 // Critères repris de la trame « Collecte des appréciations de l'entreprise » (Qualiopi ind. 30)
@@ -168,9 +169,12 @@ export function SatisfactionEntrepriseForm({ token }: { token: string }) {
             onPointerLeave={end}
           />
         </div>
-        <Button type="button" variant="ghost" size="sm" onClick={clearPad}>
-          <Eraser className="mr-1 h-3.5 w-3.5" /> Effacer
-        </Button>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <Button type="button" variant="ghost" size="sm" onClick={clearPad}>
+            <Eraser className="mr-1 h-3.5 w-3.5" /> Effacer
+          </Button>
+          <TypedSignature canvasRef={canvasRef} onSigned={() => setHasDrawn(true)} />
+        </div>
       </div>
 
       <Button onClick={submit} disabled={isPending} className="w-full">
