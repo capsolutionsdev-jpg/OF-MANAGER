@@ -23,6 +23,8 @@ import {
   NAVY,
   MUTED,
 } from "@/lib/email-templates";
+import { reportError } from "@/lib/observability/report-error";
+import { sendCivicPaiementEmailOnce } from "@/lib/civique-email";
 
 const VITRINE_BASE = process.env.VITRINE_URL ?? "https://ofmanager.info";
 const MENTION_NOM_LISIBLE: Record<CivicMention, string> = {
@@ -526,43 +528,46 @@ export async function fulfillCivicCheckout(args: {
   // Facture numérotée (best-effort, idempotente sur le paiement).
   await ensureCivicFactureFor(paiement.id).catch(() => {});
 
-  // E-mail (code d'accès + reçu) — ENVOI UNIQUE garanti par un claim atomique :
-  // le webhook ET la page de succès appellent ce fulfillment plusieurs fois.
-  const claim = await prisma.civicPaiement.updateMany({
-    where: { id: paiement.id, emailSentAt: null },
-    data: { emailSentAt: new Date() },
+  // E-mail (code d'accès + reçu) — « au plus une fois » mais RETENTABLE (A12-003) :
+  // le webhook ET la page de succès appellent ce fulfillment plusieurs fois. Le claim
+  // atomique empêche le double envoi ; sur échec il est relâché (rejeu possible) et
+  // l'incident est remonté → plus de perte silencieuse d'un code d'accès PAYÉ.
+  const euros = ((args.amountTotal ?? 0) / 100).toLocaleString("fr-FR", {
+    minimumFractionDigits: 2,
   });
-  if (claim.count === 1) {
-    const euros = ((args.amountTotal ?? 0) / 100).toLocaleString("fr-FR", {
-      minimumFractionDigits: 2,
-    });
-    const connexionUrl = `${VITRINE_BASE}/cap-language-academy/examen-civique/connexion`;
-    const html = emailShell({
-      organisme: "CAP Compétences",
-      representant: "L'équipe CAP Compétences",
-      accent: "amber",
-      body:
-        emailHeading(`Merci pour votre inscription, ${esc(candidat.prenom || "")} 🎉`) +
-        emailParagraph(
-          `Bienvenue dans la <b>préparation à l'examen civique — ${esc(MENTION_NOM_LISIBLE[mention])}</b>. ` +
-            `Votre paiement de <b>${esc(euros)} €</b> est confirmé (reçu disponible sur votre tableau de bord).`,
-        ) +
-        emailBox(
-          `🔑 <b>Votre code d'accès</b> : <span style="font-family:monospace;font-size:16px;color:${NAVY};font-weight:bold">${esc(token)}</span><br>` +
-            `<span style="color:${MUTED}">Conservez-le précieusement : il vous permet de retrouver votre progression sur tous vos appareils.</span>`,
-          "amber",
-        ) +
-        emailParagraph(
-          `Pour démarrer, connectez-vous avec votre e-mail (<b>${esc(candidat.email)}</b>) et ce code, onglet <b>« Code d'accès »</b>&nbsp;:`,
-        ) +
-        emailButton("Démarrer ma préparation →", connexionUrl) +
-        emailSignoff("À bientôt,", "L'équipe CAP Compétences"),
-    });
-    await sendEmail({
+  const connexionUrl = `${VITRINE_BASE}/cap-language-academy/examen-civique/connexion`;
+  const emailRes = await sendCivicPaiementEmailOnce(paiement.id, () =>
+    sendEmail({
       to: candidat.email,
       organismeId,
       subject: "🔓 Votre accès à la prépa examen civique est actif",
-      html,
+      html: emailShell({
+        organisme: "CAP Compétences",
+        representant: "L'équipe CAP Compétences",
+        accent: "amber",
+        body:
+          emailHeading(`Merci pour votre inscription, ${esc(candidat.prenom || "")} 🎉`) +
+          emailParagraph(
+            `Bienvenue dans la <b>préparation à l'examen civique — ${esc(MENTION_NOM_LISIBLE[mention])}</b>. ` +
+              `Votre paiement de <b>${esc(euros)} €</b> est confirmé (reçu disponible sur votre tableau de bord).`,
+          ) +
+          emailBox(
+            `🔑 <b>Votre code d'accès</b> : <span style="font-family:monospace;font-size:16px;color:${NAVY};font-weight:bold">${esc(token)}</span><br>` +
+              `<span style="color:${MUTED}">Conservez-le précieusement : il vous permet de retrouver votre progression sur tous vos appareils.</span>`,
+            "amber",
+          ) +
+          emailParagraph(
+            `Pour démarrer, connectez-vous avec votre e-mail (<b>${esc(candidat.email)}</b>) et ce code, onglet <b>« Code d'accès »</b>&nbsp;:`,
+          ) +
+          emailButton("Démarrer ma préparation →", connexionUrl) +
+          emailSignoff("À bientôt,", "L'équipe CAP Compétences"),
+      }),
+    }),
+  );
+  if (emailRes.claimed && !emailRes.sent) {
+    await reportError(new Error("Envoi e-mail code d'accès civique échoué (retentable)"), {
+      tag: "civique:access-email",
+      extra: { paiementId: paiement.id },
     });
   }
 
