@@ -867,6 +867,16 @@
   }
 }
 
+/* tw-animate-css (Dialog / DropdownMenu / Select / Tabs…) : couper les
+   animations d'entrée/sortie en mouvement réduit (WCAG 2.3.3 / RGAA 13.x).
+   Le paquet n'embarque aucune garde `prefers-reduced-motion`. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-in,
+  .animate-out {
+    animation: none !important;
+  }
+}
+
 /* ============================================================
    PHASE 2.2 (RETIRÉ) — Les styles globaux appliqués sur button/a/h1/etc.
    écrasaient Tailwind et cassaient le design (bouton "Nouveau candidat"

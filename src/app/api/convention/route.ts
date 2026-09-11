@@ -148,7 +148,7 @@ export async function POST(req: Request) {
       tarif: Number.isFinite(tarifNum) && tarifNum > 0 ? `${tarifNum} € net de taxe` : "—",
     };
     const inner = inline(renderTemplate(tpl, vars));
-    const html = `<!DOCTYPE html><html><head><meta charset="utf-8" />${DOC_STYLE}</head><body>${inner}</body></html>`;
+    const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8" />${DOC_STYLE}</head><body>${inner}</body></html>`;
     const bytes = await htmlToPdf(html);
     const src = await PDFDocument.load(bytes);
     const pages = await merged.copyPages(src, src.getPageIndices());

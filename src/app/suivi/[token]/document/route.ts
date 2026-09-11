@@ -37,7 +37,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ token: 
   const ligne = (label: string, val: string) =>
     val ? `<tr><td class="k">${esc(label)}</td><td>${esc(val)}</td></tr>` : "";
 
-  const html = `<!doctype html><html><head><meta charset="utf-8"><style>
+  const html = `<!doctype html><html lang="fr"><head><meta charset="utf-8"><style>
     body { font-family: Arial, Helvetica, sans-serif; color: #221F19; margin: 0; }
     .sheet { padding: 40px; }
     h1 { font-size: 20px; margin: 0 0 4px; }
