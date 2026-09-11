@@ -21,7 +21,7 @@ const selectClass =
 
 function ErrorText({ msg }: { msg?: string }) {
   if (!msg) return null;
-  return <p className="text-sm text-destructive">{msg}</p>;
+  return <p role="alert" className="text-sm text-destructive">{msg}</p>;
 }
 
 type SessionOption = { id: string; label: string };
@@ -166,8 +166,8 @@ export function PublicInscriptionForm({
           <ErrorText msg={errors.nom?.message} />
         </div>
         <div className="grid gap-2">
-          <Label>Genre *</Label>
-          <div className="flex gap-2">
+          <Label id="genre-label-inscription">Genre *</Label>
+          <div role="radiogroup" aria-labelledby="genre-label-inscription" className="flex gap-2">
             {(["HOMME", "FEMME"] as const).map((g) => (
               <label
                 key={g}

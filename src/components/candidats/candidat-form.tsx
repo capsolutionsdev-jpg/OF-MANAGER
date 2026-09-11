@@ -34,7 +34,7 @@ const selectClass =
 
 function ErrorText({ msg }: { msg?: string }) {
   if (!msg) return null;
-  return <p className="text-sm text-destructive">{msg}</p>;
+  return <p role="alert" className="text-sm text-destructive">{msg}</p>;
 }
 
 type FormationOption = { id: string; titre: string; reference?: string | null };
@@ -210,8 +210,8 @@ export function CandidatForm({
             <ErrorText msg={errors.prenom?.message} />
           </div>
           <div className="grid gap-2">
-            <Label>Genre *</Label>
-            <div className="flex gap-2">
+            <Label id="genre-label-candidat">Genre *</Label>
+            <div role="radiogroup" aria-labelledby="genre-label-candidat" className="flex gap-2">
               {(["HOMME", "FEMME"] as const).map((g) => (
                 <label
                   key={g}
