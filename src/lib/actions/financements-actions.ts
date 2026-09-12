@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { getTenantDb } from "@/lib/tenant";
 import { encryptSecret } from "@/lib/crypto";
 import { testWedofKey, wedofKeyOf, listRegistrationFolders, mapFolder } from "@/lib/wedof";
+import { wedofOrderedWhere } from "@/lib/wedof-sync";
 
 type Res = { ok: boolean; error?: string };
 
@@ -85,41 +86,70 @@ export async function syncWedof(): Promise<{ ok: boolean; error?: string; count?
   const key = wedofKeyOf(org?.wedofApiKey);
   if (!key) return { ok: false, error: "Aucune clé Wedof enregistrée." };
 
-  let folders;
-  try {
-    folders = await listRegistrationFolders(key, { limit: 100 });
-  } catch {
-    return { ok: false, error: "Impossible de récupérer les dossiers depuis Wedof." };
-  }
-
   const db = await getTenantDb();
+  const LIMIT = 100;
+  const MAX_PAGES = 100; // garde-fou de volume (≤ 10 000 dossiers par synchronisation)
   let count = 0;
-  for (const f of folders) {
-    const m = mapFolder(f);
-    if (!m.wedofId) continue;
+  let incomplet = false;
 
-    let candidatId: string | null = null;
-    if (m.email) {
-      const c = await db.candidat.findFirst({ where: { email: m.email }, select: { id: true } });
-      candidatId = c?.id ?? null;
+  // Pagination jusqu'à épuisement (A12-010 : l'ancien code ne traitait que la page 1).
+  for (let page = 1; page <= MAX_PAGES; page++) {
+    let folders;
+    try {
+      folders = await listRegistrationFolders(key, { limit: LIMIT, page });
+    } catch {
+      // On renvoie ce qui a déjà été traité + un signalement (sync partielle).
+      return {
+        ok: false,
+        error: "Récupération Wedof interrompue — dossiers partiellement synchronisés.",
+        count,
+      };
+    }
+    if (folders.length === 0) break;
+
+    for (const f of folders) {
+      const m = mapFolder(f);
+      if (!m.wedofId) continue;
+
+      let candidatId: string | null = null;
+      if (m.email) {
+        const c = await db.candidat.findFirst({ where: { email: m.email }, select: { id: true } });
+        candidatId = c?.id ?? null;
+      }
+
+      const data = {
+        type: m.type,
+        financeur: m.financeur,
+        etat: m.etat,
+        montant: m.montant,
+        wedofEtat: m.wedofEtat,
+        wedofMajLe: m.wedofMajLe,
+      };
+      // Garde d'ordre (A12-006) : ne pas régresser un état plus récent. Le client
+      // tenant (scopedPrisma) injecte automatiquement organismeId dans le where.
+      const upd = await db.dossierFinancement.updateMany({
+        where: wedofOrderedWhere(m.wedofId, m.wedofMajLe),
+        data: { ...data, ...(candidatId ? { candidatId } : {}) },
+      });
+      if (upd.count === 0) {
+        const exists = await db.dossierFinancement.findFirst({
+          where: { wedofId: m.wedofId },
+          select: { id: true },
+        });
+        if (!exists) await db.dossierFinancement.create({ data: { wedofId: m.wedofId, candidatId, ...data } });
+        // sinon : événement plus ancien que l'état stocké → ignoré
+      }
+      count++;
     }
 
-    const data = {
-      type: m.type,
-      financeur: m.financeur,
-      etat: m.etat,
-      montant: m.montant,
-      wedofEtat: m.wedofEtat,
-      wedofMajLe: m.wedofMajLe,
-    };
-    await db.dossierFinancement.upsert({
-      where: { wedofId: m.wedofId },
-      create: { wedofId: m.wedofId, candidatId, ...data },
-      update: { ...data, ...(candidatId ? { candidatId } : {}) },
-    });
-    count++;
+    if (folders.length < LIMIT) break;
+    if (page === MAX_PAGES) incomplet = true;
   }
 
   revalidatePath("/financements");
-  return { ok: true, count };
+  return {
+    ok: true,
+    count,
+    ...(incomplet ? { error: "Volume élevé : synchronisation plafonnée, relancez pour la suite." } : {}),
+  };
 }

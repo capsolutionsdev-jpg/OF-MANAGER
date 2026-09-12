@@ -3,6 +3,8 @@ import { createHmac, timingSafeEqual } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { decryptSecret } from "@/lib/crypto";
 import { mapFolder } from "@/lib/wedof";
+import { wedofOrderedWhere } from "@/lib/wedof-sync";
+import { reportError } from "@/lib/observability/report-error";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -56,11 +58,31 @@ export async function POST(
     wedofEtat: m.wedofEtat,
     wedofMajLe: m.wedofMajLe,
   };
-  await prisma.dossierFinancement.upsert({
-    where: { wedofId: m.wedofId },
-    create: { organismeId: orgId, wedofId: m.wedofId, ...fields },
-    update: fields,
-  });
+
+  // Écriture idempotente + garde d'ordre (A12-006) : ne pas écraser un état plus
+  // récent avec un événement en retard, et journaliser les échecs (A12-006/016) —
+  // 500 → Wedof retentera. Scopé à l'organismeId du chemin (défense en profondeur).
+  try {
+    const upd = await prisma.dossierFinancement.updateMany({
+      where: { ...wedofOrderedWhere(m.wedofId, m.wedofMajLe), organismeId: orgId },
+      data: fields,
+    });
+    if (upd.count === 0) {
+      const exists = await prisma.dossierFinancement.findFirst({
+        where: { wedofId: m.wedofId, organismeId: orgId },
+        select: { id: true },
+      });
+      if (!exists) {
+        await prisma.dossierFinancement.create({
+          data: { organismeId: orgId, wedofId: m.wedofId, ...fields },
+        });
+      }
+      // sinon : événement plus ancien que l'état stocké → ignoré (garde d'ordre)
+    }
+  } catch (e) {
+    reportError(e, { tag: "wedof:webhook", extra: { orgId, wedofId: m.wedofId } });
+    return new NextResponse("Erreur de traitement.", { status: 500 });
+  }
 
   return NextResponse.json({ ok: true });
 }
