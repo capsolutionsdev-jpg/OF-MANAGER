@@ -46,7 +46,9 @@ export async function aiComplete(params: {
     };
   }
   try {
-    const client = new Anthropic({ apiKey });
+    // Timeout abaissé (défaut SDK = 10 min) + 1 seul retry (A12-002/019) : un appel
+    // IA suspendu ne doit pas tenir la fonction serverless jusqu'à sa limite.
+    const client = new Anthropic({ apiKey, timeout: 30_000, maxRetries: 1 });
     const res = await client.messages.create({
       model: MODEL,
       max_tokens: params.maxTokens ?? 1500,

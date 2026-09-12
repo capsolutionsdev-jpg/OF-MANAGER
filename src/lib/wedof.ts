@@ -1,6 +1,7 @@
 import "server-only";
 import type { FinancementType } from "@prisma/client";
 import { decryptSecret } from "@/lib/crypto";
+import { fetchWithTimeout } from "@/lib/fetch-timeout";
 
 // Connecteur Wedof (getwedof.com) — suivi des dossiers CPF (EDOF).
 // API REST, base https://www.wedof.fr, authentification par en-tête X-API-KEY.
@@ -32,7 +33,7 @@ async function wedofRequest(
   for (const [k, v] of Object.entries(opts.params ?? {})) {
     if (v !== undefined && v !== "") url.searchParams.set(k, String(v));
   }
-  return fetch(url, {
+  return fetchWithTimeout(url, {
     method: opts.method ?? "GET",
     headers: {
       "X-API-KEY": key,

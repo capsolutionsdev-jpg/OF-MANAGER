@@ -14,6 +14,21 @@ export type LimitOpts = { limit?: number; windowMs?: number; failClosed?: boolea
 type Bucket = { count: number; reset: number };
 const store = new Map<string, Bucket>();
 
+// A12-002 : un appel Redis suspendu (socket ouvert sans réponse) n'est PAS capté
+// par un try/catch. `checkLimit` étant awaité en tête des endpoints publics, on
+// borne les opérations Redis pour retomber sur le compteur mémoire au lieu de geler
+// l'endpoint.
+const REDIS_TIMEOUT_MS = 3000;
+function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    p,
+    new Promise<never>((_, reject) => {
+      const t = setTimeout(() => reject(new Error("redis-timeout")), ms);
+      (t as { unref?: () => void }).unref?.();
+    }),
+  ]);
+}
+
 /** Limiteur synchrone en mémoire (fenêtre fixe). Repli par défaut. */
 export function rateLimit(
   key: string,
@@ -79,16 +94,22 @@ export async function checkLimit(key: string, opts: LimitOpts = {}): Promise<Lim
     return rateLimit(key, opts);
   }
   try {
-    const k = `rl:${key}`;
-    const count = await r.incr(k);
-    if (count === 1) await r.pexpire(k, windowMs);
-    if (count > limit) {
-      const ttl = await r.pttl(k);
-      return { ok: false, remaining: 0, retryAfter: Math.ceil((ttl > 0 ? ttl : windowMs) / 1000) };
-    }
-    return { ok: true, remaining: limit - count, retryAfter: 0 };
+    return await withTimeout(
+      (async (): Promise<LimitResult> => {
+        const k = `rl:${key}`;
+        const count = await r.incr(k);
+        if (count === 1) await r.pexpire(k, windowMs);
+        if (count > limit) {
+          const ttl = await r.pttl(k);
+          return { ok: false, remaining: 0, retryAfter: Math.ceil((ttl > 0 ? ttl : windowMs) / 1000) };
+        }
+        return { ok: true, remaining: limit - count, retryAfter: 0 };
+      })(),
+      REDIS_TIMEOUT_MS,
+    );
   } catch (e) {
-    console.error("[rate-limit] Redis indisponible, repli mémoire:", e);
+    // Redis indisponible OU suspendu (A12-002) → repli mémoire : ne jamais geler l'endpoint.
+    console.error("[rate-limit] Redis indisponible/suspendu, repli mémoire:", e);
     return rateLimit(key, opts);
   }
 }

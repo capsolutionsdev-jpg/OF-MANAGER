@@ -11,6 +11,7 @@ import { decryptSecret } from "@/lib/crypto";
 import { getCurrentOrganisme } from "@/lib/org";
 import { liveSendsBlocked } from "@/lib/live-sends";
 import { reportError } from "@/lib/observability/report-error";
+import { fetchWithTimeout } from "@/lib/fetch-timeout";
 
 export function emailConfigured(): boolean {
   return Boolean(process.env.RESEND_API_KEY || process.env.BREVO_API_KEY);
@@ -98,7 +99,7 @@ async function sendViaResend(
     }));
   }
   try {
-    const res = await fetch("https://api.resend.com/emails", {
+    const res = await fetchWithTimeout("https://api.resend.com/emails", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
@@ -187,7 +188,7 @@ export async function sendEmail(params: {
         content: a.content,
       }));
     }
-    const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+    const res = await fetchWithTimeout("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
       headers: {
         "api-key": sender.apiKey,

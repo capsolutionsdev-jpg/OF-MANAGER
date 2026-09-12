@@ -7,6 +7,7 @@ import { decryptSecret } from "@/lib/crypto";
 import { planForOrg } from "@/lib/plans";
 import { liveSendsBlocked } from "@/lib/live-sends";
 import { reportError } from "@/lib/observability/report-error";
+import { fetchWithTimeout } from "@/lib/fetch-timeout";
 
 type SmsSender = { name: string; apiKey: string | undefined };
 
@@ -131,7 +132,7 @@ export async function sendSms(params: {
   }
 
   try {
-    const res = await fetch("https://api.brevo.com/v3/transactionalSMS/sms", {
+    const res = await fetchWithTimeout("https://api.brevo.com/v3/transactionalSMS/sms", {
       method: "POST",
       headers: {
         "api-key": sender.apiKey,
