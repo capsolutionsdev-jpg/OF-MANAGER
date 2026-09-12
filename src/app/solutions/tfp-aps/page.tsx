@@ -82,10 +82,11 @@ export default function TfpApsPage() {
   };
 
   return (
-    <main className="min-h-screen bg-white text-[#0D1B3E]">
+    <>
+      <SiteHeader />
+      <main className="min-h-screen bg-white text-[#0D1B3E]">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <ScrollReveal skip={1} />
-      <SiteHeader />
 
       <section className="text-white" style={{ background: `radial-gradient(900px 500px at 80% -10%, #3A3550, transparent 60%), linear-gradient(180deg, ${NAVY}, #0D1B3E)` }}>
         <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6">
@@ -164,7 +165,8 @@ export default function TfpApsPage() {
         </div>
       </section>
 
+      </main>
       <SiteFooter />
-    </main>
+    </>
   );
 }
