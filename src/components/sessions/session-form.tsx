@@ -338,13 +338,13 @@ export function SessionForm({
           </div>
 
           <div className="grid gap-2 sm:col-span-2">
-            <Label>Formateur(s) affecté(s)</Label>
+            <Label id="formateurs-label">Formateur(s) affecté(s)</Label>
             {formateurs.length === 0 ? (
               <p className="text-xs text-muted-foreground">
                 Aucun formateur enregistré. Ajoutez-en dans la section « Formateurs ».
               </p>
             ) : (
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <div role="group" aria-labelledby="formateurs-label" className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {formateurs.map((f) => (
                   <label
                     key={f.id}
@@ -393,7 +393,7 @@ export function SessionForm({
                   const jours = anim[fid]?.jours ?? [];
                   return (
                     <div key={fid} className="rounded-lg border p-2.5">
-                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm">
+                      <div role="radiogroup" aria-label={`Étendue de l'animation — ${f.prenom} ${f.nom}`} className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm">
                         <span className="font-medium">
                           {f.prenom} {f.nom}
                           {f.typeContrat === "EXTERNE" && (
