@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getTauxReussite } from "@/lib/vitrine-stats";
 import { organismeScope } from "@/lib/public-scope";
+import { publicJson } from "@/lib/api-version";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -50,10 +50,7 @@ export async function GET(
   });
 
   if (!f) {
-    return NextResponse.json(
-      { formation: null },
-      { status: 404, headers: { "Access-Control-Allow-Origin": "*" } },
-    );
+    return publicJson({ formation: null }, { status: 404, cache: false });
   }
 
   // Taux de réussite (calculé depuis les résultats de certification).
@@ -69,13 +66,5 @@ export async function GET(
     nbEvalues: taux?.nbEvalues ?? null,
   };
 
-  return NextResponse.json(
-    { formation, generatedAt: new Date().toISOString() },
-    {
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
-      },
-    },
-  );
+  return publicJson({ formation, generatedAt: new Date().toISOString() });
 }
