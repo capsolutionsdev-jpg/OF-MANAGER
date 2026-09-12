@@ -1,4 +1,4 @@
-import { put } from "@vercel/blob";
+import { put, del } from "@vercel/blob";
 
 /**
  * Stockage d'un fichier uploadé.
@@ -31,6 +31,33 @@ export async function storeUpload(opts: {
   }
   const b64 = Buffer.from(data).toString("base64");
   return `data:${contentType || "application/octet-stream"};base64,${b64}`;
+}
+
+/**
+ * Upload + écriture en base ATOMIQUES côté fichier (A12-009).
+ *
+ * Stocke le fichier, exécute `persist(url)` (typiquement un `prisma.X.create`
+ * référençant l'URL) et, si `persist` échoue, SUPPRIME le blob pour ne pas laisser
+ * de fichier orphelin (coût + résidu PII hors cycle RGPD). Sur un repli `data:` URL
+ * (dev / Blob non configuré), il n'y a rien à supprimer.
+ */
+export async function storeUploadThen<T>(
+  opts: { data: Uint8Array | Buffer; folder: string; ext: string; contentType?: string },
+  persist: (url: string) => Promise<T>,
+): Promise<T> {
+  const url = await storeUpload(opts);
+  try {
+    return await persist(url);
+  } catch (e) {
+    if (!url.startsWith("data:") && process.env.BLOB_READ_WRITE_TOKEN) {
+      try {
+        await del(url);
+      } catch {
+        /* best-effort : ne pas masquer l'erreur d'origine */
+      }
+    }
+    throw e;
+  }
 }
 
 // Types réellement acceptés (déduits des octets d'en-tête, pas du MIME annoncé).
