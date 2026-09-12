@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { organismeScope } from "@/lib/public-scope";
+import { toPublicSessionDTO } from "@/lib/public-dto";
+import { publicJson } from "@/lib/api-version";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -29,31 +30,7 @@ export async function GET(req: Request) {
     take: 60,
   });
 
-  const data = sessions.map((s) => {
-    const inscrits = s.inscriptions.length;
-    return {
-      id: s.id,
-      formation: s.formation.titre,
-      reference: s.formation.reference,
-      academy: s.formation.academy,
-      dateDebut: s.dateDebut.toISOString(),
-      dateFin: s.dateFin.toISOString(),
-      horaires: s.horaires,
-      lieu: s.lieu,
-      modalite: s.modalite,
-      statut: s.statut,
-      placesTotal: s.nbPlaces,
-      placesRestantes: Math.max(0, s.nbPlaces - inscrits),
-    };
-  });
+  const data = sessions.map(toPublicSessionDTO);
 
-  return NextResponse.json(
-    { sessions: data, generatedAt: new Date().toISOString() },
-    {
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
-      },
-    },
-  );
+  return publicJson({ sessions: data, generatedAt: new Date().toISOString() });
 }

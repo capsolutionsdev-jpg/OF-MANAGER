@@ -5,6 +5,9 @@
 import { prisma } from "@/lib/prisma";
 import { decryptSecret } from "@/lib/crypto";
 import { planForOrg } from "@/lib/plans";
+import { liveSendsBlocked } from "@/lib/live-sends";
+import { reportError } from "@/lib/observability/report-error";
+import { fetchWithTimeout } from "@/lib/fetch-timeout";
 
 type SmsSender = { name: string; apiKey: string | undefined };
 
@@ -98,6 +101,13 @@ export async function sendSms(params: {
     return { sent: false, demo: true };
   }
 
+  // A12-008 : hors production sur Vercel (preview/staging), pas de vrai SMS sauf
+  // activation explicite EMAIL_LIVE=1.
+  if (liveSendsBlocked()) {
+    await logSms({ ...params, to: recipient }, "DEMO");
+    return { sent: false, demo: true };
+  }
+
   // Quota SMS mensuel de la formule + solde prépayé (packs) en dépassement.
   if (organismeId) {
     const org = await prisma.organisme.findUnique({
@@ -122,7 +132,7 @@ export async function sendSms(params: {
   }
 
   try {
-    const res = await fetch("https://api.brevo.com/v3/transactionalSMS/sms", {
+    const res = await fetchWithTimeout("https://api.brevo.com/v3/transactionalSMS/sms", {
       method: "POST",
       headers: {
         "api-key": sender.apiKey,
@@ -144,8 +154,9 @@ export async function sendSms(params: {
     const providerId = data.messageId ? String(data.messageId) : undefined;
     await logSms({ ...params, to: recipient }, "ENVOYE", providerId);
     return { sent: true, demo: false, providerId };
-  } catch {
+  } catch (e) {
     await logSms({ ...params, to: recipient }, "ECHEC");
+    await reportError(e, { tag: "sms:brevo" });
     return { sent: false, demo: false, error: "Erreur réseau lors de l'envoi." };
   }
 }

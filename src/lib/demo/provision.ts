@@ -6,6 +6,8 @@ import { sendEmail } from "@/lib/email";
 import { appBaseUrl } from "@/lib/token";
 import { seedDemoData } from "@/lib/demo/seed";
 import { logLeadEvent } from "@/lib/growth/events";
+import { purgeDemoOrganisme } from "@/lib/demo/purge";
+import { reportError } from "@/lib/observability/report-error";
 
 export type DemoMetier = "securite" | "vtc_taxi" | "les_deux" | "autre";
 
@@ -83,51 +85,70 @@ export async function provisionDemo(input: ProvisionInput): Promise<ProvisionRes
   await logLeadEvent(lead.id, "creation", { meta: { source: "demo" } });
   await logLeadEvent(lead.id, "demo_demandee", { meta: { metier: input.metier } });
 
-  // 2) Tenant démo isolé.
+  // 2→5) Tenant démo + admin + données + lien Lead — sous COMPENSATION (A12-011) :
+  // ces étapes ne sont pas transactionnelles (seedDemoData = nombreuses écritures) ;
+  // si l'une échoue, on PURGE le tenant partiel (purgeDemoOrganisme, réservé aux
+  // démos) pour ne laisser ni résidu ni doublon au réessai.
   const short = randomBytes(3).toString("hex"); // 6 hex
   const nomBase = input.organisme?.trim() || input.nom?.trim() || "Prospect";
-  const org = await prisma.organisme.create({
-    data: {
-      nom: `DÉMO — ${nomBase}`.slice(0, 80),
-      email,
-      sousDomaine: `demo-${slug(nomBase)}-${short}`.slice(0, 60),
-      statut: "ACTIF",
-      formule: "RESEAU",
-      couleurPrimaire: "#7C3AED",
-      design: "defaut",
-      fonctionnalites: { set: ALL_FEATURES },
-      isDemo: true,
-      demoHardExpiresAt: new Date(Date.now() + DEMO_HARD_TTL_DAYS * 86_400_000),
-    },
-    select: { id: true },
-  });
-
-  // 3) Admin de démo (login lisible ; auth par e-mail interne au tenant démo).
   const login = `demo-${slug(nomBase)}-${short}`.slice(0, 40);
   const loginEmail = `${login}@demo.local`;
   const password = genPassword();
-  await prisma.user.create({
-    data: {
-      email: loginEmail,
-      name: `${input.nom?.trim() || "Utilisateur"} (Démo)`,
-      role: "ADMIN",
-      organismeId: org.id,
-      isActive: true,
-      mustChangePassword: false,
-      passwordHash: bcrypt.hashSync(password, 12),
-    },
-  });
+  let orgId: string | null = null;
+  try {
+    const org = await prisma.organisme.create({
+      data: {
+        nom: `DÉMO — ${nomBase}`.slice(0, 80),
+        email,
+        sousDomaine: `demo-${slug(nomBase)}-${short}`.slice(0, 60),
+        statut: "ACTIF",
+        formule: "RESEAU",
+        couleurPrimaire: "#7C3AED",
+        design: "defaut",
+        fonctionnalites: { set: ALL_FEATURES },
+        isDemo: true,
+        demoHardExpiresAt: new Date(Date.now() + DEMO_HARD_TTL_DAYS * 86_400_000),
+      },
+      select: { id: true },
+    });
+    orgId = org.id;
 
-  // 4) Données de démo selon le métier.
-  for (const ac of academies) {
-    await seedDemoData(org.id, ac);
+    // Admin de démo (login lisible ; auth par e-mail interne au tenant démo).
+    await prisma.user.create({
+      data: {
+        email: loginEmail,
+        name: `${input.nom?.trim() || "Utilisateur"} (Démo)`,
+        role: "ADMIN",
+        organismeId: org.id,
+        isActive: true,
+        mustChangePassword: false,
+        passwordHash: bcrypt.hashSync(password, 12),
+      },
+    });
+
+    // Données de démo selon le métier.
+    for (const ac of academies) {
+      await seedDemoData(org.id, ac);
+    }
+
+    // Lien Lead → démo.
+    await prisma.lead.update({ where: { id: lead.id }, data: { demoOrganismeId: org.id } });
+    await logLeadEvent(lead.id, "demo_provisionnee", {
+      meta: { orgId: org.id, academies: academies.join(",") },
+    });
+  } catch (e) {
+    if (orgId) {
+      try {
+        await purgeDemoOrganisme(orgId);
+      } catch {
+        /* compensation best-effort : le cron de purge (filet dur) rattrapera un résidu */
+      }
+    }
+    await reportError(e, { tag: "demo:provision", extra: { leadId: lead.id } });
+    return { ok: false, error: "La création de votre démo a échoué. Réessayez ou contactez-nous." };
   }
-
-  // 5) Lien Lead → démo.
-  await prisma.lead.update({ where: { id: lead.id }, data: { demoOrganismeId: org.id } });
-  await logLeadEvent(lead.id, "demo_provisionnee", {
-    meta: { orgId: org.id, academies: academies.join(",") },
-  });
+  // À ce stade le provisionnement a réussi (sinon le catch ci-dessus a retourné).
+  if (!orgId) return { ok: false, error: "Création de démo incomplète." };
 
   // 6) E-mail d'accès au prospect (mot de passe en clair UNIQUEMENT ici).
   const link = appBaseUrl();
@@ -157,9 +178,9 @@ export async function provisionDemo(input: ProvisionInput): Promise<ProvisionRes
         `- Nom : ${input.nom ?? "—"}\n- Organisme : ${input.organisme ?? "—"}\n` +
         `- E-mail : ${email}\n- Téléphone : ${input.telephone ?? "—"}\n` +
         `- Métier : ${input.metier}\n${utmTxt ? "- " + utmTxt + "\n" : ""}` +
-        `\nTenant démo : ${org.id}`,
+        `\nTenant démo : ${orgId}`,
     });
   }
 
-  return { ok: true, orgId: org.id, login: loginEmail };
+  return { ok: true, orgId, login: loginEmail };
 }

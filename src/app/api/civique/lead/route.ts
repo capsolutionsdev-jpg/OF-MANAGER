@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { civicCors, resolveCivicOrganismeId } from "@/lib/civique-api";
 import { checkLimit, clientIp } from "@/lib/rate-limit";
+import { parseBody } from "@/lib/parse-body";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,39 +22,38 @@ export async function POST(req: Request) {
     );
   }
 
-  let body: {
-    nom?: string;
-    prenom?: string;
-    email?: string;
-    telephone?: string;
-    mention?: string;
-    organismeId?: string;
-  };
-  try {
-    body = (await req.json()) as typeof body;
-  } catch {
-    return NextResponse.json({ error: "Corps invalide." }, { status: 400, headers: civicCors });
+  // Validation d'entrée par SCHÉMA (A12-013) : types, longueurs bornées, e-mail valide,
+  // e-mail normalisé (trim + minuscule). Remplace les vérifications ad hoc.
+  const parsed = await parseBody(
+    req,
+    z.object({
+      nom: z.string().trim().min(1).max(120),
+      prenom: z.string().trim().min(1).max(120),
+      email: z.string().trim().toLowerCase().email().max(200),
+      telephone: z.string().trim().max(30).optional().default(""),
+      mention: z.string().trim().max(60).optional(),
+      organismeId: z.string().trim().max(60).optional(),
+    }),
+  );
+  if (!parsed.ok) {
+    return NextResponse.json(
+      { error: "Nom, prénom et e-mail valides requis." },
+      { status: 400, headers: civicCors },
+    );
   }
-
-  const email = (body.email ?? "").trim().toLowerCase();
-  const prenom = (body.prenom ?? "").trim();
-  const nom = (body.nom ?? "").trim();
-  const telephone = (body.telephone ?? "").trim();
-  if (!email.includes("@") || !prenom || !nom) {
-    return NextResponse.json({ error: "Nom, prénom et e-mail requis." }, { status: 400, headers: civicCors });
-  }
+  const { nom, prenom, email, telephone, mention } = parsed.data;
 
   // Correctif audit A05-002 : l'organisme cible ne peut PLUS être imposé
   // librement par le corps public (sinon écriture PII cross-tenant dans le CRM
   // d'un tenant arbitraire). Il provient de l'env CIVIC_ORGANISME_ID. Pour le
   // multi-vitrine, CIVIC_ORGANISME_IDS (liste blanche, séparée par des virgules)
   // autorise un body.organismeId UNIQUEMENT s'il y figure explicitement.
-  const organismeId = resolveCivicOrganismeId(body.organismeId);
+  const organismeId = resolveCivicOrganismeId(parsed.data.organismeId);
   if (!organismeId) {
     return NextResponse.json({ error: "Organisme non configuré." }, { status: 503, headers: civicCors });
   }
 
-  const source = `Test de positionnement civique${body.mention ? ` (${body.mention})` : ""}`;
+  const source = `Test de positionnement civique${mention ? ` (${mention})` : ""}`;
   const existing = await prisma.candidat.findFirst({
     where: { organismeId, email },
     select: { id: true },

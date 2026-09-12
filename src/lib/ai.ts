@@ -5,6 +5,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { prisma } from "@/lib/prisma";
 import { decryptSecret } from "@/lib/crypto";
+import { reportError } from "@/lib/observability/report-error";
 
 // Modèle IA : par DÉFAUT Haiku (le moins cher : ~5× moins que Opus pour la
 // rédaction d'e-mails, résumés, qualification de leads — largement suffisant).
@@ -45,7 +46,9 @@ export async function aiComplete(params: {
     };
   }
   try {
-    const client = new Anthropic({ apiKey });
+    // Timeout abaissé (défaut SDK = 10 min) + 1 seul retry (A12-002/019) : un appel
+    // IA suspendu ne doit pas tenir la fonction serverless jusqu'à sa limite.
+    const client = new Anthropic({ apiKey, timeout: 30_000, maxRetries: 1 });
     const res = await client.messages.create({
       model: MODEL,
       max_tokens: params.maxTokens ?? 1500,
@@ -61,6 +64,7 @@ export async function aiComplete(params: {
     // Ne PAS exposer l'erreur brute du fournisseur au client (fuite d'infos /
     // messages techniques). On journalise et on renvoie un message générique.
     console.error("[ai] échec de génération:", e);
+    await reportError(e, { tag: "ai" });
     return { ok: false, error: "L'assistant IA est momentanément indisponible. Réessayez dans quelques instants." };
   }
 }

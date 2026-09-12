@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { orgConfigFor } from "@/lib/org-identity";
-import { storeUpload } from "@/lib/blob";
+import { storeUploadThen } from "@/lib/blob";
 import { generateFicheExpressionBesoinPdf } from "@/lib/documents/fiche-expression-besoin";
 
 // Génération du PDF « fiche d'expression du besoin » (indicateur Qualiopi 4).
@@ -46,25 +46,24 @@ export async function GET(
     org,
   );
 
-  // Archive en pièce jointe sur la fiche (preuve Qualiopi).
+  // Archive en pièce jointe sur la fiche (preuve Qualiopi). storeUploadThen supprime
+  // le blob si l'écriture en base échoue (A12-009 : pas de fichier orphelin).
   try {
-    const url = await storeUpload({
-      data: pdf,
-      folder: `dossiers/${candidatId}`,
-      ext: "pdf",
-      contentType: "application/pdf",
-    });
-    await prisma.pieceJointe.create({
-      data: {
-        organismeId: c.organismeId,
-        candidatId,
-        label: "Fiche d'expression du besoin",
-        categorie: "QUALIOPI",
-        url,
-        mimeType: "application/pdf",
-        taille: pdf.byteLength,
-      },
-    });
+    await storeUploadThen(
+      { data: pdf, folder: `dossiers/${candidatId}`, ext: "pdf", contentType: "application/pdf" },
+      (url) =>
+        prisma.pieceJointe.create({
+          data: {
+            organismeId: c.organismeId,
+            candidatId,
+            label: "Fiche d'expression du besoin",
+            categorie: "QUALIOPI",
+            url,
+            mimeType: "application/pdf",
+            taille: pdf.byteLength,
+          },
+        }),
+    );
   } catch {
     // L'archivage ne doit pas empêcher l'affichage du PDF.
   }
