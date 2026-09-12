@@ -135,13 +135,13 @@ export default function VtcTaxiPage() {
   };
 
   return (
-    <main className="min-h-screen bg-white text-[#0D1B3E]">
+    <>
+      {/* ===== HEADER sticky (repère banner, hors <main>) ===== */}
+      <SiteHeader />
+      <main className="min-h-screen bg-white text-[#0D1B3E]">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       {/* skip={1} : ne saute que le hero (le <header> n'est pas une <section>) */}
       <ScrollReveal skip={1} />
-
-      {/* ===== HEADER sticky ===== */}
-      <SiteHeader />
 
       {/* ===== 1. HERO (H1 = requête cible) ===== */}
       <section className="text-white" style={{ background: `radial-gradient(900px 500px at 80% -10%, rgba(232,163,61,.18), transparent 60%), linear-gradient(180deg, ${NAVY}, #12245A)` }}>
@@ -302,8 +302,9 @@ export default function VtcTaxiPage() {
         </p>
       </section>
 
-      {/* ===== FOOTER ===== */}
+      </main>
+      {/* ===== FOOTER (repère contentinfo, hors <main>) ===== */}
       <SiteFooter />
-    </main>
+    </>
   );
 }
