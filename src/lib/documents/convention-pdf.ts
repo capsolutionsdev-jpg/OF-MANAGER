@@ -156,7 +156,7 @@ export async function generateAndStoreConventionPdf(conventionId: string): Promi
     html.split("/ofmanager-logo.png").join(logo64).split(STAMP_PLACEHOLDER).join(stamp64);
 
   const inner = inline(renderTemplate(DOCUMENTS["CONVENTION_ENTREPRISE"].html, vars));
-  const html = `<!DOCTYPE html><html><head><meta charset="utf-8" />${DOC_STYLE}</head><body>${inner}</body></html>`;
+  const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8" />${DOC_STYLE}</head><body>${inner}</body></html>`;
   const bytes = await htmlToPdf(html);
 
   const fileUrl = await storeUpload({

@@ -86,7 +86,7 @@ export function ConsoleRail({
   }
 
   const nav = (
-    <nav className="flex flex-col gap-4">
+    <nav aria-label="Navigation console" className="flex flex-col gap-4">
       {GROUPS.map((g) => (
         <div key={g.title} className="space-y-1">
           <p className="px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">

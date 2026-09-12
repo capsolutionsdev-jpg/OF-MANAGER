@@ -138,7 +138,7 @@ export async function addInscriptionDossier(
     const dj = dateJourPourDoc(type, inscription.session);
     const v = dj ? { ...vars, date_jour: dj } : vars;
     const inner = inlineImages(renderTemplate(doc.html, v)) + mention;
-    const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8" />${DOC_STYLE}</head><body>${inner}</body></html>`;
+    const fullHtml = `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8" />${DOC_STYLE}</head><body>${inner}</body></html>`;
     const result = (await HTMLtoDOCX(fullHtml, undefined, {
       table: { row: { cantSplit: true } },
       footer: false,

@@ -30,7 +30,7 @@ const selectClass =
 
 function ErrorText({ msg }: { msg?: string }) {
   if (!msg) return null;
-  return <p className="text-sm text-destructive">{msg}</p>;
+  return <p role="alert" className="text-sm text-destructive">{msg}</p>;
 }
 
 export function ArticleForm({

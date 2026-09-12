@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { requireSuperAdmin } from "@/lib/superadmin-guard";
 import { prisma } from "@/lib/prisma";
@@ -6,6 +7,11 @@ import { ConsoleRail } from "@/components/console/console-rail";
 import { ConfirmProvider } from "@/components/ui/confirm-dialog";
 
 export const dynamic = "force-dynamic";
+
+// Titre d'onglet distinct pour l'espace éditeur (WCAG 2.4.2).
+export const metadata: Metadata = {
+  title: { default: "Console éditeur — OFManager", template: "%s · Console — OFManager" },
+};
 
 export default async function ConsoleLayout({
   children,

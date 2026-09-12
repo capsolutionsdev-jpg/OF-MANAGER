@@ -104,7 +104,7 @@ export function emailShell(opts: {
     ? `<img src="${esc(opts.logoUrl)}" alt="${org}" height="34" style="height:34px;max-height:34px;width:auto;display:inline-block;vertical-align:middle;border:0;margin-right:10px;background:#ffffff;border-radius:6px;padding:3px 5px">`
     : `<span style="display:inline-block;width:30px;height:30px;background:${accent};border-radius:7px;text-align:center;line-height:30px;font-size:15px;margin-right:9px">🎓</span>`;
   return (
-    `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>` +
+    `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>` +
     `<body style="margin:0;background:#eef1f7;font-family:Arial,Helvetica,sans-serif;color:#0f1729">` +
     `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eef1f7;padding:24px 12px"><tr><td align="center">` +
     `<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:14px;overflow:hidden;border:1px solid ${LINE}">` +
@@ -116,7 +116,7 @@ export function emailShell(opts: {
     `<tr><td style="background:${PAPER};padding:20px 30px;border-top:1px solid ${LINE}">` +
     `<p style="margin:0 0 6px;font-size:12px;color:${MUTED};line-height:1.6"><b style="color:${NAVY}">${org}</b> — ${rep}<br>` +
     `Cet e-mail vous est adressé dans le cadre de votre formation. Une question&nbsp;? Répondez simplement à ce message.</p>` +
-    `<p style="margin:0;font-size:11px;color:#9aa7c2">🔒 Données traitées conformément au RGPD · Propulsé par OFManager</p>` +
+    `<p style="margin:0;font-size:11px;color:#5b6b86">🔒 Données traitées conformément au RGPD · Propulsé par OFManager</p>` +
     `</td></tr></table></td></tr></table></body></html>`
   );
 }

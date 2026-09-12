@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { LogOut } from "lucide-react";
@@ -13,6 +14,11 @@ import { cn } from "@/lib/utils";
 
 // Rendu dynamique : lit la session + la base (entreprise du client connecté).
 export const dynamic = "force-dynamic";
+
+// Titre d'onglet distinct pour l'espace client B2B (WCAG 2.4.2).
+export const metadata: Metadata = {
+  title: { default: "Espace client — OFManager", template: "%s · Espace client" },
+};
 
 /**
  * Habillage DÉDIÉ du portail client B2B (rôle ENTREPRISE) — volontairement hors

@@ -54,7 +54,7 @@ export async function GET(
   });
 
   const org = await orgConfigFor(session.user.organismeId);
-  const html = `<!doctype html><html><head><meta charset="utf-8"><style>
+  const html = `<!doctype html><html lang="fr"><head><meta charset="utf-8"><style>
     body { font-family: Georgia, "Times New Roman", serif; color: #221F19; padding: 0; margin: 0; }
     .sheet { padding: 60px; border: 6px double #2C53C0; margin: 24px; text-align: center; }
     .org { font-size: 13px; color: #555; }

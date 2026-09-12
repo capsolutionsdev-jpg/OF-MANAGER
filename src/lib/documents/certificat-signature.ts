@@ -21,6 +21,9 @@ export type CertificatData = {
  */
 export async function buildCertificatPdf(data: CertificatData): Promise<Uint8Array> {
   const pdf = await PDFDocument.create();
+  // Langue du document (WCAG 3.1.1 / RGAA 8.3) — synthèse vocale correcte sur
+  // cette pièce de preuve jointe à chaque dossier signé.
+  pdf.setLanguage("fr-FR");
   const page = pdf.addPage([595, 842]); // A4 portrait (points)
   const font = await pdf.embedFont(StandardFonts.Helvetica);
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold);

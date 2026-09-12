@@ -23,7 +23,7 @@ export function SiteHeader() {
       <div className="mx-auto flex h-16 max-w-6xl items-center px-4 sm:px-6">
         <Link href="/" aria-label="OFManager — accueil"><Logo /></Link>
 
-        <nav className="ml-8 hidden items-center gap-6 text-sm font-medium text-slate-600 lg:flex">
+        <nav aria-label="Navigation principale" className="ml-8 hidden items-center gap-6 text-sm font-medium text-slate-600 lg:flex">
           {NAV.map(([href, label]) => (
             <Link key={href} href={href} className="transition-colors hover:text-[#3B6EF5]">{label}</Link>
           ))}
@@ -47,7 +47,7 @@ export function SiteHeader() {
 
       {open && (
         <div className="border-t border-slate-100 bg-white lg:hidden">
-          <nav className="mx-auto flex max-w-6xl flex-col gap-1 px-4 py-3 sm:px-6">
+          <nav aria-label="Menu mobile" className="mx-auto flex max-w-6xl flex-col gap-1 px-4 py-3 sm:px-6">
             {NAV.map(([href, label]) => (
               <Link key={href} href={href} onClick={() => setOpen(false)} className="rounded-lg px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50">{label}</Link>
             ))}

@@ -47,7 +47,15 @@ export const dynamic = "force-dynamic";
 // Favicon dynamique : icône propre à l'organisme (onglet du navigateur).
 export async function generateMetadata(): Promise<Metadata> {
   const branding = await getBranding();
-  return branding.faviconUrl ? { icons: { icon: branding.faviconUrl } } : {};
+  // Titre d'onglet unique par écran (WCAG 2.4.2) : les pages qui exportent leur
+  // propre `title` s'affichent « <Titre> · <OF> » ; sinon, un défaut de section.
+  return {
+    title: {
+      default: `${branding.nom} — Espace de gestion`,
+      template: `%s · ${branding.nom}`,
+    },
+    ...(branding.faviconUrl ? { icons: { icon: branding.faviconUrl } } : {}),
+  };
 }
 
 export default async function AppLayout({

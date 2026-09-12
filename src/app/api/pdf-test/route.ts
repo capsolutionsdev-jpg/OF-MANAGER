@@ -21,7 +21,7 @@ export async function GET(req: Request) {
   }
   const t0 = Date.now();
   try {
-    const html = `<!doctype html><html><head><meta charset="utf-8"></head>
+    const html = `<!doctype html><html lang="fr"><head><meta charset="utf-8"></head>
       <body style="font-family:sans-serif;padding:40px">
         <h1>Test PDF — Chromium OK ✅</h1>
         <p>Généré le ${new Date().toLocaleString("fr-FR")}.</p>

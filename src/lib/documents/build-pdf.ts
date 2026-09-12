@@ -182,7 +182,7 @@ export async function buildInscriptionPdf(
     const dj = dateJourPourDoc(type, inscription.session);
     const v = dj ? { ...vars, date_jour: dj } : vars;
     const inner = inlineImages(renderTemplate(doc.html, v)) + mention;
-    return `<!DOCTYPE html><html><head><meta charset="utf-8" />${DOC_STYLE}</head><body>${inner}</body></html>`;
+    return `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8" />${DOC_STYLE}</head><body>${inner}</body></html>`;
   });
 
   const pdfBytesList = await htmlToPdfMany(htmls);
@@ -295,7 +295,7 @@ export async function buildSatisfactionPdf(
   // sur l'asset CAP : sinon un autre organisme afficherait le tampon CAP sur ses
   // documents. Vide tant que le tenant ne l'a pas chargé (console superadmin).
   const stamp64 = org.cachetUrl ?? EMPTY_IMAGE;
-  const html = `<!DOCTYPE html><html><head><meta charset="utf-8" />${DOC_STYLE}</head><body>${inner}</body></html>`
+  const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8" />${DOC_STYLE}</head><body>${inner}</body></html>`
     .split("/ofmanager-logo.png").join(logo64)
     .split(STAMP_PLACEHOLDER).join(stamp64);
 
@@ -391,7 +391,7 @@ export async function buildContratFormateurPdf(
   const inner = renderTemplate(contratFormateurHtml(), vars)
     .split("/ofmanager-logo.png").join(logo64)
     .split(STAMP_PLACEHOLDER).join(stamp64);
-  const html = `<!DOCTYPE html><html><head><meta charset="utf-8" />${DOC_STYLE}</head><body>${inner}</body></html>`;
+  const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8" />${DOC_STYLE}</head><body>${inner}</body></html>`;
   const data = await htmlToPdf(html);
   return {
     data,
@@ -453,7 +453,7 @@ export async function buildCompteRenduPdf(
     .split("/ofmanager-logo.png").join(logo64)
     .split(STAMP_PLACEHOLDER).join(stamp64);
 
-  const html = `<!DOCTYPE html><html><head><meta charset="utf-8" />${DOC_STYLE}</head><body>${inner}</body></html>`;
+  const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8" />${DOC_STYLE}</head><body>${inner}</body></html>`;
   const data = await htmlToPdf(html);
   return {
     data,

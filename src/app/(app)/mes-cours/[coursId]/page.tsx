@@ -194,7 +194,7 @@ export default async function CoursPlayerPage({
         </aside>
 
         {/* Contenu de la leçon */}
-        <main className="space-y-4">
+        <section className="space-y-4">
           <div className="rounded-xl border bg-card p-5">
             <h2 className="mb-4 text-xl font-bold">{current.titre}</h2>
 
@@ -267,7 +267,7 @@ export default async function CoursPlayerPage({
           {quiz.length > 0 && (
             <QuizRunner leconId={current.id} quiz={quiz} previous={prevQuiz} />
           )}
-        </main>
+        </section>
       </div>
     </div>
   );
