@@ -4,7 +4,6 @@ const create = vi.fn();
 vi.mock("@anthropic-ai/sdk", () => ({
   default: class {
     messages = { create };
-    constructor(_opts: unknown) {}
   },
 }));
 vi.mock("@/lib/prisma", () => ({
