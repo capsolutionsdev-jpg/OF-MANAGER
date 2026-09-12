@@ -170,6 +170,12 @@ export async function transmettreFactureEditeur(id: string): Promise<FactureEdit
   if (!f.numero || f.statut === FactureEditeurStatut.BROUILLON) {
     return { error: "Émettez la facture avant de la transmettre." };
   }
+  // Garde anti-re-dépôt (A12-007) : une facture déjà transmise ne doit JAMAIS être
+  // re-déposée (double dépôt d'une facture légale chez la PDP). Seul l'état EMISE
+  // est transmissible.
+  if (f.pdpTransmisAt || f.pdpReference || f.statut !== FactureEditeurStatut.EMISE) {
+    return { error: "Cette facture a déjà été transmise à la PDP." };
+  }
 
   const adapter = getPdpAdapter();
   if (!adapter.configured) {
@@ -185,22 +191,33 @@ export async function transmettreFactureEditeur(id: string): Promise<FactureEdit
     clientSiren: f.clientSiren,
     montantTTC: Number(f.montantTTC),
     facturx,
+    idempotencyKey: `facture-editeur-${f.id}`,
   });
   if (!res.ok) return { error: res.error ?? "Échec de la transmission PDP." };
 
-  await prisma.factureEditeur.update({
-    where: { id },
-    data: { statut: FactureEditeurStatut.DEPOSEE, pdpTransmisAt: new Date() },
-  });
-  await prisma.auditLog.create({
-    data: {
-      organismeId: f.organismeId,
-      action: "FACTURE_TRANSMISE_PDP",
-      entityType: "FactureEditeur",
-      entityId: id,
-      changesJson: { provider: adapter.name, reference: res.reference ?? null, numero: f.numero },
-    },
-  });
+  // Statut + référence PDP + audit dans UNE transaction (A12-007) : la référence de
+  // dépôt est PERSISTÉE (colonne dédiée, plus seulement dans les logs) → rapprochement
+  // possible ; si l'écriture échoue, la facture reste EMISE (re-transmissible), jamais
+  // dans un état incohérent DEPOSEE-sans-référence.
+  await prisma.$transaction([
+    prisma.factureEditeur.update({
+      where: { id },
+      data: {
+        statut: FactureEditeurStatut.DEPOSEE,
+        pdpTransmisAt: new Date(),
+        pdpReference: res.reference ?? null,
+      },
+    }),
+    prisma.auditLog.create({
+      data: {
+        organismeId: f.organismeId,
+        action: "FACTURE_TRANSMISE_PDP",
+        entityType: "FactureEditeur",
+        entityId: id,
+        changesJson: { provider: adapter.name, reference: res.reference ?? null, numero: f.numero },
+      },
+    }),
+  ]);
 
   revalidatePath(`/console/${f.organismeId}`);
   return { ok: true, id };

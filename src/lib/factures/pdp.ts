@@ -11,11 +11,15 @@
 //  qui gère aussi le cycle de vie (Déposée/Rejetée/Encaissée) et l'e-reporting.
 // =============================================================
 
+import { fetchWithTimeout } from "@/lib/fetch-timeout";
+
 export type PdpTransmitInput = {
   numero: string;
   clientSiren: string | null;
   montantTTC: number;
   facturx: Uint8Array; // le PDF Factur-X (PDF/A-3 + XML CII embarqué)
+  /** Clé d'idempotence (A12-007) : empêche un double dépôt chez la PDP au réessai. */
+  idempotencyKey?: string;
 };
 export type PdpTransmitResult = { ok: boolean; reference?: string; error?: string };
 
@@ -61,9 +65,12 @@ class RestPdpAdapter implements PdpAdapter {
       );
       form.append("numero", input.numero);
       if (input.clientSiren) form.append("clientSiren", input.clientSiren);
-      const res = await fetch(this.url, {
+      const res = await fetchWithTimeout(this.url, {
         method: "POST",
-        headers: { Authorization: `Bearer ${this.apiKey}` },
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+          ...(input.idempotencyKey ? { "Idempotency-Key": input.idempotencyKey } : {}),
+        },
         body: form,
       });
       if (!res.ok) return { ok: false, error: `PDP a répondu ${res.status}` };
