@@ -5,6 +5,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { prisma } from "@/lib/prisma";
 import { decryptSecret } from "@/lib/crypto";
+import { reportError } from "@/lib/observability/report-error";
 
 // Modèle IA : par DÉFAUT Haiku (le moins cher : ~5× moins que Opus pour la
 // rédaction d'e-mails, résumés, qualification de leads — largement suffisant).
@@ -61,6 +62,7 @@ export async function aiComplete(params: {
     // Ne PAS exposer l'erreur brute du fournisseur au client (fuite d'infos /
     // messages techniques). On journalise et on renvoie un message générique.
     console.error("[ai] échec de génération:", e);
+    await reportError(e, { tag: "ai" });
     return { ok: false, error: "L'assistant IA est momentanément indisponible. Réessayez dans quelques instants." };
   }
 }

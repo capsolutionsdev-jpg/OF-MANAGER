@@ -9,6 +9,8 @@
 import { prisma } from "@/lib/prisma";
 import { decryptSecret } from "@/lib/crypto";
 import { getCurrentOrganisme } from "@/lib/org";
+import { liveSendsBlocked } from "@/lib/live-sends";
+import { reportError } from "@/lib/observability/report-error";
 
 export function emailConfigured(): boolean {
   return Boolean(process.env.RESEND_API_KEY || process.env.BREVO_API_KEY);
@@ -120,6 +122,7 @@ async function sendViaResend(
   } catch (e) {
     const reason = `Resend injoignable : ${e instanceof Error ? e.message : String(e)}`;
     console.error("[email]", reason);
+    await reportError(e, { tag: "email:resend" });
     return { sent: false, reason };
   }
 }
@@ -145,6 +148,12 @@ export async function sendEmail(params: {
   // On simule un envoi réussi (expérience réaliste côté prospect) sans rien transmettre.
   if (await isDemoSender(params.organismeId)) {
     return { sent: true };
+  }
+
+  // A12-008 : hors production sur Vercel (preview/staging), ne jamais émettre de
+  // vrai e-mail sauf activation explicite EMAIL_LIVE=1.
+  if (liveSendsBlocked()) {
+    return { sent: false, reason: "Envoi e-mail désactivé hors production (EMAIL_LIVE=1 pour forcer)." };
   }
 
   const sender = await resolveSender(params.organismeId);
@@ -188,7 +197,8 @@ export async function sendEmail(params: {
       body: JSON.stringify(payload),
     });
     return { sent: res.ok, reason: res.ok ? undefined : `Brevo a refusé l'envoi (HTTP ${res.status}).` };
-  } catch {
+  } catch (e) {
+    await reportError(e, { tag: "email:brevo" });
     return { sent: false, reason: "Brevo injoignable." };
   }
 }
