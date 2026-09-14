@@ -19,6 +19,7 @@ import { sendEmail, emailConfigured, toBase64 } from "@/lib/email";
 import { orgConfigFor } from "@/lib/org-identity";
 import { sendPushToOrgStaff } from "@/lib/push";
 import { generateToken, appBaseUrl } from "@/lib/token";
+import { sendSuivi6MoisEmail } from "@/lib/suivi6mois-mailer";
 import {
   buildInscriptionPdf,
   buildSingleDocPdf,
@@ -418,6 +419,117 @@ export async function submitSuivi6Mois(
     });
   }
   return { ok: true };
+}
+
+/**
+ * Envoi MANUEL (1er envoi) de l'enquête de suivi à 6 mois depuis la page Qualiopi.
+ * Ignore volontairement la fenêtre de grâce de l'automatisation (intention explicite
+ * du gestionnaire). Verrou atomique anti-doublon (cron ↔ bouton). Réservé au staff
+ * propriétaire de l'inscription.
+ */
+export async function envoyerSuivi6Mois(
+  inscriptionId: string,
+): Promise<{ ok: boolean; error?: string; demo?: boolean }> {
+  const denied = await assertStaffOwnsInscription(inscriptionId);
+  if (denied) return { ok: false, error: denied };
+  try {
+    // Verrou : ne pose suivi6moisSentAt que s'il est encore null.
+    const claimed =
+      (
+        await prisma.inscription.updateMany({
+          where: { id: inscriptionId, suivi6moisSentAt: null },
+          data: { suivi6moisSentAt: new Date() },
+        })
+      ).count === 1;
+    if (!claimed)
+      return { ok: false, error: "Enquête déjà envoyée — utilisez « Relancer »." };
+    const r = await sendSuivi6MoisEmail(inscriptionId, { mode: "envoi" });
+    if (!r.sent) {
+      // Échec réel → libère le verrou pour permettre un réessai.
+      await prisma.inscription.updateMany({
+        where: { id: inscriptionId },
+        data: { suivi6moisSentAt: null },
+      });
+      return {
+        ok: false,
+        error: "Envoi impossible (vérifiez la configuration e-mail).",
+        demo: !emailConfigured(),
+      };
+    }
+    revalidatePath("/qualiopi/suivi-6mois");
+    return { ok: true, demo: !emailConfigured() };
+  } catch (e) {
+    console.error("envoyerSuivi6Mois: échec", e);
+    return { ok: false, error: "Erreur serveur lors de l'envoi." };
+  }
+}
+
+/**
+ * Relance de l'enquête 6 mois (déjà envoyée, pas encore répondue). Réutilise le
+ * même token/lien, incrémente le compteur de relances (traçabilité).
+ */
+export async function relancerSuivi6Mois(
+  inscriptionId: string,
+): Promise<{ ok: boolean; error?: string; demo?: boolean }> {
+  const denied = await assertStaffOwnsInscription(inscriptionId);
+  if (denied) return { ok: false, error: denied };
+  try {
+    const insc = await prisma.inscription.findUnique({
+      where: { id: inscriptionId },
+      select: { suivi6moisSentAt: true, suivi6moisCompletedAt: true },
+    });
+    if (!insc) return { ok: false, error: "Inscription introuvable." };
+    if (insc.suivi6moisCompletedAt)
+      return { ok: false, error: "Le candidat a déjà répondu." };
+    // Jamais envoyée : une relance équivaut à un premier envoi (pose le jalon).
+    if (!insc.suivi6moisSentAt) {
+      await prisma.inscription.updateMany({
+        where: { id: inscriptionId, suivi6moisSentAt: null },
+        data: { suivi6moisSentAt: new Date() },
+      });
+    }
+    const r = await sendSuivi6MoisEmail(inscriptionId, { mode: "relance" });
+    if (!r.sent)
+      return {
+        ok: false,
+        error: "Envoi impossible (vérifiez la configuration e-mail).",
+        demo: !emailConfigured(),
+      };
+    await prisma.inscription.update({
+      where: { id: inscriptionId },
+      data: {
+        suivi6moisRelanceAt: new Date(),
+        suivi6moisRelanceCount: { increment: 1 },
+      },
+    });
+    revalidatePath("/qualiopi/suivi-6mois");
+    return { ok: true, demo: !emailConfigured() };
+  } catch (e) {
+    console.error("relancerSuivi6Mois: échec", e);
+    return { ok: false, error: "Erreur serveur lors de la relance." };
+  }
+}
+
+/**
+ * Envoi manuel EN LOT (sélection multiple sur la page). Chaque inscription est
+ * vérifiée individuellement (multi-tenant) via envoyerSuivi6Mois. Renvoie le
+ * nombre d'envois réussis / en échec pour le retour utilisateur.
+ */
+export async function envoyerSuivi6MoisBatch(
+  inscriptionIds: string[],
+): Promise<{ ok: boolean; envoyes: number; echecs: number; error?: string }> {
+  if (!Array.isArray(inscriptionIds) || inscriptionIds.length === 0)
+    return { ok: false, envoyes: 0, echecs: 0, error: "Aucune inscription sélectionnée." };
+  let envoyes = 0;
+  let echecs = 0;
+  // Borne de sécurité : évite un envoi massif accidentel en une seule requête.
+  for (const id of inscriptionIds.slice(0, 500)) {
+    const r = await envoyerSuivi6Mois(id);
+    if (r.ok) envoyes++;
+    else echecs++;
+  }
+  revalidatePath("/qualiopi/suivi-6mois");
+  return { ok: true, envoyes, echecs };
 }
 
 /** Soumission publique du test de positionnement (via le token dédié). */

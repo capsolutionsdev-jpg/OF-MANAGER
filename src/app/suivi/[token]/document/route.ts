@@ -4,6 +4,7 @@ import { orgConfigFor } from "@/lib/org-identity";
 import {
   SITUATION_LABELS,
   LIEN_FORMATION_LABELS,
+  echeanceSuivi6Mois,
   type Suivi6MoisReponses,
 } from "@/lib/suivi6mois";
 
@@ -32,7 +33,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ token: 
   const org = await orgConfigFor(i.organismeId);
   const nom = `${i.candidat.prenom} ${i.candidat.nom}`;
   const dDate = (d: Date) => d.toLocaleDateString("fr-FR");
-  const completed = i.suivi6moisCompletedAt ? dDate(i.suivi6moisCompletedAt) : "";
+  // Date de réalisation officielle (Qualiopi) = échéance J+6 (fin de formation + 6 mois),
+  // indépendante de la date réelle de réponse (conservée en base pour la traçabilité).
+  const realisation = dDate(echeanceSuivi6Mois(i.session.dateFin));
 
   const ligne = (label: string, val: string) =>
     val ? `<tr><td class="k">${esc(label)}</td><td>${esc(val)}</td></tr>` : "";
@@ -64,7 +67,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ token: 
         ${ligne("Employeur", r.employeur ?? "")}
         ${r.apportFormation != null ? ligne("Apport de la formation (0-10)", String(r.apportFormation)) : ""}
         ${ligne("Commentaire", r.commentaire ?? "")}
-        ${ligne("Date de réponse", completed)}
+        ${ligne("Date de réalisation (6 mois après la formation)", realisation)}
       </table>
       <div class="sig">
         <p style="font-size:13px;margin:0 0 6px"><strong>Signature du bénéficiaire</strong></p>

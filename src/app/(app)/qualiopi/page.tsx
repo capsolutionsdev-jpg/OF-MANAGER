@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ShieldCheck, MessageSquareWarning, Newspaper, Handshake, FolderArchive, ClipboardCheck } from "lucide-react";
+import { ShieldCheck, MessageSquareWarning, Newspaper, Handshake, FolderArchive, ClipboardCheck, CalendarClock } from "lucide-react";
 import { getTenantDb } from "@/lib/tenant";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,6 +43,9 @@ export default async function QualiopiPage() {
         </Button>
         <Button variant="outline" size="sm" render={<Link href="/qualiopi/reclamations" />}>
           <MessageSquareWarning className="mr-1.5 h-4 w-4" /> Réclamations
+        </Button>
+        <Button variant="outline" size="sm" render={<Link href="/qualiopi/suivi-6mois" />}>
+          <CalendarClock className="mr-1.5 h-4 w-4" /> Suivi à 6 mois
         </Button>
         <Button variant="outline" size="sm" render={<Link href="/qualiopi/veille" />}>
           <Newspaper className="mr-1.5 h-4 w-4" /> Veille

@@ -4,6 +4,8 @@ import { sendEmail, emailConfigured, toBase64, type EmailAttachment } from "@/li
 import { sendSms } from "@/lib/sms";
 import { orgConfigFor } from "@/lib/org-identity";
 import { generateToken, appBaseUrl } from "@/lib/token";
+import { suivi6moisAutoEligible } from "@/lib/suivi6mois";
+import { sendSuivi6MoisEmail } from "@/lib/suivi6mois-mailer";
 import { DEFAULT_AUTOMATION_SETTINGS, type AutomationSettingsData } from "@/lib/automation-settings";
 import { buildSingleDocPdf } from "@/lib/documents/build-pdf";
 import {
@@ -635,50 +637,29 @@ ${org.representant} — ${org.name}`,
     }
 
     // ── 4bis) SUIVI À 6 MOIS (Qualiopi ind. 11 — devenir / insertion pro) ──
+    // Envoi AUTOMATIQUE borné à la fenêtre [J+6 ; J+6 + grâce] (suivi6moisAutoEligible)
+    // → aucune vague rétroactive sur l'historique. L'envoi manuel / la relance depuis
+    // la page Qualiopi ignorent volontairement cette borne. Contenu d'e-mail unique
+    // partagé avec les envois manuels via sendSuivi6MoisEmail.
     const suiviRule = auto("suivi_6mois", true);
-    const sixMois = new Date(s.dateFin);
-    sixMois.setMonth(sixMois.getMonth() + 6);
     if (
       suiviRule.on &&
-      !i.suivi6moisSentAt &&
-      now >= sixMois &&
+      suivi6moisAutoEligible(
+        {
+          dateFin: s.dateFin,
+          suivi6moisSentAt: i.suivi6moisSentAt,
+          suivi6moisCompletedAt: i.suivi6moisCompletedAt,
+        },
+        now,
+      ) &&
       (await claimInsc(i.id, "suivi6moisSentAt"))
     ) {
-      const suiviToken = i.suivi6moisToken ?? generateToken();
-      if (!i.suivi6moisToken) {
-        await prisma.inscription.update({
-          where: { id: i.id },
-          data: { suivi6moisToken: suiviToken },
-        });
-      }
-      const subject = `👋 6 mois après « ${f.titre} » — où en êtes-vous ?`;
-      const suiviLink = `${base}/suivi/${suiviToken}`;
-      const html = emailShell({
-        organisme: org.name,
-        representant: org.representant,
-      logoUrl: emailLogoSrc(org.id, org.logoUrl),
-        body:
-          emailHeading(`Prenons de vos nouvelles, ${esc(prenom)}`) +
-          emailParagraph(
-            `Il y a environ 6 mois, vous terminiez <b>« ${esc(f.titre)} »</b>. Dans le cadre de notre démarche qualité, nous aimerions savoir <b>où vous en êtes</b> aujourd'hui (situation professionnelle, lien avec la formation…).`,
-          ) +
-          emailButton("Répondre (2 min) →", suiviLink) +
-          emailBox(
-            `✍️ Un court questionnaire à compléter et signer. Vos réponses nous aident à améliorer nos formations.`,
-          ) +
-          emailSignoff("Merci pour votre temps,", org.representant),
+      const r = await sendSuivi6MoisEmail(i.id, {
+        mode: "envoi",
+        canal: suiviRule.channel as "email" | "sms" | "both",
+        smsBody: suiviRule.body,
       });
-      const sent = suiviRule.channel === "sms" ? true : await logAndSend({ to, subject, html, sessionId: s.id });
-      if (sent) {
-        await maybeSms(
-          suiviRule.channel,
-          i.candidat.telephone,
-          suiviRule.body ||
-            `${prenom}, 2 min pour nous dire où vous en êtes 6 mois après « ${f.titre} » : ${base}/suivi/${suiviToken}`,
-        );
-      } else {
-        await releaseInsc(i.id, "suivi6moisSentAt");
-      }
+      if (!r.sent) await releaseInsc(i.id, "suivi6moisSentAt");
     }
   }
 
