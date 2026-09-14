@@ -44,6 +44,13 @@ describe("buildSuivi6MoisCsv", () => {
     expect(line).toContain('"Habilitation; niveau ""2"""');
   });
 
+  it("neutralise l'injection de formule (=, +, -, @ en tête de cellule)", () => {
+    const csv = buildSuivi6MoisCsv([row({ poste: "=1+2", employeur: "@cmd" })]);
+    const line = csv.replace(/^﻿/, "").split("\r\n")[1];
+    expect(line).toContain("'=1+2");
+    expect(line).toContain("'@cmd");
+  });
+
   it("produit une ligne par inscription", () => {
     const csv = buildSuivi6MoisCsv([row(), row({ candidat: "Bob" })]);
     const lines = csv.replace(/^﻿/, "").split("\r\n");

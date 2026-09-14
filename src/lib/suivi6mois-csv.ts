@@ -37,9 +37,11 @@ const HEADERS = [
   "Apport (0-10)",
 ];
 
-/** Échappe une valeur CSV : guillemets doublés + encadrement si séparateur/quote/CRLF. */
+/** Échappe une valeur CSV : neutralise l'injection de formule (=, +, -, @ en tête),
+ *  double les guillemets, et encadre si séparateur / quote / CRLF. */
 function esc(v: string | number): string {
-  const s = String(v ?? "");
+  let s = String(v ?? "");
+  if (/^[=+\-@]/.test(s)) s = "'" + s; // anti-injection de formule (Excel/Sheets)
   return /[";\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
