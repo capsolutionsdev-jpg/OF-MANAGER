@@ -56,6 +56,13 @@ export const SUIVI_6MOIS_GRACE_DAYS = 15;
 
 export type Suivi6MoisStatut = "A_VENIR" | "NON_ENVOYE" | "EN_ATTENTE" | "FAIT";
 
+export const SUIVI_6MOIS_STATUT_LABELS: Record<Suivi6MoisStatut, string> = {
+  A_VENIR: "À venir",
+  NON_ENVOYE: "Non envoyé",
+  EN_ATTENTE: "Envoyé, en attente",
+  FAIT: "Fait",
+};
+
 /** État minimal d'une inscription nécessaire au calcul du statut / de l'éligibilité. */
 export type Suivi6MoisEtat = {
   dateFin: Date;

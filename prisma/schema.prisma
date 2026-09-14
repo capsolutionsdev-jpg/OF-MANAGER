@@ -1155,7 +1155,9 @@ model Inscription {
   // Token indexé (non @unique) pour éviter une contrainte bloquante en prod ;
   // généré aléatoirement (24 octets) → collision négligeable. Lecture via findFirst.
   suivi6moisToken       String? // lien public de l'enquête à 6 mois
-  suivi6moisSentAt      DateTime? // enquête 6 mois envoyée
+  suivi6moisSentAt      DateTime? // enquête 6 mois envoyée (1er envoi)
+  suivi6moisRelanceAt   DateTime? // dernière relance manuelle de l'enquête 6 mois
+  suivi6moisRelanceCount Int      @default(0) // nombre de relances envoyées
   suivi6moisJson        Json? // réponses (situation pro, lien formation, etc.)
   suivi6moisCompletedAt DateTime?
   suivi6moisSignature   String?   @db.Text // signature manuscrite (PNG data URL)
