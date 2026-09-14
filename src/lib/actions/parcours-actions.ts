@@ -20,6 +20,7 @@ import { orgConfigFor } from "@/lib/org-identity";
 import { sendPushToOrgStaff } from "@/lib/push";
 import { generateToken, appBaseUrl } from "@/lib/token";
 import { sendSuivi6MoisEmail } from "@/lib/suivi6mois-mailer";
+import { isValidSignatureDataUrl } from "@/lib/suivi6mois";
 import {
   buildInscriptionPdf,
   buildSingleDocPdf,
@@ -383,7 +384,7 @@ export async function submitSuivi6Mois(
   signatureDataUrl?: string,
 ): Promise<{ ok: boolean; error?: string }> {
   if (!reponses?.situation) return { ok: false, error: "Merci d'indiquer votre situation." };
-  if (!signatureDataUrl || !signatureDataUrl.startsWith("data:image/"))
+  if (!isValidSignatureDataUrl(signatureDataUrl))
     return { ok: false, error: "Merci de dessiner votre signature." };
 
   const insc = await prisma.inscription.findFirst({
@@ -443,7 +444,9 @@ export async function envoyerSuivi6Mois(
       ).count === 1;
     if (!claimed)
       return { ok: false, error: "Enquête déjà envoyée — utilisez « Relancer »." };
-    const r = await sendSuivi6MoisEmail(inscriptionId, { mode: "envoi" });
+    // manuel: true → un envoi déclenché par un collaborateur contourne la suspension
+    // e-mail de l'organisme (le coupe-circuit ne vise que les envois AUTOMATIQUES).
+    const r = await sendSuivi6MoisEmail(inscriptionId, { mode: "envoi", manuel: true });
     if (!r.sent) {
       // Échec réel → libère le verrou pour permettre un réessai.
       await prisma.inscription.updateMany({
@@ -482,19 +485,32 @@ export async function relancerSuivi6Mois(
     if (insc.suivi6moisCompletedAt)
       return { ok: false, error: "Le candidat a déjà répondu." };
     // Jamais envoyée : une relance équivaut à un premier envoi (pose le jalon).
+    let justClaimed = false;
     if (!insc.suivi6moisSentAt) {
-      await prisma.inscription.updateMany({
-        where: { id: inscriptionId, suivi6moisSentAt: null },
-        data: { suivi6moisSentAt: new Date() },
-      });
+      justClaimed =
+        (
+          await prisma.inscription.updateMany({
+            where: { id: inscriptionId, suivi6moisSentAt: null },
+            data: { suivi6moisSentAt: new Date() },
+          })
+        ).count === 1;
     }
-    const r = await sendSuivi6MoisEmail(inscriptionId, { mode: "relance" });
-    if (!r.sent)
+    const r = await sendSuivi6MoisEmail(inscriptionId, { mode: "relance", manuel: true });
+    if (!r.sent) {
+      // Si CE call venait de poser le jalon, on le libère (aucun e-mail parti) →
+      // symétrie avec envoyerSuivi6Mois, évite un verrou « fantôme ».
+      if (justClaimed) {
+        await prisma.inscription.updateMany({
+          where: { id: inscriptionId },
+          data: { suivi6moisSentAt: null },
+        });
+      }
       return {
         ok: false,
         error: "Envoi impossible (vérifiez la configuration e-mail).",
         demo: !emailConfigured(),
       };
+    }
     await prisma.inscription.update({
       where: { id: inscriptionId },
       data: {
@@ -517,19 +533,23 @@ export async function relancerSuivi6Mois(
  */
 export async function envoyerSuivi6MoisBatch(
   inscriptionIds: string[],
-): Promise<{ ok: boolean; envoyes: number; echecs: number; error?: string }> {
+): Promise<{ ok: boolean; envoyes: number; echecs: number; ignores: number; error?: string }> {
   if (!Array.isArray(inscriptionIds) || inscriptionIds.length === 0)
-    return { ok: false, envoyes: 0, echecs: 0, error: "Aucune inscription sélectionnée." };
+    return { ok: false, envoyes: 0, echecs: 0, ignores: 0, error: "Aucune inscription sélectionnée." };
   let envoyes = 0;
   let echecs = 0;
   // Borne de sécurité : évite un envoi massif accidentel en une seule requête.
-  for (const id of inscriptionIds.slice(0, 500)) {
+  // Le surplus au-delà de la borne est REMONTÉ (ignores), jamais ignoré en silence.
+  const LIMITE = 500;
+  const aTraiter = inscriptionIds.slice(0, LIMITE);
+  const ignores = inscriptionIds.length - aTraiter.length;
+  for (const id of aTraiter) {
     const r = await envoyerSuivi6Mois(id);
     if (r.ok) envoyes++;
     else echecs++;
   }
   revalidatePath("/qualiopi/suivi-6mois");
-  return { ok: true, envoyes, echecs };
+  return { ok: true, envoyes, echecs, ignores };
 }
 
 /** Soumission publique du test de positionnement (via le token dédié). */

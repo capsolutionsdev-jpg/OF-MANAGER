@@ -99,3 +99,10 @@ export function suivi6moisAutoEligible(
   limite.setDate(limite.getDate() + graceDays);
   return now <= limite;
 }
+
+/** Valide strictement une signature en data URL base64 (PNG/JPEG). Défense en
+ *  profondeur : empêche qu'une valeur forgée casse l'attribut src du HTML du PDF
+ *  (le gabarit échappe déjà la valeur, ceci rejette l'entrée en amont). */
+export function isValidSignatureDataUrl(s?: string | null): boolean {
+  return typeof s === "string" && /^data:image\/(png|jpe?g);base64,[A-Za-z0-9+/=]+$/.test(s);
+}
