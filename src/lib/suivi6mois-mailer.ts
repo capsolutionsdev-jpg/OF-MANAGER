@@ -20,7 +20,7 @@ export type SendSuivi6MoisResult = { ok: boolean; sent: boolean; reason?: string
  */
 export async function sendSuivi6MoisEmail(
   inscriptionId: string,
-  opts: { mode?: "envoi" | "relance"; canal?: "email" | "sms" | "both"; smsBody?: string } = {},
+  opts: { mode?: "envoi" | "relance"; canal?: "email" | "sms" | "both"; smsBody?: string; manuel?: boolean } = {},
 ): Promise<SendSuivi6MoisResult> {
   const insc = await prisma.inscription.findUnique({
     where: { id: inscriptionId },
@@ -58,7 +58,7 @@ export async function sendSuivi6MoisEmail(
   const res =
     canal === "sms"
       ? { sent: true as const, reason: undefined as string | undefined }
-      : await sendEmail({ to, subject, html, organismeId: insc.organismeId, manuel: relance || undefined });
+      : await sendEmail({ to, subject, html, organismeId: insc.organismeId, manuel: opts.manuel || undefined });
 
   if (canal !== "sms") {
     await prisma.emailLog.create({
@@ -74,7 +74,12 @@ export async function sendSuivi6MoisEmail(
     });
   }
 
-  if ((canal === "sms" || canal === "both") && insc.candidat.telephone) {
+  // « Envoi réussi » = e-mail parti OU e-mail non configuré (mode démo).
+  const sent = canal === "sms" ? true : res.sent || !emailConfigured();
+
+  // SMS uniquement si l'e-mail est bien parti (ou canal SMS pur) → évite un SMS en
+  // double quand l'e-mail échoue et que le verrou est ensuite libéré pour réessai.
+  if ((canal === "sms" || (canal === "both" && sent)) && insc.candidat.telephone) {
     await sendSms({
       to: insc.candidat.telephone,
       body:
@@ -84,7 +89,5 @@ export async function sendSuivi6MoisEmail(
     });
   }
 
-  // « Envoi réussi » = e-mail parti OU e-mail non configuré (mode démo).
-  const sent = canal === "sms" ? true : res.sent || !emailConfigured();
   return { ok: true, sent, reason: res.reason, token };
 }

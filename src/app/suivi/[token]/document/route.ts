@@ -71,7 +71,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ token: 
       </table>
       <div class="sig">
         <p style="font-size:13px;margin:0 0 6px"><strong>Signature du bénéficiaire</strong></p>
-        ${i.suivi6moisSignature ? `<img src="${i.suivi6moisSignature}" alt="signature" />` : "<em>Non signé</em>"}
+        ${i.suivi6moisSignature ? `<img src="${esc(i.suivi6moisSignature)}" alt="signature" />` : "<em>Non signé</em>"}
       </div>
       <div class="foot">${esc(org.name)} · SIRET ${esc(org.siret)} · NDA ${esc(org.nda)} — Document généré le ${dDate(new Date())}.</div>
     </div>

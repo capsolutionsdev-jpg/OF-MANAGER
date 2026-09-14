@@ -103,7 +103,7 @@ export function Suivi6MoisTable({ rows }: { rows: Suivi6MoisRow[] }) {
     if (!window.confirm(`Envoyer l'enquête de suivi à 6 mois à ${ids.length} candidat(s) ?`)) return;
     startTransition(async () => {
       const res = await envoyerSuivi6MoisBatch(ids);
-      if (res.ok) toast.success(`${res.envoyes} envoyée(s)${res.echecs ? `, ${res.echecs} échec(s)` : ""}.`);
+      if (res.ok) toast.success(`${res.envoyes} envoyée(s)${res.echecs ? `, ${res.echecs} échec(s)` : ""}${res.ignores ? `, ${res.ignores} ignorée(s) (limite 500 — relancez pour le reste)` : ""}.`);
       else toast.error(res.error ?? "Erreur.");
       setSelected(new Set());
       router.refresh();
