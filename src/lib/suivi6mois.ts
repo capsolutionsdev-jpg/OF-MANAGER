@@ -42,3 +42,53 @@ export type Suivi6MoisReponses = {
   apportFormation?: number; // 0..10 : la formation a-t-elle aidé ?
   commentaire?: string;
 };
+
+// ── Échéance, statut & éligibilité de l'enquête à 6 mois ──────────────────────
+// L'échéance « J+6 » n'est pas stockée : elle se calcule à la volée depuis la fin
+// de formation. C'est aussi la « date de réalisation » officielle imprimée sur le
+// document Qualiopi (indépendante de la date réelle de réponse du candidat).
+
+/** Nombre de jours pendant lesquels l'envoi AUTOMATIQUE reste autorisé après
+ *  l'échéance J+6. Au-delà, l'enquête n'est plus envoyée par le cron (elle reste
+ *  « non envoyée » et doit être déclenchée manuellement) → évite une vague
+ *  d'e-mails rétroactifs vers d'anciens contacts lors d'un déploiement. */
+export const SUIVI_6MOIS_GRACE_DAYS = 15;
+
+export type Suivi6MoisStatut = "A_VENIR" | "NON_ENVOYE" | "EN_ATTENTE" | "FAIT";
+
+/** État minimal d'une inscription nécessaire au calcul du statut / de l'éligibilité. */
+export type Suivi6MoisEtat = {
+  dateFin: Date;
+  suivi6moisSentAt?: Date | null;
+  suivi6moisCompletedAt?: Date | null;
+};
+
+/** Échéance de l'enquête = fin de formation + 6 mois (« J+6 »). */
+export function echeanceSuivi6Mois(dateFin: Date): Date {
+  const d = new Date(dateFin);
+  d.setMonth(d.getMonth() + 6);
+  return d;
+}
+
+/** Statut de suivi d'une inscription, à une date `now` donnée. */
+export function suivi6moisStatut(e: Suivi6MoisEtat, now: Date): Suivi6MoisStatut {
+  if (e.suivi6moisCompletedAt) return "FAIT";
+  if (e.suivi6moisSentAt) return "EN_ATTENTE";
+  return now >= echeanceSuivi6Mois(e.dateFin) ? "NON_ENVOYE" : "A_VENIR";
+}
+
+/** L'inscription est-elle éligible à un envoi AUTOMATIQUE (cron) à la date `now` ?
+ *  Vrai uniquement dans la fenêtre [J+6 ; J+6 + graceDays], jamais envoyée ni
+ *  répondue. L'envoi manuel / la relance ignorent volontairement cette borne. */
+export function suivi6moisAutoEligible(
+  e: Suivi6MoisEtat,
+  now: Date,
+  graceDays: number = SUIVI_6MOIS_GRACE_DAYS,
+): boolean {
+  if (e.suivi6moisSentAt || e.suivi6moisCompletedAt) return false;
+  const echeance = echeanceSuivi6Mois(e.dateFin);
+  if (now < echeance) return false;
+  const limite = new Date(echeance);
+  limite.setDate(limite.getDate() + graceDays);
+  return now <= limite;
+}
