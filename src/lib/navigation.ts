@@ -429,6 +429,14 @@ export const navItems: NavItem[] = [
     permission: "rgpd",
   },
   {
+    label: "Nouveautés",
+    href: "/nouveautes",
+    icon: Sparkles,
+    roles: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
+    // Pas de `permission` → visible pour tout le personnel (page d'annonces produit,
+    // hors matrice SECTION_ROLES : accès staff par fall-through du middleware).
+  },
+  {
     label: "Support",
     href: "/support",
     icon: LifeBuoy,
