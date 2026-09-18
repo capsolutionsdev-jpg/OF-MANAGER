@@ -20,7 +20,7 @@ import { SOFT_DELETE_MODELS, softWhere } from "@/lib/tenant-scope";
  * client BRUT `prisma` reste utilisé pour l'authentification (login par e-mail) et,
  * via `bypassPrisma`, pour la console SUPERADMIN et les flux publics par token.
  */
-const GLOBAL_MODELS = new Set<string>(["Organisme", "SupportMessage", "PlanTarif"]);
+const GLOBAL_MODELS = new Set<string>(["Organisme", "SupportMessage", "PlanTarif", "Release", "ReleaseEntry"]);
 
 const WHERE_OPS = new Set([
   "findFirst",

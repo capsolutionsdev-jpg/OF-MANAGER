@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, Building2, PhoneCall, LifeBuoy, BadgeEuro, Palette,
-  FileSignature, ReceiptEuro, BarChart3, ScrollText, Search, Menu, X, Coins,
+  FileSignature, ReceiptEuro, BarChart3, ScrollText, Search, Menu, X, Coins, Megaphone,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ConsoleAccountMenu } from "@/components/console/console-account-menu";
@@ -40,6 +40,7 @@ const GROUPS: Group[] = [
   ] },
   { title: "Configuration", items: [
     { href: "/console/tarifs", label: "Tarifs", icon: BadgeEuro },
+    { href: "/console/changelog", label: "Mises à jour", icon: Megaphone },
     { href: "/console/designs", label: "Designs", icon: Palette },
   ] },
 ];

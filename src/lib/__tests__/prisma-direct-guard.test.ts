@@ -153,6 +153,9 @@ const ACTIONS_ALLOWLIST = new Set([
   // après vérification isDemo — pas de données filles, getTenantDb inapplicable.
   "demo-lifecycle-actions.ts",
   "pricing-actions.ts",
+  // Changelog / notes de version : modèle GLOBAL (Release/ReleaseEntry, produit-wide),
+  // gardé requireSuperAdmin. Hors-tenant — même motif que pricing-actions.
+  "changelog-actions.ts",
   "notification-actions.ts",
   // Scopés manuellement par organismeId (updateMany where {id, organismeId})
   "devis-actions.ts",
