@@ -3148,3 +3148,50 @@ model CircuitStepRun {
   @@index([inscriptionId])
   @@index([circuitId])
 }
+
+// =============================================================
+//  CHANGELOG / NOTES DE VERSION (« mises à jour »)
+//  Modèle GLOBAL (produit-wide, hors tenant → PAS de organismeId).
+//  Une version (Release) regroupe des entrées (ReleaseEntry).
+//  Publié aux clients (page « Nouveautés ») + suivi console éditeur.
+// =============================================================
+
+enum ReleaseCategory {
+  NOUVEAUTE
+  AMELIORATION
+  CORRECTION
+  SECURITE
+}
+
+enum ReleaseAudience {
+  CLIENT // visible des organismes clients (page « Nouveautés »)
+  INTERNE // visible uniquement dans la console éditeur (SUPERADMIN)
+}
+
+// Une version du produit. `releasedAt` null = brouillon (non visible clients).
+model Release {
+  id         String         @id @default(cuid())
+  version    String         @unique // ex. "2.4.0"
+  name       String? // titre optionnel de la version
+  releasedAt DateTime? // null = brouillon ; sinon date de publication
+  entries    ReleaseEntry[]
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  @@index([releasedAt])
+}
+
+// Une entrée de changelog rattachée à une version.
+model ReleaseEntry {
+  id        String          @id @default(cuid())
+  releaseId String
+  release   Release         @relation(fields: [releaseId], references: [id], onDelete: Cascade)
+  category  ReleaseCategory @default(NOUVEAUTE)
+  title     String
+  body      String?         @db.Text
+  audience  ReleaseAudience @default(CLIENT)
+  order     Int             @default(0)
+  createdAt DateTime        @default(now())
+
+  @@index([releaseId])
+}
