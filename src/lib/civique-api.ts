@@ -488,12 +488,12 @@ export async function fulfillCivicCheckout(args: {
   // Candidat : retrouvé par (organisme, e-mail) ou créé.
   let candidat = await prisma.candidat.findFirst({
     where: { organismeId, email },
-    select: { id: true, prenom: true, email: true, civicToken: true },
+    select: { id: true, prenom: true, email: true, civicToken: true, civicMentions: true },
   });
   if (!candidat) {
     candidat = await prisma.candidat.create({
       data: { organismeId, email, prenom, nom: "", sourceConnaissance: "Site vitrine — prépa civique" },
-      select: { id: true, prenom: true, email: true, civicToken: true },
+      select: { id: true, prenom: true, email: true, civicToken: true, civicMentions: true },
     });
   }
 
@@ -507,7 +507,10 @@ export async function fulfillCivicCheckout(args: {
       civicToken: token,
       civicAccessUntil: civicAccessUntil(),
       civicAccessStatut: "ACTIF",
-      civicMentions: { push: mention },
+      // OFM-39 : ajout IDEMPOTENT de la mention payée (dédupliqué). Le `push` rejouait
+      // la même mention à chaque livraison du webhook Stripe / rappel de fulfillment
+      // (le fulfillment est « au plus une fois » mais RETENTABLE, A12-003) → doublons.
+      civicMentions: { set: Array.from(new Set([...(candidat.civicMentions ?? []), mention])) },
     },
   });
 
