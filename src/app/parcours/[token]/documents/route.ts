@@ -45,11 +45,15 @@ export async function GET(
       },
     });
   } catch (e) {
-    // Diagnostic : renvoie l'erreur réelle (génération PDF / Chromium serverless).
-    const msg = e instanceof Error ? `${e.message}\n\n${e.stack ?? ""}` : String(e);
-    return new Response(`Erreur génération PDF:\n${msg}`, {
-      status: 500,
-      headers: { "Content-Type": "text/plain; charset=utf-8" },
-    });
+    // OFM-12 : NE PAS exposer message/stack en prod sur cette route PUBLIQUE (fuite
+    // d'internes serveur). En dev on aide au diagnostic ; en prod, message générique
+    // et trace côté serveur uniquement (aligné sur api/pdf-test — durcissement P2-3).
+    const isDev = process.env.NODE_ENV !== "production";
+    console.error("[parcours/documents] génération PDF échouée:", e);
+    const detail = e instanceof Error ? `${e.message}\n\n${e.stack ?? ""}` : String(e);
+    return new Response(
+      isDev ? `Erreur génération PDF:\n${detail}` : "Erreur lors de la génération du document.",
+      { status: 500, headers: { "Content-Type": "text/plain; charset=utf-8" } },
+    );
   }
 }

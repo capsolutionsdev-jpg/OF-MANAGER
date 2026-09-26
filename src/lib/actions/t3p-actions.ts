@@ -5,6 +5,7 @@ import { z } from "zod";
 import type { T3PMetier } from "@prisma/client";
 import { auth } from "@/auth";
 import { getTenantDb } from "@/lib/tenant";
+import { isNonStaffRole } from "@/lib/permissions";
 import {
   T3P_ETAPE_KEYS,
   T3P_FRAIS_EXAMEN,
@@ -42,7 +43,8 @@ export async function creerParcoursT3P(
   opts?: { mobilite?: boolean; inscriptionId?: string },
 ): Promise<ActionResult> {
   const session = await auth();
-  if (!session?.user) return { ok: false, error: "Non autorisé." };
+  // BFLA (OFM) : gestion du parcours T3P réservée au personnel (rejette les non-staff dont ENTREPRISE).
+  if (!session?.user || isNonStaffRole(session.user.role)) return { ok: false, error: "Non autorisé." };
   const db = await getTenantDb();
 
   // Cloisonnement (audit A05-018) : candidatId est un argument ; on confirme qu'il
@@ -132,7 +134,8 @@ export type ParcoursT3PPatch = z.infer<typeof parcoursPatchSchema>;
 /** Met à jour les champs d'étapes d'un parcours (saisie console). */
 export async function majParcoursT3P(id: string, patch: ParcoursT3PPatch): Promise<ActionResult> {
   const session = await auth();
-  if (!session?.user) return { ok: false, error: "Non autorisé." };
+  // BFLA (OFM) : gestion du parcours T3P réservée au personnel (rejette les non-staff dont ENTREPRISE).
+  if (!session?.user || isNonStaffRole(session.user.role)) return { ok: false, error: "Non autorisé." };
   const db = await getTenantDb();
 
   const parsed = parcoursPatchSchema.safeParse(patch);
@@ -212,7 +215,8 @@ export async function ajouterEpreuveT3P(
   type: "THEORIE" | "PRATIQUE",
 ): Promise<ActionResult> {
   const session = await auth();
-  if (!session?.user) return { ok: false, error: "Non autorisé." };
+  // BFLA (OFM) : gestion du parcours T3P réservée au personnel (rejette les non-staff dont ENTREPRISE).
+  if (!session?.user || isNonStaffRole(session.user.role)) return { ok: false, error: "Non autorisé." };
   const db = await getTenantDb();
 
   try {
@@ -279,7 +283,8 @@ export type EpreuveT3PPatch = z.infer<typeof epreuvePatchSchema>;
  */
 export async function majEpreuveT3P(epreuveId: string, patch: EpreuveT3PPatch): Promise<ActionResult> {
   const session = await auth();
-  if (!session?.user) return { ok: false, error: "Non autorisé." };
+  // BFLA (OFM) : gestion du parcours T3P réservée au personnel (rejette les non-staff dont ENTREPRISE).
+  if (!session?.user || isNonStaffRole(session.user.role)) return { ok: false, error: "Non autorisé." };
   const db = await getTenantDb();
 
   const parsed = epreuvePatchSchema.safeParse(patch);
@@ -371,7 +376,8 @@ export async function validerEtapeT3P(
   comment?: string,
 ): Promise<ActionResult> {
   const session = await auth();
-  if (!session?.user) return { ok: false, error: "Non autorisé." };
+  // BFLA (OFM) : gestion du parcours T3P réservée au personnel (rejette les non-staff dont ENTREPRISE).
+  if (!session?.user || isNonStaffRole(session.user.role)) return { ok: false, error: "Non autorisé." };
   const idx = etapeIndex(etapeKey);
   if (idx < 0) return { ok: false, error: "Étape inconnue." };
   const db = await getTenantDb();
@@ -432,7 +438,8 @@ export async function validerEtapeT3P(
  */
 export async function annulerValidationEtapeT3P(parcoursId: string, etapeKey: string): Promise<ActionResult> {
   const session = await auth();
-  if (!session?.user) return { ok: false, error: "Non autorisé." };
+  // BFLA (OFM) : gestion du parcours T3P réservée au personnel (rejette les non-staff dont ENTREPRISE).
+  if (!session?.user || isNonStaffRole(session.user.role)) return { ok: false, error: "Non autorisé." };
   const idx = etapeIndex(etapeKey);
   if (idx < 0) return { ok: false, error: "Étape inconnue." };
   const db = await getTenantDb();
@@ -482,7 +489,8 @@ export async function annulerValidationEtapeT3P(parcoursId: string, etapeKey: st
 /** Supprime une présentation saisie par erreur (correction). */
 export async function supprimerEpreuveT3P(epreuveId: string): Promise<ActionResult> {
   const session = await auth();
-  if (!session?.user) return { ok: false, error: "Non autorisé." };
+  // BFLA (OFM) : gestion du parcours T3P réservée au personnel (rejette les non-staff dont ENTREPRISE).
+  if (!session?.user || isNonStaffRole(session.user.role)) return { ok: false, error: "Non autorisé." };
   const db = await getTenantDb();
 
   try {

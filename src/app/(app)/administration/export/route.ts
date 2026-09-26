@@ -69,6 +69,26 @@ export async function GET() {
     paiements,
   };
 
+  // OFM-15 : tracer le dump COMPLET du tenant (réversibilité) dans le journal d'audit.
+  await db.auditLog.create({
+    data: {
+      userId: session.user.id,
+      action: "EXPORT_TENANT",
+      entityType: "Organisme",
+      entityId: session.user.organismeId ?? null,
+      changesJson: {
+        candidats: candidats.length,
+        entreprises: entreprises.length,
+        formateurs: formateurs.length,
+        formations: formations.length,
+        sessions: sessions.length,
+        inscriptions: inscriptions.length,
+        factures: factures.length,
+        paiements: paiements.length,
+      },
+    },
+  });
+
   const json = JSON.stringify(bundle, null, 2);
   const date = new Date().toISOString().slice(0, 10);
   return new Response(json, {

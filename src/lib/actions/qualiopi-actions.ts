@@ -4,11 +4,13 @@ import { revalidatePath } from "next/cache";
 import { QualiopiStatut } from "@prisma/client";
 import { getTenantDb, requireTenant } from "@/lib/tenant";
 import { auth } from "@/auth";
+import { isNonStaffRole } from "@/lib/permissions";
 import { INDICATEURS } from "@/lib/qualiopi-indicateurs";
 
 export async function initialiserIndicateurs() {
   const session = await auth();
-  if (!session?.user) return;
+  // BFLA (OFM) : indicateurs Qualiopi réservés au personnel (conformité).
+  if (!session?.user || isNonStaffRole(session.user.role)) return;
   // Indicateurs cloisonnés par organisme → unicité composite (organisme, numéro).
   const { organismeId, db } = await requireTenant();
 
@@ -31,7 +33,7 @@ export async function updateIndicateur(
   data: { statut?: QualiopiStatut; commentaire?: string },
 ): Promise<{ ok: boolean }> {
   const session = await auth();
-  if (!session?.user) return { ok: false };
+  if (!session?.user || isNonStaffRole(session.user.role)) return { ok: false };
 
   const db = await getTenantDb();
   await db.qualiopiIndicateur.update({

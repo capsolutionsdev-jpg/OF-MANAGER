@@ -9,11 +9,13 @@ import { isValidSiret, SIRET_ERROR_MESSAGE } from "@/lib/validators/siret";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 async function requireUser() {
-  // Correctif audit P2-1 (BFLA) : réservé au personnel — rejette APPRENANT/FORMATEUR
-  // (qui ont un login + un organisme mais ne doivent pas gérer les clients pro).
+  // Correctif audit P2-1 (BFLA) : réservé au personnel — rejette les rôles non-staff.
+  // OFM-01 : ENTREPRISE (client B2B, tiers externe) a un login + un organisme mais
+  // ne doit déclencher AUCUNE action de gestion (cf. NON_STAFF_ROLES dans tenant.ts).
+  // Il manquait à cette liste → un compte client pouvait piloter les clients pro.
   const session = await auth();
   const role = session?.user?.role as string | undefined;
-  if (!session?.user || role === "APPRENANT" || role === "FORMATEUR") {
+  if (!session?.user || role === "APPRENANT" || role === "FORMATEUR" || role === "ENTREPRISE") {
     throw new Error("Non autorisé.");
   }
   return session.user;
@@ -80,6 +82,10 @@ export async function rattacherCandidat(formData: FormData) {
   const entrepriseId = String(formData.get("entrepriseId") ?? "");
   const candidatId = String(formData.get("candidatId") ?? "");
   if (!entrepriseId || !candidatId) return;
+  // OFM-01 (défense en profondeur) : vérifier que l'entreprise appartient bien au
+  // tenant avant de rattacher (db est cloisonné → findFirst renvoie null sinon).
+  const ent = await db.entreprise.findFirst({ where: { id: entrepriseId }, select: { id: true } });
+  if (!ent) throw new Error("Client pro introuvable pour cet organisme.");
   await db.candidat.update({
     where: { id: candidatId },
     data: { entrepriseId },

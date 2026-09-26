@@ -133,12 +133,17 @@ const PRESETS: Record<ComptaPreset, PresetCfg> = {
   },
 };
 
-/** Échappe une valeur CSV si elle contient le séparateur, un guillemet ou un saut de ligne. */
+/** Échappe une valeur CSV. OFM-14 : neutralise aussi les préfixes de formule
+ *  (= + @ TAB CR, et « - » non numérique) — sinon un libellé saisi comme « =cmd... »
+ *  s'exécute à l'ouverture Excel/Sheets. Même logique que lib/export-csv.ts `esc`. */
 function csvCell(value: string, sep: string): string {
-  if (value.includes(sep) || value.includes('"') || /[\r\n]/.test(value)) {
-    return `"${value.replace(/"/g, '""')}"`;
+  let s = value;
+  const estNombre = /^-?[\d\s.,]+$/.test(s);
+  if (/^[=+@\t\r]/.test(s) || (s.startsWith("-") && !estNombre)) s = "'" + s;
+  if (s.includes(sep) || s.includes('"') || /[\r\n]/.test(s)) {
+    return `"${s.replace(/"/g, '""')}"`;
   }
-  return value;
+  return s;
 }
 
 /** Sérialise les écritures (issues du FEC) en CSV pour le logiciel choisi. */

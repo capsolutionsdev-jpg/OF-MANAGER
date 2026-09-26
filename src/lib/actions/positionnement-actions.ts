@@ -7,10 +7,12 @@ import { getTenantDb } from "@/lib/tenant";
 import type { PositionnementQuestion } from "@/lib/positionnement";
 
 async function requireUser() {
-  // Correctif audit P2-1 (BFLA) : réservé au personnel — rejette APPRENANT/FORMATEUR.
+  // Correctif audit P2-1 (BFLA) : réservé au personnel — rejette les rôles non-staff.
+  // OFM-11 : ENTREPRISE (client B2B) était omis → un tiers pouvait réécrire les
+  // questions de positionnement (jalon Qualiopi/CPF) de n'importe quelle formation.
   const session = await auth();
   const role = session?.user?.role as string | undefined;
-  if (!session?.user || role === "APPRENANT" || role === "FORMATEUR") {
+  if (!session?.user || role === "APPRENANT" || role === "FORMATEUR" || role === "ENTREPRISE") {
     throw new Error("Non autorisé.");
   }
   return session.user;

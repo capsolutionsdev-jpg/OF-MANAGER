@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { EmailStatut } from "@prisma/client";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { requireStaffTenant } from "@/lib/tenant";
 import { sendEmail, toBase64 } from "@/lib/email";
 import { buildSingleDocPdf } from "@/lib/documents/build-pdf";
 import { DOCUMENTS } from "@/lib/documents/templates";
@@ -11,14 +12,12 @@ import { orgConfigFor } from "@/lib/org-identity";
 import { SIGNABLE_DOCS } from "@/lib/signable-docs";
 import { emailShell, emailParagraph, emailBox, emailSignoff, esc, emailLogoSrc } from "@/lib/email-templates";
 
-const STAFF = ["SUPERADMIN", "ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"];
 type Result = { ok: true } | { ok: false; error: string };
 
 async function staffOrg(): Promise<string> {
-  const session = await auth();
-  const role = session?.user?.role as string | undefined;
-  const organismeId = session?.user?.organismeId;
-  if (!session?.user || !role || !STAFF.includes(role) || !organismeId) throw new Error("Non autorisé.");
+  // OFM-11 : requireStaffTenant revalide la session en base (compte actif, tenant non
+  // suspendu, session non révoquée) — le seul contrôle du rôle dans le JWT ne suffisait pas.
+  const { organismeId } = await requireStaffTenant();
   return organismeId;
 }
 

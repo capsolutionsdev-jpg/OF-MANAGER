@@ -14,7 +14,7 @@ import { SATISFACTION_CRITERES, SATISFACTION_NOTES } from "@/lib/satisfaction";
 import { buildVariables } from "@/lib/documents/resolve";
 import { assiduiteFromSession } from "@/lib/assiduite";
 import { dateJourPourDoc } from "@/lib/documents/doc-dates";
-import { escapeHtml } from "@/lib/documents/escape";
+import { escapeHtml, isSafeImageDataUrl } from "@/lib/documents/escape";
 import { orgConfigFor } from "@/lib/org-identity";
 import {
   signatureRef,
@@ -132,7 +132,7 @@ export async function buildInscriptionPdf(
     : null;
 
   vars.signature_stagiaire =
-    signed && inscription.signatureDataUrl
+    signed && isSafeImageDataUrl(inscription.signatureDataUrl)
       ? `<img src="${inscription.signatureDataUrl}" alt="Signature du stagiaire" style="max-height:70px" />`
       : "";
 
@@ -261,7 +261,7 @@ export async function buildSatisfactionPdf(
     return `<tr><td>${c.label}</td><td>${label}</td></tr>`;
   }).join("");
 
-  const sig = rep.__signature
+  const sig = isSafeImageDataUrl(rep.__signature)
     ? `<img src="${rep.__signature}" alt="Signature" style="max-height:70px" />`
     : "";
 
@@ -375,7 +375,7 @@ export async function buildContratFormateurPdf(
     formateur_coords: coords ? `, ${coords}` : "",
     prix_jour: tarif != null ? euro(tarif) : "____________",
     total: total != null ? euro(total) : "____________",
-    signature_formateur: s.contratFormateurSignatureUrl
+    signature_formateur: isSafeImageDataUrl(s.contratFormateurSignatureUrl)
       ? `<img src="${s.contratFormateurSignatureUrl}" alt="Signature du formateur" style="max-height:70px" />`
       : "",
   };
@@ -436,7 +436,7 @@ export async function buildCompteRenduPdf(
     cr_documentation: rep.documentation ?? "",
     cr_remarques: rep.remarques ?? "",
     cr_rencontreDirection: rep.rencontreDirection ?? "",
-    signature_formateur: signature
+    signature_formateur: isSafeImageDataUrl(signature)
       ? `<img src="${signature}" alt="Signature du formateur" style="max-height:70px" />`
       : "",
   };

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { EmailStatut } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { getTenantDb } from "@/lib/tenant";
+import { requireStaffTenant } from "@/lib/tenant";
 import { auth } from "@/auth";
 import { sendEmail, emailConfigured } from "@/lib/email";
 import { orgConfigFor } from "@/lib/org-identity";
@@ -18,7 +18,9 @@ const fmt = (d: Date) => d.toLocaleDateString("fr-FR");
 export async function sendCompteRendu(
   sessionId: string,
 ): Promise<{ ok: boolean; demo: boolean; error?: string }> {
-  const db = await getTenantDb(); // cloisonne : session d'un autre OF → introuvable
+  // BFLA (OFM-12) : action exportée = directement appelable. requireStaffTenant
+  // rejette les rôles non-staff (dont ENTREPRISE) + cloisonne + revalide la session.
+  const { db } = await requireStaffTenant();
   const s = await db.session.findUnique({
     where: { id: sessionId },
     include: { formation: true, formateurs: true },

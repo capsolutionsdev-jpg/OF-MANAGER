@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { ValidationType } from "@prisma/client";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { canAccessSection } from "@/lib/permissions";
+import { canAccessSection, isNonStaffRole } from "@/lib/permissions";
 
 type Ctx = { id: string; name: string; role: string; organismeId: string; permissions: string[] };
 type Result = { ok: true } | { ok: false; error: string };
@@ -18,6 +18,11 @@ async function ctx(): Promise<Ctx> {
     select: { id: true, name: true, role: true, organismeId: true, permissions: true, isActive: true },
   });
   if (!u || !u.isActive || !u.organismeId) throw new Error("Non autorisé.");
+  // BFLA (OFM) : le module de validation est réservé au PERSONNEL. Sans cette garde,
+  // un rôle non-staff (dont ENTREPRISE) passait ctx() puis peutValider() (qui n'appelle
+  // que canAccessSection, laquelle renvoyait true pour les non-staff) → création/décision/
+  // suppression de demandes de validation par un tiers.
+  if (isNonStaffRole(u.role)) throw new Error("Non autorisé.");
   return { id: u.id, name: u.name, role: u.role, organismeId: u.organismeId, permissions: u.permissions };
 }
 

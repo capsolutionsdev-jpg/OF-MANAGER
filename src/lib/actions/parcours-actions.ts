@@ -21,6 +21,7 @@ import { sendPushToOrgStaff } from "@/lib/push";
 import { generateToken, appBaseUrl } from "@/lib/token";
 import { sendSuivi6MoisEmail } from "@/lib/suivi6mois-mailer";
 import { isValidSignatureDataUrl } from "@/lib/suivi6mois";
+import { isSafeImageDataUrl } from "@/lib/documents/escape";
 import {
   buildInscriptionPdf,
   buildSingleDocPdf,
@@ -259,7 +260,7 @@ export async function submitParcoursForm(
         : insc.candidat.ssiapDiplomeDate,
       financementType: fin ?? insc.candidat.financementType,
       // Photo d'identité : uniquement si fournie et bien une image encodée
-      ...(values.photoDataUrl?.startsWith("data:image/")
+      ...(isSafeImageDataUrl(values.photoDataUrl)
         ? { photoUrl: values.photoDataUrl }
         : {}),
     },
