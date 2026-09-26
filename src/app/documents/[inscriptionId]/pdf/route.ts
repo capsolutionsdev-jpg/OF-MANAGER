@@ -54,6 +54,8 @@ export async function GET(
       // attachment → déclenche le téléchargement direct (dans Téléchargements),
       // nommé NOM_Prénom_nature.pdf (au lieu de s'ouvrir dans l'onglet).
       "Content-Disposition": `attachment; filename="${filename}"`,
+      // OFM-40 : PII candidat → jamais mise en cache (disque navigateur / proxy partagé).
+      "Cache-Control": "private, no-store",
     },
   });
 }

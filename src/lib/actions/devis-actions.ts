@@ -31,6 +31,15 @@ export async function createDevis(values: DevisFormValues): Promise<DevisResult>
   if (!v.entrepriseId && !v.clientNom?.trim()) {
     return { ok: false, error: "Indiquez une entreprise cliente ou un nom de client." };
   }
+  // OFM-18 (cloisonnement, cf. createInscription / A05-004) : entrepriseId vient du
+  // formulaire. Le create scopé pose l'organismeId sur le Devis mais NE revérifie PAS
+  // l'appartenance de la FK → sans ce contrôle on peut rattacher (puis lire via
+  // `include: { entreprise }`) l'entreprise d'un AUTRE organisme. Le client scopé
+  // renvoie null pour une ressource hors-tenant.
+  if (v.entrepriseId) {
+    const entOk = await db.entreprise.findFirst({ where: { id: v.entrepriseId }, select: { id: true } });
+    if (!entOk) return { ok: false, error: "Entreprise cliente introuvable." };
+  }
 
   // TVA : un organisme exonéré (art. 261-4-4° du CGI) facture SANS TVA, quel que
   // soit le taux saisi → on force 0 % (la mention légale s'affiche dans le document).

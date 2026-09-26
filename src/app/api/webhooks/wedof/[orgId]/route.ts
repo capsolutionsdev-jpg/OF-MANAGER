@@ -28,9 +28,17 @@ export async function POST(
     select: { wedofWebhookSecret: true },
   });
   const secret = decryptSecret(org?.wedofWebhookSecret);
-  if (!secret) return new NextResponse("Webhook non configuré.", { status: 404 });
+  // OFM-26 : réponse IDENTIQUE à celle d'une signature invalide (ci-dessous) pour ne
+  // pas distinguer « organisme inconnu / non configuré » de « mauvaise signature »
+  // (oracle d'énumération d'organismes). Un OF qui débogue verra un 401 générique.
+  if (!secret) return new NextResponse("Signature invalide.", { status: 401 });
 
   // Signature HMAC-SHA512 du corps brut (comparaison à temps constant).
+  // Anti-rejeu (OFM-25) : Wedof ne fournit ni horodatage ni nonce (seul
+  // x-wedof-signature est émis) → pas de fenêtre temporelle façon Svix. La protection
+  // contre le rejeu repose sur l'upsert idempotent + garde d'ordre wedofOrderedWhere
+  // (écriture obsolète ignorée), scopé organismeId. Si Wedof expose un jour un
+  // horodatage/nonce, l'inclure dans le message HMAC + fenêtre de tolérance.
   const expected = createHmac("sha512", secret).update(raw).digest("hex");
   const got = req.headers.get("x-wedof-signature") ?? "";
   const a = Buffer.from(expected);

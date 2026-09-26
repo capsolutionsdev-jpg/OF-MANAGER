@@ -173,7 +173,7 @@ export function xlsxResponse(filename: string, bytes: Uint8Array): Response {
       "Content-Type":
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       "Content-Disposition": `attachment; filename="${filename}"`,
-      "Cache-Control": "no-store",
+      "Cache-Control": "private, no-store",
     },
   });
 }

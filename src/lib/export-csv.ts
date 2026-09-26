@@ -40,7 +40,7 @@ export function csvResponse(filename: string, csv: string): Response {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
       "Content-Disposition": `attachment; filename="${filename}"`,
-      "Cache-Control": "no-store",
+      "Cache-Control": "private, no-store",
     },
   });
 }
