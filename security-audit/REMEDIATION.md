@@ -18,6 +18,11 @@
 | BFLA contrat-formateur/compte-rendu | **FIXED** | `f31a922` | `sendContratFormateur`/`sendCompteRendu` (actions exportées) gardées personnel. |
 | BFLA validation | **FIXED** | `f31a922` | `ctx()` rejette non-staff + section `validations` ajoutée à `SECTION_ROLES`. |
 | **OFM-02** `next@16.3.1` RCE | **FIXED** | `4b64788` | Bump → `next@16.3.6` (≥16.3.3). `next` disparaît de l'audit prod. |
+| **OFM-12** stack trace prod | **FIXED** | `3eeaafd` | `parcours/[token]/documents` : message générique en prod, trace serveur seule. |
+| **OFM-14** injection formule CSV | **FIXED** | `3eeaafd` | `csvCell` (compta/écritures) neutralise `= + @ TAB CR` + `-` non numérique. |
+| **OFM-11** contournement liveness | **FIXED** | `3eeaafd` | `document-actions`/`manual-send-actions` `staffOrg()` → `requireStaffTenant()`. |
+| **OFM-15** exports de masse non tracés | **FIXED** | `3eeaafd` | AuditLog sur `candidats/export` + `administration/export` (dump tenant). |
+| **OFM-16** effacement RGPD incomplet | **FIXED** | `3eeaafd` | `anonymiseCandidatComplet` efface `EmailLog` (dest.+corps) et le `body` des `SmsLog`. |
 
 **Nouveau primitif** : `isNonStaffRole()` (source unique, `permissions.ts`) + 2 tests de non-régression
 (`non-staff-role.test.ts`, `escape-image-dataurl.test.ts`).
@@ -34,15 +39,15 @@ pour les rôles non-staff et *neutres* pour le personnel → aucun accès légit
   (`isNonStaffRole` / `requireStaffTenant`). Vérifié par lecture de code + typecheck + suite.
 - `next` : `npm audit --omit=dev` ne liste plus `next` (0 critical).
 
-## Reste à traiter (fast-follow — NON inclus dans cette branche)
+## Reste à traiter (fast-follow — restants, NON inclus dans cette branche)
 
-Medium : OFM-11 (assertLiveSession sur `document-actions`/`manual-send-actions` `staffOrg()`),
-OFM-12 (stack trace prod `parcours/[token]/documents`), OFM-14 (injection formule CSV compta/FEC),
-OFM-15 (AuditLog sur exports de masse), OFM-16 (effacement RGPD `EmailLog`/`SmsLog`),
-OFM-18 (`entrepriseId` devis).
+Medium : OFM-18 (`entrepriseId` devis non vérifié — défense en profondeur), OFM-20 (SSRF PDF latent :
+interception de requêtes Chromium / allow-list).
+Info/FEC : `serializeFec` (.txt fiscal) laissé intact volontairement (fichier importé par les
+logiciels comptables, pas ouvert dans Excel — un préfixe `'` casserait la conformité FEC).
 Hardening : token invitation haché, Blob privé + URL signée, CORS civique, anti-rejeu Wedof,
-idempotence paiement/provisioning, Cache-Control PDF privés, raffinement ASSISTANT sur les
-sections qui l'excluent (blog/vitrine/formateurs/qualiopi — actuellement `requireStaffTenant`
-autorise ASSISTANT, que le middleware bloque déjà par URL).
+idempotence paiement/provisioning, Cache-Control `private, no-store` sur PDF privés, raffinement
+ASSISTANT sur les sections qui l'excluent (blog/vitrine/formateurs/qualiopi — actuellement
+`requireStaffTenant` autorise ASSISTANT, que le middleware bloque déjà par URL).
 
 Détail complet des findings restants : `FINDINGS.md` / `findings-raw.json`.
