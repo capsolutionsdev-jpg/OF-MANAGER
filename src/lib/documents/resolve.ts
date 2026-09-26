@@ -4,7 +4,7 @@ import type { Assiduite } from "@/lib/assiduite";
 import { MODALITE_LABELS } from "@/lib/validators/formation";
 import { FINANCEMENT_LABELS, CNAPS_STATUT_LABELS } from "@/lib/validators/candidat";
 import { ssiapNiveauOfFormation } from "@/lib/documents/families";
-import { escapeHtml } from "@/lib/documents/escape";
+import { escapeHtml, isSafeImageDataUrl } from "@/lib/documents/escape";
 
 // `dossierPdf` (Bytes) est exclu par défaut des requêtes (cf. PRISMA_OMIT) et
 // n'est pas utilisé pour construire les documents → on l'ôte du type attendu.
@@ -79,10 +79,12 @@ export function buildVariables(
     employeur: c.employeur ?? "—",
     poste_occupe: c.posteOccupe ?? "—",
     // Photo d'identité (data URL compressée) → <img>, sinon vide (rien sur la fiche).
-    photo:
-      c.photoUrl && c.photoUrl.startsWith("data:image/")
-        ? `<img src="${c.photoUrl}" alt="Photo du stagiaire" style="width:96px;height:96px;object-fit:cover;border:1px solid #999;border-radius:4px" />`
-        : "",
+    // OFM-03 : validation STRICTE de la data URL (et non `startsWith`) avant de
+    // l'injecter dans l'attribut src — sinon une photo forgée casse l'attribut et
+    // exécute du JS (XSS stockée) dans la session staff + le Chromium du PDF.
+    photo: isSafeImageDataUrl(c.photoUrl)
+      ? `<img src="${c.photoUrl}" alt="Photo du stagiaire" style="width:96px;height:96px;object-fit:cover;border:1px solid #999;border-radius:4px" />`
+      : "",
     // Bloc « prérequis & spécificités » : sections affichées SEULEMENT si des
     // données ont été saisies (CNAPS sécurité privée, diplôme SSIAP détenu,
     // accessibilité). Les valeurs dynamiques sont échappées à la source.

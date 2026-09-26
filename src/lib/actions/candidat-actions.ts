@@ -10,6 +10,7 @@ import {
 } from "@/lib/validators/candidat";
 import { createInscription } from "@/lib/actions/inscription-actions";
 import { toActionError } from "@/lib/action-result";
+import { isSafeImageDataUrl } from "@/lib/documents/escape";
 
 export type ActionResult =
   | { ok: true; id: string; inscriptionId?: string; warning?: string }
@@ -53,7 +54,7 @@ function toData(v: CandidatFormValues) {
     besoinsAdaptation: clean(v.besoinsAdaptation),
     // Photo d'identité : uniquement si fournie (image valide) → n'écrase pas la
     // photo existante lors d'une mise à jour sans nouvelle photo.
-    ...(v.photoDataUrl && v.photoDataUrl.startsWith("data:image/")
+    ...(isSafeImageDataUrl(v.photoDataUrl)
       ? { photoUrl: v.photoDataUrl }
       : {}),
   };

@@ -12,6 +12,7 @@ import { orgConfigFor } from "@/lib/org-identity";
 import { sendPushToOrgStaff } from "@/lib/push";
 import { generateExpiringToken, expiringTokenExpired, LINK_TTL_DAYS, appBaseUrl } from "@/lib/token";
 import { logProspectEmail } from "@/lib/actions/crm-actions";
+import { isSafeImageDataUrl } from "@/lib/documents/escape";
 import {
   emailShell,
   emailParagraph,
@@ -267,7 +268,7 @@ export async function submitProspectForm(
       ssiapDiplomeNumero: clean(v.ssiapDiplomeNumero),
       ssiapDiplomeDate: toDate(v.ssiapDiplomeDate),
       // Photo d'identité : uniquement si fournie et bien une image encodée
-      ...(v.photoDataUrl?.startsWith("data:image/")
+      ...(isSafeImageDataUrl(v.photoDataUrl)
         ? { photoUrl: v.photoDataUrl }
         : {}),
       prospectFormCompletedAt: new Date(),
