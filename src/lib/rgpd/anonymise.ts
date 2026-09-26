@@ -21,7 +21,7 @@
  * en syntaxe MÉTHODE (bivariantes) pour rester assignable par les deux clients. */
 type AnonDb = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  candidat: { updateMany(args: any): Promise<any> };
+  candidat: { updateMany(args: any): Promise<any>; findFirst(args: any): Promise<any> };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   pieceJointe: { findMany(args: any): Promise<any[]>; updateMany(args: any): Promise<any> };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -38,6 +38,8 @@ type AnonDb = {
   candidatInteraction: { deleteMany(args: any): Promise<any> };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   smsLog: { updateMany(args: any): Promise<any> };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  emailLog: { updateMany(args: any): Promise<any> };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   consentement: { updateMany(args: any): Promise<any> };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -129,6 +131,13 @@ export async function anonymiseCandidatComplet(
 ): Promise<void> {
   const scope = { candidatId, organismeId };
 
+  // 0) OFM-16 : capturer l'e-mail AVANT anonymisation pour effacer ensuite les
+  //    EmailLog correspondants (EmailLog n'a pas de candidatId : lien par destinataire).
+  const cand: { email: string | null } | null = await db.candidat.findFirst({
+    where: { id: candidatId, organismeId },
+    select: { email: true },
+  });
+
   // 1) Candidat : toutes les données identifiantes.
   await db.candidat.updateMany({
     where: { id: candidatId, organismeId },
@@ -187,12 +196,22 @@ export async function anonymiseCandidatComplet(
   // 6bis) Interactions CRM (notes/échanges nominatifs) — supprimées (audit A02-007).
   await db.candidatInteraction.deleteMany({ where: scope });
 
-  // 6ter) Journaux SMS : neutraliser le numéro (donnée personnelle) conservé
-  //        dans les logs liés à ce candidat.
+  // 6ter) Journaux SMS : neutraliser le numéro ET le corps (OFM-16 : le body pouvait
+  //        contenir nom/formation) des logs liés à ce candidat.
   await db.smsLog.updateMany({
     where: { candidatId, organismeId },
-    data: { destinataire: "anonymisé (RGPD)" },
+    data: { destinataire: "anonymisé (RGPD)", body: "anonymisé (RGPD)" },
   });
+
+  // 6ter-bis) Journaux E-MAIL (OFM-16) : EmailLog conserve destinataire (e-mail du
+  //        candidat) + corps (HTML personnalisé « Bonjour {prénom}… »). Aucun
+  //        candidatId → on cible par destinataire = e-mail d'origine, puis on efface.
+  if (cand?.email) {
+    await db.emailLog.updateMany({
+      where: { destinataire: cand.email, organismeId },
+      data: { destinataire: anonymisedEmail(candidatId), corps: null },
+    });
+  }
 
   // 6quater) Consentements : conserver la preuve d'accord mais effacer l'IP.
   await db.consentement.updateMany({ where: scope, data: { ip: null } });

@@ -36,5 +36,16 @@ export async function GET(req: Request) {
     { header: "Créé le", value: (r) => r.createdAt.toLocaleDateString("fr-FR") },
   ]);
 
+  // OFM-15 : tracer l'export de masse de PII (dont donnée de santé « Handicap »)
+  // dans le journal d'audit, comme l'export unitaire (who/what/when).
+  await db.auditLog.create({
+    data: {
+      userId: session.user.id,
+      action: "EXPORT_MASSE",
+      entityType: "Candidat",
+      changesJson: { count: rows.length },
+    },
+  });
+
   return exportResponse({ req, basename: "candidats", title: "Liste des candidats", sheets: [sheet] });
 }

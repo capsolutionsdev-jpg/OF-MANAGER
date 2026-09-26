@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     organisme: { findMany: vi.fn() },
-    candidat: { findMany: vi.fn(), updateMany: vi.fn() },
+    candidat: { findMany: vi.fn(), updateMany: vi.fn(), findFirst: vi.fn() },
     pieceJointe: { findMany: vi.fn(), updateMany: vi.fn() },
     inscription: { updateMany: vi.fn() },
     emargementSignature: { updateMany: vi.fn() },
@@ -12,6 +12,7 @@ vi.mock("@/lib/prisma", () => ({
     candidatMessage: { deleteMany: vi.fn() },
     candidatInteraction: { deleteMany: vi.fn() },
     smsLog: { updateMany: vi.fn() },
+    emailLog: { updateMany: vi.fn() },
     consentement: { updateMany: vi.fn() },
     auditLog: { create: vi.fn() },
   },
@@ -28,6 +29,7 @@ beforeEach(() => {
   db.organisme.findMany.mockReset();
   db.candidat.findMany.mockReset();
   db.candidat.updateMany.mockReset().mockResolvedValue({ count: 1 });
+  db.candidat.findFirst.mockReset().mockResolvedValue({ email: "purge@example.test" });
   db.pieceJointe.findMany.mockReset().mockResolvedValue([]);
   db.pieceJointe.updateMany.mockReset().mockResolvedValue({ count: 0 });
   db.inscription.updateMany.mockReset().mockResolvedValue({ count: 0 });
@@ -37,6 +39,7 @@ beforeEach(() => {
   db.candidatMessage.deleteMany.mockReset().mockResolvedValue({ count: 0 });
   db.candidatInteraction.deleteMany.mockReset().mockResolvedValue({ count: 0 });
   db.smsLog.updateMany.mockReset().mockResolvedValue({ count: 0 });
+  db.emailLog.updateMany.mockReset().mockResolvedValue({ count: 0 });
   db.consentement.updateMany.mockReset().mockResolvedValue({ count: 0 });
   db.auditLog.create.mockReset().mockResolvedValue({});
 });
