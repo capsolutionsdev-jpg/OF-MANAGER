@@ -36,6 +36,10 @@ export const SECTION_ROLES: Record<string, Role[]> = {
   qualiopi: ["ADMIN", "RESPONSABLE_FORMATION"],
   rgpd: ["ADMIN", "RESPONSABLE_FORMATION"],
   support: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
+  // Validations « donner la main » (maker-checker). Section STAFF : sans cette entrée,
+  // roleAllowedInSection() renvoyait true pour TOUT rôle (section non listée) et
+  // canAccessSection() laissait alors passer les rôles non-staff → BFLA (audit OFM).
+  validations: ["ADMIN", "RESPONSABLE_FORMATION", "ASSISTANT"],
 };
 
 // Rôles « personnel administratif » dont l'accès aux sections est, en plus du

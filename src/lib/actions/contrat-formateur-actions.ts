@@ -6,6 +6,7 @@ import { headers } from "next/headers";
 import { EmailStatut } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
+import { isNonStaffRole } from "@/lib/permissions";
 import { sendEmail, emailConfigured, toBase64 } from "@/lib/email";
 import { orgConfigFor } from "@/lib/org-identity";
 import { generateToken, appBaseUrl } from "@/lib/token";
@@ -20,7 +21,10 @@ export async function sendContratFormateur(
   // Cette fonction est un point d'entrée server action (exportée) : elle doit se
   // garder elle-même (auth + cloisonnement tenant), sans dépendre du wrapper.
   const session = await auth();
-  if (!session?.user) return { ok: false, demo: true, error: "Non autorisé." };
+  // BFLA (OFM-12) : envoi du contrat de sous-traitance (PDF avec tarifs) réservé au
+  // personnel — un rôle non-staff (dont ENTREPRISE) pouvait le déclencher.
+  if (!session?.user || isNonStaffRole(session.user.role))
+    return { ok: false, demo: true, error: "Non autorisé." };
   const s = await prisma.session.findUnique({
     where: { id: sessionId },
     include: { formation: true, formateurs: true },

@@ -8,10 +8,13 @@ import {
 } from "@prisma/client";
 import { auth } from "@/auth";
 import { getTenantDb } from "@/lib/tenant";
+import { isNonStaffRole } from "@/lib/permissions";
 
 async function requireUser() {
+  // BFLA (OFM) : réservé au personnel — un rôle non-staff (dont ENTREPRISE) pouvait
+  // déposer/gérer des réclamations et la veille réglementaire au registre Qualiopi.
   const session = await auth();
-  if (!session?.user) throw new Error("Non autorisé.");
+  if (!session?.user || isNonStaffRole(session.user.role)) throw new Error("Non autorisé.");
   return session.user;
 }
 

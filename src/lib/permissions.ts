@@ -67,3 +67,14 @@ export function canAccessSection(
 export function isStaffRole(role: Role): boolean {
   return STAFF_ROLES.includes(role);
 }
+
+/**
+ * Rôles NON-staff : connectés (login + organisme) mais qui ne sont PAS du personnel
+ * de gestion — élèves e-learning, formateurs, et clients B2B (ENTREPRISE, tiers
+ * externe). Ils ne doivent déclencher AUCUNE Server Action de gestion, même en
+ * forgeant la requête par action-ID (BFLA — cf. NON_STAFF_ROLES dans tenant.ts).
+ * Source unique réutilisable dans les gardes inline des actions (audit OFM).
+ */
+export function isNonStaffRole(role: Role | string | null | undefined): boolean {
+  return role === "APPRENANT" || role === "FORMATEUR" || role === "ENTREPRISE";
+}

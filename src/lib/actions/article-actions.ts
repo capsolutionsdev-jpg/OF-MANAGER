@@ -3,8 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { Prisma, VitrineStatut } from "@prisma/client";
-import { getTenantDb } from "@/lib/tenant";
-import { auth } from "@/auth";
+import { requireStaffTenant } from "@/lib/tenant";
 import { articleFormSchema, type ArticleFormValues } from "@/lib/validators/article";
 
 // =============================================================
@@ -41,9 +40,9 @@ function toData(v: ArticleFormValues) {
 export async function createArticle(
   values: ArticleFormValues,
 ): Promise<ActionResult> {
-  const db = await getTenantDb();
-  const session = await auth();
-  if (!session?.user) return { ok: false, error: "Non autorisé." };
+  // BFLA (OFM) : publication du blog vitrine réservée au personnel (rejette les
+  // rôles non-staff dont ENTREPRISE) ; requireStaffTenant revalide aussi la session.
+  const { db, session } = await requireStaffTenant();
 
   const parsed = articleFormSchema.safeParse(values);
   if (!parsed.success) return { ok: false, error: "Données invalides." };
@@ -72,9 +71,9 @@ export async function updateArticle(
   id: string,
   values: ArticleFormValues,
 ): Promise<ActionResult> {
-  const db = await getTenantDb();
-  const session = await auth();
-  if (!session?.user) return { ok: false, error: "Non autorisé." };
+  // BFLA (OFM) : publication du blog vitrine réservée au personnel (rejette les
+  // rôles non-staff dont ENTREPRISE) ; requireStaffTenant revalide aussi la session.
+  const { db, session } = await requireStaffTenant();
 
   const parsed = articleFormSchema.safeParse(values);
   if (!parsed.success) return { ok: false, error: "Données invalides." };
@@ -104,9 +103,8 @@ export async function updateArticle(
 
 /** Bascule rapide du statut de publication depuis la liste. */
 export async function setArticleStatutAction(formData: FormData) {
-  const db = await getTenantDb();
-  const session = await auth();
-  if (!session?.user) return;
+  // BFLA (OFM) : réservé au personnel (rejette les rôles non-staff dont ENTREPRISE).
+  const { db, session } = await requireStaffTenant();
 
   const id = String(formData.get("id"));
   const statutRaw = String(formData.get("statut") ?? "");
@@ -132,9 +130,8 @@ export async function setArticleStatutAction(formData: FormData) {
 
 /** Archive (retire de la liste) un article. */
 export async function archiveArticleAction(formData: FormData) {
-  const db = await getTenantDb();
-  const session = await auth();
-  if (!session?.user) return;
+  // BFLA (OFM) : réservé au personnel (rejette les rôles non-staff dont ENTREPRISE).
+  const { db, session } = await requireStaffTenant();
 
   const id = String(formData.get("id"));
   if (!id) return;

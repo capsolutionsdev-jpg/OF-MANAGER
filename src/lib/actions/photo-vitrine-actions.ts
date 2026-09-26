@@ -2,8 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { ZonePhoto } from "@prisma/client";
-import { getTenantDb } from "@/lib/tenant";
-import { auth } from "@/auth";
+import { requireStaffTenant } from "@/lib/tenant";
 
 // =============================================================
 //  PHOTOS DU SITE VITRINE (galerie par zone)
@@ -17,9 +16,8 @@ const isZone = (z: string): z is ZonePhoto =>
   (Object.values(ZonePhoto) as string[]).includes(z);
 
 export async function addPhotoVitrineAction(formData: FormData) {
-  const db = await getTenantDb();
-  const session = await auth();
-  if (!session?.user) return;
+  // BFLA (OFM) : galerie vitrine réservée au personnel (rejette les rôles non-staff dont ENTREPRISE).
+  const { db, session } = await requireStaffTenant();
 
   const zone = String(formData.get("zone") ?? "");
   const url = String(formData.get("url") ?? "");
@@ -52,9 +50,8 @@ export async function addPhotoVitrineAction(formData: FormData) {
 }
 
 export async function deletePhotoVitrineAction(formData: FormData) {
-  const db = await getTenantDb();
-  const session = await auth();
-  if (!session?.user) return;
+  // BFLA (OFM) : galerie vitrine réservée au personnel (rejette les rôles non-staff dont ENTREPRISE).
+  const { db, session } = await requireStaffTenant();
 
   const id = String(formData.get("id"));
   if (!id) return;

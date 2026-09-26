@@ -62,7 +62,12 @@ export async function createFormateur(
 ): Promise<ActionResult> {
   const db = await getTenantDb();
   const session = await auth();
-  if (!session?.user) return { ok: false, error: "Non autorisé." };
+  // BFLA (OFM-01) : gestion des formateurs réservée au personnel autorisé
+  // (cf. SECTION_ROLES["formateurs"]). getTenantDb() ne gardait que la présence
+  // d'un organisme → un rôle non-staff (dont ENTREPRISE, tiers B2B) passait.
+  if (!session?.user || !STAFF.includes(session.user.role)) {
+    return { ok: false, error: "Non autorisé." };
+  }
   const parsed = formateurFormSchema.safeParse(values);
   if (!parsed.success) return { ok: false, error: "Données invalides." };
 
@@ -88,7 +93,12 @@ export async function updateFormateur(
 ): Promise<ActionResult> {
   const db = await getTenantDb();
   const session = await auth();
-  if (!session?.user) return { ok: false, error: "Non autorisé." };
+  // BFLA (OFM-01) : gestion des formateurs réservée au personnel autorisé
+  // (cf. SECTION_ROLES["formateurs"]). getTenantDb() ne gardait que la présence
+  // d'un organisme → un rôle non-staff (dont ENTREPRISE, tiers B2B) passait.
+  if (!session?.user || !STAFF.includes(session.user.role)) {
+    return { ok: false, error: "Non autorisé." };
+  }
   const parsed = formateurFormSchema.safeParse(values);
   if (!parsed.success) return { ok: false, error: "Données invalides." };
 
